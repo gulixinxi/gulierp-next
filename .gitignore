@@ -1,0 +1,13 @@
+bin/
+obj/
+node_modules/
+dist/
+.vite/
+.vs/
+.idea/
+*.user
+*.suo
+.env
+.env.*
+!.env.example
+
