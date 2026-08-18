@@ -2,11 +2,11 @@
 
 | Field | Value |
 |---|---|
-| Goal | G1A — Core Business Specification Freeze |
-| Gate (entry) | `GULIERP_GREENFIELD_BOOTSTRAPPED` |
-| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
-| Document status | **Draft for UX Prototype** — NOT Frozen, NOT User-Approved |
-| Evidence scope | New project docs + DEV `DEV_INVENTORY_SPEC.md` + 22 库存表 reverse-engineering + handoff |
+| Goal | G1A-FINAL — Operator Decision Writeback & Business Spec Freeze |
+| Gate (entry) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
+| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_FROZEN` |
+| Document status | **FROZEN at G1A-FINAL** (per `BUSINESS_SPEC_FROZEN` gate, 10 user decisions) |
+| Evidence scope | New project docs + DEV `DEV_INVENTORY_SPEC.md` + 22 库存表 reverse-engineering + handoff + G1A-FINAL USER_CONFIRMED decisions |
 | Hard rule (per G1A §十二 #5) | **This spec is NOT a CRUD list.** It must produce transactional and projection models, posting semantics, and concurrency. If it reads like "增删改查", the spec has failed. |
 
 > Same hard interpretation rule as Sales/PO specs. No `USER_CONFIRMED`
@@ -33,6 +33,39 @@ The DEV model is **REJECTED** for both:
 Per `BUSINESS_SOURCE_OF_TRUTH.md` REJECT list and
 `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` §8.
 
+## 0.5 InventoryPostingEngine (REQUIRED in V1)
+
+> **G1A-FINAL (DEC-INV-002) — CRITICAL CORRECTION**:
+>
+> Earlier draft (`CORE_MODULE_SCOPE_V1.md` v0) may have implied that
+> `InventoryPostingEngine` is deferred to V1.5/V2. **This is REJECTED.**
+>
+> The V1 **must** ship a unified `InventoryPostingEngine`. The
+> `InventoryPostingEngine` is **REQUIRED**, not optional.
+>
+> Distinction:
+>
+> | Concept | Status in V1 | Reason |
+> |---|---|---|
+> | **Manual "过账 Ledger" screen** where a user clicks "过账" on a finished business document | **REJECTED** | Per `BUSINESS_SOURCE_OF_TRUTH.md` REJECT + `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` §8.4. Users do not directly write `InventoryTransaction` or `InventoryBalance`. |
+> | **`InventoryPostingEngine`** (engine class) | **REQUIRED** | The single internal entry point that converts a business document's `Confirm/Approve` into `InventoryTransaction` rows. Per DEC-INV-002. |
+>
+> Standard posting flow:
+>
+> ```
+> Business Document (GR/SH/OtherReceipt/OtherIssue/Adjustment/Transfer/StockTake/...)
+>   → Confirm / Approve
+>     → Posting Request (typed payload)
+>       → InventoryPostingEngine.PostAsync(...)
+>         → InventoryTransaction (immutable fact)
+>         → InventoryBalance (materialized projection, in same DB tx)
+> ```
+>
+> Future reservations, idempotency, concurrency, transaction boundary,
+> reverse, source-document, source-line MUST be reserved as
+> `InventoryPostingEngine` capabilities, even if the V1 implementation
+> of some of them is partial.
+
 ---
 
 ## 1. Inventory dimensions (entity master data)
@@ -43,11 +76,11 @@ Per `BUSINESS_SOURCE_OF_TRUTH.md` REJECT list and
 | Company | `Company` | Yes | INFERENCE; **OPEN_QUESTION** V1 |
 | Organization | `Organization` (business space) | Yes | INFERENCE; reserved for V1.5 |
 | Warehouse | `Warehouse` | **Yes** | `DEV_INVENTORY_SPEC.md` §3.1 |
-| Location | `Location` | **Yes** | `DEV_INVENTORY_SPEC.md` §3.1; **OPEN_QUESTION** V1 mandatory or optional |
+| Location | `Location` | **Yes (optional use, policy-gated)** | **USER_CONFIRMED (DEC-INV-002)**: V1 支持,可选;Warehouse Policy 可要求 Location Mandatory |
 | Item | `Item` (MDM) | Yes | POC-002 MDM |
 | ItemUom | `ItemUom` (Item × Uom) | Yes | POC-002 MDM |
 | ItemUomConversion | `ItemUomConversion` | Yes | POC-002 MDM |
-| Lot/Batch | `InventoryLot` (LotNumber value object + entity) | **OPEN_QUESTION** V1 | `INVENTORY_REQUIREMENT_DISCOVERY.md` Items To Confirm "lot/batch mandatory in V1" |
+| Lot/Batch | `InventoryLot` (LotNumber value object + entity) | **per-Item flag** | **USER_CONFIRMED (DEC-INV-002)**: 按 Item Flag 启用,不全局强制 |
 | Serial Number | `InventorySerial` | **NO V1** | reserved for V2 |
 | ItemWarehousePolicy | `ItemWarehousePolicy` (per Item × Warehouse) | Yes | `DEV_INVENTORY_SPEC.md` §3.1 |
 | Status (Quality) | `QualityStatus` enum on transaction and on GR line | Yes | `DEV_QUALITY_SPEC.md` §4.1 |
@@ -56,22 +89,39 @@ Per `BUSINESS_SOURCE_OF_TRUTH.md` REJECT list and
 
 ## 2. Quantity dimensions (balance facets)
 
+> **G1A-FINAL (DEC-INV-001) — CRITICAL CORRECTION**:
+>
+> `PendingInspection` **属于 OnHand 物理库存**(`OnHand` 已包含),
+> 但**不得计入 Available**。
+>
+> `Available` 的最终公式 (在 Inventory Architecture Gate 冻结前为方向性):
+>
+> ```
+> Available =
+>   Qualified / Usable OnHand
+>   − Reserved
+>   − Other Blocking Quantity
+>   (PendingInspection NOT INCLUDED)
+> ```
+>
+> 即使 `PendingInspection` 的货物"人在仓库里",也不得视为可销售/可领用库存。
+
 | Quantity | Definition | First-class in V1? | Evidence |
 |---|---|---|---|
-| `OnHand` | Σ transactions on a `(Tenant, Warehouse, Location?, Item, Lot?)` key, sign by direction | **Yes** (materialized) | `DEV_INVENTORY_SPEC.md` §3.1 `InventoryBalance.OnHand` |
+| `OnHand` | Σ transactions on a `(Tenant, Warehouse, Location?, Item, Lot?)` key, sign by direction. **包含 PendingInspection** | **Yes** (materialized) | `DEV_INVENTORY_SPEC.md` §3.1 + **DEC-INV-001** |
 | `Reserved` | Σ active reservations, not yet shipped | **Yes** (materialized, separate column) | `DEV_INVENTORY_SPEC.md` §3.1 + `INVENTORY_REQUIREMENT_DISCOVERY.md` "inventory reservation" |
-| `Available` | `OnHand − Reserved` | Yes (computed on read) | `DEV_INVENTORY_SPEC.md` §3.1 |
-| `InTransit` | Σ transfer-out not yet received | **Yes** (materialized, separate column) | INFERENCE; **OPEN_QUESTION** V1 |
-| `PendingInspection` | Σ receipts not yet inspected (when H29=true) | **Yes** (materialized) | `DEV_QUALITY_SPEC.md` §4.1 |
-| `Qualified` | Σ accepted, post-inspection | Yes (materialized when H29=true) | `DEV_QUALITY_SPEC.md` §4.1 |
-| `Rejected` | Σ rejected, awaiting disposition | Yes (materialized when H29=true) | `DEV_QUALITY_SPEC.md` §4.1 |
-| `OnHold` | Σ quality hold | Yes (materialized when applicable) | INFERENCE |
+| `Available` | `Qualified OnHand − Reserved − Other Blocking`. **PendingInspection 不计入** | Yes (computed on read) | **USER_CONFIRMED (DEC-INV-001)** |
+| `PendingInspection` | Σ receipts not yet inspected (when H29=true) | **Yes** (materialized) | `DEV_QUALITY_SPEC.md` §4.1 + **DEC-INV-001** |
+| `Qualified` | Σ accepted, post-inspection (part of OnHand) | Yes (materialized when H29=true) | `DEV_QUALITY_SPEC.md` §4.1 |
+| `Rejected` | Σ rejected, awaiting disposition (part of OnHand) | Yes (materialized when H29=true) | `DEV_QUALITY_SPEC.md` §4.1 |
+| `InTransit` | Σ transfer-out not yet received | **Yes** (materialized) | INFERENCE; **OPEN_QUESTION** V1 强制 vs 可选 |
+| `OnHold` | Σ quality hold (subset of OnHand) | Yes (materialized when applicable) | INFERENCE |
 
-> **OPEN_QUESTION (OQ-INV-QTY-1):** which of `InTransit`,
-> `PendingInspection`, `Qualified`, `Rejected`, `OnHold` are
-> **materialized in V1**, vs computed-on-read? Conservative default:
-> `OnHand + Reserved + (PendingInspection + Qualified when H29=true)`
-> materialized, others computed. **Must be confirmed.**
+> **OPEN_QUESTION (OQ-INV-QTY-1)**: which exact columns are
+> **materialized in V1** vs computed-on-read? Default proposed:
+> `OnHand + Reserved + PendingInspection + Qualified + Rejected + InTransit`
+> materialized; `Available` always computed. **Must be confirmed at
+> Inventory Architecture Gate.**
 
 ---
 
@@ -253,22 +303,55 @@ InventoryTransferLine
 
 ## 7. Posting, reversal, idempotency, concurrency
 
-### 7.1 Posting semantics
+> **G1A-FINAL (DEC-INV-002)**: Posting is **engine-driven**, not
+> "manual ledger posting screen" and not "raw SQL". All postings go
+> through `InventoryPostingEngine.PostAsync(...)` — the **only entry
+> point** that may create `InventoryTransaction` rows.
 
-Per `DEV_INVENTORY_SPEC.md` §3.2 design principles and G1A §六 #6:
+### 7.1 Posting semantics (engine-driven, NEVER manual)
 
-> Posting is **event-driven**, **not a manual screen step**.
-> - Goods Receipt confirm → `GoodsReceiptConfirmedEvent` → InventoryService.PostAsync (Receipt)
-> - Shipment confirm → `ShipmentConfirmedEvent` → InventoryService.PostAsync (Issue)
-> - Transfer ship/receive → InventoryService.PostAsync (Issue/Receipt)
-> - StockTake approve → InventoryService.PostAsync (Adjust)
-> - SalesOrder approved → InventoryService.ReserveAsync
-> - Sales shipment → InventoryService.ReleaseReservationAsync + PostAsync (Issue)
+Per `DEV_INVENTORY_SPEC.md` §3.2 design principles and DEC-INV-002:
 
-**Forbidden in V1:** a manual "Posting" screen where a user clicks a
-"过账" button on a finished business document. This is the DEV pattern
-explicitly REJECTED in `BUSINESS_SOURCE_OF_TRUTH.md` and
-`DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` §8.
+> Posting is **engine-driven** and **event-driven**, **not a manual
+> screen step**.
+>
+> - Goods Receipt confirm → `GoodsReceiptConfirmedEvent` → `InventoryPostingEngine.PostAsync(PostingKind=Receipt)`
+> - Sales Shipment confirm → `ShipmentConfirmedEvent` → `InventoryPostingEngine.PostAsync(PostingKind=Issue)`
+> - Transfer ship → `InventoryPostingEngine.PostAsync(PostingKind=TransferOut)`
+> - Transfer receive → `InventoryPostingEngine.PostAsync(PostingKind=TransferIn)`
+> - StockTake approve → `InventoryPostingEngine.PostAsync(PostingKind=Adjust)`
+> - OtherReceipt/OtherIssue confirm → `InventoryPostingEngine.PostAsync(PostingKind=OtherReceipt|OtherIssue)`
+> - SalesOrder approved → `InventoryReservationService.ReserveAsync`
+> - Sales shipment → `InventoryReservationService.ReleaseAsync` + `InventoryPostingEngine.PostAsync(Issue)`
+
+**Forbidden in V1 (re-asserted by DEC-INV-002)**:
+
+1. ❌ A manual "Posting" screen where a user clicks a "过账" button on a
+   finished business document. This is the DEV pattern explicitly
+   REJECTED in `BUSINESS_SOURCE_OF_TRUTH.md` and
+   `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` §8.
+2. ❌ A user-facing "通用 Ledger" or "Stock Adjustment raw form" that
+   writes `InventoryTransaction` directly.
+3. ❌ A user-editable `InventoryBalance` (already forbidden by §5; re-asserted).
+4. ❌ Any code path that bypasses `InventoryPostingEngine` and writes
+   `InventoryTransaction` directly (only `InventoryPostingEngine`
+   itself + internal maintenance tools may).
+
+**Allowed user-facing stock-change actions** (all go through engine):
+
+- OtherReceipt (其它入库)
+- OtherIssue (其它出库)
+- Adjustment (差异调整,per Item Warehouse Policy)
+- Transfer (调拨,生成 Issue + Receipt 两条)
+- StockTake (盘点,生成 Adjust 集合)
+- (V1 + later) PurchaseReceipt (采购入库)
+- (V1 + later) SalesShipment (销售出库)
+- (V1.5+) ProductionIssue / ProductionReceipt
+- (V1.5+) SalesReturn / PurchaseReturn
+
+All of the above are **business documents** that go through
+`Confirm/Approve` and then `InventoryPostingEngine`. The user never
+sees the engine directly.
 
 ### 7.2 Reversal (anti-deletion)
 
@@ -311,7 +394,21 @@ Per task §六 #8:
 
 ---
 
-## 8. Stock count and adjustment
+## 8. Stock count, adjustment, and approval policy
+
+> **G1A-FINAL (DEC-INV-004) — APPROVAL POLICY**:
+>
+> | Action | Default Approval Required? | Configurable? |
+> |---|---|---|
+> | **Adjustment** (差异调整) | **Yes** (default) | Per Company Policy |
+> | **StockTake** (盘点) | **Yes** (default) | Per Company Policy |
+> | **Transfer** (调拨) | **No** (V1 default — Transfer 仅需操作权限 + Confirm 即可) | Per Company Policy 可升级为需要审批 |
+> | OtherReceipt / OtherIssue | No (V1 default) | Per Company Policy |
+> | PurchaseReceipt / SalesShipment | No (业务单据自身的 Confirm/Approve 流程已覆盖) | n/a |
+>
+> **Hard rule (DEC-INV-004)**: 禁止把所有库存动作都无差别强制走完整
+> Workflow。Transfer 至少需要操作权限 + Confirm 即可完成,除非 Company
+> Policy 显式开启 Transfer-Requires-Approval。
 
 `StockTake` is a first-class document in V1 (CORE).
 
@@ -345,26 +442,46 @@ StockTakeLine
 1. Create → `Draft` (book quantities frozen at this moment per line).
 2. Submit → `Counting` (counts can be entered).
 3. All counts entered → `Counted`.
-4. Approval (per `IApprovalService`) → `Adjusting` (service posts
-   `Adjust` transactions per line where `Difference != 0`).
+4. **Approval** (per `IApprovalService`, per DEC-INV-004 default = ON) → `Adjusting` (engine posts `Adjust` transactions per line where `Difference != 0`).
 5. Adjustments complete → `Closed`.
 6. Cancellation path: `Draft/Counting → Cancelled` (no adjustments).
 
-### 8.2 Hard rule
+### 8.2 Adjustment flow
 
-- **Adjust always requires `ApprovalId`**. The
-  `IInventoryService.AdjustAsync(req, approvalId, ct)` signature
-  enforces this at compile time, per `DEV_INVENTORY_SPEC.md` §3.2.
+- Direct Adjustment (no StockTake): Create Adjustment doc → Submit → **Approval** (per DEC-INV-004 default = ON) → Confirm → `InventoryPostingEngine.PostAsync(PostingKind=Adjust)`.
+- The `IInventoryPostingEngine.AdjustAsync(req, approvalId, ct)` signature
+  **enforces** the approval at compile time, per `DEV_INVENTORY_SPEC.md` §3.2.
+
+### 8.3 Transfer flow (DEC-INV-004 default: NO full approval)
+
+- Create Transfer → Submit → Confirm (with `Confirm` permission) →
+  `InventoryPostingEngine.PostAsync(PostingKind=TransferOut)` (source
+  warehouse).
+- Receiver Confirm → `InventoryPostingEngine.PostAsync(PostingKind=TransferIn)`.
+- V1: NO approval required by default. Per Company Policy, this can be
+  tightened to "Transfer requires approval".
+
+### 8.4 OtherReceipt / OtherIssue (V1: NO approval by default)
+
+- Create OtherReceipt (其它入库) or OtherIssue (其它出库) → Submit →
+  Confirm → `InventoryPostingEngine.PostAsync(PostingKind=OtherReceipt|OtherIssue)`.
+- Per Company Policy, can require approval.
 
 ---
 
 ## 9. Reservation
 
+> **G1A-FINAL (DEC-INV-001)**: Reservation 是 **Inventory 模块能力**,
+> **不属于 Sales 自己维护库存余额**。
+>
+> Sales 不得直接写 `InventoryBalance` / `InventoryTransaction`。
+> Sales 只能通过 Inventory Contract / Event 请求 Reservation。
+
 ```text
 InventoryReservation
   Id                : long
   TenantId          : long
-  SourceDocumentType: enum (SalesOrder)
+  SourceDocumentType: enum (SalesOrder | ProductionOrder | ...)
   SourceDocumentId  : long
   SourceLineId      : long
   ItemId            : long
@@ -377,49 +494,58 @@ InventoryReservation
   Status            : enum (Active | Released | Expired)
 ```
 
-### 9.1 Flow
+### 9.1 Flow (DEC-INV-001)
 
-| Trigger | Action |
-|---|---|
-| `SalesOrderConfirmed` event | `ReserveAsync` per SO line, FIFO by Lot? **OPEN_QUESTION** |
-| `ShipmentConfirmed` event | `ReleaseReservationAsync` + `PostAsync(Issue)` |
-| `SalesOrderCancelled` / `Closed` | `ReleaseReservationAsync` for unreleased portion |
-| Partial release | per-line release; reservation row updates to `Released` with note |
+| Trigger | Action | Default ON? |
+|---|---|---|
+| `SalesOrderConfirmed` (ApprovalStatus=Approved) | `InventoryReservationService.ReserveAsync` per SO line, FIFO by Lot? **OPEN_QUESTION** | **YES (per Company Policy; default ON)** |
+| `ShipmentConfirmed` (Sales SH Approved) | `ReleaseReservationAsync` + `InventoryPostingEngine.PostAsync(Issue)` | n/a |
+| `SalesOrderCancelled` | `ReleaseReservationAsync` for unreleased portion | n/a |
+| `SalesOrderClosed` | `ReleaseReservationAsync` for unreleased portion | n/a |
+| Partial release | per-line release; reservation row updates to `Released` with note | n/a |
 
-### 9.2 Hard rules
+### 9.2 Hard rules (DEC-INV-001)
 
-- `Reserved` sum on balance ≤ `OnHand`. If `OnHand < requested`,
-  **partial reservation allowed** (per task §六 #11) — but only
-  reserved quantity is the bound.
-- `Available = OnHand - Reserved` is always ≥ 0; backend enforces.
-- Reservation expiry: **V1 OPEN_QUESTION** (default: no auto-expire).
+1. **Sales module has zero write access** to `InventoryBalance` or
+   `InventoryTransaction`. All inventory state changes are made by the
+   `InventoryPostingEngine`.
+2. **Partial reservation allowed** when `OnHand < requested`. The
+   reserved quantity is the upper bound; the SO can still be approved
+   with a smaller `ReservedQuantity` than `OpenQuantity` (and
+   shipment will only issue up to the reserved amount).
+3. `Available = Qualified OnHand - Reserved - Other Blocking` is always
+   ≥ 0; backend enforces (`PendingInspection` is NOT in Available per
+   DEC-INV-001).
+4. Reservation auto-expiry: **V1 default OFF** (per Company Policy can
+   enable).
+5. Reservation policy (per Company): default ON for SO confirmed; per
+   Company Policy can be disabled or extended (e.g. for MTO in V1.5+).
 
 ---
 
 ## 10. Negative stock policy (high-impact decision)
 
-Per task §六 #10: "是否允许负库存必须作为用户决策项"。
+> **G1A-FINAL (DEC-INV-002)**: V1 **默认严格禁止**负库存。
+> Block all posts that would make `OnHand < 0` (for any quality status
+> bucket) or `Available < 0` (taking PendingInspection exclusion into
+> account).
 
-| Policy | Behaviour | Pros | Cons |
-|---|---|---|---|
-| **Strict** | Block all posts that would make `OnHand < 0` | data always consistent; cannot ship "what we don't have" | operational friction (must reserve or transfer first) |
-| **Warn** | Allow, but emit alert | less friction | inconsistent data; eventually reconciliation pain |
-| **Allow** | Allow, no warning | operational freedom | book can be negative — bad for MRP / safety stock |
-
-> **Default if no user answer:** **Strict** (per `DEV_INVENTORY_SPEC.md`
-> implicit guidance + the V1 goal of being auditable). **OQ-INV-NEG-1**
-> in confirmation checklist.
+| Policy | V1 default | Configurable per Company? |
+|---|---|---|
+| `OnHand` ≥ 0 always | **Yes** (block) | Per Company Policy; default = strict |
+| `Available` ≥ 0 always | **Yes** (block) | Per Company Policy; default = strict |
+| `Reserved` ≤ OnHand | **Yes** (block) | n/a |
+| `InTransit` ≥ 0 | Yes | n/a |
 
 ---
 
 ## 11. Lot / serial policy
 
-Per task §六 #12 and `INVENTORY_REQUIREMENT_DISCOVERY.md` "lot/batch
-mandatory in V1":
+> **G1A-FINAL (DEC-INV-002)**: Lot = per-Item Flag 启用。**不**全局强制。
 
-| Aspect | V1 decision | Notes |
+| Aspect | V1 decision | Evidence |
 |---|---|---|
-| Lot mandatory? | **OPEN_QUESTION** OQ-INV-LOT-1 | Default: **optional** (Item-level flag `LotRequired`); V1.5+ may make mandatory for specific item categories |
+| Lot mandatory? | **Per-Item flag** (`Item.LotEnabled`) | **USER_CONFIRMED (DEC-INV-002)**: 按 Item Flag 启用,不全局强制 |
 | Serial number | NO V1 | reserved for V2 (medical, electronics) |
 | Lot assignment at GR | optional; can be entered later per transaction | INFERENCE |
 | Lot assignment at Issue | FIFO? Manual? Lot selection dialog? | **OPEN_QUESTION** OQ-INV-LOT-2; default FIFO with manual override |
@@ -587,12 +713,24 @@ actionable list. Most blocking:
 | `INVENTORY_REQUIREMENT_DISCOVERY.md` | NEW_PROJECT_DISCOVERY | open confirmations |
 | `ARCHITECTURE_RULES.md` | NEW_PROJECT_GOVERNANCE | hard rules |
 | `FOUNDATION_BOUNDARY.md` | NEW_PROJECT_GOVERNANCE | reserved items |
+| `GULIERP_MODULE_INDEPENDENCE_RULE.md` | NEW_PROJECT_GOVERNANCE | module isolation (FROZEN) |
+| `META_GULI_GOVERNANCE_V1.md` | NEW_PROJECT_GOVERNANCE | meta governance (FROZEN) |
+| `G1A_DECISIONS_V1.md` | USER_CONFIRMED | 10 user decisions at G1A-FINAL |
 | `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` | DEV_METADATA | 22 库存表 / 7 steps |
 | `DEV_INVENTORY_SPEC.md` | DEV_RELATION | required shape |
 | `DEV_QUALITY_SPEC.md` | DEV_RELATION | quality touch points |
 | `DEV_FORMULA_AND_RULE_CATALOG.md` | DEV_FORMULA | safety stock hints |
 | `DEV_SECURITY_MODEL_ANALYSIS.md` | DEV_RELATION | action permission |
-| (none USER_CONFIRMED) | — | **gap — see OQ-INV-*** |
 
-**No `USER_CONFIRMED` evidence in current source set.** Spec is a
-structured input for UX prototype and user decisions, not frozen truth.
+**G1A-FINAL USER_CONFIRMED items (Frozen)**:
+
+| Decision | Items promoted | Spec section |
+|---|---|---|
+| DEC-INV-001 (PendingInspection not in Available) | §2 Available formula, X-scenarios | §2, §15 |
+| DEC-INV-001 (Reservation = Inventory capability, Sales cannot write Inventory directly) | §3, §9, §17 | §3, §9, §17 |
+| DEC-INV-002 (Negative stock strict default) | §10, X1 | §10, §15 |
+| DEC-INV-002 (Lot per-Item flag) | §1, §11 | §1, §11 |
+| DEC-INV-002 (Location optional, policy-gated) | §1, OQ-INV-9 | §1 |
+| DEC-INV-002 (InventoryPostingEngine REQUIRED V1) | §0.5, §7.1 (entire) | §0.5, §7.1 |
+| DEC-INV-004 (Approval policy: Adjust+StockTake default ON, Transfer default OFF) | §8 (entire) | §8 |
+| DEC-MODULE-001 (Inventory owns its contracts; cross-module via event/contract only) | §17 | §17 |

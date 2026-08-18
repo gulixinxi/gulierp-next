@@ -2,11 +2,11 @@
 
 | Field | Value |
 |---|---|
-| Goal | G1A — Core Business Specification Freeze |
-| Gate (entry) | `GULIERP_GREENFIELD_BOOTSTRAPPED` |
-| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
-| Document status | **Draft for UX Prototype** — NOT Frozen, NOT User-Approved |
-| Hard rule (G1A §九) | **INFERENCE 不允许标记 Frozen.** This matrix classifies every field/rule by evidence type. Frozen-state in this matrix is reserved for the future `BUSINESS_SPEC_FROZEN` gate (which this Goal does not advance to). |
+| Goal | G1A-FINAL — Operator Decision Writeback & Business Spec Freeze |
+| Gate (entry) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
+| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_FROZEN` |
+| Document status | **FROZEN at G1A-FINAL** — 10 user decisions promoted to USER_CONFIRMED |
+| Hard rule | **Only USER_CONFIRMED may be Frozen.** 10 G1A-FINAL decisions are Frozen. Other items remain at their original evidence type. |
 
 ---
 
@@ -105,7 +105,7 @@
 | Field | Type | Evidence | Confidence | User confirm needed? | Target |
 |---|---|---|---|---|---|
 | H36 SourceDocument | `DEV_RELATION` (typed replacement) | High | NO | V1 |
-| H37 WorkflowInstanceId | `POC-004` | High | NO | V1 |
+| H37 WorkflowInstanceId | `POC-004` (reference only) → `DEC-WORKFLOW-001 (G1A-FINAL)`: simple Approval in V1, no POC-004 runtime dep | High | NO | V1 |
 | H38 ApprovedBy/At | `INFERENCE` | High | NO (V1.5 typed) | V1.5 |
 | H39 ConcurrencyVersion | `POC-001+` | High | NO | V1 |
 
@@ -250,7 +250,7 @@
 | H31 Attachment[] | `INFERENCE` (object store) | High | NO | V1 |
 | H32 DocumentType | `INFERENCE` | Medium | NO | V1 |
 | H33 SourceDocument (PR/MRP) | `DEV_RELATION` | High | NO | V1 |
-| H34 WorkflowInstanceId | `POC-004` | High | NO | V1 |
+| H34 WorkflowInstanceId | `POC-004` (reference only) → `DEC-WORKFLOW-001 (G1A-FINAL)`: simple Approval in V1, no POC-004 runtime dep | High | NO | V1 |
 | H35 ApprovedBy/At | `INFERENCE` | High | YES (V1.5 typed) | V1.5 |
 | H36 ConcurrencyVersion | `POC-001+` | High | NO | V1 |
 
@@ -475,17 +475,36 @@ See `G1A_OPERATOR_CONFIRMATION_CHECKLIST.md`.
 
 ## 6. Frozen-state discipline (self-check)
 
-> "INFERENCE 不允许标记 Frozen."
+> "Only USER_CONFIRMED may be Frozen."
 
-In this matrix, every row is marked with `Confidence` and
-`User confirm needed?`. None is `Frozen`. None can be `Frozen` until
-the user provides `USER_CONFIRMED` evidence for that field/rule.
-This matrix therefore:
+In this matrix, the following items are now `USER_CONFIRMED` (Frozen at
+G1A-FINAL per `BUSINESS_SPEC_FROZEN` gate). Other items remain at their
+original evidence type (INFERENCE / OPEN_QUESTION) until the user
+addresses them.
 
-- Does NOT advance the gate to `GULIERP_CORE_BUSINESS_SPEC_FROZEN`.
-- Does NOT claim any field is "decided".
-- Does provide a structured input for the user to make those
-  decisions in `G1A_OPERATOR_CONFIRMATION_CHECKLIST.md`.
+### 6.1 G1A-FINAL Frozen items (10 decisions)
+
+| # | Decision | Frozen spec items |
+|---|---|---|
+| DEC-SO-001 | Sales Pricing/Tax line-level, both 含税/未税 | H21 (renamed to DefaultPriceMode), H22 (DefaultTaxRate as default only), L16, L17, L18 (LinePriceMode, new), L19 (LineTaxRate, new), L20, L21, L22 (renamed/alias) |
+| DEC-SO-002 | Line-level discount, rate+amount, derived | L23 (DiscountRate), L24 (DiscountAmount), L25 (NetAmountExclTax) |
+| DEC-SO-003 | Header default warehouse + Line override; Line-level location | H28, L27, L28 |
+| DEC-STATUS-001 | 3D DocumentStatus/ApprovalStatus/ExecutionStatus | All of §5 in SO/PO specs; the 9 single-status design is REJECTED |
+| DEC-INV-001 | PendingInspection not in Available; Reservation = Inventory capability; Sales cannot write Inventory | §2 Available formula, §3, §7, §9, §17 cross-module events |
+| DEC-INV-002 | Negative stock strict; Lot per-Item flag; Location policy-gated; InventoryPostingEngine REQUIRED in V1 | §0.5, §1, §10, §11 |
+| DEC-INV-003 | (Redundant with DEC-INV-002; the PostingEngine is REQUIRED) | §0.5, §7.1 |
+| DEC-INV-004 | Adjust+StockTake default approval ON; Transfer default OFF; per Company Policy configurable | §8 (entire) |
+| DEC-PO-001 | PR optional; Over-receive 0% default + per Policy; QC by Item Policy; Receiving Warehouse header+line | §0, §2, §3.5 H24, §3.6 H29, §4.3 L15, §4.5 L26, §4.5 L29 |
+| DEC-UX-001 | Multi-Tab + Document Fullscreen; PopWin 辅助; zh-CN only; Mobile not V1; Saved View per user; Column Memory per user | §1.1, §3.8, §3.9, §3.11, §10 |
+| DEC-MODULE-001 | Module Independence (no cross-module infra, no direct DB write, IModule descriptor, edition packaging) | All cross-module sections; new governance file `GULIERP_MODULE_INDEPENDENCE_RULE.md` |
+
+### 6.2 Discipline (re-asserted)
+
+- The matrix **does** advance the gate to `GULIERP_CORE_BUSINESS_SPEC_FROZEN`.
+- Only the items in §6.1 are Frozen; everything else is still subject
+  to user decision.
+- New `BUSINESS_SPEC_FROZEN` cycles will be required when more items
+  are Frozen (e.g. per-module freezing in G1B+).
 
 ---
 

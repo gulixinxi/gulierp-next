@@ -2,12 +2,23 @@
 
 | Field | Value |
 |---|---|
-| Goal | G1A — Core Business Specification Freeze |
-| Gate (entry) | `GULIERP_GREENFIELD_BOOTSTRAPPED` |
-| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
-| Document status | **Draft for UX Prototype** — NOT Frozen, NOT User-Approved |
+| Goal | G1A-FINAL — Operator Decision Writeback & Business Spec Freeze |
+| Gate (entry) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
+| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_FROZEN` |
+| Document status | **FROZEN at G1A-FINAL** (per `BUSINESS_SPEC_FROZEN` gate, 10 user decisions + DEC-MODULE-001) |
 | Purpose | Per G1A §十一, classify every known module/feature into release bands. Avoid silently dragging handoff-ambition into V1, while not losing future requirements. |
-| Hard rule | No new module enters V1 silently. Every band assignment must be in this document. |
+| Hard rule | No new module enters V1 silently. Every band assignment must be in this document. **DEC-INV-002: InventoryPostingEngine is REQUIRED in V1, NOT V1.5+.** |
+
+> **G1A-FINAL key corrections**:
+> 1. **InventoryPostingEngine: V1.5+ → V1** (per DEC-INV-002). Earlier
+>    version of this document deferred PostingEngine to V1.5; that is
+>    REJECTED.
+> 2. **DEC-MODULE-001 (Module Independence)**: a new §0 governs
+>    composability. See `GULIERP_MODULE_INDEPENDENCE_RULE.md` for the
+>    full rule. This document's V1 vs V1.5 vs V2 bands now respect
+>    that rule.
+> 3. **DEC-STATUS-001**: business modules use the 3D status model, not
+>    single-string status.
 
 ---
 
@@ -16,13 +27,35 @@
 | Band | What it means | When |
 |---|---|---|
 | **V0.1 FOUNDATION** | Skeleton, governance, source-of-truth, building blocks. No business modules. | G0 (DONE) |
-| **V1 ERP CORE** | First shippable ERP: MDM, Sales, Purchase, Inventory, Workflow, Print, Audit, Permission, with the requirements laid out in this G1A spec. | G1A → G1B (UX prototype) → G1C (API freeze) → G1D–G1N (impl) → G1.SHIPPED |
+| **V1 ERP CORE** | First shippable ERP: MDM, Sales, Purchase, **Inventory** (with `InventoryPostingEngine` REQUIRED per DEC-INV-002), Workflow, Print, Audit, Permission, with the requirements laid out in this G1A spec. | G1A-FINAL (DONE) → G1B-1 (SO UX) → G1B-2 (PO/Inventory UX) → G1C (API freeze) → G1D–G1N (impl) → G1.SHIPPED |
 | **V1.5 MANUFACTURING** | BOM, Routing, WorkCenter, ProductionOrder (MakeToStock / MakeToOrder), basic MRP, basic SRM, return orders, multi-currency, mobile/H5 read-only. | G1.5A onwards |
 | **V2 MOM** | Full Manufacturing (subcontracting, multi-level BOM, capacity planning, APS), QMS, full SRM (RFQ, bidding, vendor rating), Cost, BI, IoT. | G2 onwards |
 
 > These are project bands, not calendar dates. The actual ship
 > sequence is determined by user priority + downstream goals. The
 > order is **V0.1 → V1 → V1.5 → V2**.
+
+## 0.5 Module Independence (DEC-MODULE-001)
+
+Per `GULIERP_MODULE_INDEPENDENCE_RULE.md`:
+
+- Foundation is the platform.
+- MDM is the shared business vocabulary.
+- Business modules declare their dependencies on (foundation + mdm) and
+  optionally on other business modules' **public contracts** only.
+- Cross-module goes through **Contract / Application Interface /
+  Domain or Integration Event**.
+- No business module may directly read or write another module's DB
+  tables or infrastructure.
+- Each module owns its routes, menus, permissions, jobs, migrations,
+  configuration, frontend pages, backend endpoints.
+- Each module is **enable / disable**-able at runtime via configuration.
+- The 12 product editions (Warehouse / Inventory / Sales / Purchase /
+  ERP / Manufacturing ERP / MOM / etc.) are **configuration**, not
+  source branches.
+
+V1 modules MUST satisfy the module independence rule.
+Architecture tests enforce this. See `GULIERP_MODULE_INDEPENDENCE_RULE.md` §8.
 
 ---
 
@@ -173,7 +206,7 @@
 
 | Module | V0.1 | V1 | V1.5 | V2 | Notes |
 |---|---|---|---|---|---|
-| Workflow Lite (POC-004) | — | ✅ (CORE) | ✅ | ✅ | Submit/Approve/Reject |
+| Workflow Lite (POC-004) | — | (simple Approval in V1) | ✅ | ✅ | **DEC-WORKFLOW-001**: POC-004 is reference only, NOT runtime; V1 has 0 Admin.NET / 0 old Workflow runtime dep |
 | Multi-step approval | — | ✅ (per template) | ✅ | ✅ | same |
 | Withdraw / Unapprove / Cancel / Close / Void nodes | — | ✅ (CORE) | ✅ | ✅ | spec §6 |
 | Approval limit (amount-tiered) | — | — | partial | ✅ | G9+ |
@@ -350,8 +383,9 @@ here to make sure they don't sneak in.
 | Equipment / OEE | V2+ |
 | BPM workflow engine | V2+ |
 | Document Factory (报表 / 卡片生成器) | task §二 forbidden in G1A |
-| Inventory Posting Engine (full) | task §二 forbidden in G1A; spec §7.1 event-driven only |
-| Generic Workflow Engine (general-purpose) | V2+ (G1 uses Lite from POC-004) |
+| InventoryPostingEngine | **V1 REQUIRED (DEC-INV-002)** — G1A-FINAL correction: REJECTED V1.5+ deferral |
+| Manual "过账" Ledger screen | **REJECTED** (per `BUSINESS_SOURCE_OF_TRUTH.md`) — NEVER, per spec §0.5 and §7.1 |
+| Generic Workflow Engine (general-purpose) | V2+ (G1: V1 simple Approval, no POC-004 runtime) |
 | AI-driven write execution | V2+ (per `POC003_TO_POC004_GOAL_MODE_TASK.md` §17) |
 
 ---
@@ -359,9 +393,11 @@ here to make sure they don't sneak in.
 ## 19. What this scope document does NOT claim
 
 - It is **not** a roadmap with dates. Bands are V0.1/V1/V1.5/V2.
-- It is **not** user-confirmed. Each row is `INFERENCE` based on
-  the existing reverse-engineering reports and task statement.
-- It is **not** a contract. User can re-band items.
+- It is **not** user-confirmed as a whole. **However** the G1A-FINAL
+  corrections (InventoryPostingEngine V1, Module Independence rule,
+  3D status model) ARE Frozen at G1A-FINAL per `BUSINESS_SPEC_FROZEN`.
+- It is **not** a contract. User can re-band items via new decision
+  records in `G1A_DECISIONS_V1.md`.
 - It does **not** authorize any implementation. Per G1A Gate rules.
 
 ---
@@ -369,9 +405,12 @@ here to make sure they don't sneak in.
 ## 20. Cross-references
 
 - `BUSINESS_SOURCE_OF_TRUTH.md` — REUSE/REDESIGN/REJECT/REIMPLEMENT
+- `GULIERP_MODULE_INDEPENDENCE_RULE.md` — DEC-MODULE-001 (FROZEN)
+- `META_GULI_GOVERNANCE_V1.md` — meta governance (FROZEN)
+- `G1A_DECISIONS_V1.md` — decision record (FROZEN entries)
 - `SALES_ORDER_BUSINESS_SPEC_V1.md` — V1 Sales detail
 - `PURCHASE_ORDER_BUSINESS_SPEC_V1.md` — V1 Purchase detail
 - `INVENTORY_BUSINESS_SPEC_V1.md` — V1 Inventory detail
 - `ERP_DOCUMENT_UX_REQUIREMENTS_V1.md` — V1 UX
-- `G1A_OPERATOR_CONFIRMATION_CHECKLIST.md` — user decisions
+- `G1A_OPERATOR_CONFIRMATION_CHECKLIST.md` — post-decision state
 - `FAILED_POC_REQUIREMENT_GAP_ANALYSIS.md` — anti-patterns

@@ -2,19 +2,19 @@
 
 | Field | Value |
 |---|---|
-| Goal | G1A — Core Business Specification Freeze |
-| Gate (entry) | `GULIERP_GREENFIELD_BOOTSTRAPPED` |
-| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
-| Document status | **Draft for UX Prototype** — NOT Frozen, NOT User-Approved |
-| Evidence scope | New project docs + DEV reverse-engineering + handoff ERP-VIS-001 |
-| Forbidden claims | This document does NOT prove a single field is "USER_CONFIRMED". It distinguishes what is confirmed vs derived vs open. |
+| Goal | G1A-FINAL — Operator Decision Writeback & Business Spec Freeze |
+| Gate (entry) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
+| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_FROZEN` |
+| Document status | **FROZEN at G1A-FINAL** (per `BUSINESS_SPEC_FROZEN` gate, 10 user decisions) |
+| Evidence scope | New project docs + DEV reverse-engineering + handoff ERP-VIS-001 + 10 USER_CONFIRMED decisions (G1A-FINAL) |
+| Frozen items | All items tagged `USER_CONFIRMED` in §14 are Frozen. All other items remain as previously classified (INFERENCE / OPEN_QUESTION). |
 
-> **Hard interpretation rule (per G1A §三):**
+> **Hard interpretation rule (per G1A §三 + G1A-FINAL):**
 > - `USER_CONFIRMED` / `HANDOFF` / `DEV_*` / `FAILED_POC` / `INFERENCE` / `OPEN_QUESTION` are evidence **types**, not "Frozen" claims.
-> - Nothing in this spec may be marked `Frozen` unless its evidence type is `USER_CONFIRMED` (and there are no `USER_CONFIRMED` facts in current source set).
-> - "Frozen" is reserved for `GULIERP_CORE_BUSINESS_SPEC_FROZEN` which is **not** the current Gate and **must not** be advanced to by this Goal.
+> - At G1A-FINAL, **10 user decisions** have been promoted to `USER_CONFIRMED`. They are Frozen.
 > - `INFERENCE` must not enter the spec silently. When used, it is labelled.
 > - `OPEN_QUESTION` must be asked explicitly, never silently filled in.
+> - `BUSINESS_SPEC_FROZEN` is the current Gate but **only the `USER_CONFIRMED` items are Frozen**; other items remain under their original evidence type until the user addresses them.
 
 ---
 
@@ -67,6 +67,9 @@ that flagged what business dimensions historically mattered.
 > `INFERENCE` means we believe the field is needed but cannot prove it
 > from sources; `OPEN_QUESTION` means we do not have enough to even
 > recommend a default.
+>
+> **G1A-FINAL update**: items marked `USER_CONFIRMED` below were
+> promoted at G1A-FINAL. They are Frozen. See `G1A_DECISIONS_V1.md`.
 
 ### 2.1 Identity and dates
 
@@ -112,12 +115,12 @@ that flagged what business dimensions historically mattered.
 |---|---|---|---|---|---|---|
 | H19 | 币种 | `CurrencyCode` (ISO 4217) | Yes | `CNY` | MDM `Currency` | INFERENCE; standard ERP practice |
 | H20 | 汇率 | `ExchangeRate` | `decimal(18,8)` | 1.0 (when =CNY) | lookup; frozen on Confirm | INFERENCE; **OPEN_QUESTION** V1: multi-currency on or off |
-| H21 | 税制 | `TaxScheme` (含税/未税) | Yes | `TaxExcluded` (typical) | Dictionary | `DEV_FORMULA_AND_RULE_CATALOG.md` 含税/未税 references; **OPEN_QUESTION** V1 default |
-| H22 | 税率 | `TaxRate` | `decimal(8,4)` (e.g. 0.1300) | per tax scheme | MDM `TaxRate` | INFERENCE; **OPEN_QUESTION** 行级税率 (H40) vs 头级 |
+| H21 | 默认价格模式 (含税/未税) | `DefaultPriceMode` (TaxInclusive / TaxExclusive) | Yes | per Company/Customer Policy | Dictionary | **USER_CONFIRMED (DEC-SO-001)**: 公司/客户可配默认价格模式 |
+| H22 | 默认税率 | `DefaultTaxRate` | `decimal(8,4)` (e.g. 0.1300) | per Company/Customer Policy | MDM `TaxRate` | **USER_CONFIRMED (DEC-SO-001)**: 头级税率只作默认值,不作为唯一税率 — 实际税率在 L-LINE 锁定 |
 | H23 | 付款条件 | `PaymentTermCode` | Yes | `M0` (immediate) or `M30` (default) | MDM `PaymentTerm` | INFERENCE (standard ERP) |
 | H24 | 结算方式 | `SettlementMethod` (现金/转账/汇票/...) | No | per payment term | Dictionary | INFERENCE; **OPEN_QUESTION** V1 强制 vs 可选 |
-| H25 | 价格模式 | `PricingMode` (含税/未税) | Yes | = H21 | Dictionary | INFERENCE; should follow tax scheme |
-| H26 | 折扣模式 | `DiscountMode` (None/Line/Total) | No | `None` | Dictionary | INFERENCE; **OPEN_QUESTION** V1 行级 vs 总级 |
+| H25 | (合并到 H21) | — | — | — | — | (V1: 头级只配 DefaultPriceMode; Line 有自己的 PriceMode) |
+| H26 | 折扣模式 (V1 deprecated) | — | — | — | — | **USER_CONFIRMED (DEC-SO-002)**: V1 折扣固定 Line-level,头级不再设 DiscountMode |
 
 > **DEV gap evidence:** `SALES_ORDER_REQUIREMENT_DISCOVERY.md` lists
 > "Pricing, discount, tax and currency rules" as an item **to confirm**.
@@ -130,8 +133,8 @@ that flagged what business dimensions historically mattered.
 | # | Field | Type | Required | Lookup | Evidence |
 |---|---|---|---|---|---|
 | H27 | 交货方式 | `DeliveryMethod` (自提/送货/快递) | No | Dictionary | INFERENCE; common ERP |
-| H28 | 默认仓库 | `DefaultWarehouseId` | No | MDM `Warehouse` | INFERENCE; useful for reservation; **OPEN_QUESTION** V1 行级 vs 头级 |
-| H29 | 默认库位 | `DefaultLocationId` | No | MDM `Location` filter `WarehouseId=H28` | INFERENCE; **OPEN_QUESTION** V1: 是否在订单头 |
+| H28 | 默认仓库 | `DefaultWarehouseId` | No | MDM `Warehouse` | **USER_CONFIRMED (DEC-SO-003)**: 头仓库 = 默认仓库,Line 可覆盖 |
+| H29 | 默认库位 (V1 deprecated) | — | — | — | **USER_CONFIRMED (DEC-SO-003)**: 库位 = Line-level,不再在订单头 |
 | H30 | 承运商 | `CarrierId` | No | MDM `Carrier` | INFERENCE; **OPEN_QUESTION** V1 |
 | H31 | 跟踪号 | `TrackingNo` | No | — | INFERENCE; **OPEN_QUESTION** V1 |
 | H32 | 备注 | `Memo` | No | free text | INFERENCE; common ERP |
@@ -149,7 +152,7 @@ that flagged what business dimensions historically mattered.
 | # | Field | Type | Required | Evidence |
 |---|---|---|---|---|
 | H36 | 源单据 | `SourceDocument?` (Quotation/PO-on-behalf/MTO) | No | `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` §7 Linker (SourceDocumentId pattern) |
-| H37 | 工作流实例 | `WorkflowInstanceId?` | No | POC-004 Workflow Lite — `WorkflowInstance` 1:1 to SO |
+| H37 | 工作流实例 | `WorkflowInstanceId?` | No | DEC-WORKFLOW-001 (G1A-FINAL): GuliERP Next 0 Admin.NET / 0 old Workflow runtime dep;V1 uses a simple Approval capability. POC-004 is **reference only**. |
 | H38 | 审核人 / 审核时间 | `ApprovedBy?`, `ApprovedAt?` | No | INFERENCE; reserved for V1.5+ typed approval |
 | H39 | 乐观锁 | `ConcurrencyVersion` | Yes (system) | POC-001/POC-002/POC-003 invariant |
 
@@ -198,15 +201,23 @@ line edits do not violate header status; line `LineNo` is auto-assigned.
 
 | # | Field | Type | Required | Default | Read-only when | Evidence |
 |---|---|---|---|---|---|---|
-| L16 | 单价(未税) | `UnitPriceExclTax` (Money, ≥ 0) | Yes | from `ItemSalesPrice` lookup, or manual override | After Submit | INFERENCE; standard ERP |
-| L17 | 单价(含税) | `UnitPriceInclTax` = L16 × (1 + H22) | Yes (system) | derived | Always | INFERENCE; depends on H21 scheme |
-| L18 | 含税单价 | (alt name for L17) | — | — | — | (alias) |
-| L19 | 未税金额 | `AmountExclTax` = L11 × L16, HALF_EVEN, 4dp | Yes (system) | derived | Always | POC-003 invariant (`HALF_EVEN, 4 decimal places`) |
-| L20 | 税额 | `TaxAmount` = L19 × H22 (or L11 × (L17-L16)) | Yes (system) | derived | Always | INFERENCE; **OPEN_QUESTION** 行级税率 vs 头级 |
-| L21 | 含税金额 | `AmountInclTax` = L19 + L20 | Yes (system) | derived | Always | INFERENCE |
-| L22 | 折扣率 | `DiscountRate` (0 ≤ x < 1) | No | 0 | After Submit | INFERENCE; **OPEN_QUESTION** V1 |
-| L23 | 折扣额 | `DiscountAmount` (Money, ≥ 0) | No | 0 | After Submit | INFERENCE |
-| L24 | 净未税金额 | `NetAmountExclTax` = L19 × (1 - L22) − L23 | Yes (system) | derived | Always | INFERENCE |
+| L16 | 单价(未税) / `NetUnitPrice` | `UnitPriceExclTax` (Money, ≥ 0) | Yes | from `ItemSalesPrice` lookup, or manual override | After Submit | **USER_CONFIRMED (DEC-SO-001)**: 必须支持,Line 可选 |
+| L17 | 单价(含税) / `TaxInclusiveUnitPrice` | `UnitPriceInclTax` (Money, ≥ 0) | Yes (one of L16/L17 must be entered) | derived from the other + L20 | After Submit | **USER_CONFIRMED (DEC-SO-001)**: 必须支持,Line 可选 |
+| L18 | 行价格模式 | `LinePriceMode` (TaxInclusive / TaxExclusive) | Yes | = H21 if set, else per Line | After Submit | **USER_CONFIRMED (DEC-SO-001)**: Line 决定本行是含税/未税 |
+| L19 | 行税率 | `LineTaxRate` (decimal(8,4)) | Yes | = H22 (默认) | After Submit | **USER_CONFIRMED (DEC-SO-001)**: 行税率最终落到 L19,头税率 H22 仅作默认值 |
+| L20 | 未税金额 / `NetAmount` | `AmountExclTax` = L11 × L16, HALF_EVEN, 4dp | Yes (system) | derived | Always | POC-003 invariant (`HALF_EVEN, 4 decimal places`) |
+| L21 | 税额 / `TaxAmount` | `TaxAmount` = L20 × L19 (line rate) | Yes (system) | derived | Always | **USER_CONFIRMED (DEC-SO-001)**: 用行税率 L19 计算,不用 H22 |
+| L22 | 含税金额 / `GrossAmount` | `AmountInclTax` = L20 + L21 | Yes (system) | derived | Always | INFERENCE → **USER_CONFIRMED (DEC-SO-001)** 命名 |
+| L23 | 折扣率 | `DiscountRate` (0 ≤ x < 1) | No | 0 | After Submit | **USER_CONFIRMED (DEC-SO-002)**: Line-level; 与 L24 互斥输入 |
+| L24 | 折扣额 | `DiscountAmount` (Money, ≥ 0) | No | 0 | After Submit | **USER_CONFIRMED (DEC-SO-002)**: Line-level; 与 L23 互斥输入 |
+| L25 | 净未税金额 | `NetAmountExclTax` = L20 × (1 - L23) - L24 | Yes (system) | derived | Always | **USER_CONFIRMED (DEC-SO-002)**: 折后未税金额,用于汇总 |
+
+> **G1A-FINAL 说明 (DEC-SO-001, DEC-SO-002)**:
+> 1. 同一张 SalesOrder 可以存在不同税率的行(L19 各自独立)。
+> 2. 含税/未税价格(L16/L17)二选一输入,另一个由系统 + L19 派生。
+> 3. 折扣在 Line 维度,用户输入 L23 或 L24 之一,另一个由系统派生。
+> 4. 头级 `DefaultPriceMode` (H21) / `DefaultTaxRate` (H22) 只作新建行的默认值。
+> 5. 实际字段名(中文/英文)可在 API Contract 冻结时确定(本表给出建议)。
 
 > **POC-003 invariant (preserved):** client cannot author
 > `AmountExclTax`, `TaxAmount`, `AmountInclTax`, `NetAmountExclTax` —
@@ -216,18 +227,18 @@ line edits do not violate header status; line `LineNo` is auto-assigned.
 
 | # | Field | Type | Required | Default | Read-only when | Evidence |
 |---|---|---|---|---|---|---|
-| L25 | 交货日期 | `LineDeliveryDate` (DateOnly) | No | = H4 | After Submit | INFERENCE |
-| L26 | 仓库 | `WarehouseId` | Yes | = H28 if set | After Submit | INFERENCE; **OPEN_QUESTION** V1 头 vs 行; per `INVENTORY_REQUIREMENT_DISCOVERY.md` Items To Confirm "warehouse and location granularity" |
-| L27 | 库位 | `LocationId?` | No | = H29 if set | After Submit | INFERENCE; **OPEN_QUESTION** V1 |
-| L28 | 批次需求 | `LotRequired` (bool) | No | false | After Submit | INFERENCE; **OPEN_QUESTION** V1 (per `INVENTORY_REQUIREMENT_DISCOVERY.md` "lot/batch mandatory in V1") |
-| L29 | 备注 | `LineMemo` | No | — | After Submit | INFERENCE |
-| L30 | 关闭状态 | `LineStatus` (Open/Closed) | No | Open | After Submit (driven) | INFERENCE; 头 Closed 时强制 Close 行? **OPEN_QUESTION** |
+| L26 | 交货日期 | `LineDeliveryDate` (DateOnly) | No | = H4 | After Submit | INFERENCE |
+| L27 | 仓库 | `WarehouseId` | Yes | = H28 if set | After Submit | **USER_CONFIRMED (DEC-SO-003)**: Line 覆盖 Header |
+| L28 | 库位 | `LocationId?` | No (按 Item / Warehouse / Company Policy 决定是否必填) | — | After Submit | **USER_CONFIRMED (DEC-SO-003)**: 库位 = Line-level; 是否必填由 Policy 决定 |
+| L29 | 批次需求 | `LotRequired` (bool) | No | = Item.LotEnabled | After Submit | **USER_CONFIRMED (DEC-INV-002)**: 按 Item Flag 启用,不全局强制 |
+| L30 | 备注 | `LineMemo` | No | — | After Submit | INFERENCE |
+| L31 | 关闭状态 | `LineStatus` (Open/Closed) | No | Open | After Submit (driven) | INFERENCE; 头 Closed 时强制 Close 行? **OPEN_QUESTION** |
 
 ### 3.6 Status and derived
 
 | # | Field | Type | Evidence |
 |---|---|---|---|
-| L31 | 行预留状态 | `LineReservationStatus` (None/Partial/Full) | INFERENCE; `InventoryReservation` integration |
+| L32 | 行预留状态 | `LineReservationStatus` (None/Partial/Full) | INFERENCE; `InventoryReservation` integration (Sales 不直接写;通过 Inventory 合约) |
 
 ---
 
@@ -256,89 +267,131 @@ line edits do not violate header status; line `LineNo` is auto-assigned.
 
 ## 5. State machine
 
-> Per G1A §十二 #4, all of the following must be in the spec:
-> 审核 / 反审 / 撤回 / 作废 / 关闭 / 来源 / 下游 / 部分执行 / 防重复 /
-> 打印 / 附件 / 审计 / 权限 / 异常 / 并发.
+> **G1A-FINAL (DEC-STATUS-001)**: 旧 9 状态单维度模型**已否决**。
+> GuliERP 统一采用**三维状态模型**:
+>
+> | 维度 | 枚举 | 含义 |
+> |---|---|---|
+> | `DocumentStatus` | `Draft / Active / Closed / Cancelled` | 文档生命周期 |
+> | `ApprovalStatus` | `NotSubmitted / Pending / Approved / Rejected / Withdrawn` | 审批生命周期 |
+> | `ExecutionStatus` | `NotStarted / Partial / Completed` | 执行生命周期 |
+>
+> Sales / Purchase / 后续 Production 可以在此之上增加**强类型领域状态**(强类型枚举,不是字符串),但**禁止重新退化为一个巨大字符串 Status**。
+>
+> 合法组合示例:SalesOrder `DocumentStatus=Active AND ApprovalStatus=Approved AND ExecutionStatus=Partial`。
 
-### 5.1 Header status values
+### 5.1 Three-dimensional status values
 
-| Status | Display | Evidence | Notes |
-|---|---|---|---|
-| `Draft` | 草稿 | INFERENCE (universal) | Initial state |
-| `Submitted` | 已提交 | INFERENCE (post-Submit, pre-Approve) | Per ERP-VIS-001 (operator evidence shows Submit → Approve/Reject) |
-| `Approved` | 已审核 | POC-004 + ERP-VIS-001 | Allows downstream generation |
-| `Rejected` | 已驳回 | POC-004 + ERP-VIS-001 Run 2 | Terminal? OR returns to Draft? **OPEN_QUESTION** |
-| `PartiallyShipped` | 部分发货 | INFERENCE | When 0 < L12 sum < L11 sum |
-| `Shipped` | 已发货 | INFERENCE | When L12 sum == L11 sum (or L14 covers remainder) |
-| `Closed` | 已关闭 | POC-003 | Terminal. Auto-set when fully shipped and AR/Invoice closed |
-| `Cancelled` | 已取消 | POC-003 | Terminal. Reverse downstream if any |
-| `Voided` | 已作废 | INFERENCE (per `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` 38 triggers include `RunBeforeVoided`) | Terminal. Differs from `Cancelled` by reason (data correction vs business cancel) |
+#### 5.1.1 DocumentStatus (GLOBAL, USER_CONFIRMED DEC-STATUS-001)
 
-> **Gap (per G1A §十二 #1):** many of these names are not in any
-> current source. They are `INFERENCE` based on standard ERP practice.
-> The user's hand must confirm exact status set, labels, transitions.
-
-### 5.2 Transitions
-
-| From | To | Trigger | Action | Evidence |
+| Value | Display | Meaning | Initial? | Terminal? |
 |---|---|---|---|---|
-| (new) | `Draft` | Create | — | INFERENCE |
-| `Draft` | `Draft` | Update | Save | INFERENCE |
-| `Draft` | `Submitted` | User: 提交 | Submit | ERP-VIS-001 Run 1 |
-| `Submitted` | `Approved` | User: 审核通过 | Approve | ERP-VIS-001 Run 1 |
-| `Submitted` | `Rejected` | User: 驳回 (with reason) | Reject | ERP-VIS-001 Run 2 |
-| `Submitted` | `Draft` | User: 撤回 (only if no approver acted) | Withdraw | INFERENCE; **OPEN_QUESTION** allowed? |
-| `Approved` | `Draft` | User: 反审核 | Unapprove | INFERENCE; **OPEN_QUESTION** allowed when downstream exists |
-| `Approved` | `PartiallyShipped` | Event: `ShipmentConfirmed` | — | INFERENCE |
-| `PartiallyShipped` | `Shipped` | Event: last line `OpenQuantity == 0` | — | INFERENCE |
-| `Shipped` / `PartiallyShipped` | `Closed` | User: 关闭 (with reason) or auto when all lines Closed and AR settled | Close | POC-003 + INFERENCE |
-| `Draft` | `Cancelled` | User: 取消 (with reason) | Cancel | POC-003 |
-| `Submitted` | `Cancelled` | User: 取消 (with reason) | Cancel | POC-003 |
-| `Approved` | `Cancelled` | User: 取消 (with reason), requires **Cancel Downstream**? | Cancel | **OPEN_QUESTION** rules |
-| any | `Voided` | Admin: 作废 (data fix) | Void | INFERENCE |
+| `Draft` | 草稿 | Editable, not yet submitted | yes (on create) | no |
+| `Active` | 生效 | Submitted/Approved and editable per workflow rules | no | no |
+| `Closed` | 已关闭 | All execution completed, AR/Inventory settled | no | yes (V1) |
+| `Cancelled` | 已取消 | Document rolled back (with reversal where applicable) | no | yes |
 
-### 5.3 State invariants
+#### 5.1.2 ApprovalStatus (GLOBAL, USER_CONFIRMED DEC-STATUS-001)
 
-1. Header `ConcurrencyVersion` increments on each status transition.
-2. Line edits are blocked when header in `Submitted/Approved/...` (write-protected).
-3. `Cancelled` and `Voided` are terminal — no further transitions except read.
-4. `Closed` is terminal — but `Closed` may be reopened by admin in rare cases
-   (e.g. accounting reclassification) — **OPEN_QUESTION** V1.
-5. Concurrent edit on the same `SalesOrderId` returns `SALES_ORDER_VERSION_CONFLICT`
-   (matches POC-003 invariant).
-6. `Submit` requires at least 1 line, customer, order date, salesperson, dept.
-7. `Approve` requires approver permission and `ConcurrencyVersion` match.
-8. **OPEN_QUESTION:** can `Approved` SO be `Unapprove`d when downstream
-   shipments exist? Standard ERP forbids; GuliERP V1 must confirm.
+| Value | Display | Meaning | Initial? | Terminal? |
+|---|---|---|---|---|
+| `NotSubmitted` | 未提交 | Never submitted for approval | yes (on create) | no |
+| `Pending` | 待审批 | Submitted, awaiting decision | no | no |
+| `Approved` | 已通过 | Approved by approver(s) | no | no (can be re-submitted) |
+| `Rejected` | 已驳回 | Rejected with reason | no | no (can re-submit if Withdraw) |
+| `Withdrawn` | 已撤回 | Submitter withdrew before decision | no | no (can re-submit) |
+
+#### 5.1.3 ExecutionStatus (GLOBAL, USER_CONFIRMED DEC-STATUS-001)
+
+| Value | Display | Meaning | Initial? | Terminal? |
+|---|---|---|---|---|
+| `NotStarted` | 未执行 | No downstream documents generated | yes (on create) | no |
+| `Partial` | 部分执行 | Some lines executed | no | no |
+| `Completed` | 已完成 | All lines fully executed | no | yes (per V1) |
+
+### 5.2 SalesOrder-specific status (extension on top of GLOBAL)
+
+SalesOrder MAY add (per DEC-STATUS-001 "强类型领域状态"):
+
+| Field | Type | Meaning |
+|---|---|---|
+| `SalesDeliveryStatus` (optional) | enum: `NotReady / ReadyToShip / PartiallyShipped / Shipped` | Sales-specific lifecycle for shipping; per spec §7 |
+
+> Per DEC-STATUS-001, this MUST be a typed enum field, **not** a
+> re-introduction of a single `Status` string.
+
+### 5.3 Transitions (per dimension)
+
+| Dimension | From | To | Trigger | Audit |
+|---|---|---|---|---|
+| DocumentStatus | (none) | `Draft` | Create | yes |
+| DocumentStatus | `Draft` | `Active` | Submit (with valid ApprovalStatus) | yes |
+| DocumentStatus | `Active` | `Closed` | All ExecutionStatus = Completed AND AR settled | yes |
+| DocumentStatus | `Draft` / `Active` | `Cancelled` | User cancel (with reason) | yes (with reason) |
+| DocumentStatus | `Active` | `Draft` | (NOT allowed in V1 — frozen once Active) | — |
+| ApprovalStatus | (none) | `NotSubmitted` | Create | yes |
+| ApprovalStatus | `NotSubmitted` | `Pending` | Submit | yes |
+| ApprovalStatus | `Pending` | `Approved` | Approve | yes |
+| ApprovalStatus | `Pending` | `Rejected` | Reject (with reason) | yes (with reason) |
+| ApprovalStatus | `Pending` | `Withdrawn` | Withdraw (Submitter only, before any approver act) | yes |
+| ApprovalStatus | `Rejected` / `Withdrawn` | `Pending` | Re-Submit (after edit) | yes |
+| ApprovalStatus | `Approved` | `Pending` | (NOT in V1 — re-approval is a new document; **OPEN_QUESTION** V1) |
+| ExecutionStatus | (none) | `NotStarted` | Create | yes |
+| ExecutionStatus | `NotStarted` | `Partial` | First downstream confirmed | yes |
+| ExecutionStatus | `Partial` | `Completed` | All lines `OpenQuantity == 0` | yes |
+| ExecutionStatus | `Completed` | `Partial` | (NOT allowed — Completed is terminal in V1) | — |
+
+### 5.4 State invariants (replacement for old §5.3)
+
+1. Header `ConcurrencyVersion` increments on every state-affecting action.
+2. Line edits are blocked when `DocumentStatus ∈ {Active, Closed, Cancelled}` (write-protected).
+3. `DocumentStatus=Closed` is terminal; **OPEN_QUESTION** admin re-open.
+4. `DocumentStatus=Cancelled` is terminal; reversal = new transaction in Inventory.
+5. Concurrent edit returns `SALES_ORDER_VERSION_CONFLICT` (POC-003 invariant).
+6. `Submit` action requires: ≥1 line, customer, order date, salesperson, dept, valid L16/L17/L19/L20/L21 values.
+7. `Approve` requires approver permission, `ConcurrencyVersion` match, and ApprovalStatus=`Pending`.
+8. **DEC-STATUS-001 invariant**: when storing documents, all 3 dimensions
+   are persisted independently. The UI may show a combined "Status"
+   cell, but the **DB schema** MUST have 3 separate typed columns.
+9. `Closed` requires: ApprovalStatus ∈ {Approved, Withdrawn (auto-approved)}, ExecutionStatus=Completed.
+10. `Cancelled` requires reason and (when ExecutionStatus≠NotStarted) reverses downstream via Inventory reversal.
+11. **Withdrawn** requires: Submitter identity == current user AND no approver has acted yet.
+
+> **G1A-FINAL note**: spec §5.1/5.2/5.3/5.4 **replaces** the old §5.1/5.2/5.3
+> in this version. The old single-string `Status` model is **rejected**
+> per DEC-STATUS-001.
 
 ---
 
 ## 6. Actions (按钮 / actions)
 
-> Per G1A §四 F, each action records 显示条件 / 启用条件 / 后端校验 /
-> 状态影响 / 审计 / 权限.
+> **G1A-FINAL (DEC-STATUS-001)**: actions below are **per-dimension**.
+> Each action declares which dimension(s) it changes and the
+> pre-condition per dimension.
 
-| Action | 显示条件 | 启用条件 | 后端校验 | 状态影响 | 审计 | 权限 |
+| Action | Display when | Enable when | Backend guard | Effect (3D) | Audit | Permission |
 |---|---|---|---|---|---|---|
-| 新建 New | always | always | — | → `Draft` | yes | SalesOrder.Create |
-| 保存 Save (Draft) | header in `Draft` | header in `Draft` | required-field validation | — | yes | SalesOrder.Update |
-| 复制 Copy | always | SalesOrder.Read | — | new draft | yes | SalesOrder.Create |
-| 提交 Submit | header in `Draft` | ≥1 line, customer set, dates set | Submit guard | → `Submitted` | yes | SalesOrder.Submit |
-| 撤回 Withdraw | header in `Submitted` AND current user is the Submitter | no approver acted | — | → `Draft` | yes | SalesOrder.Withdraw |
-| 审核通过 Approve | header in `Submitted` | approver permission, version match | Approve guard | → `Approved` (+ event) | yes | SalesOrder.Approve |
-| 驳回 Reject (reason required) | header in `Submitted` | approver permission, version match | — | → `Rejected` | yes (with reason) | SalesOrder.Reject |
-| 反审核 Unapprove | header in `Approved` AND (no downstream / force flag) | permission | downstream-check guard | → `Draft` | yes | SalesOrder.Unapprove (advanced) |
-| 取消 Cancel (reason required) | header not terminal | permission | downstream-check guard | → `Cancelled` | yes | SalesOrder.Cancel |
-| 作废 Void (reason required) | header in `Draft` / `Rejected` (admin only) | admin permission | — | → `Voided` | yes (with reason) | SalesOrder.Void (admin) |
-| 关闭 Close (reason required) | header in `Shipped` / `PartiallyShipped` | permission | AR settled? guard | → `Closed` | yes | SalesOrder.Close |
+| 新建 New | always | always | — | DocumentStatus→Draft, ApprovalStatus→NotSubmitted, ExecutionStatus→NotStarted | yes | SalesOrder.Create |
+| 保存 Save | DocumentStatus=Draft | DocumentStatus=Draft | required-field validation | — | yes | SalesOrder.Update |
+| 复制 Copy | always | SalesOrder.Read | — | new draft (3D reset) | yes | SalesOrder.Create |
+| 提交 Submit | DocumentStatus=Draft | ≥1 line, customer, dates, valid L16/L17/L19/L20/L21 | Submit guard | DocumentStatus→Active, ApprovalStatus→Pending (+ InventoryReservation request if Company Policy) | yes | SalesOrder.Submit |
+| 撤回 Withdraw | ApprovalStatus=Pending AND Submitter=current user | no approver acted | — | ApprovalStatus→Withdrawn, DocumentStatus remains Active | yes | SalesOrder.Withdraw |
+| 审核通过 Approve | ApprovalStatus=Pending | approver permission, version match | Approve guard | ApprovalStatus→Approved (+ InventoryReservation if Company Policy) | yes | SalesOrder.Approve |
+| 驳回 Reject (reason required) | ApprovalStatus=Pending | approver permission, version match | — | ApprovalStatus→Rejected | yes (with reason) | SalesOrder.Reject |
+| 重新提交 Re-Submit | ApprovalStatus=Rejected / Withdrawn | permission, version match | re-Submit guard | ApprovalStatus→Pending | yes | SalesOrder.Submit |
+| 取消 Cancel (reason required) | DocumentStatus ∈ {Draft, Active} | permission | downstream-check guard | DocumentStatus→Cancelled (release reservation if any) | yes (with reason) | SalesOrder.Cancel |
+| 关闭 Close (reason required) | ExecutionStatus=Completed | permission | AR settled? guard | DocumentStatus→Closed | yes | SalesOrder.Close |
 | 打印 Print | always | permission | — | — | yes (print log) | SalesOrder.Print |
 | 导出 Export | always | permission | — | — | yes (export log) | SalesOrder.Export |
-| 生成发货单 GenerateShipment | header in `Approved` | permission, ≥1 line with `OpenQuantity > 0` | reservation-check guard | new shipment header (cross-module event) | yes | SalesOrder.GenerateShipment |
-| 关联报价单 AttachQuotation | always (Draft) | permission | — | sets `SourceDocument` | yes | SalesOrder.Update |
+| 生成发货单 GenerateShipment | DocumentStatus=Active AND ApprovalStatus=Approved | permission, ≥1 line with `OpenQuantity > 0` | reservation-check guard | new Shipment header; ExecutionStatus=Partial on first SH confirm | yes | SalesOrder.GenerateShipment |
+| 关联报价单 AttachQuotation | DocumentStatus=Draft | permission | — | sets `SourceDocument` | yes | SalesOrder.Update |
+| (Removed) Unapprove | — | — | — | — | — | **DEC-STATUS-001**: Unapprove 不再是单独动作; 走 Re-Submit 新流程 |
+| (Removed) Void | — | — | — | — | — | **DEC-STATUS-001**: "作废" 由 Cancel 承担 (with reason); 实际数据纠错场景走 admin 系统功能,不在业务模块公开 |
 
-> **OPEN_QUESTION:** many of the more advanced actions (Unapprove,
-> Re-Open Closed) are `INFERENCE` based on standard ERP, **must be
-> confirmed** with user before V1.
+> **OPEN_QUESTION**: re-approval of an Approved document (ApprovalStatus
+> Approved → Pending again) is **not** in V1. A re-approval scenario is
+> handled as a new document or a "Change Order" feature, not as a
+> status regression. **OPEN_QUESTION-BI-1** for V1.5.
 
 ---
 
@@ -352,13 +405,22 @@ line edits do not violate header status; line `LineNo` is auto-assigned.
 | Downstream to SalesInvoice (销售发票) | 1:N — per shipment OR per AR run | INFERENCE; **OPEN_QUESTION** V1 |
 | Downstream to AR (应收) | via Invoice | `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` §2 step list (`应收账款` 214) |
 | Downstream to ProductionOrder (MTO) | optional 1:1 per line if `Item.Type = MadeToOrder` | `DEV_PRODUCTION_SPEC.md` §3.3 `SalesOrderConfirmedEvent` |
-| Downstream to InventoryReservation | on `Approved`; releases on `Cancelled/Closed` | `DEV_INVENTORY_SPEC.md` §3.4 + §3.2 `ReserveAsync` |
+| **Downstream to InventoryReservation (DEC-INV-001)** | on `Approved` (per Company Policy); releases on Cancel/Close | **USER_CONFIRMED (DEC-INV-001)**: Inventory 能力,Sales **不得**直接写 `InventoryBalance` / `InventoryTransaction`;通过 Inventory Contract / Event 请求 Reservation |
+| Reservation partial allowed | yes (per Company Policy) | **USER_CONFIRMED (DEC-INV-001)**: 允许部分预留 |
+| Reservation default-on? | **per Company Policy** (default ON) | **USER_CONFIRMED (DEC-INV-001)**: 默认 ON,可配置关闭或扩展 |
 | Reuse candidate reference | shows even when already used | INFERENCE (UX best practice) |
 | Duplicate-source prevention | server checks `SourceDocumentId+SourceDocumentType` already mapped; **OPEN_QUESTION** V1: allow or block? | INFERENCE |
 
 > **Hard rule:** `SourceDocument` is **not a text reference** — it is
 > `(SourceDocumentType enum, SourceDocumentId long)`. `text nvarchar(256)`
 > reference is in the REJECT list per `BUSINESS_SOURCE_OF_TRUTH.md`.
+>
+> **DEC-INV-001 hard rule**: Sales 模块**不得**持有
+> `InventoryBalance` / `InventoryTransaction` 的写权限。Sales 与
+> Inventory 的所有交互必须通过 Inventory 公开的 Contract / Event
+> (e.g. `IInventoryReservationService.ReserveAsync(req)` /
+> `InventoryReservationRequestedEvent`)。详见
+> `GULIERP_MODULE_INDEPENDENCE_RULE.md` §3.
 
 ---
 
@@ -499,6 +561,9 @@ This document references the following evidence sources:
 | `SALES_ORDER_REQUIREMENT_DISCOVERY.md` | NEW_PROJECT_DISCOVERY | open confirmations |
 | `ARCHITECTURE_RULES.md` | NEW_PROJECT_GOVERNANCE | hard rules |
 | `FOUNDATION_BOUNDARY.md` | NEW_PROJECT_GOVERNANCE | reserved items |
+| `GULIERP_MODULE_INDEPENDENCE_RULE.md` | NEW_PROJECT_GOVERNANCE | module isolation (FROZEN) |
+| `META_GULI_GOVERNANCE_V1.md` | NEW_PROJECT_GOVERNANCE | meta governance + LESSON-001 (FROZEN) |
+| `G1A_DECISIONS_V1.md` | USER_CONFIRMED | 10 user decisions at G1A-FINAL |
 | `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` | DEV_METADATA | what DEV exposed |
 | `DEV_BUSINESS_DOCUMENT_TEMPLATE_SPEC.md` | DEV_TEMPLATE | document concept |
 | `DEV_INVENTORY_SPEC.md` | DEV_RELATION | reservation, posting |
@@ -506,8 +571,20 @@ This document references the following evidence sources:
 | `DEV_SECURITY_MODEL_ANALYSIS.md` | DEV_RELATION | action permission |
 | `ERP-VIS-001_START_SNAPSHOT.md` | HANDOFF | UX reference |
 | `ERP-VIS-001_OPERATOR_EVIDENCE_PACK.md` | HANDOFF | PC flow evidence |
-| (none USER_CONFIRMED) | — | **gap — see OQ-SO-* ** |
 
-**No `USER_CONFIRMED` evidence in current source set.** This spec is
-a structured input for the next stage (`UX_PROTOTYPE`) and for user
-decisions, not a claim of frozen business truth.
+**G1A-FINAL USER_CONFIRMED items (Frozen)**:
+
+| Decision | Items promoted | Spec section |
+|---|---|---|
+| DEC-SO-001 | H21, H22, L16, L17, L18 (new), L19 (new), L20 (renamed), L21 (renamed), L22 (renamed) | §2.4, §3.4 |
+| DEC-SO-002 | L23, L24, L25 | §3.4 |
+| DEC-SO-003 | H28, H29 (deprecated), L27, L28 | §2.5, §3.5 |
+| DEC-STATUS-001 | §5 (entire), §6 actions | §5, §6 |
+| DEC-INV-001 | §7 (InventoryReservation rules) | §7 |
+
+**Items still requiring future user attention (non-frozen, see checklist)**:
+
+- OQ-SO-1..15 — most are now resolved by G1A-FINAL; remaining are tracked
+  in `G1A_OPERATOR_CONFIRMATION_CHECKLIST.md` (post-G1A-FINAL state).
+- OQ-SO-13 (Customer/BillTo/ShipTo fields) — still open.
+- OQ-SO-15 (Quotation 1:1 vs 1:N) — still open.

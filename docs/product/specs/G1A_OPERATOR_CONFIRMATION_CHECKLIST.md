@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| Goal | G1A — Core Business Specification Freeze |
-| Gate (entry) | `GULIERP_GREENFIELD_BOOTSTRAPPED` |
-| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
-| Document status | **Draft for UX Prototype** — NOT Frozen, NOT User-Approved |
-| Purpose | Per G1A §七 + §十, this is the consolidated actionable list of high-value decisions the user must answer. It is intentionally short (not 100碎问题). |
-| Hard rule | This document is **not** auto-answered. The user reads it, decides, and only then can the Gate advance to `BUSINESS_SPEC_FROZEN` (which is **not** the current Goal's exit gate). |
+| Goal | G1A-FINAL — Operator Decision Writeback & Business Spec Freeze |
+| Gate (entry) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
+| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_FROZEN` |
+| Document status | **FROZEN at G1A-FINAL** — 10 user decisions promoted; remaining items still pending |
+| Purpose | Per G1A-FINAL, this is the **post-decision** state of the confirmation checklist. Items marked `RESOLVED` have been answered and promoted to `USER_CONFIRMED` (Frozen). Items still pending remain. |
+| Note | This is no longer a "questions to ask" — it is now a **decision log** + **remaining open questions**. See `G1A_DECISIONS_V1.md` for the full decision record. |
 
 ---
 
@@ -26,18 +26,22 @@
 
 ---
 
-## 1. Sales decisions (CORE_V1)
+## 1. Sales decisions (CORE_V1) — post-G1A-FINAL state
+
+### Resolved (Frozen at G1A-FINAL)
+
+| # | Question | Resolution | Decision |
+|---|---|---|---|
+| S-BU-1 | Pricing/Tax scheme | `(c)` both 含税+未税,user choice per line, configurable per Customer/Company | **DEC-SO-001** |
+| S-BU-2 | Tax rate level | `(b)` per line, header H22 = default only | **DEC-SO-001** |
+| S-BU-3 | Discount mode | `(d)` both line rate AND line amount, **Line-level only** (no header total discount in V1) | **DEC-SO-002** |
+| S-BU-4 | Status set & transitions | **REJECTED** the 9-status single-string model. Adopted **3D model**: `DocumentStatus / ApprovalStatus / ExecutionStatus` (+ optional `SalesDeliveryStatus` typed enum) | **DEC-STATUS-001** |
+| S-BU-5 | Warehouse/Location granularity | `(c)` both, line overrides header; Location = Line-level only, mandatory policy-gated | **DEC-SO-003 / DEC-INV-002** |
+| S-BU-6 | Reservation policy on Approved | Default ON; per Company Policy; partial allowed; **Sales cannot write Inventory directly** | **DEC-INV-001** |
 
 ### BLOCKING_BEFORE_UX
 
-| # | Question | Default if no answer | Spec ref |
-|---|---|---|---|
-| **S-BU-1** | **Pricing/Tax scheme** — is the unit price entered in the SO line `(a)` 未税 only `(b)` 含税 only `(c)` both, with user choice per line, `(d)` configurable per customer/company? | (a) 未税 only | OQ-SO-1, H21, L16, L17, F1–F3 |
-| **S-BU-2** | **Tax rate level** — is the tax rate `(a)` header only (one rate per SO) `(b)` per line (Item-driven) `(c)` both? | (a) header only | OQ-SO-2, H22, L20 |
-| **S-BU-3** | **Discount** — allowed at `(a)` line rate only `(b)` line amount only `(c)` header total only `(d)` line rate + line amount? | (d) both line rate AND line amount | OQ-SO-3, L22, L23, F1 |
-| **S-BU-4** | **Status set & transitions** — confirm the 9 statuses (`Draft / Submitted / Approved / Rejected / PartiallyShipped / Shipped / Closed / Cancelled / Voided`) and the transition table in spec §5.2. | accept the table as proposed | OQ-SO-4, spec §5.1–5.3 |
-| **S-BU-5** | **Warehouse/Location granularity** — at `(a)` header only `(b)` line only `(c)` both, line overrides header? | (c) both, line overrides | OQ-SO-7, H28, L26 |
-| **S-BU-6** | **Reservation policy on Approved** — does `Approved` SO automatically reserve inventory? `(a)` yes always `(b)` no, reserved at shipment `(c)` configurable per item/customer? | (a) yes always (partial reservation allowed) | OQ-SO-8, L15, L31 |
+(none remaining for Sales; all 6 BLOCKING_BEFORE_UX items resolved at G1A-FINAL)
 
 ### BLOCKING_BEFORE_IMPLEMENTATION
 
@@ -81,17 +85,21 @@
 
 ---
 
-## 2. Purchase decisions (CORE_V1)
+## 2. Purchase decisions (CORE_V1) — post-G1A-FINAL state
+
+### Resolved (Frozen at G1A-FINAL)
+
+| # | Question | Resolution | Decision |
+|---|---|---|---|
+| P-BU-1 | PR required before PO | `(b)` **optional** (PR is recommended, not mandatory) | **DEC-PO-001** |
+| P-BU-2 | Over-receive tolerance default | `(a)` **0%** default; per Company/Supplier Policy override; per Line override | **DEC-PO-001** |
+| P-BU-3 | Quality inspection by default | `(b)` per `ItemWarehousePolicy.QualityInspectionRequired` (not global) | **DEC-PO-001** |
+| P-BU-4 | Receiving warehouse granularity | `(c)` both, line overrides header; Location = Line-level | **DEC-PO-001 / DEC-SO-003** |
+| P-BU-5 | Status set & transitions | **REJECTED** the 9-status single-string model. Adopted 3D model (DEC-STATUS-001) | **DEC-STATUS-001** |
 
 ### BLOCKING_BEFORE_UX
 
-| # | Question | Default | Spec ref |
-|---|---|---|---|
-| **P-BU-1** | **PR required before PO** — `(a)` always `(b)` optional (can create PO directly)? | (b) optional (PR is recommended) | OQ-PO-1, spec §2 |
-| **P-BU-2** | **Over-receive tolerance** — default `(a)` 0% (no over) `(b)` 2% `(c)` per-supplier config `(d)` per-PO line? | (a) 0% with per-line override | OQ-PO-2, L15 |
-| **P-BU-3** | **Quality inspection by default** — does PO require inspection on receipt? `(a)` always `(b)` per item policy `(c)` per supplier? | (b) per `ItemWarehousePolicy.QualityInspectionRequired` | OQ-PO-5, H29, L29 |
-| **P-BU-4** | **Receiving warehouse at** — `(a)` header only `(b)` line only `(c)` both? | (c) both, line overrides | OQ-PO-6, H24, L26 |
-| **P-BU-5** | **Status set & transitions** — confirm 9 statuses + transition table. | accept the table | OQ-PO-12, spec §6.1–6.2 |
+(none remaining for Purchase; all 5 BLOCKING_BEFORE_UX items resolved at G1A-FINAL)
 
 ### BLOCKING_BEFORE_IMPLEMENTATION
 
@@ -133,18 +141,22 @@
 
 ---
 
-## 3. Inventory decisions (CORE_V1)
+## 3. Inventory decisions (CORE_V1) — post-G1A-FINAL state
+
+### Resolved (Frozen at G1A-FINAL)
+
+| # | Question | Resolution | Decision |
+|---|---|---|---|
+| I-BU-1 | Negative stock policy | `(a)` **strict** (block) — default; per Company Policy configurable | **DEC-INV-002** |
+| I-BU-2 | Lot mandatory in V1 | `(b)` per-Item flag (`Item.LotEnabled`); not global | **DEC-INV-002** |
+| I-BU-3 | Reservation on Approved SO | `(a)` yes default; per Company Policy; partial allowed; **Sales cannot write Inventory** | **DEC-INV-001** |
+| I-BU-4 | Posting model | `(a)` event-driven only — via `InventoryPostingEngine` (REJECTED manual ledger posting screen) | **DEC-INV-002** |
+| I-BU-5 | Quality status blocks Available stock | `(b)` **NO** — `PendingInspection` is part of `OnHand` but NOT in `Available` | **DEC-INV-001** |
+| I-BU-6 | StockTake / Adjustment / Transfer approval | Adjust + StockTake default ON; Transfer default OFF (仅需 Confirm + 权限); per Company Policy | **DEC-INV-004** |
 
 ### BLOCKING_BEFORE_UX
 
-| # | Question | Default | Spec ref |
-|---|---|---|---|
-| **I-BU-1** | **Negative stock policy** — `(a)` strict (block) `(b)` warn `(c)` allow? | (a) strict | OQ-INV-1, spec §10, X1 |
-| **I-BU-2** | **Lot mandatory in V1** — `(a)` global mandate `(b)` per-Item flag `(c)` not used in V1? | (b) per-Item flag | OQ-INV-2, §11, L28 (SO/PO) |
-| **I-BU-3** | **Reservation on Approved SO** — `(a)` yes always `(b)` no `(c)` per-Item / per-customer config? | (a) yes always (partial allowed) | OQ-INV-5, §9 |
-| **I-BU-4** | **Posting model** — `(a)` event-driven only `(b)` event-driven + manual adjust `(c)` manual "过账" screen allowed? | (a) event-driven only | OQ-INV-4, §7.1 |
-| **I-BU-5** | **Quality status blocks Available stock** — when H29=true and `PendingInspection > 0`, is that quantity part of `Available`? `(a)` yes `(b)` no? | (a) yes (consistent with strict policy) | OQ-INV-6, §2 |
-| **I-BU-6** | **StockTake / Adjustment / Transfer approval** — `(a)` all three require approval `(b)` only Adjust `(c)` none? | (a) all three | OQ-INV-7, §8.2, §6 |
+(none remaining for Inventory; all 6 BLOCKING_BEFORE_UX items resolved at G1A-FINAL)
 
 ### BLOCKING_BEFORE_IMPLEMENTATION
 
@@ -187,16 +199,20 @@
 
 ---
 
-## 4. UX decisions (G1B depends on these)
+## 4. UX decisions (G1B depends on these) — post-G1A-FINAL state
+
+### Resolved (Frozen at G1A-FINAL)
+
+| # | Question | Resolution | Decision |
+|---|---|---|---|
+| X-BU-1 | Fullscreen / multi-tab / PopWin | Multi-Tab + Document Fullscreen 主交互;PopWin 仅辅助(Lookup / Quick View / 小表单 / 业务弹层) | **DEC-UX-001** |
+| X-BU-2 | i18n languages for V1 | **zh-CN only** (代码结构 i18n-ready, 不投入 en-US 翻译) | **DEC-UX-001** |
+| X-BU-3 | Saved view per user or per role | **per user** | **DEC-UX-001** |
+| X-BU-4 | Mobile/H5 read-only V1 | **NOT in V1** (推迟 V1.5+) | **DEC-UX-001** |
 
 ### BLOCKING_BEFORE_UX
 
-| # | Question | Default | Spec ref |
-|---|---|---|---|
-| **X-BU-1** | **Fullscreen / multi-tab / PopWin priority** for V1? `(a)` all three `(b)` multi-tab only `(c)` none? | (b) multi-tab only | OQ-UX-1, UX §3.9 |
-| **X-BU-2** | **i18n languages for V1** — `(a)` zh-CN only `(b)` zh-CN + en-US `(c)` more? | (b) zh-CN + en-US | OQ-UX-5, UX §3.11 |
-| **X-BU-3** | **Saved view per user or per role?** | per user | OQ-UX-4, UX §1.1 |
-| **X-BU-4** | **Mobile/H5 read-only V1?** | not V1 | OQ-UX-2, UX §3.8 |
+(none remaining for UX; all 4 BLOCKING_BEFORE_UX items resolved at G1A-FINAL)
 
 ### BLOCKING_BEFORE_IMPLEMENTATION
 

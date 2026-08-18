@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| Goal | G1A — Core Business Specification Freeze |
-| Gate (entry) | `GULIERP_GREENFIELD_BOOTSTRAPPED` |
-| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
-| Document status | **Draft for UX Prototype** — NOT Frozen, NOT User-Approved |
+| Goal | G1A-FINAL — Operator Decision Writeback & Business Spec Freeze |
+| Gate (entry) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
+| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_FROZEN` |
+| Document status | **FROZEN at G1A-FINAL** (per `BUSINESS_SPEC_FROZEN` gate, 10 user decisions) |
 | Hard rule (G1A §十二 #6) | **No `DocumentHeader/DocumentLine` "super table" design.** This spec is **product/UX requirements only**. Implementation schema design happens in a later Goal. |
 | Hard rule (G1A §八) | This stage does NOT write Vue. The output is **what users need to see and do**, not **how to code it**. |
 
@@ -50,11 +50,11 @@
 | Top toolbar | 左侧：业务空间/组织选择；中部：关键字搜索；右侧：高级筛选、列设置、导出、打印 | Standard ERP |
 | Filter panel | `Advanced Filter` drawer (toggle). Fields grouped by tab. Recent filters saved per user. | Power user |
 | Data grid | Sticky header, virtual scroll, column resize, column show/hide (per user, saved) | Standard |
-| Status column | Color-coded tag (草稿/已提交/已审核/已驳回/部分发货/已发货/已关闭/已取消/已作废) | Standard |
+| Status column | **Three combined tags** showing the 3D status (e.g. `Active · Approved · Partial`). Color-coded. | DEC-STATUS-001 (3D model) |
 | Multi-select rows | Yes, with bulk action bar appearing (Submit, Approve, Export, Print) | Standard |
-| Row double-click | Opens detail in new tab (preserves list scroll position) | handoff UX |
+| Row double-click | Opens detail in **new tab** (DEC-UX-001 multi-tab main interaction) | DEC-UX-001 |
 | Row right-click | Context menu: Edit / Copy / Print / View workflow / View downstream | handoff UX |
-| Saved view | User can save filter+column+sort as "我的视图"; can set as default | Power user |
+| Saved view | **per user** (DEC-UX-001) — User can save filter+column+sort as "我的视图"; can set as default | **USER_CONFIRMED (DEC-UX-001)** |
 | Page-back | When coming from list → detail → back, preserve page, filter, sort, scroll | handoff UX |
 | Empty state | "暂无数据 · 新建" with single CTA | Standard |
 | Error state | "加载失败 · 重试" | Standard |
@@ -252,22 +252,29 @@
 - "在新标签页打开" preserves caller scroll.
 - "生成下游" button on detail if status allows.
 
-### 3.8 Mobile / H5 boundary
+### 3.8 Mobile / H5 boundary (DEC-UX-001)
+
+> **G1A-FINAL (DEC-UX-001)**: Mobile / H5 **不进入 V1 第一版阻塞范围**。
+> 推迟到 V1.5+ (与 G1B UX Prototype 解耦)。
+
+| Aspect | Spec | Status |
+|---|---|---|
+| V1 Mobile / H5 | **NOT in V1** | DEC-UX-001 推迟 |
+| V1.5+ Mobile / H5 scope | Read-only list + read-only detail for SO, PO, GR, SH, Transfer, StockTake | reserved |
+| Edit / action on mobile | 推迟到 V1.5+ | reserved |
+| Login | H5 session; reuse web auth (future) | reserved |
+
+### 3.9 Fullscreen and multi-tab (DEC-UX-001)
+
+> **G1A-FINAL (DEC-UX-001)**: 主交互为 **Multi-Tab + Document Fullscreen**。
+> PopWin **不**作为主交互,只用于辅助小弹层。
 
 | Aspect | Spec |
 |---|---|
-| Scope | Read-only list + read-only detail for SO, PO, GR, SH, Transfer, StockTake |
-| Edit / action | not in V1 mobile (V1.5+) |
-| Login | H5 session; reuse web auth |
-| Card-based | one record per card; key fields visible |
-| Filter | simplified; basic text search |
-| Attachment | download only |
-
-### 3.9 Fullscreen and multi-tab
-
-- Fullscreen toggle on detail page.
-- Multi-tab support in router (open detail in new tab from list).
-- PopWin: independent browser window for power users (V1.5+).
+| **Multi-Tab** | V1 主交互。Detail page 默认在新 tab 打开;List 页面支持多个 tab;同 session 可同时打开多个 SalesOrder detail 互不干扰。 |
+| **Document Fullscreen** | V1 主交互。Detail page 提供全屏模式(隐藏顶部 nav 和左侧 menu),适合长时间编辑。 |
+| **PopWin (弹窗窗口)** | **仅**用于: (a) Lookup 选择; (b) Quick View 速览; (c) 小型表单(快速新增/编辑一个辅助实体); (d) 辅助业务弹层。**不**用于主业务单据编辑。**禁止**将旧 Flask 系统的 iframe/PopWin 技术实现复制到新系统。 |
+| Independent browser window | V1.5+; (独立进程窗口,不是 in-app popwin) |
 
 ### 3.10 Accessibility (basic V1)
 
@@ -275,11 +282,16 @@
 - Keyboard navigation works for all primary actions.
 - Form labels associated with inputs.
 
-### 3.11 Internationalization (i18n)
+### 3.11 Internationalization (i18n) (DEC-UX-001)
 
-- All UI strings in resource files (`zh-CN`, `en-US`).
-- Default locale: `zh-CN`.
-- V1 must support at least: zh-CN, en-US.
+> **G1A-FINAL (DEC-UX-001)**: V1 = **zh-CN only**。
+> 代码结构必须允许未来 i18n (i18n keys、resource 文件),但当前**不投入 en-US 翻译资源**。
+
+| Aspect | Spec |
+|---|---|
+| V1 supported locales | **zh-CN only** |
+| Future-ready | yes (resource files; i18n key naming) |
+| en-US translation | **NOT in V1** — 推迟到 V1.5+ 按需启用 |
 
 ---
 
@@ -365,18 +377,20 @@ table. UX requirement:
 
 ---
 
-## 10. Open questions (UX)
+## 10. Open questions (UX) — post-G1A-FINAL state
 
-- **OQ-UX-1:** fullscreen / multi-tab / PopWin priority for V1?
-- **OQ-UX-2:** mobile/H5 read-only V1 yes / no?
-- **OQ-UX-3:** bulk-approve in V1 (per spec §5 OS15 = DEFERRED V1.5)?
-- **OQ-UX-4:** saved view per user or per role?
-- **OQ-UX-5:** i18n languages for V1 (zh-CN only / + en-US / + others)?
-- **OQ-UX-6:** batch line input via Excel paste in V1?
-- **OQ-UX-7:** drag-fill cells in V1?
-- **OQ-UX-8:** print template editor in V1 (vs V1.5+)?
-- **OQ-UX-9:** attachment versioning in V1?
-- **OQ-UX-10:** column memory per role or per user?
+| # | Question | Resolution | Source |
+|---|---|---|---|
+| **OQ-UX-1** | fullscreen / multi-tab / PopWin priority | **Multi-Tab + Document Fullscreen 主交互;PopWin 仅辅助弹层** | **USER_CONFIRMED (DEC-UX-001)** |
+| **OQ-UX-2** | mobile/H5 read-only V1 | **NOT in V1** (推迟 V1.5+) | **USER_CONFIRMED (DEC-UX-001)** |
+| **OQ-UX-3** | bulk-approve V1 | DEFERRED V1.5 | unchanged |
+| **OQ-UX-4** | saved view per user or per role | **per user** | **USER_CONFIRMED (DEC-UX-001)** |
+| **OQ-UX-5** | i18n languages for V1 | **zh-CN only** (代码 i18n-ready) | **USER_CONFIRMED (DEC-UX-001)** |
+| **OQ-UX-6** | batch line input via Excel paste V1 | DEFERRED V1.5 | unchanged |
+| **OQ-UX-7** | drag-fill cells V1 | DEFERRED V1.5 | unchanged |
+| **OQ-UX-8** | print template editor V1 | DEFERRED V1.5 | unchanged |
+| **OQ-UX-9** | attachment versioning V1 | DEFERRED V1.5 | unchanged |
+| **OQ-UX-10** | column memory per role or per user | **per user** | **USER_CONFIRMED (DEC-UX-001)** |
 
 ---
 
@@ -396,4 +410,17 @@ table. UX requirement:
 | `ERP-VIS-001_*` handoff | `HANDOFF` |
 | `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` §3 (UI metadata pattern) | `DEV_METADATA` |
 | Standard ERP UX practice (Chinese ERP industry convention) | `INFERENCE` |
-| (no USER_CONFIRMED per-item) | gap — see OQ-UX-* |
+| `G1A_DECISIONS_V1.md` (DEC-UX-001) | `USER_CONFIRMED` |
+| `GULIERP_MODULE_INDEPENDENCE_RULE.md` | NEW_PROJECT_GOVERNANCE |
+| `META_GULI_GOVERNANCE_V1.md` | NEW_PROJECT_GOVERNANCE |
+
+**G1A-FINAL USER_CONFIRMED items (Frozen)**:
+
+| Decision | Items promoted | Spec section |
+|---|---|---|
+| DEC-UX-001 (Multi-Tab + Document Fullscreen 主交互) | §3.9, §1.1 (row double-click) | §3.9, §1.1 |
+| DEC-UX-001 (PopWin 仅辅助) | §3.9 | §3.9 |
+| DEC-UX-001 (V1 = zh-CN only, 代码 i18n-ready) | §3.11 | §3.11 |
+| DEC-UX-001 (Mobile/H5 NOT in V1) | §3.8 | §3.8 |
+| DEC-UX-001 (Saved View per user) | §1.1 | §1.1 |
+| DEC-UX-001 (Column Memory per user) | §10 OQ-UX-10 | §10 |

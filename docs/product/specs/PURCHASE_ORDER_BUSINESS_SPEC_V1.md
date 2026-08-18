@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| Goal | G1A — Core Business Specification Freeze |
-| Gate (entry) | `GULIERP_GREENFIELD_BOOTSTRAPPED` |
-| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
-| Document status | **Draft for UX Prototype** — NOT Frozen, NOT User-Approved |
-| Evidence scope | New project docs + DEV reverse-engineering + handoff (SalesOrder UX as parallel reference) |
-| Forbidden claims | Same as SalesOrder spec. SRM/RFQ features belong in V2, not V1. |
+| Goal | G1A-FINAL — Operator Decision Writeback & Business Spec Freeze |
+| Gate (entry) | `GULIERP_CORE_BUSINESS_SPEC_READY_FOR_UX` |
+| Gate (exit) | `GULIERP_CORE_BUSINESS_SPEC_FROZEN` |
+| Document status | **FROZEN at G1A-FINAL** (per `BUSINESS_SPEC_FROZEN` gate, 10 user decisions) |
+| Evidence scope | New project docs + DEV reverse-engineering + handoff + G1A-FINAL USER_CONFIRMED decisions |
+| Frozen items | All items tagged `USER_CONFIRMED` in §15 are Frozen. |
 
 > Same hard interpretation rule as the SalesOrder spec. Nothing here
 > is `USER_CONFIRMED` — current source set contains zero such
@@ -51,11 +51,15 @@ where they influence the V1 domain model.
 
 ---
 
-## 2. Purchase Requisition (PR) — CORE_V1 (minimal)
+## 2. Purchase Requisition (PR) — CORE_V1 (optional, recommended)
+
+> **G1A-FINAL (DEC-PO-001)**: PR 是**推荐流程**,**不是强制前置**。
+> V1 允许直接创建 PurchaseOrder(不需要先建 PR)。详见 §6.1。
 
 PR is the internal demand document that triggers PO creation. Per
 `PURCHASE_ORDER_REQUIREMENT_DISCOVERY.md` Items To Confirm "Requisition
-to purchase order relationship" — this is the most common flow.
+to purchase order relationship" — this is the most common flow but not
+mandatory.
 
 | # | Field (zh) | Field (en) | Type | Required | Default | Evidence |
 |---|---|---|---|---|---|---|
@@ -147,8 +151,8 @@ to purchase order relationship" — this is the most common flow.
 
 | # | Field | Type | Required | Lookup | Evidence |
 |---|---|---|---|---|---|
-| H24 | 收货仓库 | `ReceivingWarehouseId` | Yes | MDM `Warehouse` | `PURCHASE_ORDER_REQUIREMENT_DISCOVERY.md` Items To Confirm "Receiving warehouse" |
-| H25 | 默认库位 | `DefaultReceivingLocationId?` | No | MDM `Location` | INFERENCE; **OPEN_QUESTION** V1 |
+| H24 | 收货仓库 (默认) | `ReceivingWarehouseId` | Yes | MDM `Warehouse` | **USER_CONFIRMED (DEC-PO-001)**: 头仓库 = 默认收货仓,Line 可覆盖 |
+| H25 | 默认库位 (V1 deprecated) | — | — | — | **DEC-PO-001 / DEC-SO-003 共同**: 库位 = Line-level,不在订单头 |
 | H26 | 运输方式 | `TransportMethod` | No | Dictionary | INFERENCE |
 | H27 | 承运商 | `CarrierId` | No | MDM | INFERENCE; **OPEN_QUESTION** V1 |
 | H28 | 备注 | `Memo` | `string` | No | INFERENCE |
@@ -157,7 +161,7 @@ to purchase order relationship" — this is the most common flow.
 
 | # | Field | Type | Required | Default | Evidence |
 |---|---|---|---|---|---|
-| H29 | 来料是否检验 | `IncomingInspectionRequired` | No | = `ItemWarehousePolicy.QualityInspectionRequired` for H24 | `DEV_QUALITY_SPEC.md` §4.1 |
+| H29 | 来料是否检验 | `IncomingInspectionRequired` | No | = `ItemWarehousePolicy.QualityInspectionRequired` for H24 | **USER_CONFIRMED (DEC-PO-001)**: 按 Item Policy 决定,不是全局所有收货强制 IQC |
 | H30 | 检验类型 | `InspectionType` (Incoming/None/...) | No | = `ItemWarehousePolicy.InspectionType` | same |
 
 ### 3.7 Attachments, classification, audit
@@ -167,7 +171,7 @@ to purchase order relationship" — this is the most common flow.
 | H31 | 附件 | `Attachment[]` | No | `BUSINESS_SOURCE_OF_TRUTH.md` REJECT (`image`/`ntext`) |
 | H32 | 单据类型 | `DocumentType` (Normal/Subcontracting/Return/...) | Yes, default `Normal` | INFERENCE; **note: Subcontracting flag is informational only in V1** |
 | H33 | 源单据 | `SourceDocument?` (PR/MRP) | No | `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` §7 Linker |
-| H34 | 工作流实例 | `WorkflowInstanceId?` | No | POC-004 Workflow Lite pattern |
+| H34 | 工作流实例 | `WorkflowInstanceId?` | No | DEC-WORKFLOW-001 (G1A-FINAL): GuliERP Next 0 Admin.NET / 0 old Workflow runtime dep;V1 uses a simple Approval capability. POC-004 is **reference only**. |
 | H35 | 审核人 / 时间 | `ApprovedBy?`, `ApprovedAt?` | No | INFERENCE; reserved for V1.5 |
 | H36 | 乐观锁 | `ConcurrencyVersion` | Yes (system) | POC-001/002/003 invariant |
 
@@ -203,7 +207,7 @@ to purchase order relationship" — this is the most common flow.
 | L12 | 已收数量 | `ReceivedQuantity` (≥0) | Yes (system) | 0 | Always (derived) | INFERENCE; populated by GR events |
 | L13 | 未收数量 | `OpenQuantity` = L11 - L12 - L14 | Yes (system) | = L11 | Always (derived) | INFERENCE |
 | L14 | 已取消数量 | `CancelledQuantity` | No | 0 | Always (derived) | INFERENCE |
-| L15 | 超收容差% | `OverReceiveTolerancePct` (0..100) | No | 0 (= no over) | After Submit | `PURCHASE_ORDER_REQUIREMENT_DISCOVERY.md` Items To Confirm "Over-receiving tolerance" |
+| L15 | 超收容差% | `OverReceiveTolerancePct` (0..100) | No | 0 (= no over) — per **Company/Supplier Policy** default,per-Line override allowed | After Submit | **USER_CONFIRMED (DEC-PO-001)**: V1 默认 0%,允许通过 Company/Supplier Policy 设置默认容差,允许 PO Line 特批覆盖 |
 | L16 | 最大可收数量 | `MaxReceivable` = L11 × (1 + L15/100) | Yes (system) | = L11 | Always (derived) | INFERENCE |
 
 > **Hard invariant:** client cannot author `ReceivedQuantity`,
@@ -228,10 +232,10 @@ to purchase order relationship" — this is the most common flow.
 | # | Field | Type | Required | Default | Read-only when | Evidence |
 |---|---|---|---|---|---|---|
 | L25 | 交货日期 | `LineDeliveryDate` | No | = H3 | After Submit | INFERENCE |
-| L26 | 收货仓库 | `ReceivingWarehouseId` | No | = H24 if set | After Submit | INFERENCE; **OPEN_QUESTION** V1 头 vs 行 |
+| L26 | 收货仓库 | `ReceivingWarehouseId` | No | = H24 if set | After Submit | **USER_CONFIRMED (DEC-PO-001)**: 头默认 + Line 覆盖 |
 | L27 | 收货库位 | `ReceivingLocationId?` | No | = H25 if set | After Submit | INFERENCE |
 | L28 | 批次需求 | `LotRequired` | No | false | After Submit | INFERENCE; **OPEN_QUESTION** V1 |
-| L29 | 是否需要检验 | `InspectionRequired` (line override) | No | = H29 | After Submit | INFERENCE |
+| L29 | 是否需要检验 | `InspectionRequired` (line override) | No | = H29 | After Submit | **USER_CONFIRMED (DEC-PO-001)**: Line 覆盖 (H29=Item Policy 决定,Line 可改) |
 | L30 | 备注 | `LineMemo` | No | — | After Submit | INFERENCE |
 | L31 | 关闭状态 | `LineStatus` (Open/Closed) | No | Open | After Submit (driven) | INFERENCE |
 
@@ -258,72 +262,92 @@ to purchase order relationship" — this is the most common flow.
 
 ## 6. State machine
 
-### 6.1 Header status values
+> **G1A-FINAL (DEC-STATUS-001)**: 旧 9 状态单维度模型**已否决**。
+> GuliERP 统一采用**三维状态模型** (详见 `SALES_ORDER_BUSINESS_SPEC_V1.md` §5):
+>
+> - `DocumentStatus`: `Draft / Active / Closed / Cancelled`
+> - `ApprovalStatus`: `NotSubmitted / Pending / Approved / Rejected / Withdrawn`
+> - `ExecutionStatus`: `NotStarted / Partial / Completed`
+>
+> Purchase 在此之上可加 **强类型领域状态** `PurchaseReceiveStatus`:
+> `NotReady / PartiallyReceived / FullyReceived`(typed enum,**不**是字符串)。
 
-| Status | Display | Evidence | Notes |
+### 6.1 Three-dimensional status values (GLOBAL, mirrors SalesOrder §5.1)
+
+| Dimension | Values |
+|---|---|
+| DocumentStatus | `Draft / Active / Closed / Cancelled` |
+| ApprovalStatus | `NotSubmitted / Pending / Approved / Rejected / Withdrawn` |
+| ExecutionStatus | `NotStarted / Partial / Completed` |
+| (PO-specific) PurchaseReceiveStatus | `NotReady / PartiallyReceived / FullyReceived` (derived from lines) |
+
+### 6.2 PR status (per DEC-PO-001, V1: PR optional)
+
+| DocumentStatus | ApprovalStatus | ExecutionStatus | Notes |
 |---|---|---|---|
-| `Draft` | 草稿 | INFERENCE | Initial state |
-| `Submitted` | 已提交 | INFERENCE | Awaiting approval |
-| `Approved` | 已审核 | INFERENCE | Allows GR creation |
-| `Rejected` | 已驳回 | INFERENCE | Terminal? or back to Draft? **OPEN_QUESTION** |
-| `PartiallyReceived` | 部分到货 | INFERENCE | 0 < L12 sum < L11 sum |
-| `Received` | 已到货 | INFERENCE | L12 sum == L11 sum |
-| `Closed` | 已关闭 | INFERENCE | AR settled + lines closed |
-| `Cancelled` | 已取消 | INFERENCE | Terminal |
-| `Voided` | 已作废 | INFERENCE (per `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` 38 triggers) | Terminal (data correction) |
+| `Draft` | `NotSubmitted` | `NotStarted` | Initial |
+| `Active` | `Approved` | `Partial` or `Completed` | PR can generate PO lines |
+| `Closed` | `Approved` | `Completed` | All PR lines converted to PO |
+| `Cancelled` | any | any | With reason |
 
-> **Note:** the **status names** here are `INFERENCE` based on standard
-> ERP + parallel SalesOrder state machine. User must confirm exact set.
+> **DEC-PO-001**: PR 不再是 PO 强制前置。允许直接创建 PO。
 
-### 6.2 Transitions
+### 6.3 PO transitions (per dimension)
 
-| From | To | Trigger | Action | Evidence |
+| Dimension | From | To | Trigger | Audit |
 |---|---|---|---|---|
-| (new) | `Draft` | Create | — | INFERENCE |
-| `Draft` | `Submitted` | User: 提交 | Submit | INFERENCE |
-| `Submitted` | `Approved` | User: 审核通过 | Approve | INFERENCE |
-| `Submitted` | `Rejected` | User: 驳回 (with reason) | Reject | INFERENCE |
-| `Submitted` | `Draft` | User: 撤回 (Submitter only, no approver acted) | Withdraw | INFERENCE; **OPEN_QUESTION** allowed? |
-| `Approved` | `Draft` | User: 反审核 (no downstream) | Unapprove | **OPEN_QUESTION** when downstream exists |
-| `Approved` | `PartiallyReceived` | Event: `GoodsReceiptConfirmed` | — | INFERENCE |
-| `PartiallyReceived` | `Received` | Event: all lines `OpenQuantity == 0` | — | INFERENCE |
-| `Received` / `PartiallyReceived` | `Closed` | User: 关闭 (with reason) or auto | Close | INFERENCE |
-| `Draft` / `Submitted` / `Approved` | `Cancelled` | User: 取消 (with reason) | Cancel | INFERENCE |
-| any | `Voided` | Admin: 作废 (data fix) | Void | INFERENCE |
+| DocumentStatus | (none) | `Draft` | Create | yes |
+| DocumentStatus | `Draft` | `Active` | Submit | yes |
+| DocumentStatus | `Active` | `Closed` | All ExecutionStatus=Completed AND AP settled | yes |
+| DocumentStatus | `Draft` / `Active` | `Cancelled` | User cancel (with reason) | yes (with reason) |
+| ApprovalStatus | (none) | `NotSubmitted` | Create | yes |
+| ApprovalStatus | `NotSubmitted` | `Pending` | Submit | yes |
+| ApprovalStatus | `Pending` | `Approved` | Approve | yes |
+| ApprovalStatus | `Pending` | `Rejected` | Reject (with reason) | yes |
+| ApprovalStatus | `Pending` | `Withdrawn` | Withdraw (Submitter only) | yes |
+| ApprovalStatus | `Rejected` / `Withdrawn` | `Pending` | Re-Submit (after edit) | yes |
+| ExecutionStatus | (none) | `NotStarted` | Create | yes |
+| ExecutionStatus | `NotStarted` | `Partial` | First `GoodsReceiptConfirmed` | yes |
+| ExecutionStatus | `Partial` | `Completed` | All lines `OpenQuantity == 0` | yes |
+| (PO-specific) PurchaseReceiveStatus | `NotReady` | `PartiallyReceived` | First partial GR confirm | yes |
+| (PO-specific) PurchaseReceiveStatus | `PartiallyReceived` | `FullyReceived` | Last line `OpenQuantity == 0` | yes |
 
-### 6.3 State invariants
+### 6.4 State invariants (replaces old §6.3)
 
-1. `ConcurrencyVersion` increments on every transition.
-2. Line edits blocked when header in `Submitted/Approved/...`.
-3. `Cancelled`, `Voided`, `Closed` are terminal (V1 — no reopen).
-4. Concurrent edit returns `PURCHASE_ORDER_VERSION_CONFLICT` (mirrors SalesOrder).
+1. `ConcurrencyVersion` increments on every state-affecting action.
+2. Line edits blocked when `DocumentStatus ∈ {Active, Closed, Cancelled}`.
+3. `DocumentStatus=Closed` and `DocumentStatus=Cancelled` are terminal.
+4. Concurrent edit returns `PURCHASE_ORDER_VERSION_CONFLICT`.
 5. `Submit` requires: supplier, buyer, dept, ≥1 line, dates.
 6. `Approve` requires: approver permission, version match.
-7. `GoodsReceipt` can only be created when PO is in `Approved` or later.
+7. `GoodsReceipt` can only be created when PO is `DocumentStatus=Active AND ApprovalStatus=Approved`.
+8. **DEC-STATUS-001 invariant**: 3 个 dimension 必须**独立持久化**为 3 个 typed column(不是 1 个 string)。
+9. **DEC-PO-001 invariant**: PO 创建**不**需要先有 PR; PR 是可选的上游参考。
 
 ---
 
 ## 7. Actions
 
-| Action | 显示条件 | 启用条件 | 后端校验 | 状态影响 | 审计 | 权限 |
+> **G1A-FINAL (DEC-STATUS-001)**: actions are **per-dimension**.
+
+| Action | Display when | Enable when | Backend guard | Effect (3D + PO-specific) | Audit | Permission |
 |---|---|---|---|---|---|---|
-| 新建 New | always | always | — | → `Draft` | yes | `purchase.order.create` |
-| 保存 Save | `Draft` | `Draft` | required-field | — | yes | `purchase.order.update` |
-| 复制 Copy | always | `purchase.order.read` | — | new draft | yes | `purchase.order.create` |
-| 提交 Submit | `Draft` | ≥1 line, supplier, buyer, dates | Submit guard | → `Submitted` | yes | `purchase.order.submit` |
-| 撤回 Withdraw | `Submitted` AND current user is Submitter AND no approver acted | — | — | → `Draft` | yes | `purchase.order.withdraw` |
-| 审核通过 Approve | `Submitted` | approver, version match | Approve guard | → `Approved` (+ event) | yes | `purchase.order.approve` |
-| 驳回 Reject (reason) | `Submitted` | approver, version match | — | → `Rejected` | yes (reason) | `purchase.order.reject` |
-| 反审核 Unapprove | `Approved` AND no GR | permission | downstream guard | → `Draft` | yes | `purchase.order.unapprove` (advanced) |
-| 取消 Cancel (reason) | not terminal | permission | downstream guard | → `Cancelled` | yes | `purchase.order.cancel` |
-| 作废 Void (reason) | `Draft` / `Rejected` | admin | — | → `Voided` | yes (reason) | `purchase.order.void` (admin) |
-| 关闭 Close (reason) | `Received` / `PartiallyReceived` | permission | AR settled? guard | → `Closed` | yes | `purchase.order.close` |
+| 新建 New | always | always | — | DocumentStatus→Draft, ApprovalStatus→NotSubmitted, ExecutionStatus→NotStarted, PurchaseReceiveStatus→NotReady | yes | `purchase.order.create` |
+| 保存 Save | DocumentStatus=Draft | DocumentStatus=Draft | required-field | — | yes | `purchase.order.update` |
+| 复制 Copy | always | `purchase.order.read` | — | new draft (3D reset) | yes | `purchase.order.create` |
+| 提交 Submit | DocumentStatus=Draft | ≥1 line, supplier, buyer, dates | Submit guard | DocumentStatus→Active, ApprovalStatus→Pending | yes | `purchase.order.submit` |
+| 撤回 Withdraw | ApprovalStatus=Pending AND Submitter=current user | no approver acted | — | ApprovalStatus→Withdrawn | yes | `purchase.order.withdraw` |
+| 审核通过 Approve | ApprovalStatus=Pending | approver, version match | Approve guard | ApprovalStatus→Approved | yes | `purchase.order.approve` |
+| 驳回 Reject (reason) | ApprovalStatus=Pending | approver, version match | — | ApprovalStatus→Rejected | yes (reason) | `purchase.order.reject` |
+| 重新提交 Re-Submit | ApprovalStatus=Rejected / Withdrawn | permission, version match | re-Submit guard | ApprovalStatus→Pending | yes | `purchase.order.submit` |
+| 取消 Cancel (reason) | DocumentStatus ∈ {Draft, Active} | permission | downstream guard | DocumentStatus→Cancelled (reversal via Inventory if any GR) | yes (reason) | `purchase.order.cancel` |
+| 关闭 Close (reason) | ExecutionStatus=Completed | permission | AP settled? guard | DocumentStatus→Closed | yes | `purchase.order.close` |
 | 打印 Print | always | permission | — | — | yes | `purchase.order.print` |
 | 导出 Export | always | permission | — | — | yes | `purchase.order.export` |
-| 生成入库单 GenerateGoodsReceipt | `Approved` and ≥1 line with `OpenQuantity > 0` | permission | — | new GR header | yes | `purchase.order.generate-gr` |
-| 关联请购单 AttachRequisition | `Draft` | permission | — | sets `SourceDocument` | yes | `purchase.order.update` |
-
-> **OPEN_QUESTION:** advanced actions (Unapprove when GR exists) must be confirmed.
+| 生成入库单 GenerateGoodsReceipt | DocumentStatus=Active AND ApprovalStatus=Approved | permission, ≥1 line with `OpenQuantity > 0` | — | new GR header (consumed by Inventory) | yes | `purchase.order.generate-gr` |
+| 关联请购单 AttachRequisition | DocumentStatus=Draft | permission | — | sets `SourceDocument` | yes | `purchase.order.update` |
+| (Removed) Unapprove | — | — | — | — | — | DEC-STATUS-001: 不再单独动作 |
+| (Removed) Void | — | — | — | — | — | DEC-STATUS-001: 由 Cancel 承担 |
 
 ---
 
@@ -457,12 +481,22 @@ actionable list. Most blocking:
 | `PURCHASE_ORDER_REQUIREMENT_DISCOVERY.md` | NEW_PROJECT_DISCOVERY | confirm list |
 | `ARCHITECTURE_RULES.md` | NEW_PROJECT_GOVERNANCE | hard rules |
 | `FOUNDATION_BOUNDARY.md` | NEW_PROJECT_GOVERNANCE | reserved items |
+| `GULIERP_MODULE_INDEPENDENCE_RULE.md` | NEW_PROJECT_GOVERNANCE | module isolation (FROZEN) |
+| `META_GULI_GOVERNANCE_V1.md` | NEW_PROJECT_GOVERNANCE | meta governance (FROZEN) |
+| `G1A_DECISIONS_V1.md` | USER_CONFIRMED | 10 user decisions at G1A-FINAL |
 | `DEV_METADATA_REVERSE_ENGINEERING_REPORT.md` | DEV_METADATA | 采购管理 step list |
 | `DEV_QUALITY_SPEC.md` | DEV_RELATION | QMS touch points |
 | `DEV_INVENTORY_SPEC.md` | DEV_RELATION | GR integration |
 | `DEV_PRODUCTION_SPEC.md` | DEV_RELATION | V1.5+ MRP touch |
 | `DEV_SECURITY_MODEL_ANALYSIS.md` | DEV_RELATION | action permission |
-| (none USER_CONFIRMED) | — | **gap — see OQ-PO-*** |
 
-**No `USER_CONFIRMED` evidence in current source set.** Spec is a
-structured input for UX prototype and user decisions, not frozen truth.
+**G1A-FINAL USER_CONFIRMED items (Frozen)**:
+
+| Decision | Items promoted | Spec section |
+|---|---|---|
+| DEC-PO-001 (PR 可选) | §0 / §2 header / §6.1 / §6.2 / §6.4 #9 / §7 AttachRequisition | §2, §6, §7 |
+| DEC-PO-001 (Over-receive 0% default) | L15 `OverReceiveTolerancePct` default = 0; per Company/Supplier Policy override | §4.3 L15 |
+| DEC-PO-001 (QC by Item Policy) | H29 default = `ItemWarehousePolicy.QualityInspectionRequired` (not global) | §3.6 H29 |
+| DEC-PO-001 (Receiving Warehouse header+line) | H24 + L26 = header default + line override | §3.5 H24, §4.5 L26 |
+| DEC-STATUS-001 (3D state) | §6 (entire) | §6 |
+| DEC-MODULE-001 (no cross-module infra) | §8 (relations — PO→GR via event, not direct infra) | §8 |
