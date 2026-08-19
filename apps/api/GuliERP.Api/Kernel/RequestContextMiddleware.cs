@@ -40,8 +40,26 @@ public sealed class RequestContextMiddleware
             ? suppliedRequestId
             : Guid.NewGuid().ToString("N");
 
-        // 2. Resolve trace id (W3C Activity).
-        var traceId = Activity.Current?.TraceId.ToString() ?? string.Empty;
+        // 2. Resolve trace id (W3C Activity) with a stable per-request fallback.
+        //
+        //    G2-002R1 fix: when there is no upstream W3C propagation, or when
+        //    Activity.Current exists but its TraceId is the default (all-zero),
+        //    the prior code emitted an empty X-Trace-Id header + an empty
+        //    traceId in ProblemDetails + an empty TraceId in the logging
+        //    scope. That broke the G2-002R1 §五 TEST 3 / TEST 4 / TEST 5
+        //    invariants ("traceId non-empty in all surfaces").
+        //
+        //    The fallback is a LOCAL correlation id (32 hex chars) — NOT a
+        //    W3C trace context. It satisfies the per-request stability and
+        //    uniqueness contract that ProblemDetails, response headers, and
+        //    logging scope rely on. Operators who care about full distributed
+        //    tracing should propagate the W3C `traceparent` header upstream;
+        //    this fallback is the degraded mode for environments that do not.
+        var w3cTraceId = Activity.Current?.TraceId ?? default;
+        var hasW3cTraceId = !w3cTraceId.Equals(default);
+        string traceId = hasW3cTraceId
+            ? w3cTraceId.ToHexString()
+            : ActivityTraceId.CreateRandom().ToHexString();
 
         // 3. Push context.
         var rc = new RequestContext(requestId, traceId, DateTimeOffset.UtcNow);

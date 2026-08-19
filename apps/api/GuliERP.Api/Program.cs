@@ -2,6 +2,7 @@ using GuliERP.Api;
 using GuliERP.Api.Kernel;
 using GuliERP.Foundation;
 using GuliERP.Foundation.Kernel;
+using TestValidationRequest = GuliERP.Api.Kernel.TestEndpoints.TestValidationRequest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -96,7 +97,49 @@ builder.Services.AddGuliErpFoundation(connectionString);
 //     with the GuliERP extensions (code / requestId / traceId). No stack
 //     trace / SQL / connection string / password / token is ever in the
 //     response body.
-builder.Services.AddProblemDetails();
+//
+//     The ProblemDetailsOptions.CustomizeProblemDetails callback runs
+//     for every ProblemDetails response (4xx, 5xx, validation) so the
+//     GuliERP extensions are automatically attached. The callback reads
+//     the current request's RequestContext (set by
+//     RequestContextMiddleware) and copies RequestId + TraceId into the
+//     extensions bag, plus a stable ErrorCodes value (validation_failed
+//     for 400, route_not_found for 404, internal_error for 5xx).
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        var problem = context.ProblemDetails;
+        if (problem is null)
+        {
+            return;
+        }
+
+        // Skip if a Foundation handler already added extensions.
+        if (problem.Extensions.ContainsKey(ProblemDetailsExtensions.CodeKey))
+        {
+            return;
+        }
+
+        var http = context.HttpContext;
+        var rc = http.RequestServices
+            .GetService<IRequestContextAccessor>()
+            ?.Current;
+
+        var code = problem.Status switch
+        {
+            StatusCodes.Status400BadRequest => ErrorCodes.ValidationFailed,
+            StatusCodes.Status404NotFound => ErrorCodes.RouteNotFound,
+            StatusCodes.Status500InternalServerError => ErrorCodes.InternalError,
+            _ => ErrorCodes.InternalError,
+        };
+
+        problem.WithGuliErpExtensions(
+            code,
+            rc?.RequestId,
+            rc?.TraceId);
+    };
+});
 builder.Services.AddExceptionHandler<FoundationExceptionHandler>();
 
 // --- 6. ASP.NET Core health checks (native, G2-001 preserved) ---
@@ -168,6 +211,62 @@ app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.Health
 //     that proves the API v1 routing convention works. No auth, no DB,
 //     no envelope wrapper.
 app.MapFoundationSystemEndpoints();
+
+// --- 11b. G2-002R1 test-only endpoints (config-gated) ---
+//     These two endpoints exist ONLY to let the Foundation Kernel
+//     integration tests trigger the real ASP.NET Core validation + 500
+//     pipelines. They are gated by `GuliERP:TestEndpoints:Enable` (off
+//     by default; only the WebApplicationFactory tests turn this on via
+//     `WithWebHostBuilder.UseSetting("GuliERP:TestEndpoints:Enable",
+//     "true")`). The Production host never has the flag set, so these
+//     routes do not exist there.
+//
+//     Why not /__test/throw + /__test/validation in production code?
+//     The brief §15 #8 explicitly forbids /throw /test-error /debug-
+//     exception in the Production surface. By gating with a config
+//     flag we get the ASP.NET Core pipeline to be tested without ever
+//     exposing the endpoints in production.
+if (app.Configuration.GetValue<bool>("GuliERP:TestEndpoints:Enable", false))
+{
+    var testGroup = app.MapGroup("/__test").WithTags("TestOnly-DisabledInProduction");
+
+    // POST /__test/validation — drives the standard ASP.NET Core
+    // ValidationProblemDetails contract. The DTO is decorated with
+    // [Required] / [Range] so empty name + negative age fail. The
+    // endpoint surfaces ModelState via Results.ValidationProblem
+    // (RFC 7807 / 9457). Our RequestContextMiddleware runs first and
+    // attaches X-Request-Id / X-Trace-Id; the JSON body inherits the
+    // requestId / traceId via the GuliERP extensions attached after
+    // Results.ValidationProblem.
+    testGroup.MapPost("/validation", (TestValidationRequest req) =>
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (string.IsNullOrWhiteSpace(req.Name))
+        {
+            errors["name"] = new[] { "The Name field is required." };
+        }
+        if (req.Age < 0)
+        {
+            errors["age"] = new[] { "The field Age must be between 0 and 150." };
+        }
+        if (errors.Count == 0)
+        {
+            return Results.Ok(new { ok = true });
+        }
+        return Results.ValidationProblem(errors);
+    });
+
+    // GET /__test/throw — drives the IExceptionHandler pipeline.
+    // Throws a plain InvalidOperationException; FoundationExceptionHandler
+    // catches it, logs the full exception with RequestId/TraceId, and
+    // returns 500 + application/problem+json with code=internal_error.
+    // The response MUST NOT carry any stack frame, password,
+    // connection string, or internal path.
+    testGroup.MapGet("/throw", () =>
+    {
+        throw new InvalidOperationException("synthetic test exception (test-only endpoint)");
+    });
+}
 
 // --- 12. Last-resort 404 → ProblemDetails (G2-002 §8) ---
 //     Placed AFTER endpoint mapping so it only fires for genuinely
