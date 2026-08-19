@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Xunit;
 
 namespace GuliERP.Foundation.IntegrationTests;
@@ -21,6 +22,21 @@ namespace GuliERP.Foundation.IntegrationTests;
 /// <c>DiagnosticResponseWriter</c> in <c>HealthCheckHelpers</c>). The tests
 /// parse the JSON <c>status</c> field rather than asserting on the raw
 /// string so the contract stays robust to future diagnostic additions.
+///
+/// G2-003V1 note: the original implementation used
+/// <c>builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString)</c>.
+/// That call writes to the <see cref="IWebHostBuilder"/>'s in-memory
+/// configuration source, which sits BELOW the default
+/// <c>AddEnvironmentVariables()</c> source in the precedence chain. When
+/// the Operator (or any caller) has set
+/// <c>ConnectionStrings__GuliERP</c> in the process environment, the
+/// env-var value wins and the bad-DB fixture is silently overridden —
+/// the test then sees a real DB and <c>/health/ready</c> returns 200
+/// instead of the expected 503. The fix is to add an in-memory
+/// configuration provider INSIDE <c>ConfigureAppConfiguration</c>, which
+/// is appended to the END of the config sources and therefore has the
+/// highest priority. This is the standard ASP.NET Core integration-test
+/// pattern for forcing a test-only configuration value.
 /// </summary>
 public sealed class FoundationHostHealthFactsBadDb : IClassFixture<WebApplicationFactory<Program>>
 {
@@ -35,11 +51,20 @@ public sealed class FoundationHostHealthFactsBadDb : IClassFixture<WebApplicatio
     public async Task LiveHealthyWithBadDb()
     {
         // The /health/live endpoint must NOT depend on the database and must
-        // therefore still return Healthy when the DB is unreachable.
+        // therefore still return Healthy when the DB is unreachable. The
+        // bad connection here is forced via the in-memory config source
+        // appended LAST in ConfigureAppConfiguration, so it overrides any
+        // caller-supplied ConnectionStrings__GuliERP env var.
         using var factory = _factory.WithWebHostBuilder(builder =>
         {
-            builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString);
             builder.UseEnvironment("Production");
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:GuliERP"] = BadConnectionString,
+                });
+            });
         });
 
         var client = factory.CreateClient();
@@ -56,8 +81,14 @@ public sealed class FoundationHostHealthFactsBadDb : IClassFixture<WebApplicatio
     {
         using var factory = _factory.WithWebHostBuilder(builder =>
         {
-            builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString);
             builder.UseEnvironment("Production");
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:GuliERP"] = BadConnectionString,
+                });
+            });
         });
 
         var client = factory.CreateClient();
