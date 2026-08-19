@@ -1,5 +1,7 @@
 using GuliERP.Api;
+using GuliERP.Api.Kernel;
 using GuliERP.Foundation;
+using GuliERP.Foundation.Kernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -46,16 +48,25 @@ builder.Logging.AddSimpleConsole(options =>
     options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ ";
 });
 
-// --- 3. Foundation services ---
-//     Per docs/governance/GULIERP_MODULE_INDEPENDENCE_RULE.md §2 the Foundation
-//     exposes a single AddGuliErpFoundation() extension that wires
-//     FoundationDbContext + IFoundationBoundary. The Host MUST NOT register
-//     DbContext or migration logic directly; that lives in the Foundation module.
-var connectionString = builder.Configuration.GetConnectionString("GuliERP")
-    ?? throw new InvalidOperationException(
-        "ConnectionStrings:GuliERP is required. Set it via appsettings.json, " +
-        "GULIERP_ConnectionStrings__GuliERP env var, or user secrets. " +
-        "See docs/verification/G2_001_HOST_POSTGRESQL_REPORT.md §9 for the contract.");
+// --- 3. Configuration validation (G2-002 §11) ---
+//     Fail Early on the one configuration value the host genuinely needs:
+//       ConnectionStrings:GuliERP — must exist and be non-empty.
+//     The host never trusts `Password=CHANGE_ME` to be a real production
+//     credential; the operator must inject the real password via
+//     ConnectionStrings__GuliERP env var. The dev appsettings file ships
+//     `Password=CHANGE_ME` and the host will fail-fast if the env var is
+//     missing in Production (G2-001 fail-fast contract — preserved).
+var connectionString = builder.Configuration.GetConnectionString("GuliERP");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    // Throw synchronously at host construction; this becomes a startup
+    // failure with a clear message — NOT a runtime 500. Per G2-001 §15
+    // "如果关键配置完全缺失:应 fail-fast 并给明确开发错误".
+    throw new InvalidOperationException(
+        "Configuration validation failed: ConnectionStrings:GuliERP is missing or empty. " +
+        "Set it via appsettings.json, GULIERP_ConnectionStrings__GuliERP env var, " +
+        "or user secrets. See docs/verification/G2_001_HOST_POSTGRESQL_REPORT.md §9 for the contract.");
+}
 
 // Log the redacted connection string so the operator can see what the host
 // actually resolved. This is critical for G2-001R1 — the G2-001 first
@@ -71,23 +82,34 @@ startupLogger.LogInformation(
     "(password redacted; if you see Password=CHANGE_ME the env var was not picked up).",
     HealthCheckHelpers.RedactConnectionString(connectionString));
 
+// --- 4. Foundation services ---
+//     Per docs/governance/GULIERP_MODULE_INDEPENDENCE_RULE.md §2 the Foundation
+//     exposes a single AddGuliErpFoundation() extension that wires
+//     FoundationDbContext + IFoundationBoundary + IRequestContextAccessor
+//     (G2-002). The Host MUST NOT register DbContext or migration logic
+//     directly; that lives in the Foundation module.
 builder.Services.AddGuliErpFoundation(connectionString);
 
-// --- 4. ASP.NET Core health checks (native) ---
+// --- 5. ProblemDetails + Exception Handler (G2-002 §8) ---
+//     Native ASP.NET Core 10 IExceptionHandler chain. The Foundation
+//     handler maps unhandled exceptions to RFC 9457 / 7807 ProblemDetails
+//     with the GuliERP extensions (code / requestId / traceId). No stack
+//     trace / SQL / connection string / password / token is ever in the
+//     response body.
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<FoundationExceptionHandler>();
+
+// --- 6. ASP.NET Core health checks (native, G2-001 preserved) ---
 //     Per docs/architecture/G2_FOUNDATION_ARCHITECTURE_V1_DRAFT.md §5 / §11:
 //       /health/live  — Host process is alive. Never fails on DB outage.
 //       /health/ready — Host can serve traffic. Fails if PostgreSQL is unreachable.
 //     The readiness probe is a DI-scoped DbContext probe; the live probe
 //     is a no-op "self" check.
-//     AddDbContextCheck<T> returns Unhealthy on exception, but the default
-//     response writer only emits "Unhealthy" — no failure reason. G2-001R1
-//     introduces DiagnosticResponseWriter (see HealthCheckHelpers.cs) so
-//     the operator can see the actual exception type/message in the 503 body.
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy("Host process alive."), tags: new[] { "live" })
     .AddCheck<FoundationDbReadinessHealthCheck>("foundation-db", tags: new[] { "ready" });
 
-// --- 5. OpenAPI (dev only) ---
+// --- 7. OpenAPI (dev only) ---
 //     Per task §7: "可以启用 Development OpenAPI,但不是本 Goal 核心."
 //     Kept in Development to keep the Production surface minimal.
 if (builder.Environment.IsDevelopment())
@@ -98,24 +120,35 @@ if (builder.Environment.IsDevelopment())
 
 var app = builder.Build();
 
-// --- 6. Middleware pipeline (order is sacred) ---
-//     Per docs/architecture/G2_FOUNDATION_ARCHITECTURE_V1_DRAFT.md §5.
-//     G2-001 only wires the surface relevant to "prove the platform":
-//       request-id + exception boundary + health probes.
-//     AuthN / tenant-scope / audit-scope middleware belong to G2-002+ and are NOT
-//     registered here (per task §7 "禁止本阶段实现 User / Role / JWT / ... / Audit Domain").
+// --- 8. Middleware pipeline (order is sacred, G2-002) ---
+//     Per docs/architecture/G2_FOUNDATION_ARCHITECTURE_V1_DRAFT.md §9
+//     adapted for the G2-002 Cross-Cutting Baseline (no Identity /
+//     Tenant / Auth yet — those are reserved for a post-G2-002 Goal).
+//
+//     Pipeline order (each line is non-negotiable):
+//       1. RequestContextMiddleware   — establishes RequestId / TraceId /
+//                                       RequestContext, sets response
+//                                       headers BEFORE downstream code runs.
+//       2. UseExceptionHandler         — catches unhandled exceptions,
+//                                       delegates to FoundationExceptionHandler.
+//       3. RequestLoggingMiddleware    — BeginScope(RequestId, TraceId),
+//                                       one structured log line per request.
+//       4. UseRouting                  — (built-in) minimal API routing.
+//       5. (endpoints are mapped below)
+//       6. RouteNotFoundMiddleware     — last-resort 404 → ProblemDetails.
+
+app.UseMiddleware<RequestContextMiddleware>();
+app.UseExceptionHandler();   // delegates to FoundationExceptionHandler
+app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseRouting();
+
+// --- 9. OpenAPI (dev) ---
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-// --- 7. Health endpoints (with diagnostic response writer) ---
-//     Per task §14: live = always Healthy; ready = DB connectivity.
-//     The DiagnosticResponseWriter (HealthCheckHelpers.cs) is what the
-//     G2-001R1 retry uses to expose the actual readiness failure reason.
-//     It writes a JSON body with: overall status, the per-check name,
-//     status, description, and exception type/message. No password, no
-//     connection string, no token is ever included.
+// --- 10. Health endpoints (G2-001 preserved) ---
 app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     Predicate = registration => registration.Tags.Contains("live"),
@@ -130,13 +163,25 @@ app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.Health
     ResponseWriter = HealthCheckHelpers.DiagnosticResponseWriter,
 });
 
-// --- 8. Root / banner (dev convenience) ---
+// --- 11. Foundation system endpoint (G2-002 §12) ---
+//     /api/v1/system/ping — a safe, no-business-semantics liveness ping
+//     that proves the API v1 routing convention works. No auth, no DB,
+//     no envelope wrapper.
+app.MapFoundationSystemEndpoints();
+
+// --- 12. Last-resort 404 → ProblemDetails (G2-002 §8) ---
+//     Placed AFTER endpoint mapping so it only fires for genuinely
+//     unmatched paths.
+app.UseMiddleware<RouteNotFoundMiddleware>();
+
+// --- 13. Root / banner ---
 app.MapGet("/", () => Results.Text(
-    "GuliERP Api (G2-001)\n" +
+    "GuliERP Api (G2-001 + G2-002)\n" +
     "Endpoints:\n" +
-    "  GET /health/live   Host process liveness\n" +
-    "  GET /health/ready  PostgreSQL readiness\n" +
-    (app.Environment.IsDevelopment() ? "  GET /openapi/v1.json  OpenAPI spec (dev only)\n" : ""),
+    "  GET /health/live            Host process liveness\n" +
+    "  GET /health/ready           PostgreSQL readiness\n" +
+    "  GET /api/v1/system/ping     Foundation liveness + version\n" +
+    (app.Environment.IsDevelopment() ? "  GET /openapi/v1.json        OpenAPI spec (dev only)\n" : ""),
     "text/plain"));
 
 app.Run();
