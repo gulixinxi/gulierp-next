@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/apps/" />
+  <Folder Name="/apps/api/">
+    <Project Path="apps/api/GuliERP.Api/GuliERP.Api.csproj" />
+  </Folder>
+  <Folder Name="/modules/" />
+  <Folder Name="/modules/foundation/">
+    <Project Path="modules/foundation/GuliERP.Foundation/GuliERP.Foundation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GuliERP.Foundation.IntegrationTests/GuliERP.Foundation.IntegrationTests.csproj" />
+    <Project Path="tests/GuliERP.Foundation.Tests/GuliERP.Foundation.Tests.csproj" />
+  </Folder>
+</Solution>
