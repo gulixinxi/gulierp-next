@@ -4,16 +4,15 @@
 
 | Field | Value |
 |---|---|
-| Goal | **G2-001 — Host & PostgreSQL** |
-| Gate | `G2_001_HOST_POSTGRESQL_VERIFIED_CODE_READY_OPERATOR_RUNTIME_PENDING` |
-| Status | **Active — Mavis-driven code-side PASS; Operator-driven real-DB round PENDING** |
-| Entry Gate | `GULIERP_CORE_BUSINESS_SPEC_FROZEN` |
-| Scope | Minimal ASP.NET Core host + FoundationDbContext (schema=foundation) + `G2001_InitializeFoundationSchema` migration + `/health/live` + `/health/ready` + 7 integration tests + operator evidence pack |
-| Non-goals | All business modules (Sales/Purchase/Inventory); real auth/JWT; permission; tenant/company/org/user/role entities; audit; dictionary; workflow; sales API; any Admin.NET / Furion / SqlSugar |
-| Verification | `docs/verification/G2_001_HOST_POSTGRESQL_REPORT.md` (22 sections, 33 KB) |
-| Operator handoff | `tools/dev/g2-001-operator-evidence.ps1` |
-| Hard Stop | G2-001 does NOT auto-advance to G2-002. The Operator must (a) run the evidence pack, (b) update this registry to `G2_001_HOST_POSTGRESQL_VERIFIED` before the next session can begin G2-002. |
-| Forbidden follow-up without Operator sign-off | `G2-002 Foundation Kernel` (any identity/auth/permission work) |
+| Goal | **G2-002 — Foundation Kernel** |
+| Gate | `G2_001_HOST_POSTGRESQL_VERIFIED` (CLOSED) → entry gate for G2-002 |
+| Status | **HALTED** — Gate advanced by Operator Acceptance on 2026-08-19; Mavis must NOT auto-start G2-002 implementation. Awaiting explicit next-session kickoff. |
+| Entry Gate | `G2_001_HOST_POSTGRESQL_VERIFIED` (G2-001 closure) |
+| Operator Acceptance Date | 2026-08-19 (Asia/Taipei) |
+| Scope (deferred — DO NOT start) | **Foundation cross-cutting baseline ONLY**: Exception Boundary, Unified API Error Contract, Request Context (RequestId / TraceId), Logging baseline, Configuration validation, API conventions / versioning baseline, Validation error response, minimum Foundation abstractions. **G2-002 explicitly does NOT include Tenant / Company / Organization / User / Role / JWT / Auth / Authorization / Permission / DataScope / Menu-Button permission / Audit business model / Dictionary business model** — those are reserved for separate later Goals (identity kernel goal is post-G2-002 and out of scope here). |
+| Non-goals (deferred — DO NOT start) | All business modules (Sales/Purchase/Inventory); Tenant / Company / Organization / User / Role tables (reserved for a dedicated Identity Kernel Goal, post-G2-002); JWT; Refresh Token; Authentication; Authorization; Permission; DataScope; Menu/Button permission; Audit business model; Dictionary business model; workflow; sales API; any Admin.NET / Furion / SqlSugar |
+| Hard Stop | Mavis must NOT begin G2-002 implementation in this session. G2-002 kickoff requires a fresh session with explicit user authorization. |
+| Previous Goal Verification | `docs/verification/G2_001_HOST_POSTGRESQL_REPORT.md` (25 sections, including R1 history §24 + Operator Evidence §26) |
 
 ## Previous Active Goal (superseded)
 
@@ -42,28 +41,35 @@
 | No .NET / npm operations | PASS | task G1A-FINAL §一 forbids; no build attempted |
 | Git commit/tag/push/rebase | NONE | task §九 forbids; user to commit when ready |
 
-## G2-001 — Host & PostgreSQL (active)
+## G2-001 — Host & PostgreSQL (CLOSED — Operator-verified on 2026-08-19)
 
 | Check | Status | Note |
 |---|---|---|
 | .NET 10 SDK reachable | PASS | `D:\guli\gulierp\.dotnet\dotnet.exe` SDK 10.0.400; `global.json` 10.0.100 latestFeature matches |
 | Host build (Release) | PASS | 0 warnings / 0 errors; `GuliERP.Api.dll` produced |
 | Migration generated | PASS | `20260819103150_G2001_InitializeFoundationSchema.cs` author-written `CREATE SCHEMA IF NOT EXISTS foundation;` |
-| Migration apply to real PG | **PENDING Operator** | Mavis cannot inject PGPASSWORD; `tools/dev/g2-001-operator-evidence.ps1` provided |
-| foundation schema + EF Migrations History | **PENDING Operator** | `FoundationDatabaseFacts` will assert once real DB available |
-| Integration Tests (real DB path) | SKIP → PENDING Operator | 5 tests with `[Fact(Skip = "ConnectionStrings__GuliERP env var not set")]` |
-| `/health/live` with bad DB | PASS (Round 1 + Round 2) | Returns 200 Healthy even when PostgreSQL unreachable |
-| `/health/ready` with bad DB | PASS (Round 1 + Round 2) | Returns 503 Unhealthy — readiness failure boundary proven |
-| `/health/live` with real DB | **PENDING Operator** | `FoundationHostHealthFacts.LiveHealthyWithGoodDb` |
-| `/health/ready` with real DB | **PENDING Operator** | `FoundationHostHealthFacts.ReadyHealthyWithGoodDb` |
-| Runtime Round 1 (real DB) | **PENDING Operator** | `g2-001-operator-evidence.ps1` Step 4 |
-| Runtime Round 2 (real DB) | **PENDING Operator** | `g2-001-operator-evidence.ps1` Step 5 |
+| Migration apply to real PG | **PASS (Operator 2026-08-19)** | `dotnet ef database update` succeeded; database up-to-date; `__ef_migrations_history` row for `20260819103150_G2001_InitializeFoundationSchema` present |
+| foundation schema + EF Migrations History | **PASS (Operator 2026-08-19)** | `SELECT 1 FROM information_schema.schemata WHERE schema_name='foundation'` returns 1; `foundation.__ef_migrations_history` table exists with the expected row |
+| Integration Tests (real DB path) | **7/7 PASS / 0 failed / 0 skipped (Operator 2026-08-19)** | `FoundationDatabaseFacts` (3 raw-DB) + `FoundationHostHealthFactsGoodDb` (2 host) + `FoundationHostHealthFactsBadDb` (2 host) all execute; R1 loud-fail design confirmed working |
+| `/health/live` with real DB | **PASS (Operator 2026-08-19, Round 1 + Round 2)** | 200 Healthy; `self` check Healthy; `foundation-db` Healthy |
+| `/health/ready` with real DB | **PASS (Operator 2026-08-19, Round 1 + Round 2)** | 200 Healthy; `foundation-db` check `SELECT 1 OK against Host=192.168.2.228` |
+| Bad-DB negative round | **PASS (Operator 2026-08-19)** | `live=200 Healthy` + `ready=503 Unhealthy` with real `Npgsql.NpgsqlException: Failed to connect to 127.0.0.1:1` in JSON body |
+| Runtime Round 1 (real DB) | **PASS (Operator 2026-08-19)** | `g2-001-operator-evidence.ps1` Step 4; live=200/ready=200 |
+| Runtime Round 2 (real DB) | **PASS (Operator 2026-08-19)** | `g2-001-operator-evidence.ps1` Step 5; live=200/ready=200; restart round-trip consistent |
 | Secret handling | PASS | `appsettings.{,Development}.json` use `Password=CHANGE_ME`; no real password in any tracked file; `git diff --check` exit 0 |
 | Forbidden patterns | PASS | Scan found no `UseInMemoryDatabase` / `UseSqlite` / `EnsureCreated` / `Admin.NET` / `Furion` / `SqlSugar` in code (only mentioned in comments as forbidden) |
 | VOL Pattern Reuse | DOCUMENTED | Single-rejected-pattern (TenancyManager empty fn) explicitly avoided; composition-root shape adopted |
-| Gate | `G2_001_HOST_POSTGRESQL_VERIFIED_CODE_READY_OPERATOR_RUNTIME_PENDING` | Operator must flip to `G2_001_HOST_POSTGRESQL_VERIFIED` after running the evidence pack |
-| Next Goal | **G2-002 Foundation Kernel (Identity)** | HALTED — Operator must sign off before Mavis can begin |
-| Forbidden auto-advance | G2-002 cannot start until Operator flips the gate; per META_GULI HR-7 no silent scope expansion |
+| Gate | **`G2_001_HOST_POSTGRESQL_VERIFIED`** | Operator-flipped on 2026-08-19; G2-001 formally CLOSED |
+| Operator Acceptance Date | 2026-08-19 (Asia/Taipei) | Recorded in `docs/verification/G2_001_HOST_POSTGRESQL_REPORT.md` §26 |
+| Next Goal | **G2-002 Foundation Kernel** | HALTED — explicit next-session kickoff required; Mavis MUST NOT auto-start |
+
+### G2-001 Non-Blocking Follow-up Items (post-CLOSURE)
+
+| # | Item | Owner | Note |
+|---|---|---|---|
+| F1 | **Deployment/Migration Credential vs Runtime Credential separation** | G2-002+ | The `gulidata` role currently has `CREATEDB` privilege (proved by Operator-side `CREATE DATABASE gulierp_g2_001`). Runtime application credential should not need this privilege. Split into (a) deployment/migration credential with `CREATEDB`/`ALTER` for CI/CD schema work, and (b) runtime credential with only `CONNECT/SELECT/INSERT/UPDATE/DELETE` for the host. Recorded as R-G2-001-CREDENTIAL-PRIVILEGE in the verification report §20/§24.6. |
+| F2 | **PostgreSQL integration test profile (local + CI)** | G2-002+ or a future test-infra Goal | The current Operator evidence pack (`g2-001-operator-evidence.ps1`) injects PGPASSWORD at runtime; a long-term local/CI profile is needed so the integration tests can run unattended in (a) developer laptops (Docker compose or local PG service) and (b) CI (service container or testcontainer). Out of scope for G2-001 because the Goal brief explicitly accepts Mavis-cannot-inject PGPASSWORD. |
+| F3 | **`global.json` / .NET 10 SDK roll-forward policy** | G2-002+ or a future dev-env Goal | `global.json` pins `10.0.100` with `rollForward: latestFeature`, which currently resolves to SDK 10.0.400 at `D:\guli\gulierp\.dotnet\dotnet.exe`. The system PATH dotnet at `C:\Program Files\dotnet\dotnet.exe` is host-only without SDK. A unified policy (where the SDK lives, how roll-forward resolves in CI vs dev) needs to be documented; the current state is "works because Operator happens to have the SDK in a known path". |
 
 ## G1A-FINAL Residual Risks (post-FREEZE)
 
@@ -138,10 +144,11 @@
 
 | Field | Value |
 |---|---|
-| Goal | **G1B-1 — SalesOrder High-Fidelity Static UX Prototype** |
-| Executor | **TRAE** (not Mavis) |
-| Entry Gate | `GULIERP_CORE_BUSINESS_SPEC_FROZEN` (current Gate) |
-| Scope | SalesOrder only: List + Create/Edit + Detail. Static Vue 3 / Element Plus. Mock data only. NO API. NO DB. NO real Sales Service. |
-| Non-goals | All other modules. All backend code. Real data. |
-| Hard Stop | G1B-1 must be approved as `SALES_ORDER_UX_APPROVED` by the user before any further UI prototype (PO/Inventory). G1B-1 must NOT auto-advance to G1B-2. |
-| Forbidden follow-up without UX approval | `G1B-2` (Purchase/Inventory UX), `G1C` (API contract), `G1D`+ (implementation) |
+| Goal | **G2-002 — Foundation Kernel** |
+| Executor | Mavis (when explicitly kicked off in a fresh session) |
+| Entry Gate | `G2_001_HOST_POSTGRESQL_VERIFIED` (achieved 2026-08-19) |
+| Scope (DO NOT auto-start in this session) | **Foundation cross-cutting baseline ONLY**: Exception Boundary, Unified API Error Contract, Request Context (RequestId / TraceId), Logging baseline, Configuration validation, API conventions / versioning baseline, Validation error response, minimum Foundation abstractions. **G2-002 explicitly does NOT include Tenant / Company / Organization / User / Role / JWT / Auth / Authorization / Permission / DataScope / Menu-Button permission / Audit business model / Dictionary business model** — those are reserved for separate later Goals (identity kernel goal is post-G2-002 and out of scope here). |
+| Non-goals (deferred) | All business modules (Sales/Purchase/Inventory); Tenant / Company / Organization / User / Role tables (reserved for a dedicated Identity Kernel Goal, post-G2-002); JWT; Refresh Token; Authentication; Authorization; Permission; DataScope; Menu/Button permission; Audit business model; Dictionary business model; workflow; sales API; any Admin.NET / Furion / SqlSugar |
+| Hard Stop | G2-002 must NOT auto-start in the current Mavis session. Mavis must wait for an explicit next-session kickoff. |
+| Forbidden follow-up without user authorization | `G2-002` implementation (any Tenant / Company / Organization / User / Role table, ITenantContext / ICompanyContext / IOrganizationContext, UseTenantScope middleware, JWT, refresh token, IUserPasswordHasher, authentication, authorization, permission, DataScope, menu/button permission, audit business model, dictionary business model, or seed-data work) |
+| Pre-G2-002 (G2-001 closure follow-up) | F1: Deployment/Migration Credential vs Runtime Credential split. F2: PostgreSQL integration test profile (local + CI). F3: `global.json` / .NET 10 SDK roll-forward policy. None of these block G2-002; all three are tracked in the G2-001 verification report. |
