@@ -4,6 +4,21 @@
 
 | Field | Value |
 |---|---|
+| Goal | **G2-001 — Host & PostgreSQL** |
+| Gate | `G2_001_HOST_POSTGRESQL_VERIFIED_CODE_READY_OPERATOR_RUNTIME_PENDING` |
+| Status | **Active — Mavis-driven code-side PASS; Operator-driven real-DB round PENDING** |
+| Entry Gate | `GULIERP_CORE_BUSINESS_SPEC_FROZEN` |
+| Scope | Minimal ASP.NET Core host + FoundationDbContext (schema=foundation) + `G2001_InitializeFoundationSchema` migration + `/health/live` + `/health/ready` + 7 integration tests + operator evidence pack |
+| Non-goals | All business modules (Sales/Purchase/Inventory); real auth/JWT; permission; tenant/company/org/user/role entities; audit; dictionary; workflow; sales API; any Admin.NET / Furion / SqlSugar |
+| Verification | `docs/verification/G2_001_HOST_POSTGRESQL_REPORT.md` (22 sections, 33 KB) |
+| Operator handoff | `tools/dev/g2-001-operator-evidence.ps1` |
+| Hard Stop | G2-001 does NOT auto-advance to G2-002. The Operator must (a) run the evidence pack, (b) update this registry to `G2_001_HOST_POSTGRESQL_VERIFIED` before the next session can begin G2-002. |
+| Forbidden follow-up without Operator sign-off | `G2-002 Foundation Kernel` (any identity/auth/permission work) |
+
+## Previous Active Goal (superseded)
+
+| Field | Value |
+|---|---|
 | Goal | G1A-FINAL — Operator Decision Writeback & Business Spec Freeze |
 | Gate | `GULIERP_CORE_BUSINESS_SPEC_FROZEN` |
 | Status | **FROZEN** — 10 USER_CONFIRMED decisions; spec & governance written back |
@@ -26,6 +41,29 @@
 | Source code unchanged | PASS | Only spec/governance/decision docs edited; no .cs/.ts/.vue/.sql touched |
 | No .NET / npm operations | PASS | task G1A-FINAL §一 forbids; no build attempted |
 | Git commit/tag/push/rebase | NONE | task §九 forbids; user to commit when ready |
+
+## G2-001 — Host & PostgreSQL (active)
+
+| Check | Status | Note |
+|---|---|---|
+| .NET 10 SDK reachable | PASS | `D:\guli\gulierp\.dotnet\dotnet.exe` SDK 10.0.400; `global.json` 10.0.100 latestFeature matches |
+| Host build (Release) | PASS | 0 warnings / 0 errors; `GuliERP.Api.dll` produced |
+| Migration generated | PASS | `20260819103150_G2001_InitializeFoundationSchema.cs` author-written `CREATE SCHEMA IF NOT EXISTS foundation;` |
+| Migration apply to real PG | **PENDING Operator** | Mavis cannot inject PGPASSWORD; `tools/dev/g2-001-operator-evidence.ps1` provided |
+| foundation schema + EF Migrations History | **PENDING Operator** | `FoundationDatabaseFacts` will assert once real DB available |
+| Integration Tests (real DB path) | SKIP → PENDING Operator | 5 tests with `[Fact(Skip = "ConnectionStrings__GuliERP env var not set")]` |
+| `/health/live` with bad DB | PASS (Round 1 + Round 2) | Returns 200 Healthy even when PostgreSQL unreachable |
+| `/health/ready` with bad DB | PASS (Round 1 + Round 2) | Returns 503 Unhealthy — readiness failure boundary proven |
+| `/health/live` with real DB | **PENDING Operator** | `FoundationHostHealthFacts.LiveHealthyWithGoodDb` |
+| `/health/ready` with real DB | **PENDING Operator** | `FoundationHostHealthFacts.ReadyHealthyWithGoodDb` |
+| Runtime Round 1 (real DB) | **PENDING Operator** | `g2-001-operator-evidence.ps1` Step 4 |
+| Runtime Round 2 (real DB) | **PENDING Operator** | `g2-001-operator-evidence.ps1` Step 5 |
+| Secret handling | PASS | `appsettings.{,Development}.json` use `Password=CHANGE_ME`; no real password in any tracked file; `git diff --check` exit 0 |
+| Forbidden patterns | PASS | Scan found no `UseInMemoryDatabase` / `UseSqlite` / `EnsureCreated` / `Admin.NET` / `Furion` / `SqlSugar` in code (only mentioned in comments as forbidden) |
+| VOL Pattern Reuse | DOCUMENTED | Single-rejected-pattern (TenancyManager empty fn) explicitly avoided; composition-root shape adopted |
+| Gate | `G2_001_HOST_POSTGRESQL_VERIFIED_CODE_READY_OPERATOR_RUNTIME_PENDING` | Operator must flip to `G2_001_HOST_POSTGRESQL_VERIFIED` after running the evidence pack |
+| Next Goal | **G2-002 Foundation Kernel (Identity)** | HALTED — Operator must sign off before Mavis can begin |
+| Forbidden auto-advance | G2-002 cannot start until Operator flips the gate; per META_GULI HR-7 no silent scope expansion |
 
 ## G1A-FINAL Residual Risks (post-FREEZE)
 
