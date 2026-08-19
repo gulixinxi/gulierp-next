@@ -148,6 +148,9 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
             b.Property(c => c.Status).HasConversion<int>();
             // UNIQUE (TenantId, Code) — Company code unique within Tenant
             b.HasIndex(c => new { c.TenantId, c.Code }).IsUnique().HasDatabaseName("ux_gulierp_company_tenant_code");
+            // FK: Company.TenantId → Tenant.Id (DEC-ID-002; G2-003V2)
+            b.HasOne<Tenant>().WithMany().HasForeignKey(c => c.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
             // FK self-reference for group / subsidiary tree
             b.HasOne<Company>().WithMany().HasForeignKey(c => c.ParentCompanyId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -170,6 +173,12 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
             b.Property(p => p.Status).HasConversion<int>();
             // UNIQUE (CompanyId, Code) — Plant code unique within Company
             b.HasIndex(p => new { p.CompanyId, p.Code }).IsUnique().HasDatabaseName("ux_gulierp_plant_company_code");
+            // FK: Plant.TenantId → Tenant.Id (DEC-ID-018; G2-003V2)
+            b.HasOne<Tenant>().WithMany().HasForeignKey(p => p.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // FK: Plant.CompanyId → Company.Id (DEC-ID-018; G2-003V2)
+            b.HasOne<Company>().WithMany().HasForeignKey(p => p.CompanyId)
+                .OnDelete(DeleteBehavior.Restrict);
             // FK self-reference for sub-plant tree
             b.HasOne<Plant>().WithMany().HasForeignKey(p => p.ParentPlantId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -186,6 +195,12 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
             b.Property(o => o.Status).HasConversion<int>();
             // UNIQUE (CompanyId, Code) — OU code unique within Company
             b.HasIndex(o => new { o.CompanyId, o.Code }).IsUnique().HasDatabaseName("ux_gulierp_org_company_code");
+            // FK: OrganizationUnit.TenantId → Tenant.Id (DEC-ID-005; G2-003V2)
+            b.HasOne<Tenant>().WithMany().HasForeignKey(o => o.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // FK: OrganizationUnit.CompanyId → Company.Id (DEC-ID-005; G2-003V2)
+            b.HasOne<Company>().WithMany().HasForeignKey(o => o.CompanyId)
+                .OnDelete(DeleteBehavior.Restrict);
             // FK self-reference for the tree
             b.HasOne<OrganizationUnit>().WithMany().HasForeignKey(o => o.ParentOrganizationUnitId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -207,6 +222,9 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
             b.HasIndex(u => new { u.TenantId, u.NormalizedUserName })
                 .IsUnique()
                 .HasDatabaseName("ux_gulierp_user_tenant_username");
+            // FK: GuliErpUser.TenantId → Tenant.Id (DEC-ID-003; G2-003V2)
+            b.HasOne<Tenant>().WithMany().HasForeignKey(u => u.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
             b.Property(u => u.ConcurrencyVersion).IsConcurrencyToken();
         });
 
@@ -226,6 +244,9 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
             b.HasIndex(r => new { r.TenantId, r.Code })
                 .IsUnique()
                 .HasDatabaseName("ux_gulierp_role_tenant_code");
+            // FK: GuliErpRole.TenantId → Tenant.Id (DEC-ID-007; G2-003V2)
+            b.HasOne<Tenant>().WithMany().HasForeignKey(r => r.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
             b.Property(r => r.ConcurrencyVersion).IsConcurrencyToken();
         });
 
@@ -249,6 +270,15 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
                 .IsUnique()
                 .HasFilter("\"IsDefault\" = true")
                 .HasDatabaseName("ux_gulierp_user_company_default");
+            // FK: UserCompanyMembership.TenantId → Tenant.Id (DEC-ID-004; G2-003V2)
+            b.HasOne<Tenant>().WithMany().HasForeignKey(m => m.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // FK: UserCompanyMembership.CompanyId → Company.Id (DEC-ID-004; G2-003V2)
+            b.HasOne<Company>().WithMany().HasForeignKey(m => m.CompanyId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // FK: UserCompanyMembership.UserId → AspNetUsers.Id (G2-003V2)
+            b.HasOne<GuliErpUser>().WithMany().HasForeignKey(m => m.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
             b.Property(m => m.ConcurrencyVersion).IsConcurrencyToken();
         });
 
@@ -272,6 +302,18 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
                 .IsUnique()
                 .HasFilter("\"IsPrimary\" = true")
                 .HasDatabaseName("ux_gulierp_user_org_primary");
+            // FK: UserOrganizationMembership.TenantId → Tenant.Id (DEC-ID-006; G2-003V2)
+            b.HasOne<Tenant>().WithMany().HasForeignKey(m => m.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // FK: UserOrganizationMembership.CompanyId → Company.Id (DEC-ID-006; G2-003V2)
+            b.HasOne<Company>().WithMany().HasForeignKey(m => m.CompanyId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // FK: UserOrganizationMembership.UserId → AspNetUsers.Id (G2-003V2)
+            b.HasOne<GuliErpUser>().WithMany().HasForeignKey(m => m.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // FK: UserOrganizationMembership.OrganizationUnitId → OrganizationUnit.Id (DEC-ID-006; G2-003V2)
+            b.HasOne<OrganizationUnit>().WithMany().HasForeignKey(m => m.OrganizationUnitId)
+                .OnDelete(DeleteBehavior.Restrict);
             b.Property(m => m.ConcurrencyVersion).IsConcurrencyToken();
         });
 
@@ -295,6 +337,18 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
             b.HasIndex(a => new { a.TenantId, a.UserId, a.RoleId, a.CompanyId })
                 .IsUnique()
                 .HasDatabaseName("ux_gulierp_user_role");
+            // FK: UserRoleAssignment.TenantId → Tenant.Id (DEC-ID-008; G2-003V2)
+            b.HasOne<Tenant>().WithMany().HasForeignKey(a => a.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // FK: UserRoleAssignment.UserId → AspNetUsers.Id (G2-003V2)
+            b.HasOne<GuliErpUser>().WithMany().HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // FK: UserRoleAssignment.RoleId → AspNetRoles.Id (G2-003V2)
+            b.HasOne<GuliErpRole>().WithMany().HasForeignKey(a => a.RoleId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // FK: UserRoleAssignment.CompanyId → Company.Id (nullable; optional Company scope per DEC-ID-008; G2-003V2)
+            b.HasOne<Company>().WithMany().HasForeignKey(a => a.CompanyId)
+                .OnDelete(DeleteBehavior.Restrict);
             b.Property(a => a.ConcurrencyVersion).IsConcurrencyToken();
         });
     }
