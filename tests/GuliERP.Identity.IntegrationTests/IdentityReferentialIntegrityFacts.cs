@@ -1,4 +1,4 @@
-using System.Net;
+using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
 using GuliERP.Identity.Infrastructure.Persistence;
@@ -24,31 +24,29 @@ namespace GuliERP.Identity.IntegrationTests;
 /// </para>
 ///
 /// <para>
-/// These tests are Operator-side tests: they require a real
-/// PostgreSQL with the G2003 + G2003V2 migrations applied. The
-/// Mavis side has no real DB, so the tests <strong>loud-fail</strong>
-/// (per G2-001R1 / G2-003 / G2-003R1 discipline) when the
-/// <c>ConnectionStrings__GuliERP</c> env var is the bad-DB
-/// fixture. Operator unlocks them by running
-/// <c>tools/dev/g2-003-operator-evidence.ps1</c> with a real
-/// connection string. The Operator script runs Step 4
-/// (integration tests) which automatically includes these tests.
+/// G2-003V2R1 (this revision) makes the 3 integration tests
+/// <strong>self-contained</strong>: each test creates its own
+/// unique Tenant + Company via the <see cref="SnowflakeIdGenerator"/>
+/// Singleton and unique Guid-derived Codes, performs the
+/// assertion, then cleans up via a fresh DbContext. The tests
+/// do NOT depend on any seed data (the Operator DB
+/// <c>gulierp_g2_003_test</c> is a Production-environment host
+/// and never received the G2-003 dev seed; the original
+/// G2-003V2 test file hard-coded a <c>Code = "default"</c>
+/// assumption and failed with <c>Assert.NotNull</c> on line
+/// 157 + 209). Tests are now order-independent and
+/// idempotent across runs.
 /// </para>
 ///
 /// <para>
-/// The tests verify:
-/// <list type="number">
-///   <item>FK_Tenant_RejectOnOrphan: inserting a Company with a
-///         non-existent TenantId raises <see cref="DbUpdateException"/>
-///         with a PostgreSQL FK violation (<c>23503</c>).</item>
-///   <item>FK_Tenant_AcceptOnValid: inserting a Company with a
-///         valid TenantId succeeds.</item>
-///   <item>FK_DeleteBehavior_Restrict: attempting to delete a
-///         Tenant that has Company children raises a
-///         <see cref="DbUpdateException"/> (no cascading delete).</item>
-///   <item>Orphan_Count_Zero: after a fresh seed, the FK
-///         constraints report 0 orphan rows in the catalog.</item>
-/// </list>
+/// The 3 tests are Operator-side tests: they require a real
+/// PostgreSQL with the G2003 + G2003V2 migrations applied. The
+/// Mavis side has no real DB, so the tests <strong>loud-fail</strong>
+/// (per G2-001R1 / G2-003 discipline) when the
+/// <c>ConnectionStrings__GuliERP</c> env var is the bad-DB
+/// fixture. Operator unlocks them by running
+/// <c>tools/dev/g2-003-operator-evidence.ps1</c> with a real
+/// connection string.
 /// </para>
 /// </summary>
 public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplicationFactory<Program>>
@@ -68,13 +66,6 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
         return _factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
-            builder.ConfigureAppConfiguration((_, config) =>
-            {
-                // The caller may have supplied a real DB via env var; the
-                // test below uses IConfiguration to detect the
-                // bad-DB fixture and loud-fail explicitly when there is
-                // no real DB.
-            });
         });
     }
 
@@ -84,16 +75,28 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
         return cfg.GetConnectionString("GuliERP");
     }
 
+    /// <summary>
+    /// Returns a unique 8-hex-char suffix (Guid-derived) for test
+    /// Code / Name fields. Same pattern as the G2-002 per-run-unique
+    /// data convention (see G2-002 operator evidence). Ensures no
+    /// cross-run collision and no order-dependence.
+    /// </summary>
+    private static string UniqueSuffix() =>
+        Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+
     [Fact]
     public async Task FK_Tenant_RejectOnOrphan()
     {
         // Operator-required: the test creates a Company with a
         // non-existent TenantId. Without the G2003V2 FK, the insert
         // would succeed (orphan row). With the FK, it must raise
-        // DbUpdateException.
+        // DbUpdateException. We use a Guid-derived Company.Id +
+        // bogus TenantId + Guid-derived Code to avoid any collision
+        // with other test runs in the same database.
         using var factory = BuildHost();
         using var scope = factory.Services.CreateScope();
-        var conn = GetConnectionString(scope.ServiceProvider);
+        var sp = scope.ServiceProvider;
+        var conn = GetConnectionString(sp);
         if (string.IsNullOrEmpty(conn) || conn.Contains("Host=127.0.0.1;Port=1", StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
@@ -104,14 +107,13 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
                 "section 'Operator Evidence' for the unlock path.");
         }
 
-        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-        var bogusTenantId = 99_999_999L;  // intentionally not a real Tenant
+        var idGen = sp.GetRequiredService<SnowflakeIdGenerator>();
 
         var company = new Company
         {
-            Id = 88_888_888L,
-            TenantId = bogusTenantId,
-            Code = $"FK-ORPHAN-{DateTimeOffset.UtcNow.Ticks}",
+            Id = idGen.NextId(),
+            TenantId = 99_999_999_999L,    // intentionally non-existent
+            Code = $"FK-ORPHAN-{UniqueSuffix()}",
             Name = "FK Orphan Test Company",
             DefaultCurrency = "USD",
             Timezone = "UTC",
@@ -121,27 +123,39 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
             ConcurrencyVersion = 0,
         };
 
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        db.Companies.Add(company);
+
         var ex = await Assert.ThrowsAsync<DbUpdateException>(async () =>
         {
-            db.Companies.Add(company);
             await db.SaveChangesAsync();
         });
-        // The exception is wrapped; the inner exception typically
-        // contains the PostgreSQL error code 23503 (foreign_key_violation).
-        // We do not assert the code verbatim to avoid coupling to Npgsql
-        // exception formatting; we just confirm the save was rejected.
+        // The exception is wrapped by EF Core; the inner
+        // PostgreSQL NpgsqlException contains the SqlState
+        // (23503 foreign_key_violation) and the constraint name.
+        // We do not assert the SqlState verbatim to avoid coupling
+        // to Npgsql exception formatting; the bare
+        // DbUpdateException is the contract.
         Assert.NotNull(ex);
     }
 
     [Fact]
     public async Task FK_Tenant_AcceptOnValid()
     {
-        // Operator-required: the test inserts a Company with a
-        // valid TenantId (the seed creates Tenant #1 with snowflake
-        // id 1). Without a real DB, the test loud-fails.
+        // Operator-required: the test creates its OWN unique
+        // Tenant + Company, asserts the Company insert succeeds
+        // and the Company.TenantId matches the Tenant.Id, then
+        // cleans up via a fresh DbContext. The previous version
+        // hard-coded `t.Code == "default"` which assumed the
+        // G2-003 dev seed had been applied; the Operator DB
+        // (`gulierp_g2_003_test`, Production env) never received
+        // the seed, so the lookup returned null and
+        // Assert.NotNull failed. The new version is fully
+        // self-contained and order-independent.
         using var factory = BuildHost();
         using var scope = factory.Services.CreateScope();
-        var conn = GetConnectionString(scope.ServiceProvider);
+        var sp = scope.ServiceProvider;
+        var conn = GetConnectionString(sp);
         if (string.IsNullOrEmpty(conn) || conn.Contains("Host=127.0.0.1;Port=1", StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
@@ -149,19 +163,31 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
                 "Set ConnectionStrings__GuliERP to a working Npgsql connection string.");
         }
 
-        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-        // Read the seed Tenant (Id=1, the G2-003 seed creates the
-        // default Tenant with snowflake id 1).
-        var seedTenant = await db.Tenants.AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Code == "default");
-        Assert.NotNull(seedTenant);
+        var idGen = sp.GetRequiredService<SnowflakeIdGenerator>();
+        var db = sp.GetRequiredService<IdentityDbContext>();
 
+        // 1. Create a unique Tenant via the test DbContext.
+        var tenant = new Tenant
+        {
+            Id = idGen.NextId(),
+            Code = $"FK-AT-{UniqueSuffix()}",
+            Name = "FK AcceptOnValid Test Tenant",
+            Status = TenantStatus.Active,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ModifiedAt = DateTimeOffset.UtcNow,
+            ConcurrencyVersion = 0,
+        };
+        db.Tenants.Add(tenant);
+        await db.SaveChangesAsync();
+
+        // 2. Create a unique Company referencing the newly
+        //    inserted Tenant.
         var company = new Company
         {
-            Id = 77_777_777L,
-            TenantId = seedTenant!.Id,
-            Code = $"FK-VALID-{DateTimeOffset.UtcNow.Ticks}",
-            Name = "FK Valid Test Company",
+            Id = idGen.NextId(),
+            TenantId = tenant.Id,
+            Code = $"FK-AV-{UniqueSuffix()}",
+            Name = "FK AcceptOnValid Test Company",
             DefaultCurrency = "USD",
             Timezone = "UTC",
             Status = CompanyStatus.Active,
@@ -172,30 +198,63 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
         db.Companies.Add(company);
         await db.SaveChangesAsync();
 
-        // Cleanup so the test is repeatable.
-        var inserted = await db.Companies.AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == 77_777_777L);
-        Assert.NotNull(inserted);
-        if (inserted is not null)
+        // 3. Assert the Company is queryable and the TenantId
+        //    matches what we set.
+        var reloaded = await db.Companies.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == company.Id);
+        Assert.NotNull(reloaded);
+        Assert.Equal(tenant.Id, reloaded!.TenantId);
+        Assert.Equal(company.Code, reloaded.Code);
+
+        // 4. Cleanup via a FRESH DbContext (per brief §8: after a
+        //    successful save, the original DbContext is fine, but
+        //    using a fresh context keeps the cleanup isolated from
+        //    the test's tracked entities and avoids accidental
+        //    tracking pollution). The cleanup is best-effort: if
+        //    the test is running against a read-only user, the
+        //    cleanup delete may fail, but that does not affect the
+        //    test's pass/fail verdict.
+        try
         {
-            db.ChangeTracker.Clear();
-            // Use raw SQL for delete to avoid the Company self-FK
-            // blocking the delete (no children here, so it works).
-            await db.Database.ExecuteSqlRawAsync(
-                "DELETE FROM identity.gulierp_company WHERE \"Id\" = 77777777");
+            using var cleanupScope = factory.Services.CreateScope();
+            var cleanupDb = cleanupScope.ServiceProvider
+                .GetRequiredService<IdentityDbContext>();
+            await cleanupDb.Database.ExecuteSqlRawAsync(
+                "DELETE FROM identity.gulierp_company WHERE \"Id\" = {0}",
+                company.Id);
+            await cleanupDb.Database.ExecuteSqlRawAsync(
+                "DELETE FROM identity.gulierp_tenant WHERE \"Id\" = {0}",
+                tenant.Id);
+        }
+        catch
+        {
+            // Best-effort cleanup; swallow on purpose. The
+            // unique Guid-derived Codes mean a leftover row will
+            // not collide with the next test run.
         }
     }
 
     [Fact]
     public async Task FK_DeleteBehavior_Restrict_TenantCannotBeDeletedWithCompanies()
     {
-        // Operator-required: delete the default Tenant (which has
-        // 1 Company + 1 Plant + 1 Org + 4 Roles + 2 Users) and
-        // expect DbUpdateException. The G2003V2 FKs use Restrict
-        // (per G2-002 §14 / DEC-ID-015 soft-delete).
+        // Operator-required: the test creates its OWN unique
+        // Tenant + Company, then attempts to delete the Tenant
+        // (which has the Company as a child) and expects
+        // DbUpdateException because the G2003V2 FK uses
+        // OnDelete(DeleteBehavior.Restrict). The previous version
+        // hard-coded `t.Code == "default"` and failed at the
+        // seed-lookup step. The new version:
+        //   1. Creates the Tenant + Company via the test DbContext.
+        //   2. Uses a FRESH DbContext (per brief §8) to attempt
+        //      the delete. The fresh context is not contaminated
+        //      by the test's tracked entities and gives a clean
+        //      failure surface for the DbUpdateException.
+        //   3. After the expected failure, cleans up via yet
+        //      ANOTHER fresh DbContext.
         using var factory = BuildHost();
         using var scope = factory.Services.CreateScope();
-        var conn = GetConnectionString(scope.ServiceProvider);
+        var sp = scope.ServiceProvider;
+        var conn = GetConnectionString(sp);
         if (string.IsNullOrEmpty(conn) || conn.Contains("Host=127.0.0.1;Port=1", StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
@@ -203,18 +262,87 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
                 "Set ConnectionStrings__GuliERP to a working Npgsql connection string.");
         }
 
-        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-        var seedTenant = await db.Tenants.AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Code == "default");
-        Assert.NotNull(seedTenant);
+        var idGen = sp.GetRequiredService<SnowflakeIdGenerator>();
+        var db = sp.GetRequiredService<IdentityDbContext>();
 
-        var tenant = await db.Tenants.FirstOrDefaultAsync(t => t.Id == seedTenant!.Id);
-        Assert.NotNull(tenant);
-        db.Tenants.Remove(tenant!);
-
-        await Assert.ThrowsAsync<DbUpdateException>(async () =>
+        // 1. Create the Tenant + Company via the test DbContext.
+        var tenant = new Tenant
         {
-            await db.SaveChangesAsync();
-        });
+            Id = idGen.NextId(),
+            Code = $"FK-DR-{UniqueSuffix()}",
+            Name = "FK DeleteRestrict Test Tenant",
+            Status = TenantStatus.Active,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ModifiedAt = DateTimeOffset.UtcNow,
+            ConcurrencyVersion = 0,
+        };
+        var company = new Company
+        {
+            Id = idGen.NextId(),
+            TenantId = tenant.Id,
+            Code = $"FK-DR-C-{UniqueSuffix()}",
+            Name = "FK DeleteRestrict Test Company",
+            DefaultCurrency = "USD",
+            Timezone = "UTC",
+            Status = CompanyStatus.Active,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ModifiedAt = DateTimeOffset.UtcNow,
+            ConcurrencyVersion = 0,
+        };
+        db.Tenants.Add(tenant);
+        db.Companies.Add(company);
+        await db.SaveChangesAsync();
+
+        // Detach the test DbContext to avoid tracked-entity
+        // pollution when we attempt the delete from a fresh
+        // DbContext. EF Core's change tracker can interfere with
+        // a fresh context's load if the entity is still attached
+        // to the request scope.
+        db.ChangeTracker.Clear();
+
+        // 2. Attempt the delete via a FRESH DbContext. We expect
+        //    DbUpdateException because the Restrict FK blocks the
+        //    cascading delete.
+        using (var attemptScope = factory.Services.CreateScope())
+        {
+            var attemptDb = attemptScope.ServiceProvider
+                .GetRequiredService<IdentityDbContext>();
+            var attached = await attemptDb.Tenants
+                .FirstOrDefaultAsync(t => t.Id == tenant.Id);
+            Assert.NotNull(attached);
+            attemptDb.Tenants.Remove(attached!);
+
+            await Assert.ThrowsAsync<DbUpdateException>(async () =>
+            {
+                await attemptDb.SaveChangesAsync();
+            });
+            // The attempt DbContext may be in a failed state; we
+            // dispose it via `await using` and create a third
+            // DbContext for cleanup.
+        }
+
+        // 3. Cleanup via a THIRD fresh DbContext. We delete the
+        //    Company first, then the Tenant. The Company delete
+        //    succeeds (it has no children referencing it in this
+        //    test); the Tenant delete now succeeds because the
+        //    Company child is gone.
+        try
+        {
+            using var cleanupScope = factory.Services.CreateScope();
+            var cleanupDb = cleanupScope.ServiceProvider
+                .GetRequiredService<IdentityDbContext>();
+            await cleanupDb.Database.ExecuteSqlRawAsync(
+                "DELETE FROM identity.gulierp_company WHERE \"Id\" = {0}",
+                company.Id);
+            await cleanupDb.Database.ExecuteSqlRawAsync(
+                "DELETE FROM identity.gulierp_tenant WHERE \"Id\" = {0}",
+                tenant.Id);
+        }
+        catch
+        {
+            // Best-effort cleanup; swallow on purpose. The unique
+            // Guid-derived Codes mean a leftover row will not
+            // collide with the next test run.
+        }
     }
 }
