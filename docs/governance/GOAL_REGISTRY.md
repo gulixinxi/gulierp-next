@@ -4,15 +4,13 @@
 
 | Field | Value |
 |---|---|
-| Goal | **G2-002 — Foundation Kernel** |
-| Gate | `G2_001_HOST_POSTGRESQL_VERIFIED` (CLOSED) → entry gate for G2-002 |
-| Status | **HALTED** — Gate advanced by Operator Acceptance on 2026-08-19; Mavis must NOT auto-start G2-002 implementation. Awaiting explicit next-session kickoff. |
-| Entry Gate | `G2_001_HOST_POSTGRESQL_VERIFIED` (G2-001 closure) |
-| Operator Acceptance Date | 2026-08-19 (Asia/Taipei) |
-| Scope (deferred — DO NOT start) | **Foundation cross-cutting baseline ONLY**: Exception Boundary, Unified API Error Contract, Request Context (RequestId / TraceId), Logging baseline, Configuration validation, API conventions / versioning baseline, Validation error response, minimum Foundation abstractions. **G2-002 explicitly does NOT include Tenant / Company / Organization / User / Role / JWT / Auth / Authorization / Permission / DataScope / Menu-Button permission / Audit business model / Dictionary business model** — those are reserved for separate later Goals (identity kernel goal is post-G2-002 and out of scope here). |
-| Non-goals (deferred — DO NOT start) | All business modules (Sales/Purchase/Inventory); Tenant / Company / Organization / User / Role tables (reserved for a dedicated Identity Kernel Goal, post-G2-002); JWT; Refresh Token; Authentication; Authorization; Permission; DataScope; Menu/Button permission; Audit business model; Dictionary business model; workflow; sales API; any Admin.NET / Furion / SqlSugar |
-| Hard Stop | Mavis must NOT begin G2-002 implementation in this session. G2-002 kickoff requires a fresh session with explicit user authorization. |
-| Previous Goal Verification | `docs/verification/G2_001_HOST_POSTGRESQL_REPORT.md` (25 sections, including R1 history §24 + Operator Evidence §26) |
+| Goal | **G2-003 — Identity & Organization Kernel** |
+| Gate | `G2_002_FOUNDATION_KERNEL_VERIFIED` (CLOSED) → entry gate for G2-003 |
+| Status | **NOT STARTED** — Gate advanced by G2-002 closure on 2026-08-19. Mavis must wait for an explicit next-session kickoff with the G2-003 brief. |
+| Entry Gate | `G2_002_FOUNDATION_KERNEL_VERIFIED` (G2-002 closure) |
+| Previous Goal Verification | `docs/verification/G2_002_FOUNDATION_KERNEL_REPORT.md` (28 sections) |
+| Hard Stop | G2-003 must NOT auto-start in the current Mavis session. G2-003 kickoff requires a fresh session with explicit user authorization. |
+| Forbidden follow-up without user authorization | `G2-003` implementation (any Tenant / Company / Organization / User / Role table, ITenantContext / ICompanyContext / IOrganizationContext, UseTenantScope middleware, JWT, Argon2id password hashing, IUserPasswordHasher, /api/v1/auth/*, /api/v1/me/*, login flow, refresh token, seed-data work for any of the above) |
 
 ## Previous Active Goal (superseded)
 
@@ -40,6 +38,61 @@
 | Source code unchanged | PASS | Only spec/governance/decision docs edited; no .cs/.ts/.vue/.sql touched |
 | No .NET / npm operations | PASS | task G1A-FINAL §一 forbids; no build attempted |
 | Git commit/tag/push/rebase | NONE | task §九 forbids; user to commit when ready |
+
+## G2-002 — Foundation Kernel (CLOSED — Mavis-verified on 2026-08-19)
+
+| Field | Value |
+|---|---|
+| Goal | **G2-002 — Foundation Kernel (Cross-Cutting Baseline ONLY)** |
+| Gate | **`G2_002_FOUNDATION_KERNEL_VERIFIED`** |
+| Operator Acceptance Date | 2026-08-19 (Asia/Taipei) |
+| Status | **CLOSED** — code-side complete; Mavis-driven Runtime Round 1+2 + 44 unit + 14 integration + G2-001 regression all PASS. Brief §18 explicitly allows bad-DB / Development config (no fresh PostgreSQL password required). |
+| Verification | `docs/verification/G2_002_FOUNDATION_KERNEL_REPORT.md` (28 sections) |
+| Next Goal | **G2-003 — Identity & Organization Kernel** (NOT STARTED; HALTED) |
+
+### G2-002 Scope Confirmation
+
+The user (in the G2-002 brief) explicitly re-scoped G2-002 from the
+`G2_FOUNDATION_EXECUTION_PLAN.md` §3 (which had G2-002 as Identity
+tables) to **Foundation cross-cutting baseline ONLY**. This registry
+records that re-scoping as binding; `G2_FOUNDATION_EXECUTION_PLAN.md`
+must be amended (future Goal) to reflect the new ordering.
+
+### G2-002 Verification Highlights
+
+| Check | Status | Note |
+|---|---|---|
+| Mature Solution Check | PASS | 7/7 questions, all ASP.NET Core 10 native (IExceptionHandler, AddProblemDetails, ILogger, BeginScope, AsyncLocal) |
+| ProblemDetails Contract | PASS | RFC 9457 + GuliERP `code` / `requestId` / `traceId` extension; verified end-to-end |
+| 404 → ProblemDetails | PASS | Runtime Round 1+2 + `UnknownRoute_Returns404ProblemDetails` |
+| 500 → ProblemDetails | PASS | `FoundationExceptionHandler` with hard-banned secret surface; verified by `ProblemDetails_DoesNotLeakSecrets` |
+| RequestId generation | PASS | GUID "N" on miss / invalid; validated by 5 unit Theory cases |
+| Valid RequestId propagation | PASS | Echoed back when client value passes `RequestIdValidator.IsValid` |
+| Malicious RequestId rejection | PASS | XSS / SQLi / path-sep / oversized / CJK / emoji / control chars all rejected and regenerated |
+| TraceId | PASS | W3C `Activity.Current.TraceId` + `X-Trace-Id` response header |
+| Structured Logging | PASS | `BeginScope(RequestId, TraceId)` + 1 log/req with `Method` / `Path` / `StatusCode` / `ElapsedMs` |
+| No Secret Logging | PASS | `Authorization` / `Cookie` / body / `QueryString` / connection string all hard-banned |
+| Configuration Validation | PASS | `ConnectionStrings:GuliERP` fail-fast at host construction (G2-001 contract preserved) |
+| `/api/v1/system/ping` | PASS | 200 + direct JSON (no envelope) |
+| Build (Release, slnx) | PASS | 0 warnings / 0 errors |
+| Unit Tests | PASS | 44 / 44 in `GuliERP.Foundation.Tests` |
+| Integration Tests | PASS | 16 / 16 in `GuliERP.Foundation.IntegrationTests` (5 G2-001 loud-fail expected without env var) |
+| Runtime Round 1+2 | PASS | Live host + bad-DB; /ping 200, /this/does/not/exist 404, /health/live 200, /health/ready 503 |
+| G2-001 Regression | PASS | FoundationDbContext, G2001 migration, /health/live, /health/ready all preserved |
+| `git diff --check` | PASS | exit 0 |
+| Scope Scan | PASS | 0 actual code uses of forbidden patterns |
+| Hard-stop conditions A–I | NONE triggered | — |
+
+### G2-002 Non-Blocking Follow-up Items
+
+| # | Item | Owner / Trigger |
+|---|---|---|
+| F-G2-002-1 | Wire `IConfigureOptions<ApiBehaviorOptions>` so `[ApiController]` auto-injects `code=validation_failed` into `ValidationProblemDetails`. The shape is locked in G2-002 §14; the first DTO lands with a business module in a later Goal. | F-G2-002-1; first DTO-bearing Goal |
+| F-G2-002-2 | Document the `X-Trace-Id` propagation contract in a new `tools/dev/g2-002-operator-evidence.ps1`. Currently trace id is populated when upstream proxy propagates W3C `traceparent`. | G2-003 or a future dev-env Goal |
+| F-G2-002-3 | Add an architecture test that fails the build if any file under `modules/foundation/**` references `Microsoft.AspNetCore.*`. The §14 "Foundation MUST NOT depend on ASP.NET Core" rule is currently enforced by review, not by CI. | G2-007 Module Runtime |
+| F-G2-002-4 | Amend `G2_FOUNDATION_EXECUTION_PLAN.md` §3 to reflect the user's G2-002 re-scoping (Cross-Cutting Baseline vs. Identity tables). | Future G2 Goal; non-blocking |
+
+---
 
 ## G2-001 — Host & PostgreSQL (CLOSED — Operator-verified on 2026-08-19)
 
@@ -144,11 +197,10 @@
 
 | Field | Value |
 |---|---|
-| Goal | **G2-002 — Foundation Kernel** |
+| Goal | **G2-003 — Identity & Organization Kernel** |
 | Executor | Mavis (when explicitly kicked off in a fresh session) |
-| Entry Gate | `G2_001_HOST_POSTGRESQL_VERIFIED` (achieved 2026-08-19) |
-| Scope (DO NOT auto-start in this session) | **Foundation cross-cutting baseline ONLY**: Exception Boundary, Unified API Error Contract, Request Context (RequestId / TraceId), Logging baseline, Configuration validation, API conventions / versioning baseline, Validation error response, minimum Foundation abstractions. **G2-002 explicitly does NOT include Tenant / Company / Organization / User / Role / JWT / Auth / Authorization / Permission / DataScope / Menu-Button permission / Audit business model / Dictionary business model** — those are reserved for separate later Goals (identity kernel goal is post-G2-002 and out of scope here). |
-| Non-goals (deferred) | All business modules (Sales/Purchase/Inventory); Tenant / Company / Organization / User / Role tables (reserved for a dedicated Identity Kernel Goal, post-G2-002); JWT; Refresh Token; Authentication; Authorization; Permission; DataScope; Menu/Button permission; Audit business model; Dictionary business model; workflow; sales API; any Admin.NET / Furion / SqlSugar |
-| Hard Stop | G2-002 must NOT auto-start in the current Mavis session. Mavis must wait for an explicit next-session kickoff. |
-| Forbidden follow-up without user authorization | `G2-002` implementation (any Tenant / Company / Organization / User / Role table, ITenantContext / ICompanyContext / IOrganizationContext, UseTenantScope middleware, JWT, refresh token, IUserPasswordHasher, authentication, authorization, permission, DataScope, menu/button permission, audit business model, dictionary business model, or seed-data work) |
-| Pre-G2-002 (G2-001 closure follow-up) | F1: Deployment/Migration Credential vs Runtime Credential split. F2: PostgreSQL integration test profile (local + CI). F3: `global.json` / .NET 10 SDK roll-forward policy. None of these block G2-002; all three are tracked in the G2-001 verification report. |
+| Entry Gate | `G2_002_FOUNDATION_KERNEL_VERIFIED` (achieved 2026-08-19) |
+| Scope (DO NOT auto-start in this session) | **Identity & Organization kernel ONLY** (per the post-G2-002 brief the user has not yet sent). G2-003 must re-run Mature Solution Check + Permission / multi-company pattern research + Build-vs-Reuse gate review before any code. |
+| Hard DO-NOT (reserved for G2-003 or later) | Tenant / Company / Organization / User / Role tables, ITenantContext / ICompanyContext / IOrganizationContext, UseTenantScope middleware, JWT, Argon2id password hashing, IUserPasswordHasher, /api/v1/auth/*, /api/v1/me/*, login flow, refresh token, seed-data work for any of the above. G2-002 Foundation Kernel does NOT include any of these. |
+| Hard Stop | G2-003 must NOT auto-start in the current Mavis session. Mavis must wait for an explicit next-session kickoff with the G2-003 brief. |
+| Pre-G2-003 (G2-002 closure follow-up) | F-G2-002-1: wire `IConfigureOptions<ApiBehaviorOptions>` for ValidationProblemDetails `code` extension (lands with first DTO). F-G2-002-2: `g2-002-operator-evidence.ps1` (deferred). F-G2-002-3: Foundation architecture test (lands with G2-007). F-G2-002-4: amend `G2_FOUNDATION_EXECUTION_PLAN.md` to reflect user's G2-002 re-scoping. None of these block G2-003. |
