@@ -7,8 +7,15 @@
   <Folder Name="/modules/foundation/">
     <Project Path="modules/foundation/GuliERP.Foundation/GuliERP.Foundation.csproj" />
   </Folder>
+  <Folder Name="/modules/identity/">
+    <Project Path="modules/identity/GuliERP.Identity.Domain/GuliERP.Identity.Domain.csproj" />
+    <Project Path="modules/identity/GuliERP.Identity.Application/GuliERP.Identity.Application.csproj" />
+    <Project Path="modules/identity/GuliERP.Identity.Infrastructure/GuliERP.Identity.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GuliERP.Foundation.IntegrationTests/GuliERP.Foundation.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.Foundation.Tests/GuliERP.Foundation.Tests.csproj" />
+    <Project Path="tests/GuliERP.Identity.IntegrationTests/GuliERP.Identity.IntegrationTests.csproj" />
+    <Project Path="tests/GuliERP.Identity.Tests/GuliERP.Identity.Tests.csproj" />
   </Folder>
 </Solution>

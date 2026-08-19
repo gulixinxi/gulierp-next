@@ -5,6 +5,9 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\modules\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\..\..\modules\identity\GuliERP.Identity.Domain\GuliERP.Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\..\modules\identity\GuliERP.Identity.Application\GuliERP.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\..\modules\identity\GuliERP.Identity.Infrastructure\GuliERP.Identity.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" />

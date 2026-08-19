@@ -2,6 +2,7 @@ using GuliERP.Api;
 using GuliERP.Api.Kernel;
 using GuliERP.Foundation;
 using GuliERP.Foundation.Kernel;
+using GuliERP.Identity.Infrastructure;
 using TestValidationRequest = GuliERP.Api.Kernel.TestEndpoints.TestValidationRequest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -90,6 +91,20 @@ startupLogger.LogInformation(
 //     (G2-002). The Host MUST NOT register DbContext or migration logic
 //     directly; that lives in the Foundation module.
 builder.Services.AddGuliErpFoundation(connectionString);
+
+// --- 4b. Identity services (G2-003) ---
+//     Per G2-003A DEC-ID-012 the Identity module uses
+//     IDENTITY_COMPONENT_REUSE: the ASP.NET Core Identity machinery
+//     (UserManager, RoleManager, lockout, security stamp, claims) is
+//     wired, but NO login endpoint / JWT / cookie auth / SignInManager
+//     surface is exposed. The G2-004 Authentication Goal will do that.
+//
+//     The ICurrentTenant / ICurrentCompany / ICurrentUser contracts
+//     (DEC-ID-009, 010) are resolved from HTTP headers in the
+//     IdentityContextMiddleware; the future G2-004 Auth Goal will
+//     replace header-based resolution with JWT-claim-based resolution
+//     without changing the contracts.
+builder.Services.AddGuliErpIdentity(connectionString);
 
 // --- 5. ProblemDetails + Exception Handler (G2-002 §8) ---
 //     Native ASP.NET Core 10 IExceptionHandler chain. The Foundation
@@ -183,6 +198,7 @@ var app = builder.Build();
 app.UseMiddleware<RequestContextMiddleware>();
 app.UseExceptionHandler();   // delegates to FoundationExceptionHandler
 app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseIdentityContext();    // G2-003: resolves ICurrentTenant/Company/User from headers
 app.UseRouting();
 
 // --- 9. OpenAPI (dev) ---

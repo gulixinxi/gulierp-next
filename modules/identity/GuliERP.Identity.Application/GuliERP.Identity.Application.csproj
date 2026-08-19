@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>GuliERP.Identity.Application</RootNamespace>
+    <AssemblyName>GuliERP.Identity.Application</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\GuliERP.Identity.Domain\GuliERP.Identity.Domain.csproj" />
+  </ItemGroup>
+</Project>
