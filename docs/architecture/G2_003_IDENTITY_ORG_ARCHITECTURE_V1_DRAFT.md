@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Goal | G2-003 — Identity & Organization Kernel (DESIGN ONLY; implementation is the next Operator-gated Goal) |
-| Type | Architecture draft (freezes 16 DEC-IDs, 12 hypotheses, 10 Q&As) |
+| Type | Architecture draft (freezes 20 DEC-IDs, 12 hypotheses, 18 Q&As — base 16 + 4 R2 amendment) |
 | Author | Mavis (single writer) |
 | Date | 2026-08-19 (Asia/Taipei) |
 | Entry gate | `G2_002_FOUNDATION_KERNEL_VERIFIED` (G2-002 closed, G2-002R1 + G2-002R2 also closed) |
-| Predecessor | `docs/research/G2_003A_IDENTITY_ORG_BUILD_VS_REUSE_GATE.md` (`G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED`) |
+| Predecessor | `docs/research/G2_003A_IDENTITY_ORG_BUILD_VS_REUSE_GATE.md` (`G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED`; the gate is amended by §40 of the gate document) |
 | Authority | This draft binds G2-003 Implementation; the build-vs-reuse Gate binds this draft |
 | Status | **DRAFT — Frozen for G2-003 implementation; no source code in this document** |
 
@@ -22,14 +22,15 @@
 
 G2-003 produces the Identity & Organization Kernel that:
 
-1. Models **Tenant** (customer / isolation boundary) and **Company** (legal entity) as separate concepts.
-2. Models **OrganizationUnit** as a Company-scoped tree (Branch / Department / Team / Other).
-3. Models **User** as Tenant-scoped; a User can be a member of N Companies via `UserCompanyMembership` and N OrganizationUnits via `UserOrganizationMembership`.
+1. Models **Tenant** (customer / isolation boundary), **Company** (legal entity), and **Plant** (logistics site) as separate concepts. **Plant is NOT a subtype of OrganizationUnit** (G2-003A-R2 amendment, DEC-ID-019).
+2. Models **OrganizationUnit** as a Company-scoped HR/team tree (Branch / Department / Team / Other). `OrganizationUnit` and `Plant` are independent dimensions.
+3. Models **User** as Tenant-scoped; a User can be a member of N Companies via `UserCompanyMembership` and N OrganizationUnits via `UserOrganizationMembership`. Direct User→Plant membership is **deferred** to V1.5+ / DataScope Goal.
 4. Models **Role** as Tenant-scoped definition + **Role Assignment** as Company-scoped (or Tenant-wide).
-5. Exposes **ICurrentTenant / ICurrentCompany / ICurrentUser** contracts in `GuliERP.Foundation` so business modules never read Identity tables directly.
+5. Exposes **ICurrentTenant / ICurrentCompany / ICurrentUser** contracts in `GuliERP.Foundation` so business modules never read Identity tables directly. `IPlantScoped` marker interface is reserved for future Inventory / Production / Quality modules.
 6. Reuses ASP.NET Core Identity for credentials (password hash, lockout, security stamp, UserManager, SignInManager) — without making Identity the ERP User table.
-7. Freezes the data-isolation direction (EF Core `HasQueryFilter` for `IMultiTenant` + `ICompanyScoped`).
+7. Freezes the data-isolation direction (EF Core `HasQueryFilter` for `IMultiTenant` + `ICompanyScoped` + future `IPlantScoped`).
 8. Excludes Authentication (G2-004) and Authorization (G2-005) — Identity ≠ Authentication ≠ Authorization.
+9. **Reserves the Plant ownership contract** for future modules: `Warehouse` (future Inventory) has `PlantId` FK; `WorkCenter` / `ProductionOrder` (future Production) have `PlantId` FK; `InventoryTransaction` has `SourcePlantId` + `TargetPlantId` FK. (G2-003A-R2, DEC-ID-020)
 
 ---
 
@@ -141,6 +142,27 @@ GuliERP.Api                      (existing, G2-001 + G2-002)
 | `Timezone` | `string` (IANA TZ) | required |
 | `Status` | `CompanyStatus` enum (`Active / Suspended / Closed`) | required |
 | Audit + `ConcurrencyVersion` | | per G2-001 |
+
+### 3.2.1 — `Plant` (NEW — G2-003A-R2 amendment)
+
+| Field | Type | Constraint |
+|---|---|---|
+| `Id` | `long snowflake` | PK |
+| `TenantId` | `long` | FK → `Tenant` (denormalized) |
+| `CompanyId` | `long` | FK → `Company` |
+| `ParentPlantId` | `long?` | nullable self-FK (sub-plant / sub-factory) |
+| `Code` | `string 1..40 ASCII` | unique within Company |
+| `Name` | `string 1..200` | required |
+| `AddressLine1` / `AddressLine2` | `string?` | optional |
+| `City` | `string?` | optional |
+| `Region` | `string?` | optional (state / province) |
+| `CountryCode` | `string 2` (ISO 3166-1 alpha-2) | required |
+| `Timezone` | `string` (IANA TZ) | required |
+| `CalendarCode` | `string?` | optional; reference to future `PlantCalendar` (V1.5+) |
+| `Status` | `PlantStatus` enum (`Active / Inactive / UnderConstruction / Decommissioned`) | required |
+| Audit + `ConcurrencyVersion` | | per G2-001 |
+
+**Why `Plant` is a first-class entity, NOT a subtype of `OrganizationUnit`**: per DEC-ID-019 + §40.1 of the G2-003A gate. Plant carries 12+ production-specific properties (physical address, calendar, CountryCode, Timezone) that have no place in the HR/team tree. SAP S/4HANA, Odoo, and ERPNext all converge on Plant being independent. Collapsing Plant into OrganizationUnit is rejected.
 
 ### 3.3 — `OrganizationUnit`
 
@@ -330,6 +352,15 @@ public interface ICompanyScoped : IMultiTenant
 public interface IOrganizationScoped : ICompanyScoped
 {
     long OrganizationUnitId { get; }
+}
+
+public interface IPlantScoped : ICompanyScoped
+{
+    // G2-003A-R2 amendment. Reserved in G2-003; future
+    // Inventory / Production / Quality entities implement it.
+    // No ICurrentPlant in V1; the marker is sufficient for the
+    // EF Core HasQueryFilter contract.
+    long PlantId { get; }
 }
 ```
 

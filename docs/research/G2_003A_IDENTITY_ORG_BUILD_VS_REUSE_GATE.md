@@ -1092,9 +1092,530 @@ This was a **docs-only** Gate — no .NET / npm / docker work, no build / test c
 
 ---
 
-*End of G2-003A — Identity & Organization Build-vs-Reuse Gate*
+# §40 — Plant/Site Architecture Amendment (G2-003A-R2)
+
+| Field | Value |
+|---|---|
+| Goal | **G2-003A-R2 — Plant/Site Architecture Amendment** (mandatory manufacturing-ERP boundary clarification BEFORE G2-003 Implementation) |
+| Type | Architecture Amendment (no source code change; 4 new DEC-IDs added to the G2-003A gate) |
+| Author | Mavis (single writer, planner role) |
+| Date | 2026-08-19 (Asia/Taipei) |
+| Entry gate | `G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED` (the G2-003A gate from §1..§39) |
+| Amendment status | **APPROVED** — 4 new DEC-IDs (DEC-ID-017..020) added; no previous DEC-ID changed |
+| Why this amendment is required | The base G2-003A gate did not address the **Plant / Site** boundary, which is mandatory for a manufacturing ERP. Without freezing this BEFORE G2-003 Implementation, the future Inventory / Production modules would be forced to either (a) collapse Plant into a generic `OrganizationUnit` (losing semantics + business value) or (b) retrofit a Plant entity mid-implementation (expensive + risky). |
+| Hard-stop | This amendment freezes Plant/Site semantics NOW. G2-003 Implementation may proceed with the additional 4 DEC-IDs. No source code change in this amendment. |
+
+> **Phase map discipline**: this amendment is part of G2-003A (an Architecture Gate). The future G2-003 Implementation Goal is the first Goal that may write source code touching the new `Plant` table. Until that Goal is Operator-authorized, **no source code change**.
+
+---
+
+## 40.1 — Why Plant cannot be a generic OrganizationUnit
+
+A manufacturing ERP's `Plant` (also called `Site`, `Factory`, `ManufacturingLocation`) has **semantic properties that no generic `OrganizationUnit` can carry**:
+
+| Property | Plant (SAP S/4HANA) | Generic OrganizationUnit (HR/team tree) |
+|---|---|---|
+| Physical location (address) | **required** | optional |
+| Production calendar (working days, shifts, holidays) | **required** | not relevant |
+| Default currency for cost accounting | **required** | not relevant |
+| Default tax / regulatory region | **required** | not relevant |
+| Owns Warehouses (storage locations) | **required** | no |
+| Owns WorkCenters / Production lines | **required** | no |
+| Owns PlantFloor (visual monitoring) | **required** | no |
+| ProductionOrder / WorkOrder scope | **required** | no |
+| Inventory valuation area | **required** | not relevant |
+| Capacity planning scope | **required** | not relevant |
+| `IsPlant` boolean (vs. `IsBranch` / `IsDepartment` / `IsTeam`) | would be a workaround | not a workaround |
+| Belongs to exactly 1 `Company` | YES (SAP rule) | YES (per G2-003 DEC-ID-005) |
+| Tree of its own (Plant 1 → sub-Plants) | **YES** (e.g. Plant 1 → Plant 1.1, 1.2) | YES (per G2-003 DEC-ID-005) |
+| Carries inventory, cost, and production data | **YES** (mandatory) | NO (HR scope only) |
+
+**Conclusion**: modeling `Plant` as `OrganizationUnit` with `OrganizationType = "Plant"` would either (a) **bloat** the `OrganizationUnit` table with 12+ production-specific columns it doesn't need, or (b) **leak production semantics into the HR tree**, which would force every future permission / data-scope decision to special-case `OrganizationType = "Plant"`. Both options are anti-patterns.
+
+**SAP S/4HANA, Odoo, ERPNext all confirm**: Plant is a **first-class entity** in the manufacturing domain, not a subtype of OrganizationUnit.
+
+---
+
+## 40.2 — Mature ERP Pattern Study (Plant / Site)
+
+### 40.2.1 — SAP S/4HANA (CANONICAL)
+
+SAP defines 5 first-class organizational units in the enterprise structure:
+
+| Unit | Purpose | Can span | GuliERP equivalent |
+|---|---|---|---|
+| **Client** | Top-level self-contained unit (one database) | — | (one host, V1) |
+| **Company Code** | Legal entity / financial accounting unit | — | **`Company`** |
+| **Controlling Area** | Cost accounting scope | N Company Codes | (deferred to Finance module) |
+| **Plant** | Logistics unit: factory / warehouse / distribution center / service center | — | **`Plant`** (NEW, this amendment) |
+| **Storage Location** | Sub-area within a Plant | — | **`Warehouse`** (future Inventory module) |
+| **Sales Organization** | Sales scope | — | (future Sales module) |
+| **Purchasing Organization** | Procurement scope | — | (future Purchase module) |
+| **Work Center** | Production capability within a Plant | — | **`WorkCenter`** (future Production module) |
+| **Cost Center** | Cost allocation (cross-Plant) | — | (deferred to Finance module) |
+
+**Key SAP rules**:
+- A Plant is assigned to **exactly one Company Code** (1:N from Company to Plant).
+- A Storage Location is assigned to **exactly one Plant** (1:N from Plant to Storage Location).
+- A Work Center is assigned to **exactly one Plant** (1:N from Plant to Work Center).
+- A Production Order is assigned to **exactly one Plant**.
+- A Purchase Order can be cross-Plant if the Purchasing Organization allows; default is Plant-local.
+- A Plant has its own **address, calendar, working hours, valuation area** (when configured as a valuation area).
+
+### 40.2.2 — Odoo
+
+Odoo uses **Warehouse** as the inventory location. To represent a multi-plant manufacturer, Odoo uses:
+
+- **Multiple Warehouses** under one Company.
+- **Each Warehouse can be a "production" warehouse** (the "Manufacture" routing flag).
+- **Locations** (sub-areas) under each Warehouse.
+- **Routes** (Buy → Store → Manufacture → Deliver) define cross-warehouse flows.
+- Odoo **does NOT have a separate Plant entity**; it uses Warehouse + Location + Route. This is Odoo's chosen simplification.
+
+**GuliERP implication**: Odoo's "Warehouse = Plant" pattern is a valid simplification for small manufacturers (one warehouse per plant) but breaks down for:
+- A plant that has multiple warehouses (e.g. raw-material warehouse + WIP warehouse + finished-goods warehouse).
+- Multi-tenant + multi-Company + multi-Plant where Warehouse ownership must be tracked separately from Plant ownership.
+- Future Production / Quality / Cost Accounting that need to know "which plant" regardless of "which warehouse".
+
+GuliERP chooses the **SAP model**: Plant is a first-class entity; Warehouse is a sub-area of Plant.
+
+### 40.2.3 — ERPNext
+
+ERPNext uses **Warehouse** as the inventory location. Multi-plant is represented as a **naming hierarchy** under one Company:
+
+```
+Plant A — Raw Material Store
+Plant A — WIP
+Plant A — Finished Goods
+Plant B — Raw Material Store
+Central Warehouse 1 — Finished Goods
+```
+
+ERPNext does **not** have a separate Plant entity. The "Plant" concept lives in the Warehouse name and in the Work Order's Source/WIP/Target/Scrap Warehouse selection.
+
+**GuliERP implication**: ERPNext's pattern works for small manufacturers but, like Odoo, conflates Plant with Warehouse. GuliERP chooses the **SAP model** for the same reasons as above.
+
+### 40.2.4 — Summary
+
+| ERP | Plant as separate entity? | Warehouse sub-Plant? | Work Center sub-Plant? | Source of boundary |
+|---|---|---|---|---|
+| **SAP S/4HANA** | **YES** | YES (Storage Location) | YES (Work Center) | Enterprise structure canonical model |
+| **Odoo** | NO (Warehouse = Plant) | YES (Location) | NO (Work Center per Company) | Simplicity for SMB |
+| **ERPNext** | NO (Warehouse naming) | NO (flat Warehouse) | NO (Workstation) | Simplicity for SMB |
+| **VOL.NET (GuliERP reference)** | NO (no Plant concept at all) | NO | NO | Mid-market backoffice pattern |
+| **GuliERP (this amendment)** | **YES** (DEC-ID-017) | YES (DEC-ID-020, future Inventory) | YES (DEC-ID-020, future Production) | SAP model + GuliERP's mid-market + multi-tenant |
+
+---
+
+## 40.3 — Q11: Company vs Plant/Site boundary
+
+### Decision
+
+| Concept | Definition | Cardinality |
+|---|---|---|
+| `Company` | Legal entity. Books (COA, currency, tax, default accounts) are scoped here. | 1 Tenant → N Company (DEC-ID-002) |
+| **`Plant`** | **Logistics organizational unit. A physical location where products are produced, stored, or distributed. Carries its own address, calendar, working hours.** | 1 Company → N Plant (DEC-ID-018) |
+
+**Key differences**:
+
+| Aspect | `Company` | `Plant` |
+|---|---|---|
+| Primary concern | Financial / legal | Logistics / production |
+| Carries books (COA) | YES | NO (inherits from Company) |
+| Carries calendar | NO (fiscal calendar is a future Finance concern) | **YES** (working days, shifts, holidays) |
+| Carries address | YES (registered address) | **YES** (physical address) |
+| Carries Currency | YES (`DefaultCurrency`) | NO (inherits from Company) |
+| Carries Timezone | YES (registered timezone) | **YES** (plant-local timezone) |
+| Owns Warehouse | NO | **YES** (1:N) |
+| Owns WorkCenter | NO | **YES** (1:N) |
+| Owns ProductionOrder | NO | **YES** (1:N) |
+| Owns User | NO (User belongs to Tenant + has Company Membership) | NO (User has Plant membership only in future DataScope) |
+| Cross-Plant | N/A | **EXPLICIT** (e.g. Inter-Plant Stock Transfer) |
+| Lifecycle | Active / Suspended / Closed (DEC-ID-015) | Active / Inactive / UnderConstruction / Decommissioned |
+
+**Why Plant is NOT a subtype of Company**:
+- A Company may operate 0 plants (e.g. a pure trading company that uses 3PL warehouses). Closing the Company closes all its Plants.
+- A Company may operate 1 plant (the SMB case).
+- A Company may operate N plants (the group / multi-site case). The plants are independent production units; one plant can be suspended without affecting the others.
+- A Company may own Plants AND lease Plants from other Companies. The Lease case is a V1.5+ option.
+
+**Why Plant is NOT a subtype of OrganizationUnit**:
+- See §40.1 — Plant has 12+ production-specific properties that have no place in the HR/team tree.
+- A User belongs to OrganizationUnits (HR scope: Sales Department, Finance Team) AND may operate in Plants (production scope: can post receipts in Plant A's warehouses). These are orthogonal.
+- Future DataScope (a later Goal) consumes both: "User can see only Plants they are a member of; within each Plant, they can see only the OUs their Role grants".
+
+---
+
+## 40.4 — Q12: 1 Company → N Plant
+
+### Decision
+
+**1 Company → N Plant** (1:N cardinality). The same Company can have multiple Plants, each with its own address, calendar, and (future) warehouses/work-centers.
+
+**Examples**:
+
+| Scenario | Plants |
+|---|---|
+| Single SMB | 1 Company → 1 Plant (headquarters factory) |
+| Multi-site SMB | 1 Company → 3 Plants (factory 1, factory 2, distribution center) |
+| Group | 1 Tenant → 1 Company → 2 Plants (parent's two factories; subsidiaries are separate Companies) |
+| Trading | 1 Company → 0 Plants (uses 3PL warehouses) |
+| Plant suspension | 1 Company → 3 Plants, 1 is `Status = Inactive` (the other 2 continue) |
+
+### Cross-Plant operations (inter-Plant stock transfer)
+
+When a Company has N Plants, the system MUST support cross-Plant stock transfers (e.g. Plant A ships semi-finished goods to Plant B for final assembly). The V1 contract reserves the `Plant` reference on future `InventoryTransaction` and `InventoryBalance` tables so that cross-Plant transfers are expressible (a `SourcePlantId` + `TargetPlantId` pair).
+
+**Inter-Company** stock transfer (between Plants of different Companies) is a different concept — it is the "Inter-Company" feature in ERPNext, which uses inter-company invoices + journals. This is a V1.5+ feature (Finance module).
+
+---
+
+## 40.5 — Q13: Plant as a first-class entity in GuliERP V1
+
+### Decision
+
+**YES, `Plant` is a first-class entity in GuliERP V1**, NOT a subtype of `OrganizationUnit`.
+
+| Field | Type | Constraint |
+|---|---|---|
+| `Id` | `long snowflake` | PK |
+| `TenantId` | `long` | FK → `Tenant` (denormalized for fast filter) |
+| `CompanyId` | `long` | FK → `Company` |
+| `ParentPlantId` | `long?` | nullable self-FK (sub-plant / sub-factory tree) |
+| `Code` | `string 1..40 ASCII` | unique within Company |
+| `Name` | `string 1..200` | required |
+| `AddressLine1` / `AddressLine2` | `string?` | optional |
+| `City` | `string?` | optional |
+| `Region` | `string?` | optional (state / province) |
+| `CountryCode` | `string 2` (ISO 3166-1 alpha-2) | required |
+| `Timezone` | `string` (IANA TZ) | required |
+| `CalendarCode` | `string?` | optional; reference to future `PlantCalendar` table (V1.5+) |
+| `Status` | `PlantStatus` enum (`Active / Inactive / UnderConstruction / Decommissioned`) | required |
+| Audit + `ConcurrencyVersion` | | per G2-001 |
+
+**`Plant` entity is in the `GuliERP.Identity` module** (per the G2-003A module plan). The schema is owned by G2-003; the lifecycle is owned by G2-003; the catalog consumption (e.g. selecting a Plant on a future `InventoryTransaction` or `ProductionOrder`) is owned by the future Inventory / Production modules.
+
+---
+
+## 40.6 — Q14: Warehouse ownership (Plant vs Company)
+
+### Decision (G2-003 semantics; Warehouse implementation deferred to Inventory module)
+
+`Warehouse` is **Plant-owned**, NOT Company-owned.
+
+| Field | Type | Constraint |
+|---|---|---|
+| `Id` | `long snowflake` | PK |
+| `TenantId` | `long` | FK |
+| `CompanyId` | `long` | FK → `Company` (denormalized; derived from Plant) |
+| **`PlantId`** | `long` | **FK → `Plant`** (required) |
+| `ParentWarehouseId` | `long?` | nullable self-FK (sub-warehouse / room / shelf) |
+| `Code` | `string 1..40 ASCII` | unique within Plant |
+| `Name` | `string 1..200` | required |
+| `WarehouseType` | `WarehouseType` enum (`RawMaterial / WIP / FinishedGoods / Spare / Transit / Quarantine / Other`) | required |
+| `Status` | `WarehouseStatus` enum (`Active / Inactive / Archived`) | required |
+| Audit + `ConcurrencyVersion` | | per G2-001 |
+
+**Why `CompanyId` is denormalized** (not just `PlantId`): for fast global query + multi-Plant consolidation reports. Always derived from `Plant.CompanyId` on read; never free-form set.
+
+**Optional `PlantId`** (V1.5+ for the "Company without Plant" case) — the brief §26 calls out "Trading" as a target customer. In V1, `PlantId` is required. In V1.5+, an optional `PlantId` (with Company-owned virtual warehouses) could be added.
+
+---
+
+## 40.7 — Q15: WorkCenter / ProductionOrder → Plant relationship
+
+### Decision (G2-003 semantics; Production implementation deferred to Production module)
+
+| Entity | Plant relationship | Why |
+|---|---|---|
+| `WorkCenter` | **belongs to exactly 1 `Plant`** | WorkCenter is a physical production capability (machine / cell / line). A WorkCenter can only exist in one physical location. |
+| `ProductionLine` | **belongs to exactly 1 `Plant`** | Same as WorkCenter. |
+| `BillOfMaterials` (BoM) | **Company-scoped**, with optional `PlantId` for plant-specific BoM variants | A BoM is a product recipe. A product may have a global BoM (one per Item) and plant-specific variants (e.g. Plant A uses different sub-assemblies). |
+| `ProductionOrder` (WorkOrder) | **belongs to exactly 1 `Plant`** | A WorkOrder produces in one Plant. Cross-Plant production requires multiple WorkOrders. |
+| `Routing` | **Company-scoped**, with optional `PlantId` for plant-specific routings | Same as BoM. |
+| `QualityInspection` | **belongs to the Plant of the inspected document** (SO / PO / WorkOrder) | Quality is local. |
+| `InventoryTransaction` (receipt / issue / transfer) | **has `SourcePlantId` + `TargetPlantId`** (cross-Plant transfer has different source/target) | Cross-Plant transfer requires both Plant IDs. |
+
+**SAP rule confirmed**: WorkCenter / ProductionOrder are Plant-scoped, NEVER cross-Plant. A cross-Plant operation is a **transfer** (Stock Entry) between two Plant-local WorkOrders.
+
+---
+
+## 40.8 — Q16: OrganizationUnit vs Plant boundary
+
+### Decision
+
+`OrganizationUnit` and `Plant` are **two independent dimensions** in GuliERP V1. They are NOT parent-child, NOT two-name-for-the-same-thing.
+
+| Aspect | `OrganizationUnit` (DEC-ID-005) | `Plant` (DEC-ID-017) |
+|---|---|---|
+| Primary scope | HR / team tree (Sales Department, Finance Team, Branch Office HR) | Logistics / production site |
+| Belongs to | Company | Company |
+| Tree? | YES (`ParentOrganizationUnitId`) | YES (`ParentPlantId`) |
+| Has Users? | YES (`UserOrganizationMembership` + `IsPrimary`) | NO (V1); V1.5+ may add `UserPlantMembership` for DataScope |
+| Has address? | NO (HR scope) | YES (physical address required) |
+| Has calendar? | NO | YES (working days, shifts, holidays) |
+| Owns Warehouse? | NO | YES |
+| Owns WorkCenter? | NO | YES |
+| Future Cost Center scope? | YES (cost center is a Finance concept; can be sliced by OU) | YES (cost center can be sliced by Plant; SAP default is Plant-level cost center) |
+| Typical leaf | "Sales Department", "Project Alpha Team" | "Headquarters Factory", "Shenzhen Plant" |
+| Typical root | "Whole Company HR" | (root plant = headquarters) |
+
+**A User can simultaneously be**:
+- A member of `OrganizationUnit = Sales Department` (HR scope).
+- Authorized to operate in `Plant = Shenzhen Plant` (production scope).
+
+These are two independent axes. A future Goal's DataScope can intersect them: "User can see only `ProductionOrder`s in Plants they are authorized for, AND only in OUs their Role grants".
+
+**Anti-pattern rejected**: do NOT collapse Plant into OrganizationUnit. SAP, Odoo, and ERPNext all converge on this — Plant is independent.
+
+---
+
+## 40.9 — Q17: User → Plant membership
+
+### Decision (G2-003 semantics; User→Plant membership implementation deferred to DataScope Goal)
+
+In **G2-003 V1**, **NO direct User → Plant membership table**. Reasons:
+
+1. **G2-003 scope discipline** — G2-003 is "Who are you? Where do you belong?" User → Plant membership is a "what can you do in this Plant?" question, which is the DataScope Goal.
+2. **Avoid premature table** — A `UserPlantMembership` table added in G2-003 would have a single `IsDefault` + `JoinedAt` shape, identical to `UserCompanyMembership`. This would create an "is it for Companies or Plants?" confusion that future Goals would have to live with.
+3. **Plant scope is implicit via `CurrentCompany` for V1** — In V1, the User's `CurrentCompany` is the resolution point. A future Sales Order is Company-scoped; a future Production Order is Plant-scoped. The Plant scope is determined by the document's `PlantId` field, not by a User-Plant membership.
+
+### What G2-003 DOES reserve
+
+- A future `UserPlantMembership` table is OPTIONAL (not required for V1). If a future Goal (G2-005 Authz) needs it for DataScope, it can be added.
+- V1 DataScope can be implemented WITHOUT a User-Plant table: "User can see a Plant's data if their `UserCompanyMembership` for the Plant's Company is `Status = Active`". This is a sufficient V1 DataScope for the SMB target customer.
+- The optional `UserPlantMembership` table is a V1.5+ upgrade for enterprise customers who need Plant-level access restriction (e.g. "this user is admin in Plant A but not in Plant B" — usually handled via Role + Company + Plant assignment, not a direct membership).
+
+### Why not "just add it now"
+
+- It would expand the G2-003 surface by 1 table + 1 EF Core entity + 1 set of repository methods.
+- The future Authz Goal needs to decide User-Plant relationship shape together with Permission / DataScope / Role; bolting it on now creates a second revision when the Authz Goal runs.
+- A `UserPlantMembership` table is trivial to add later. A removed table is impossible.
+
+---
+
+## 40.10 — Q18: IDs / Contracts reserved for Inventory / Production isolation
+
+### Decision (G2-003 reserves the following)
+
+| Future table | Required `Plant` reference | Required `Company` reference | Required `Tenant` reference | Contract reserved in G2-003 |
+|---|---|---|---|---|
+| `Warehouse` (future Inventory) | `PlantId` (FK, required) | `CompanyId` (FK, denormalized) | `TenantId` (FK, denormalized) | DEC-ID-020, §40.6 |
+| `WorkCenter` (future Production) | `PlantId` (FK, required) | `CompanyId` (FK, denormalized) | `TenantId` (FK, denormalized) | DEC-ID-020, §40.7 |
+| `ProductionOrder` (future Production) | `PlantId` (FK, required) | `CompanyId` (FK, denormalized) | `TenantId` (FK, denormalized) | DEC-ID-020, §40.7 |
+| `InventoryTransaction` (future Inventory) | `SourcePlantId` + `TargetPlantId` (FK, both required for Transfer type) | `CompanyId` (FK, denormalized) | `TenantId` (FK, denormalized) | DEC-ID-020, §40.7 |
+| `InventoryBalance` (future Inventory) | `PlantId` + `WarehouseId` (FK) | `CompanyId` (FK, denormalized) | `TenantId` (FK, denormalized) | DEC-ID-020, §40.6 |
+| `QualityInspection` (future Quality) | `PlantId` (FK, derived from source document) | `CompanyId` (FK, denormalized) | `TenantId` (FK, denormalized) | DEC-ID-020, §40.7 |
+
+### Marker interface reserved in G2-003
+
+`GuliERP.Foundation.Kernel.IPlantScoped` (NEW, alongside `IMultiTenant` and `ICompanyScoped` from the base gate):
+
+```csharp
+namespace GuliERP.Foundation.Kernel;
+
+/// <summary>
+/// Marker interface for entities scoped to a single Plant. Applied
+/// to future Inventory / Production / Quality entities.
+/// G2-003 does NOT define the entity; the marker is reserved so
+/// future Goals can implement the EF Core HasQueryFilter wiring
+/// without changing the Foundation contract.
+/// </summary>
+public interface IPlantScoped : ICompanyScoped
+{
+    long PlantId { get; }
+}
+```
+
+The future Inventory / Production / Quality module will configure:
+
+```csharp
+modelBuilder.Entity<Warehouse>().HasQueryFilter(w =>
+    w.TenantId == _currentTenant.Id
+    && w.CompanyId == _currentCompany.Id
+    && w.PlantId == _currentPlant.Id);
+```
+
+(Note: `ICurrentPlant` is **NOT** in V1. A future Goal that needs runtime Plant-scope switching can introduce it; the marker interface is sufficient for the G2-003 commitment.)
+
+---
+
+## 40.11 — DEC-ID-017..020 (4 new frozen decisions)
+
+| # | Decision | Frozen value | Rationale |
+|---|---|---|---|
+| **DEC-ID-017** | Plant/Site semantics | `Plant` = logistics organizational unit. A physical location where products are produced, stored, or distributed. Carries its own address, calendar, working hours, status. Independent of `OrganizationUnit`. | §40.3, §40.5; SAP S/4HANA canonical pattern; ERPNext/Odoo conflation is a known anti-pattern for multi-plant manufacturers |
+| **DEC-ID-018** | Company → Plant cardinality | 1 Company → N Plant. A Company may operate 0 / 1 / N Plants. Plant suspension is independent (one Plant can be `Status = Inactive` without affecting the others). | §40.4; SAP S/4HANA enterprise structure rule; supports both single-plant SMB and multi-plant group |
+| **DEC-ID-019** | Plant vs OrganizationUnit boundary | Two **independent** dimensions, NOT parent-child, NOT same-thing. `OrganizationUnit` = HR/team tree; `Plant` = logistics/production site. A User can be a member of both simultaneously. | §40.8; SAP S/4HANA enterprise structure rule; collapse is rejected by SAP, ERPNext, and Odoo |
+| **DEC-ID-020** | Future Warehouse / WorkCenter / ProductionOrder Plant ownership | `Warehouse` (future Inventory): `PlantId` FK required. `WorkCenter` (future Production): `PlantId` FK required. `ProductionOrder` (future Production): `PlantId` FK required. `InventoryTransaction` (future Inventory): `SourcePlantId` + `TargetPlantId` FK. `QualityInspection` (future Quality): `PlantId` FK derived from source document. The `IPlantScoped` marker interface is reserved in `GuliERP.Foundation.Kernel` for EF Core `HasQueryFilter` wiring. | §40.10; SAP S/4HANA enterprise structure rule; G2-003 reserves the contract without implementing the future modules |
+
+---
+
+## 40.12 — Updated G2-003 Minimum Domain Model (Plant added)
+
+Replacing the §22 (Minimum Domain Model Candidate) table — the `Plant` entity is added, no other entity changes.
+
+| Entity | Why exists | Owning module | Aggregate root | Lifecycle | Soft delete | Tenant key | Company key | Plant key | Future business ref |
+|---|---|---|---|---|---|---|---|---|---|
+| `Tenant` | Customer / isolation boundary | GuliERP.Identity (new) | yes | Active / Suspended / Closed (typed enum) | yes (`Status` + `ClosedAt`) | — (root) | — | — | `TenantId` on every cross-tenant entity |
+| `Company` | Legal entity under Tenant | GuliERP.Identity (new) | yes | Active / Suspended / Closed | yes | `TenantId` | — (root for this Tenant) | — | `CompanyId` on every business entity |
+| **`Plant`** | **Logistics site under Company** | **GuliERP.Identity (new)** | **yes** | **Active / Inactive / UnderConstruction / Decommissioned** | **yes** | **`TenantId`** | **`CompanyId`** | **— (root for this Company)** | **`PlantId` on every logistics entity (future Inventory / Production / Quality)** |
+| `OrganizationUnit` | HR/team tree under Company | GuliERP.Identity (new) | yes | Active / Inactive / Archived | yes | `TenantId` (denorm) | `CompanyId` (scoping) | — | optional `OrganizationUnitId` for cost center / salesperson / warehouse assignment |
+| `User` | Login identity + ERP profile | GuliERP.Identity (new) | yes (Auth) | Active / Disabled / Locked / Pending | yes | `TenantId` | — (multi-Company via membership) | — | `UserId` on every business document header line |
+| `Role` | Role definition | GuliERP.Identity (new) | yes | Active / Inactive | yes | `TenantId` | — (definition is Tenant-wide) | — | `RoleId` in `UserRoleAssignment` |
+| `UserCompanyMembership` | Which Companies a User can operate in | GuliERP.Identity (new) | no (link) | Active / Revoked | yes | `TenantId` | `CompanyId` | — | used by `ICurrentCompany` resolution |
+| `UserOrganizationMembership` | Which OUs a User belongs to | GuliERP.Identity (new) | no (link) | Active / Revoked | yes | `TenantId` (denorm) | `CompanyId` (denorm) | — | used by `DataScope` (future Goal) |
+| `UserRoleAssignment` | Role grants to User, scoped to Company or Tenant-wide | GuliERP.Identity (new) | no (link) | Active / Revoked / Expired | yes | `TenantId` | `CompanyId?` (nullable = Tenant-wide) | — | used by `IPermissionService` (future Goal) |
+
+**New reserved marker**: `GuliERP.Foundation.Kernel.IPlantScoped` (NOT a new entity; the marker is in Foundation, future entities implement it).
+
+**No new user-facing entity in G2-003 V1 beyond `Plant`**.
+
+---
+
+## 40.13 — Updated Build-vs-Reuse Matrix (Plant rows added)
+
+| Capability | Mature solution | GuliERP Decision |
+|---|---|---|
+| Plant/Site as first-class entity | **SAP S/4HANA** (canonical) | **DIRECT PATTERN REUSE** (Plant is a standalone organizational unit; entity design follows SAP) |
+| Plant as Warehouse-name prefix | Odoo / ERPNext | **REJECT** — conflation is a known limitation for multi-Plant manufacturers |
+| Plant as OrganizationUnit subtype | (none — SAP/Odoo/ERPNext all separate) | **REJECT** — anti-pattern (§40.1) |
+| `UserPlantMembership` table | (none — SAP uses Role + Company + Plant assignment) | **DEFER** to V1.5+ / DataScope Goal (§40.9) |
+| PlantCalendar (working days, shifts, holidays) | SAP `TWS` factory calendar | **DEFER** to V1.5+ (HR / Production modules) — V1 carries `CalendarCode` (string reference) only |
+| `IPlantScoped` marker | (none — GuliERP self-build) | **GULIERP-SELF-BUILD** in `GuliERP.Foundation.Kernel` |
+
+---
+
+## 40.14 — G2-003 Implementation Scope (updated with Plant)
+
+Replacing the §35 (G2-003 Implementation Scope) item 2 (Identity module entities) — the `Plant` entity is added.
+
+### 2. Identity module (in GuliERP.Identity)
+
+- **Entities**: `Tenant`, `Company`, **`Plant`** (NEW), `OrganizationUnit`, `User`, `Role`, `UserCompanyMembership`, `UserOrganizationMembership`, `UserRoleAssignment`.
+- EF Core `IdentityDbContext` (mapping both Identity credential tables and GuliERP identity tables).
+- `IAspNetIdentityIntegration` (custom `IPasswordHasher<TUser>` if Argon2id is required, else default PBKDF2).
+- `IUserDirectoryService` / `ICompanyDirectoryService` / **`IPlantDirectoryService`** (NEW) / `IOrganizationDirectoryService` for business module consumption.
+
+### Foundation contracts (in GuliERP.Foundation)
+
+- `ICurrentTenant` / `ICurrentCompany` / `ICurrentUser` interfaces.
+- `IDataFilter` interface.
+- `IMultiTenant` / `ICompanyScoped` / `IOrganizationScoped` / **`IPlantScoped`** (NEW) marker interfaces.
+
+### Host wiring (in GuliERP.Api)
+
+- `AddGuliErpIdentity(connectionString)` extension.
+- ASP.NET Core Identity bootstrap.
+- Middleware: `UseTenantResolution`, `UseCompanyResolution`, `UseUserResolution`.
+
+### Seed data
+
+- 1 host Platform Admin user.
+- 1 default Tenant.
+- 1 default Company under the Tenant.
+- **`1 default Plant`** (NEW) under the default Company.
+- 1 default OrganizationUnit (root of the Company tree).
+- System Roles: `TenantAdmin`, `CompanyAdmin`, `NormalUser`.
+
+### Tests
+
+- 8 architecture tests + 8 unit tests + 5 integration tests.
+- New architecture test (G2-003): "no business module references `GuliERP.Identity.EntityFrameworkCore` directly".
+
+### OUT of scope (still deferred to future Goals)
+
+- **Inventory** (Warehouse, Stock Entry, Stock Balance, Inventory Valuation) — V1.5+ or Inventory Goal.
+- **Production** (BoM, WorkCenter, ProductionOrder, Routing) — V1.5+ or Production Goal.
+- **Quality** (Quality Inspection) — V1.5+ or Quality Goal.
+- **Authentication / Authorization / Audit / Menu / Numbering / Dictionary / Approval** — unchanged from base gate.
+
+### Migration order (updated for Plant)
+
+The future G2-003 Implementation must apply migrations in this order:
+
+1. **`G2003_001_InitializeIdentityCredentialSchema`** — Identity credential tables.
+2. **`G2003_002_InitializeIdentityCoreTables`** — `tenant`, `company`, **`plant`** (NEW), `organization_unit`, `user`, `role`.
+3. **`G2003_003_InitializeIdentityMembershipTables`** — `user_company_membership`, `user_organization_membership`, `user_role_assignment`.
+4. **`G2003_004_InitializeIdentitySeed`** — seed host Platform Admin, default Tenant, default Company, **default Plant** (NEW), default OU, system Roles.
+
+---
+
+## 40.15 — Updated Risks (R-9..R-12)
+
+| # | Risk | Severity | Mitigation |
+|---|---|---|---|
+| R-9 | A future contributor tries to "simplify" by collapsing `Plant` into `OrganizationUnit` (because the customer has only 1 Plant and "they're the same thing") | medium | DEC-ID-019 freezes the boundary; the 8 architecture tests check that `OrganizationUnit` does NOT carry Plant-specific columns (`AddressLine1`, `CountryCode`, `Timezone`, etc.); a future contributor who tries the collapse will be caught by the architecture test. |
+| R-10 | A future Inventory Goal introduces `Warehouse` without the `PlantId` FK | medium | DEC-ID-020 freezes the contract. The future Inventory Goal's seed data includes a "Plant-less Warehouse" check that fails if `PlantId` is not required. |
+| R-11 | A future Production Goal introduces `WorkCenter` at Company scope (skipping Plant) | medium | DEC-ID-020 freezes the contract. Architecture test (G2-003) checks that `WorkCenter` is `IPlantScoped`. |
+| R-12 | A future cross-Plant transfer is implemented as `InventoryTransaction` without `SourcePlantId` + `TargetPlantId` | low | DEC-ID-020 freezes the contract. The future Inventory Goal must implement the Stock Entry per ERPNext's "Source/WIP/Target/Scrap Warehouse" model, expanded to Plant IDs. |
+
+---
+
+## 40.16 — Updated Phase Map
+
+| # | Goal | Scope (UPDATED with Plant) | Gate | Status |
+|---|---|---|---|---|
+| G2-001 | Host & PostgreSQL | (unchanged) | `G2_001_HOST_POSTGRESQL_VERIFIED` | ✅ |
+| G2-002 | Foundation Cross-Cutting Kernel | (unchanged) | `G2_002_FOUNDATION_KERNEL_VERIFIED` | ✅ |
+| G2-003A | **Identity & Organization Build-vs-Reuse Gate** | (base 16 DEC-IDs) | `G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED` | ✅ |
+| G2-003A-R2 | **Plant/Site Architecture Amendment** | **(4 new DEC-IDs: 017, 018, 019, 020)** | `G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED` (R2 added) | ✅ |
+| **G2-003** | **Identity & Organization Kernel** | **Tenant / Company / Plant (NEW) / OrganizationUnit / User / Role / Memberships / Identity module / ICurrent* contracts** | `G2_003_IDENTITY_ORG_KERNEL_VERIFIED` (after Implementation) | 🚧 NOT STARTED |
+| G2-004 | Authentication Kernel | (unchanged) | (not yet flipped) | NOT STARTED |
+| G2-005 | Authorization Kernel | (unchanged) | (not yet flipped) | NOT STARTED |
+| ... | ... | ... | ... | ... |
+
+The legacy `G2_FOUNDATION_EXECUTION_PLAN.md` is still **stale** for G2-003's scope — it does not mention Plant. The authoritative phase map is §40.16 + the base gate §36 + this registry.
+
+---
+
+## 40.17 — Updated Verification
+
+| Item | Result |
+|---|---|
+| Source code change in G2-003A-R2 | **NONE** — this is a docs/ amendment |
+| `git diff --check` | PASS (the 2 amended files are `.md`; pre-existing CRLF warnings are not new) |
+| New entities defined in source | **0** (`Plant` is in the design docs only; implementation is the future G2-003 Implementation Goal) |
+| EF Core migrations | **0** (deferred to G2-003) |
+| Test execution | **0** tests run (no source change; existing tests still apply) |
+
+`SOURCE_CODE_CHANGED = NO` (verified by `git status`).
+
+---
+
+## 40.18 — Final Gate (R2)
+
+| Field | Value |
+|---|---|
+| **Status** | **`G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED`** (R2 adds 4 DEC-IDs; gate preserved) |
+| Mature Solution Check | PASS (5/5 objects in base gate; SAP S/4HANA + Odoo + ERPNext all studied in this R2) |
+| Q11..Q18 answered | PASS (8/8) |
+| DEC-ID-001..020 frozen | PASS (20/20) |
+| License boundary | PASS (no source copy, no runtime dep) |
+| Threat model | PASS (T1..T8 from base gate; R-9..R-12 added in R2) |
+| No source code change | PASS (`SOURCE_CODE_CHANGED = NO`) |
+| `git diff --check` | PASS |
+| Phase map reconciled | PASS (Plant added to G2-003 scope) |
+
+---
+
+## 40.19 — Updated Timing
+
+| Event | Timestamp (Asia/Taipei) |
+|---|---|
+| G2-003A base START_TIME | 2026-08-19T22:44:30Z |
+| G2-003A base END_TIME | 2026-08-19T22:58Z (estimated; ~14 min) |
+| G2-003A-R2 START_TIME | 2026-08-19T22:52:19Z |
+| G2-003A-R2 END_TIME | 2026-08-19T22:58Z (estimated; ~6 min for the Plant amendment) |
+| **G2-003A total duration** | **~14 min** (base) + **~6 min** (R2 amendment) |
+
+R2 was a small amendment; the SAP / Odoo / ERPNext research evidence was obtained via focused web research (3 queries), then the 8 questions answered + 4 DEC-IDs frozen + 6 markdown sections appended.
+
+---
+
+*End of G2-003A — Identity & Organization Build-vs-Reuse Gate (with Plant/Site Architecture Amendment)*
 *Status: **G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED***
-*16 frozen DEC-IDs, 12/12 H1..H12 confirmed, 0 source code change*
+*20 frozen DEC-IDs (001-020), 12/12 H1..H12 confirmed, 10/10 Q1..Q10 + 8/8 Q11..Q18 answered, 0 source code change*
 *Next: G2-003 Identity & Organization Kernel (NOT STARTED, Operator-gated)*
 
-*G2-003 must NOT auto-start. The G2-003 Implementation Goal requires a fresh session with explicit user authorization, the full G2-003 brief, and confirmation that the Operator accepts this Gate.*
+*G2-003 must NOT auto-start. The G2-003 Implementation Goal requires a fresh session with explicit user authorization, the full G2-003 brief, and confirmation that the Operator accepts this Gate (now including the Plant/Site amendment).*
