@@ -388,3 +388,124 @@ The 5 R2 new tests:
 | Hard DO-NOT (reserved for G2-003 or later) | Tenant / Company / Organization / User / Role tables, ITenantContext / ICompanyContext / IOrganizationContext, UseTenantScope middleware, JWT, Argon2id password hashing, IUserPasswordHasher, /api/v1/auth/*, /api/v1/me/*, login flow, refresh token, seed-data work for any of the above. G2-002 Foundation Kernel does NOT include any of these. |
 | Hard Stop | G2-003 must NOT auto-start in the current Mavis session. Mavis must wait for an explicit next-session kickoff with the G2-003 brief. |
 | Pre-G2-003 (G2-002 closure follow-up) | F-G2-002-1: wire `IConfigureOptions<ApiBehaviorOptions>` for ValidationProblemDetails `code` extension (lands with first DTO). F-G2-002-2: `g2-002-operator-evidence.ps1` (deferred). F-G2-002-3: Foundation architecture test (lands with G2-007). F-G2-002-4: amend `G2_FOUNDATION_EXECUTION_PLAN.md` to reflect user's G2-002 re-scoping. None of these block G2-003. |
+
+---
+
+## G2-003A — Identity & Organization Build-vs-Reuse Gate (CLOSED — Mavis-approved 2026-08-19)
+
+| Field | Value |
+|---|---|
+| Goal | **G2-003A — Identity & Organization Build-vs-Reuse Gate (Architecture decision ONLY; no source code)** |
+| Entry Gate | G2_002_FOUNDATION_KERNEL_VERIFIED (G2-002 closed + R1 closed + R2 closed) |
+| Exit Gate | **G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED** |
+| Status | **CLOSED** — 16 DEC-IDs frozen, 12/12 H1..H12 confirmed, 10/10 Q1..Q10 answered, 0 source code changed. |
+| Verification | docs/research/G2_003A_IDENTITY_ORG_BUILD_VS_REUSE_GATE.md (74 KB, 39 sections) + docs/architecture/G2_003_IDENTITY_ORG_ARCHITECTURE_V1_DRAFT.md (26 KB, 12 sections) |
+| Next Goal | **G2-003 — Identity & Organization Kernel** (NOT STARTED, HALTED) |
+
+### G2-003A — Executive Decision
+
+**RECOMMENDED_OPTION = IDENTITY_COMPONENT_REUSE** (full matrix in §31 of the Gate):
+
+| Concern | Direction |
+|---|---|
+| Authentication credentials (password hash, lockout, security stamp, token) | **DIRECT REUSE** of ASP.NET Core Identity primitives |
+| Identity schema (AspNetUsers / AspNetRoles) | **ADAPT** — IdentityUser stores credentials only; GuliERP keeps its **own** User / Role tables for ERP semantics; the two are 1:1 linked by Id |
+| Tenant / Company / Organization | **PATTERN_REUSE_ONLY** (ABP ICurrentTenant shape + ERPNext Company tree) — no ABP runtime, no Finbuckle runtime |
+| Data isolation | **GULIERP-SELF-BUILD** at the EF Core HasQueryFilter level + IDataFilter interface |
+| Role Assignment scope | **GULIERP-SELF-BUILD** (UserRoleAssignment (UserId, RoleId, CompanyId?) with CompanyId = NULL = Tenant-wide) |
+| Organization tree | **PATTERN_REUSE_ONLY** (ERPNext Department + VOL.NET Sys_UserDepartment M:N) |
+| Permission / DataScope / Menu / Button / Field | **OUT OF SCOPE** of G2-003A — G2-004 / G2-005 / V1.5+ |
+
+**No source code change in G2-003A.** This Gate is docs/ only. Path-specific staging: 2 new files in docs/ (research + architecture).
+
+### G2-003A — Architecture Decisions (16 frozen)
+
+| # | Decision | Frozen value |
+|---|---|---|
+| DEC-ID-001 | Tenant semantics | Tenant = customer / isolation boundary. V1: 1 Tenant per host. V1.5+: N Tenants per host (SaaS). |
+| DEC-ID-002 | Company semantics | Company = legal entity. 1 Tenant → N Company. Company.ParentCompanyId self-FK for group/subsidiary. |
+| DEC-ID-003 | User ownership | User belongs to Tenant. User.TenantId required. |
+| DEC-ID-004 | User ↔ Company | M:N UserCompanyMembership with IsDefault flag. |
+| DEC-ID-005 | Organization | OrganizationUnit is **Company-scoped** (not Tenant-scoped). Tree via ParentOrganizationUnitId. |
+| DEC-ID-006 | User ↔ Org | M:N UserOrganizationMembership with IsPrimary flag (exactly one per (User, Company)). |
+| DEC-ID-007 | Role definition | Role is Tenant-scoped. Role.IsSystem for non-deletable system roles. |
+| DEC-ID-008 | Role assignment | UserRoleAssignment(UserId, RoleId, CompanyId?). CompanyId = NULL = Tenant-wide. |
+| DEC-ID-009 | ICurrentTenant | AsyncLocal + Change(...) in GuliERP.Foundation.Kernel. |
+| DEC-ID-010 | ICurrentCompany | Parallel to ICurrentTenant. AsyncLocal + Change(...). |
+| DEC-ID-011 | Company switching | UI action calls /api/v1/auth/switch-company which re-mints the JWT (no full re-login). X-Company-Id header override for API integration. |
+| DEC-ID-012 | ASP.NET Core Identity reuse | **IDENTITY_COMPONENT_REUSE** — Identity for credentials (PasswordHasher, UserManager, lockout, security stamp, SignInManager, claims); GuliERP owns User/Role/Company/Org for ERP semantics. The two coexist in one IdentityDbContext. |
+| DEC-ID-013 | Data isolation | EF Core HasQueryFilter for IMultiTenant + ICompanyScoped. Single DB / single schema / row-level isolation. RLS is a V1.5+ option. |
+| DEC-ID-014 | ID strategy | long snowflake (8 bytes). G2-001 snowflake generator. igint PostgreSQL column. Hashed-to-string for frontend exposure. |
+| DEC-ID-015 | Lifecycle | Soft-delete only. Status enum on every entity. No hard delete of Identity/Organization data. |
+| DEC-ID-016 | Module ownership | GuliERP.Identity (Domain + Application + Infrastructure) is the new module. Business modules consume ICurrent* / opaque IDs only. |
+
+### G2-003A — Q1..Q10 Answers
+
+| # | Question | Answer |
+|---|---|---|
+| Q1 | Tenant vs Company | Tenant is not Company. Tenant = customer/isolation; Company = legal entity. 1 Tenant → N Company. |
+| Q2 | Company model | Legal entity with separate books. DefaultCurrency + Timezone + optional LegalName + TaxId + ParentCompanyId (group tree). |
+| Q3 | Organization model | OrganizationUnit is Company-scoped. Tree via ParentOrganizationUnitId. OrganizationType enum (Root/Branch/Department/Team/Other). |
+| Q4 | User membership | User is Tenant-scoped. M:N UserCompanyMembership with IsDefault flag. Single-Company is trivial case. |
+| Q5 | Org membership | M:N UserOrganizationMembership with IsPrimary flag (exactly one per (User, Company)). |
+| Q6 | Role definition vs assignment | Separated. Role is Tenant-scoped. UserRoleAssignment is Company-scoped (or Tenant-wide via CompanyId = NULL). |
+| Q7 | CurrentCompany resolution | Explicit X-Company-Id header → JWT company_id claim → User's IsDefault Company. |
+| Q8 | CurrentTenant vs CurrentCompany | Separated. Three contexts: ICurrentTenant, ICurrentCompany, ICurrentUser. Never conflated. |
+| Q9 | Data isolation | EF Core HasQueryFilter for IMultiTenant + ICompanyScoped. IDataFilter for cross-Tenant host reads. RLS is V1.5+ option. |
+| Q10 | System administration | Lattice of Role + Boundary: IsPlatformAdmin flag (host); TenantAdmin Role (Tenant-wide); CompanyAdmin Role (Company-specific). Never a string Role. |
+
+### G2-003A — H1..H12 Verification
+
+**All 12 hypotheses confirmed. 0 MODIFY. 0 REJECT.**
+
+### G2-003A — Build-vs-Reuse Route
+
+OVERALL_STRATEGY = GREENFIELD_WITH_PATTERN_REUSE (consistent with VOL_PRO_002 final verdict).
+
+- **DIRECT REUSE**: ASP.NET Core Identity (PasswordHasher, UserManager, lockout, security stamp, SignInManager, claims, [Authorize]).
+- **PATTERN REUSE**: ABP (ICurrentTenant, IMultiTenant, IDataFilter shapes); ERPNext (Company, Department); VOL.NET (UserDepartment M:N, Role tree, cache pattern).
+- **SELF-BUILD**: Tenant / Company / Organization / User / Role / Membership entities + the Identity module + the 3 Context contracts + the data-isolation wiring.
+- **REJECT**: ABP runtime, Finbuckle runtime, VOL.NET source code, 1:1 User-Role, comma-string AuthValue, 2-level DataScope, TenancyManager empty function, RoleId == 1 hardcode, IsPlatformAdmin as business-code string.
+- **DEFERRED (out of G2-003)**: Authentication, Authorization, Menu, Audit, Numbering, Dictionary, Approval, OpenIddict, 2FA, Cost Center.
+
+### G2-003A — License / Runtime Dependency
+
+| Source | License | Decision |
+|---|---|---|
+| ASP.NET Core Identity | MIT | DIRECT REUSE |
+| ABP Framework | LGPL / commercial | PATTERN_REUSE_ONLY (no runtime) |
+| ERPNext | MIT | CONCEPT_LEARNING only (Python, not .NET) |
+| Finbuckle.MultiTenant | Apache 2.0 | PATTERN_REUSE_ONLY (no runtime) |
+| VOL.NET | MIT | PATTERN_REUSE_ONLY (no source copy) |
+| Odoo | LGPL | REJECT (Python, not .NET) |
+
+LICENSE_IMPACT = NONE — no source code copied, no runtime dependency added.
+
+### G2-003A — Forbidden Amendments Respected
+
+| Forbidden | Did it? | Evidence |
+|---|---|---|
+| git reset --hard | NO | 2188c13 intact in git log |
+| git rebase | NO | linear history |
+| git revert | NO | G2-003A only adds new commits |
+| git commit --amend | NO | fresh commit SHAs |
+| git add . | NO | path-specific staging only |
+| git push | NO | local repo; no remote |
+| git tag | NO | none created |
+| Source code change | **NO** | SOURCE_CODE_CHANGED = NO (Gate is docs/ only) |
+| Re-open G2-001 / G2-002 / R1 / R2 | NO | all preserved |
+| Enter Tenant/Company/User/Role implementation | NO | G2-003 NOT STARTED, Operator-gated |
+
+### G2-003A — Honest Disclosure
+
+| # | Disclosure |
+|---|---|
+| HD-A1 | This Gate is docs/ only. No source code in G2-003A. The 16 DEC-IDs are binding for the future G2-003 Implementation Goal, which requires a fresh session with explicit user authorization. |
+| HD-A2 | The legacy G2_FOUNDATION_EXECUTION_PLAN.md (pre-existing untracked) still lists G2-002 as Identity — that text is **stale** and not authoritative. The authoritative phase map is in §36 of the Gate + this registry. |
+| HD-A3 | ABP / Finbuckle are PATTERN-only. A future Goal that wants to introduce the ABP runtime would need a new Architecture Gate (DEC-ARCH-…). |
+| HD-A4 | IsPlatformAdmin is a flag on User, but the F-G2-002-3 architecture test (deferred to G2-007) will be EXTENDED in G2-003 to also forbid business modules from reading this field directly. |
+| HD-A5 | The 4-deferred items (Authentication / Authorization / Audit / Numbering / Dictionary / Menu) are each separate Goals. G2-003 is **not** the "whole security" Goal — it's the "who are you" Kernel only. |
+| HD-A6 | G2-003 Implementation will require 4 EF Core migrations in a specific order (§10 of the architecture draft) to avoid breaking seed data. |
+| HD-A7 | VOL.NET research evidence is reused from prior sessions (docs/research/vol-pro/), not re-extracted. This is a deliberate scope-discipline decision. |
+
+---
