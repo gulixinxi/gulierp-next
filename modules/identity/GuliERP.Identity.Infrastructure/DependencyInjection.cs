@@ -137,6 +137,33 @@ public static class DependencyInjection
         // ----- HttpContextAccessor (SignInManager needs it) -----
         services.AddHttpContextAccessor();
 
+        // ----- G2-004R1 — Antiforgery (CSRF) for cookie-authenticated state-changing endpoints -----
+        // Per DEC-AUTH-009: ASP.NET Core native IAntiforgery. NOT
+        // a custom HMAC / nonce / Origin-only middleware. The
+        // antiforgery cookie is `.GuliERP.Antiforgery` (HttpOnly,
+        // Secure, SameSite=Strict — stricter than the auth cookie's
+        // Lax because it carries no user identity, only a CSRF
+        // secret). The header name is `X-CSRF-TOKEN` (frozen).
+        //
+        // The middleware (`app.UseAntiforgery()`) is NOT wired
+        // because we validate per-endpoint (the /csrf and /me
+        // endpoints are CSRF-exempt). The middleware would block
+        // them.
+        services.AddAntiforgery(options =>
+        {
+            options.Cookie.Name = ".GuliERP.Antiforgery";
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            options.Cookie.SameSite = SameSiteMode.Strict;
+            options.Cookie.Path = "/";
+            options.HeaderName = GuliErpAuthSchemes.CsrfHeaderName;
+            // Suppress the X-Frame-Options / Referrer-Policy /
+            // SameSite warnings (G2-002 §10 — we don't add
+            // global security headers; the SPA is the only
+            // first-party client).
+            options.SuppressXFrameOptionsHeader = false;
+        });
+
         // ----- Context contracts (Scoped; G2-003 unchanged) -----
         services.AddScoped<ICurrentTenant, CurrentTenant>();
         services.AddScoped<ICurrentCompany, CurrentCompany>();

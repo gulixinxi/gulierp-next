@@ -76,4 +76,21 @@ public static class ErrorCodes
     /// belongs to a different Tenant).
     /// </summary>
     public const string InvalidCompanySelection = "invalid_company_selection";
+
+    // ----------------------------------------------------------------
+    // G2-004R1 — Antiforgery (CSRF) error code
+    //   (frozen in docs/architecture/G2_004_AUTHENTICATION_ARCHITECTURE.md
+    //    §6.1 AMENDMENT + DEC-AUTH-009)
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// CSRF validation failure on a state-changing cookie-authenticated
+    /// endpoint. The 3 endpoints (<c>POST /login</c>,
+    /// <c>POST /logout</c>, <c>POST /company/switch</c>) call
+    /// <c>IAntiforgery.ValidateRequestAsync</c> BEFORE business
+    /// logic; failure returns 400 + this code. The response
+    /// body MUST NOT include the token contents, the cookie, the
+    /// secret, or any stack frame (G2-002 ban list).
+    /// </summary>
+    public const string CsrfValidationFailed = "csrf_validation_failed";
 }

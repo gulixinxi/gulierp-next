@@ -31,4 +31,14 @@ public static class GuliErpAuthSchemes
     /// Reserved for the future JWT Bearer scheme. Not wired in V1.
     /// </summary>
     public const string BearerScheme = "GuliERP.Bearer";
+
+    /// <summary>
+    /// G2-004R1 — The antiforgery request-token header name
+    /// (DEC-AUTH-009). The SPA fetches the token via
+    /// <c>GET /api/v1/auth/csrf</c> and sends it back in this
+    /// header alongside the auth cookie for state-changing
+    /// requests (<c>POST /login</c>, <c>POST /logout</c>,
+    /// <c>POST /company/switch</c>).
+    /// </summary>
+    public const string CsrfHeaderName = "X-CSRF-TOKEN";
 }

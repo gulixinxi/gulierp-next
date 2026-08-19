@@ -136,15 +136,39 @@ try {
     Pass "Host ready at http://127.0.0.1:5099"
 
     # Operator-driven happy path: log in as the seed user.
+    # G2-004R1 — fetch the antiforgery token first; send it
+    # back in X-CSRF-TOKEN for every state-changing request.
+    # The script auto-extracts the token from the /csrf
+    # response (the operator MUST NOT copy/paste manually).
+    $csrfResp = Invoke-WebRequest -Uri 'http://127.0.0.1:5099/api/v1/auth/csrf' -Method Get -UseBasicParsing -SessionVariable 'session'
+    if ($csrfResp.StatusCode -ne 200) { Fail "GET /api/v1/auth/csrf → $($csrfResp.StatusCode) (expected 200)"; return }
+    $csrfToken = ($csrfResp.Content | ConvertFrom-Json).requestToken
+    if ([string]::IsNullOrEmpty($csrfToken)) { Fail "csrf response missing requestToken"; return }
+    Pass "GET /api/v1/auth/csrf → 200 (token captured)"
+
     $loginBody = '{"userName":"admin","password":"ChangeMe!2026","tenantCode":"default"}'
-    $loginResp = Invoke-WebRequest -Uri 'http://127.0.0.1:5099/api/v1/auth/login' -Method Post -Body $loginBody -ContentType 'application/json' -UseBasicParsing -SessionVariable 'session'
+    $loginResp = Invoke-WebRequest -Uri 'http://127.0.0.1:5099/api/v1/auth/login' -Method Post -Body $loginBody -ContentType 'application/json' -Headers @{ 'X-CSRF-TOKEN' = $csrfToken } -UseBasicParsing -WebSession $session
     if ($loginResp.StatusCode -eq 200) {
-        Pass "POST /api/v1/auth/login → 200 (happy path)"
+        Pass "POST /api/v1/auth/login → 200 (happy path with X-CSRF-TOKEN)"
         $me = Invoke-WebRequest -Uri 'http://127.0.0.1:5099/api/v1/auth/me' -UseBasicParsing -WebSession $session
         if ($me.StatusCode -eq 200) { Pass "GET /api/v1/auth/me → 200 (cookie roundtrip)" }
         else { Fail "GET /api/v1/auth/me → $($me.StatusCode) (expected 200)" }
-        $logout = Invoke-WebRequest -Uri 'http://127.0.0.1:5099/api/v1/auth/logout' -Method Post -UseBasicParsing -WebSession $session
-        if ($logout.StatusCode -eq 204) { Pass "POST /api/v1/auth/logout → 204" }
+        # Company switch — need a fresh CSRF token (the
+        # server regenerates per request).
+        $csrf2 = Invoke-WebRequest -Uri 'http://127.0.0.1:5099/api/v1/auth/csrf' -Method Get -UseBasicParsing -WebSession $session
+        $csrfToken2 = ($csrf2.Content | ConvertFrom-Json).requestToken
+        $switchBody = '{"targetCompanyId":1}'
+        $switch = Invoke-WebRequest -Uri 'http://127.0.0.1:5099/api/v1/auth/company/switch' -Method Post -Body $switchBody -ContentType 'application/json' -Headers @{ 'X-CSRF-TOKEN' = $csrfToken2 } -UseBasicParsing -WebSession $session
+        # The switch may 403 (no membership) on a fresh
+        # DB without seeded membership; we accept 200 or
+        # 403 as both prove the CSRF gate passed. 400
+        # csrf_validation_failed would be a regression.
+        if ($switch.StatusCode -in @(200, 403)) { Pass "POST /api/v1/auth/company/switch → $($switch.StatusCode) (CSRF gate passed; business validation fired)" }
+        else { Fail "POST /api/v1/auth/company/switch → $($switch.StatusCode) (expected 200 or 403 — NOT 400)" }
+        $csrf3 = Invoke-WebRequest -Uri 'http://127.0.0.1:5099/api/v1/auth/csrf' -Method Get -UseBasicParsing -WebSession $session
+        $csrfToken3 = ($csrf3.Content | ConvertFrom-Json).requestToken
+        $logout = Invoke-WebRequest -Uri 'http://127.0.0.1:5099/api/v1/auth/logout' -Method Post -Headers @{ 'X-CSRF-TOKEN' = $csrfToken3 } -UseBasicParsing -WebSession $session
+        if ($logout.StatusCode -eq 204) { Pass "POST /api/v1/auth/logout → 204 (with X-CSRF-TOKEN)" }
         else { Fail "POST /api/v1/auth/logout → $($logout.StatusCode) (expected 204)" }
     } else {
         Fail "POST /api/v1/auth/login → $($loginResp.StatusCode) (expected 200)"
@@ -197,12 +221,26 @@ try {
         if ($ready2.StatusCode -eq 503) { Pass "GET /health/ready → 503 (bad-DB)" }
 
         # Login with bad-DB → 401 invalid_credentials (uniform).
+        # G2-004R1: must include the X-CSRF-TOKEN header (fetched
+        # from /csrf first).
+        $csrfRespBad = Invoke-WebRequest -Uri 'http://127.0.0.1:5098/api/v1/auth/csrf' -Method Get -UseBasicParsing
+        $csrfBad = ($csrfRespBad.Content | ConvertFrom-Json).requestToken
         $loginBody = '{"userName":"admin","password":"ChangeMe!2026","tenantCode":"default"}'
-        $loginResp = Invoke-WebRequest -Uri 'http://127.0.0.1:5098/api/v1/auth/login' -Method Post -Body $loginBody -ContentType 'application/json' -UseBasicParsing
+        $loginResp = Invoke-WebRequest -Uri 'http://127.0.0.1:5098/api/v1/auth/login' -Method Post -Body $loginBody -ContentType 'application/json' -Headers @{ 'X-CSRF-TOKEN' = $csrfBad } -UseBasicParsing
         if ($loginResp.StatusCode -eq 401 -and $loginResp.Content -match 'invalid_credentials') {
             Pass "POST /api/v1/auth/login (bad-DB) → 401 + invalid_credentials (enumeration defense)"
         } else {
             Fail "POST /api/v1/auth/login (bad-DB) → $($loginResp.StatusCode) (expected 401 + invalid_credentials)"
+        }
+
+        # CSRF negative proof: state-changing without X-CSRF-TOKEN
+        # MUST return 400 + csrf_validation_failed, even when the
+        # request body is well-formed.
+        $noCsrfResp = Invoke-WebRequest -Uri 'http://127.0.0.1:5098/api/v1/auth/login' -Method Post -Body $loginBody -ContentType 'application/json' -UseBasicParsing
+        if ($noCsrfResp.StatusCode -eq 400 -and $noCsrfResp.Content -match 'csrf_validation_failed') {
+            Pass "POST /api/v1/auth/login (bad-DB, NO X-CSRF-TOKEN) → 400 + csrf_validation_failed (CSRF boundary)"
+        } else {
+            Fail "POST /api/v1/auth/login (bad-DB, NO X-CSRF-TOKEN) → $($noCsrfResp.StatusCode) (expected 400 + csrf_validation_failed)"
         }
     } finally {
         if ($hostProc -and -not $hostProc.HasExited) {
@@ -241,13 +279,26 @@ try {
 
     # Login with X-Tenant-Id header — header is IGNORED.
     $loginBody = '{"userName":"admin","password":"ChangeMe!2026","tenantCode":"default"}'
-    $loginResp = Invoke-WebRequest -Uri 'http://127.0.0.1:5097/api/v1/auth/login' -Method Post -Body $loginBody -ContentType 'application/json' -Headers @{ 'X-Tenant-Id' = '1' } -UseBasicParsing
+    # G2-004R1 — fetch a CSRF token first, then send it.
+    $csrfProd = Invoke-WebRequest -Uri 'http://127.0.0.1:5097/api/v1/auth/csrf' -Method Get -UseBasicParsing
+    $csrfProdToken = ($csrfProd.Content | ConvertFrom-Json).requestToken
+    $loginResp = Invoke-WebRequest -Uri 'http://127.0.0.1:5097/api/v1/auth/login' -Method Post -Body $loginBody -ContentType 'application/json' -Headers @{ 'X-Tenant-Id' = '1'; 'X-CSRF-TOKEN' = $csrfProdToken } -UseBasicParsing
     # The header doesn't affect the login outcome (the login
     # doesn't read it). The login is independent of the
     # principal-source path. The D-003 proof is the /me
     # response below: the X-Tenant-Id header is IGNORED, so
     # the cookie carries the seed Tenant, not 1.
     Write-Host "  [INFO] /auth/login (Production, with X-Tenant-Id: 1) → $($loginResp.StatusCode)"
+
+    # CSRF negative proof (Production): state-changing without
+    # the X-CSRF-TOKEN header MUST return 400 +
+    # csrf_validation_failed.
+    $noCsrfProd = Invoke-WebRequest -Uri 'http://127.0.0.1:5097/api/v1/auth/login' -Method Post -Body $loginBody -ContentType 'application/json' -UseBasicParsing
+    if ($noCsrfProd.StatusCode -eq 400 -and $noCsrfProd.Content -match 'csrf_validation_failed') {
+        Pass "POST /api/v1/auth/login (Production, NO X-CSRF-TOKEN) → 400 + csrf_validation_failed"
+    } else {
+        Fail "POST /api/v1/auth/login (Production, NO X-CSRF-TOKEN) → $($noCsrfProd.StatusCode) (expected 400 + csrf_validation_failed)"
+    }
 
     # /me without cookie → 401 + authentication_required.
     $meNoAuth = Invoke-WebRequest -Uri 'http://127.0.0.1:5097/api/v1/auth/me' -UseBasicParsing

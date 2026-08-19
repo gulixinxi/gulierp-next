@@ -223,12 +223,13 @@ The G2-002 sacred middleware order is preserved. The new line is
 
 ### 4.2 Endpoints (minimal V1)
 
-| Method | Path | Auth | Purpose |
-|---|---|---|---|
-| POST | `/api/v1/auth/login` | NO | Validate credentials, mint cookie, return user DTO |
-| POST | `/api/v1/auth/logout` | YES | Sign out, clear cookie |
-| GET | `/api/v1/auth/me` | YES | Return current user DTO (Id, UserName, TenantId, CompanyId, IsPlatformAdmin) |
-| POST | `/api/v1/auth/company/switch` | YES | Re-mint cookie with new `company_id` claim (uses `ICompanySwitchingService.ValidateSwitchAsync`) |
+| Method | Path | Auth | CSRF | Purpose |
+|---|---|---|---|---|
+| GET  | `/api/v1/auth/csrf` | NO | exempt | Mint a fresh antiforgery token (G2-004R1 / DEC-AUTH-009) |
+| POST | `/api/v1/auth/login` | NO | REQUIRED | Validate credentials, mint cookie, return user DTO |
+| POST | `/api/v1/auth/logout` | YES | REQUIRED | Sign out, clear cookie |
+| GET | `/api/v1/auth/me` | YES | exempt | Return current user DTO (Id, UserName, TenantId, CompanyId, IsPlatformAdmin) |
+| POST | `/api/v1/auth/company/switch` | YES | REQUIRED | Re-mint cookie with new `company_id` claim (uses `ICompanySwitchingService.ValidateSwitchAsync`) |
 
 Deferred (declarations only; not in G2-004):
 
@@ -381,6 +382,20 @@ each type (status + code + non-leakage).
 
 ### 6.1 Why no antiforgery in V1
 
+> **G2-004R1 AMENDMENT (2026-08-20)** — the V1 "no antiforgery"
+> assumption was **REJECTED**. The architectural risk review
+> found that under Cookie Authentication the browser
+> automatically attaches the authentication cookie on any
+> same-site `fetch()` with `credentials: 'include'`. The
+> `SameSite=Lax` defense alone is **not sufficient** for
+> cookie-authenticated state-changing endpoints; the mature
+> ASP.NET Core `IAntiforgery` mechanism MUST be wired for
+> `POST /login`, `POST /logout`, `POST /company/switch`.
+> `SameSite=Lax` is retained as **defense-in-depth**, NOT
+> the primary CSRF guarantee.
+>
+> See **DEC-AUTH-009** in §9 below.
+
 V1's first-party SPA uses `POST /api/v1/auth/login` and the
 other auth endpoints with `Content-Type: application/json`.
 Antiforgery tokens are needed when cookies are sent with HTML
@@ -466,6 +481,7 @@ text, no leaked user name in the body).
 | **DEC-AUTH-006** | **Login enumeration defense** | All login failures return the same `401 invalid_credentials` ProblemDetails. Internal `ILogger` discriminates the outcome. No user / tenant / lockout hint in the response. A test asserts 3 failure modes return identical responses. |
 | **DEC-AUTH-007** | **Lockout** | 5 failed attempts / 5 min `LockoutEnd`. Locked-out user gets the same `401 invalid_credentials` response (no enumeration). No admin unlock API in V1; `UserManager.SetLockoutEndDateAsync` is the manual path (operator or future G2-005 admin endpoint). |
 | **DEC-AUTH-008** | **IsPlatformAdmin isolation** | `ICurrentUser.IsPlatformAdmin` is `AsyncLocal`-backed (closes G2-R0 D-001). The Authentication handler reads the `IsPlatformAdmin` claim and pushes `true` to the AsyncLocal. The plain `get; set;` is removed (the property becomes the AsyncLocal read). The Testing env `X-Platform-Admin: true` path is preserved (G2-002R2) and now also drives the AsyncLocal. |
+| **DEC-AUTH-009** | **Antiforgery (CSRF) for cookie-authenticated state-changing endpoints** | ASP.NET Core native `IAntiforgery` (NOT a custom HMAC / nonce / Origin-only middleware). The antiforgery cookie is `.GuliERP.Antiforgery` (HttpOnly, Secure, SameSite=Strict). The header name is **`X-CSRF-TOKEN`** (frozen). A new public endpoint `GET /api/v1/auth/csrf` calls `IAntiforgery.GetAndStoreTokens(...)` and returns the request token as JSON (`{"requestToken": "...", "headerName": "X-CSRF-TOKEN"}`). The 3 state-changing endpoints (`POST /login`, `POST /logout`, `POST /company/switch`) call `IAntiforgery.ValidateRequestAsync(httpContext)` BEFORE any business logic; on failure they return `400 + code=csrf_validation_failed` ProblemDetails (no token content leaked; the G2-002 requestId/traceId extensions are attached). The `GET /csrf` and `GET /me` endpoints are CSRF-exempt. `SameSite=Lax` on the auth cookie is retained as defense-in-depth. The antiforgery is the **primary** CSRF guarantee. |
 
 ---
 
