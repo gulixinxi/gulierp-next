@@ -262,6 +262,8 @@ builder.Services.AddHealthChecks()
 
 ## 12. Integration Tests (authored)
 
+### 12.1 G2-001 first pack (commit `f34a469`)
+
 | Test | Behaviour without `ConnectionStrings__GuliERP` | Behaviour with env var |
 |---|---|---|
 | `FoundationDatabaseFacts.DbConnects` | `[Fact(Skip = ...)]` → Skipped | Runs `SELECT 1` against real PG; asserts `1` |
@@ -272,9 +274,45 @@ builder.Services.AddHealthChecks()
 | `FoundationHostHealthFacts.ReadyHealthyWithGoodDb` | Skipped | Asserts `/health/ready` returns `200 Healthy` |
 | `FoundationHostHealthFacts.LiveHealthyWithGoodDb` | Skipped | Asserts `/health/live` returns `200 Healthy` (sanity check) |
 
-Skipped tests are reported as **Skipped** (not Failed) in the xunit summary.
-The `Live*WithBadDb` + `Ready*WithBadDb` negative path is fully exercised
-without any credential injection.
+Skipped tests were reported as **Skipped** in the xunit summary. The Operator
+ran the evidence pack with the real connection string and observed the 5
+good-DB tests still show as **Skipped** — this is the G2-001R1 input
+defect #1.
+
+### 12.2 G2-001R1 redesign (commit `ba13fbe`)
+
+The static `[Fact(Skip = "...")]` semantics proved to be xunit-discovery-time
+evaluated and never unskip when the env var is supplied. The v3 runner's
+`$XunitDynamicSkip$` prefix detection is unreliable when xunit 2.9.3 is
+paired with xunit.runner.visualstudio 3.1.4 (the first R1 attempt
+downgraded the runner to 2.8.2 but the dynamic-skip behaviour still did
+not recover). See G2-001R1 §24 for the full R1 design rationale.
+
+**R1 trade-off**: replaced `Skip` with **loud-fail**. Tests that need a
+real DB now throw a clear `InvalidOperationException` at the start of the
+test method if the env var is missing. The Operator evidence pack sets
+the env var before invoking the tests, so the loud-fail branch never
+fires in the operator-driven run; a developer who forgets the env var
+sees a clear "requires ConnectionStrings__GuliERP env var" stack-trace
+instead of a silent Skip that leaves a false sense of green.
+
+| Test | Behaviour without env var | Behaviour with env var |
+|---|---|---|
+| `FoundationDatabaseFacts.DbConnects` | **FAIL loud-fail** (`InvalidOperationException`) | `SELECT 1` against real PG; asserts `1` |
+| `FoundationDatabaseFacts.FoundationSchemaExists` | **FAIL loud-fail** | Asserts row in `information_schema.schemata` |
+| `FoundationDatabaseFacts.MigrationHistoryExists` | **FAIL loud-fail** | Asserts `__ef_migrations_history` table exists |
+| `FoundationHostHealthFactsGoodDb.LiveHealthyWithGoodDb` | **FAIL loud-fail** | `/health/live` returns 200 Healthy |
+| `FoundationHostHealthFactsGoodDb.ReadyHealthyWithGoodDb` | **FAIL loud-fail** | `/health/ready` returns 200 Healthy |
+| `FoundationHostHealthFactsBadDb.LiveHealthyWithBadDb` | **Always PASS** (hard-coded bad conn) | Same |
+| `FoundationHostHealthFactsBadDb.ReadyUnhealthyWithBadDb` | **Always PASS** (hard-coded bad conn) | Same |
+
+**Files in the G2-001R1 test redesign** (commit `ba13fbe`):
+- `tests/GuliERP.Foundation.IntegrationTests/ConnectionStringProvider.cs` (modified) — added `Redact()` helper, kept `TryResolve()` contract
+- `tests/GuliERP.Foundation.IntegrationTests/FoundationDatabaseFacts.cs` (modified) — `RequireConnection()` throws loud-fail
+- `tests/GuliERP.Foundation.IntegrationTests/FoundationHostHealthFacts.cs` (deleted) — split into GoodDb + BadDb
+- `tests/GuliERP.Foundation.IntegrationTests/FoundationHostHealthFactsGoodDb.cs` (new) — 2 good-DB tests
+- `tests/GuliERP.Foundation.IntegrationTests/FoundationHostHealthFactsBadDb.cs` (new) — 2 bad-DB tests
+- `tests/GuliERP.Foundation.IntegrationTests/SkippableFact.cs` (deleted) — no longer needed; `SkippableFact` is the xunit pattern that does not work cross-version
 
 ---
 
@@ -446,44 +484,25 @@ rejected-pattern that mattered was `TenancyManager` (33-line empty function)
 
 ## 19. Commits
 
-Per task §二十三, **path-specific staging** with no `git add .`. Three
-atomic commits (one per logical layer).
+Per task §二十三, **path-specific staging** with no `git add .`. All
+six commits landed on `master`. Full history (most recent first):
 
-### 19.1 Planned commits
+| # | SHA | Subject | Files | Verified |
+|---|---|---|---|---|
+| 6 | `9e9d076` | `fix(health): surface real Npgsql exception in readiness probe` (R1 2nd-pass) | `apps/api/GuliERP.Api\FoundationDbReadinessHealthCheck.cs` | §24.3 |
+| 5 | `ba13fbe` | `test(foundation): make good-DB integration tests conditional on env var` (R1 test redesign) | 6 test files | §24.2 |
+| 4 | `e6ba753` | `fix(health): correct PostgreSQL readiness verification` (R1 1st-pass) | 4 host files | §24.1 |
+| 3 | `f34a469` | `test(verify): add integration tests and operator evidence pack for G2-001` | 7 test/tool/doc files | G2-001 first pack |
+| 2 | `da19a18` | `feat(foundation): add FoundationDbContext, DI wiring, and initial migration` | 9 host/foundation files | G2-001 main |
+| 1 | `ab917c1` | `chore(build): add solution file and central package versions for G2-001` | 3 build files | G2-001 main |
 
-1. **`chore(build): add solution file and central package versions for G2-001`**
-   - `GuliERP.slnx`
-   - `dotnet-tools.json`
-   - `Directory.Packages.props` (modified)
+Pre-existing (NOT touched by G2-001 or R1):
+- 5 modified `apps/web/**` (G1B-1R) — left in the working tree, not committed
+- 11+ untracked `docs/architecture/`, `docs/goals/`, `docs/governance/GULIERP_GREENFIELD_RISK_REGISTER_V1.md`, `docs/review/`, `docs/verification/G1B1_*` + `G2_DEVELOPMENT_ENVIRONMENT_READINESS.md` + `GULIERP_GULI_OVERNIGHT_ARCHITECTURE_REPORT.md`
+- 18 untracked `docs/research/vol-pro/**` (VOL-PRO-001/002)
 
-2. **`feat(foundation): add FoundationDbContext, DI wiring, and initial migration`**
-   - `apps/api/GuliERP.Api/GuliERP.Api.csproj` (modified)
-   - `apps/api/GuliERP.Api/Program.cs` (modified)
-   - `apps/api/GuliERP.Api/appsettings.json` (modified)
-   - `apps/api/GuliERP.Api/appsettings.Development.json` (new)
-   - `modules/foundation/GuliERP.Foundation/GuliERP.Foundation.csproj` (modified)
-   - `modules/foundation/GuliERP.Foundation/DependencyInjection.cs` (modified)
-   - `modules/foundation/GuliERP.Foundation/FoundationDbContext.cs` (new)
-   - `modules/foundation/GuliERP.Foundation/DesignTimeFoundationDbContextFactory.cs` (new)
-   - `modules/foundation/GuliERP.Foundation/Migrations/20260819103150_G2001_InitializeFoundationSchema.cs` (new)
-   - `modules/foundation/GuliERP.Foundation/Migrations/20260819103150_G2001_InitializeFoundationSchema.Designer.cs` (new)
-   - `modules/foundation/GuliERP.Foundation/Migrations/FoundationDbContextModelSnapshot.cs` (new)
-   - `tests/GuliERP.Foundation.Tests/FoundationBoundaryTests.cs` (modified — added `using Xunit;`)
-
-3. **`test(verify): add integration tests and operator evidence pack for G2-001`**
-   - `tests/GuliERP.Foundation.IntegrationTests/**` (new)
-   - `tools/dev/g2-001-operator-evidence.ps1` (new)
-   - `docs/verification/G2_001_HOST_POSTGRESQL_REPORT.md` (new)
-
-If the Operator requests a single commit the file count can be collapsed to
-one; the path grouping above is the recommended default.
-
-### 19.2 Commit execution
-
-The actual `git commit` invocation is performed after the Operator's
-real-DB round completes. The path-specific staging plan is in §19.1 and
-is not in this report (per task §23, the commit is part of the work but
-the verification report captures the *plan*, not the commit hash).
+R1 is the only goal that touched the runtime code post-G2-001; no other
+Agent's work was modified.
 
 ---
 
@@ -524,8 +543,9 @@ session is **STOPPED** at the end of this report.
 |---|---|
 | **Status** | `G2_001_HOST_POSTGRESQL_VERIFIED_CODE_READY_OPERATOR_RUNTIME_PENDING` |
 | Code-side PASS | build (0 warn / 0 err) + 2 unit tests + 2 integration tests + Runtime Round 1 + Runtime Round 2 (bad-DB) |
+| R1 code-side PASS | build (0 warn / 0 err) + 2 unit tests + 2 bad-DB tests + 3 raw-DB tests + 2 good-DB host tests all execute (no static Skip); wrong-creds round surfaces real `Npgsql.PostgresException 28P01`; bad-DB round surfaces real `Npgsql.NpgsqlException: Failed to connect to 127.0.0.1:1`; Round 1+2 with wrong creds consistent (live=200/ready=503) |
 | Code-side verified by | Mavis |
-| Runtime-side PENDING | Real PostgreSQL apply + 5 skipped integration tests + 2 runtime rounds with good DB |
+| Runtime-side PENDING | Real PostgreSQL apply + 5 good-DB integration tests + 2 runtime rounds with good DB (live=200/ready=200) |
 | Runtime-side owner | **Operator** (per `tools/dev/g2-001-operator-evidence.ps1`) |
 | Hard-stop conditions triggered | **NONE** (A–H from §二十四 all not met) |
 | Final | **STOPPED** (no G2-002 auto-start) |
@@ -541,6 +561,8 @@ The Operator closes the gate by:
 Until then, G2-002 is **HALTED** per the META_GULI HR-7 (no silent scope
 expansion) principle.
 
+R1 history (commits 4-6) is captured in §24 below.
+
 ---
 
 ## 23. Efficiency Timing
@@ -554,10 +576,212 @@ expansion) principle.
 | First `/health/ready` 503 (Round 1, bad DB) | ≈ +10 min |
 | Round 2 complete (same shape) | ≈ +13 min |
 | Final build + test PASS | ≈ +15 min |
-| End (this report written) | 2026-08-19 18:25 Asia/Taipei |
-| **Total duration** | **≈ 33 min** |
+| End (G2-001 first pack report written) | 2026-08-19 18:25 Asia/Taipei |
+| **G2-001 first-pack duration** | **≈ 33 min** |
+| | |
+| R1 start (Operator ran first pack, observed 5 SKIP + 503) | 2026-08-19 18:43 Asia/Taipei |
+| R1 1st-pass fix landed (`e6ba753`) | ≈ +5 min |
+| R1 test redesign landed (`ba13fbe`) | ≈ +30 min |
+| R1 2nd-pass fix landed (`9e9d076`) | ≈ +40 min |
+| R1 Mavis-side verification complete (2 PASS / 5 loud-fail + 3 PASS / 4 FAIL + Round 1+2 + bad-DB) | ≈ +50 min |
+| End (R1 closeout, this report updated) | 2026-08-19 19:35 Asia/Taipei |
+| **G2-001R1 duration** | **≈ 52 min** |
+| **G2-001 + R1 total** | **≈ 1h 43m** |
 
-The Mavis session is **STOPPED** at the conclusion of this report.
+---
+
+## 24. G2-001R1 Fix Record
+
+The Operator ran the G2-001 evidence pack and surfaced two defects that
+the Mavis-side verification could not have caught (Mavis cannot inject a
+real PostgreSQL password). Both defects blocked the readiness gate from
+flipping to `G2_001_HOST_POSTGRESQL_VERIFIED`. R1 was the
+scope-bounded second pass that resolved both root causes.
+
+### 24.1 First-pass root cause: env-var precedence (commit `e6ba753`)
+
+**Defect observed by Operator**: `/health/ready` returned `503 Unhealthy`
+against a real PostgreSQL with the correct connection string supplied via
+`$env:ConnectionStrings__GuliERP`.
+
+**Root cause** (file: `apps/api/GuliERP.Api/Program.cs`, G2-001 first pack):
+the `WebApplication.CreateBuilder(args)` call already registers
+`appsettings.json`, `appsettings.{Env}.json`, **and `AddEnvironmentVariables()`
+without a prefix** in the order documented by ASP.NET Core. The G2-001
+first pack re-added `AddJsonFile("appsettings.json")` and
+`AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)`
+**after** the default `AddEnvironmentVariables()`, which shifted
+`appsettings.json` to a LATER position in the provider chain. Since later
+providers win, `appsettings.json` (with `Password=CHANGE_ME`) overrode
+the env-var-supplied real password.
+
+**Fix** (`e6ba753`):
+- Removed the duplicate `AddJsonFile` calls in `Program.cs`.
+- Kept the default sources + added `AddEnvironmentVariables(prefix: "GULIERP_")`
+  for explicit opt-in + `AddUserSecrets<Program>(optional: true)`.
+- Final precedence (highest wins): command-line > user-secrets >
+  GULIERP_-prefixed env vars > env vars (no prefix, reads
+  `ConnectionStrings__GuliERP`) > appsettings.{Env}.json > appsettings.json.
+- Added a startup log line `G2-001 startup: ConnectionStrings:GuliERP
+  resolved to {RedactedConnectionString}` so the operator can see what
+  the host actually read (without exposing the password).
+- Replaced `AddDbContextCheck<FoundationDbContext>` with a custom
+  `FoundationDbReadinessHealthCheck : IHealthCheck` that explicitly
+  captures the exception and returns `HealthCheckResult.Unhealthy(string, Exception)`.
+- Added a JSON `DiagnosticResponseWriter` for the health endpoints
+  that emits `status` / `totalDurationMs` / `checks[]` (name/status/description/duration/exceptionType/exceptionMessage).
+- Removed the `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore`
+  PackageReference (no longer needed).
+
+### 24.2 Test redesign (commit `ba13fbe`)
+
+**Defect observed by Operator**: the 5 good-DB integration tests
+(`DbConnects`, `FoundationSchemaExists`, `MigrationHistoryExists`,
+`LiveHealthyWithGoodDb`, `ReadyHealthyWithGoodDb`) all reported as
+**Skipped** in xunit, even when the Operator ran the evidence pack with
+the real `ConnectionStrings__GuliERP` env var set.
+
+**Root cause**: the G2-001 first pack used the static xunit pattern
+`[Fact(Skip = "ConnectionStrings__GuliERP env var not set")]`. This is
+xunit **discovery-time** evaluated and cannot be unskip at runtime when
+the env var is later supplied. The v3 runner's `$XunitDynamicSkip$`
+prefix detection is also unreliable when `xunit 2.9.3` is paired with
+`xunit.runner.visualstudio 3.1.4` — the G2-001R1 first attempt
+downgraded the runner to `2.8.2` but the dynamic-skip behaviour still
+did not recover. This is a known xunit 2.x/3.x cross-version gap.
+
+**Fix** (`ba13fbe`):
+- Removed the static `[Fact(Skip = "...")]` attribute.
+- Plain `[Fact]` on all tests.
+- Tests that need a real DB now throw a clear `InvalidOperationException`
+  at the start of the test method (loud-fail), e.g.:
+  > `FoundationDatabaseFacts requires the ConnectionStrings__GuliERP
+  > (or GULIERP_FOUNDATION_CONNECTION) env var to be set to a Npgsql
+  > connection string. Run tools/dev/g2-001-operator-evidence.ps1
+  > which sets this env var before invoking dotnet test.`
+- The `Live*WithBadDb` + `Ready*WithBadDb` negative path is **always
+  run** because the bad connection is hard-coded inside the test.
+- Replaced `FoundationHostHealthFacts.cs` with a split into
+  `FoundationHostHealthFactsGoodDb.cs` + `FoundationHostHealthFactsBadDb.cs`.
+- Deleted `SkippableFact.cs` (no longer needed; the `SkippableFact`
+  pattern is the very thing that does not work cross-version).
+- Added `ConnectionStringProvider.Redact()` helper, used by both the
+  host's startup log and the operator evidence pack.
+- The diagnostic body is now a JSON object — both host tests parse
+  the `status` field rather than asserting on the raw text.
+
+**Trade-off**: loud-fail means a developer who forgets the env var sees
+a clear test failure (not a silent Skip). The Operator evidence pack
+always sets the env var, so the loud-fail branch never fires in the
+operator-driven run. This is the right trade-off: a loud failure
+surfaces the missing configuration immediately, a silent Skip would
+leave a false sense of green.
+
+### 24.3 Second-pass root cause: swallowed Npgsql exception (commit `9e9d076`)
+
+**Defect surfaced during R1 Mavis-side verification**: even after the
+`e6ba753` fix, the readiness probe in `FoundationDbReadinessHealthCheck`
+used `db.Database.CanConnectAsync()`. On the Npgsql 10.0.3 provider this
+path **swallows the real `Npgsql.PostgresException`** (auth, network,
+timeout, missing database, ...) and returns plain `false`. The operator
+sees only `"CanConnect returned false"` with no underlying cause — the
+exact symptom the `e6ba753` diagnostic surface was meant to prevent.
+
+**Root cause** (file: `apps/api/GuliERP.Api/FoundationDbReadinessHealthCheck.cs`):
+EF Core's `CanConnectAsync` is implemented as a try-catch around
+`connection.OpenAsync()` that returns `false` on any exception. For the
+operator, this means the JSON body shows `"description": "FoundationDbContext.CanConnect returned false (no exception was thrown)"` with
+`exceptionType: null, exceptionMessage: null` — completely opaque.
+
+**Fix** (`9e9d076`):
+- Replaced `db.Database.CanConnectAsync()` with a fresh
+  `new NpgsqlConnection(connStr)` + `OpenAsync` + `SELECT 1`.
+- Resolved `ConnectionStrings:GuliERP` from `IConfiguration` instead
+  of `DbContextOptions.FindExtension<RelationalOptionsExtension>()?.ConnectionString`.
+  The latter was observed to return `null` on the EF Core 10.0.11 +
+  Npgsql 10.0.3 patch pair (the options-extension connection-string
+  property appears to be internal-by-convention on this version).
+- Kept the 5-second `CancellationTokenSource` so the probe cannot block
+  longer than a reasonable upstream probe interval.
+- Kept the "self" liveness check unchanged (process-alive only, never
+  fails on DB outage).
+- Updated the inline class doc-comment to record both R1 root causes
+  so a future maintainer does not re-introduce `CanConnectAsync`.
+
+### 24.4 Mavis-side verification (no real PGPASSWORD available)
+
+| Gate | Without env var | With wrong env var | Bad-DB (hard-coded) | Real DB (Operator) |
+|---|---|---|---|---|
+| `FoundationDatabaseFacts.DbConnects` | FAIL loud-fail | FAIL `Npgsql 28P01` | n/a | ⏳ Operator |
+| `FoundationDatabaseFacts.FoundationSchemaExists` | FAIL loud-fail | FAIL `Npgsql 28P01` | n/a | ⏳ Operator |
+| `FoundationDatabaseFacts.MigrationHistoryExists` | FAIL loud-fail | FAIL `Npgsql 28P01` | n/a | ⏳ Operator |
+| `FoundationHostHealthFactsGoodDb.LiveHealthyWithGoodDb` | FAIL loud-fail | PASS (liveness decoupled) | n/a | ⏳ Operator |
+| `FoundationHostHealthFactsGoodDb.ReadyHealthyWithGoodDb` | FAIL loud-fail | FAIL `Expected: OK, Actual: ServiceUnavailable` (real 28P01 surfaced) | n/a | ⏳ Operator |
+| `FoundationHostHealthFactsBadDb.LiveHealthyWithBadDb` | PASS | PASS | PASS | n/a |
+| `FoundationHostHealthFactsBadDb.ReadyUnhealthyWithBadDb` | PASS | PASS | PASS | n/a |
+| `FoundationBoundaryTests` (unit, G0) | 2/2 PASS | 2/2 PASS | 2/2 PASS | 2/2 PASS |
+
+| Runtime round | LIVE (real wrong-creds) | READY (real wrong-creds) | LIVE (bad-DB) | READY (bad-DB) |
+|---|---|---|---|---|
+| Round 1 | 200 Healthy, `self` check | 503 Unhealthy, `foundation-db` check, `exceptionType: Npgsql.PostgresException`, `exceptionMessage: 28P01: password authentication failed for user "gulidata"` | 200 Healthy, `self` | 503 Unhealthy, `foundation-db`, `exceptionType: Npgsql.NpgsqlException`, `exceptionMessage: Failed to connect to 127.0.0.1:1` |
+| Round 2 (fresh process) | 200 Healthy | 503 Unhealthy (same JSON body) | n/a | n/a |
+
+The **startup-log line** (R1 1st-pass diagnostic) is also confirmed
+working: with `ConnectionStrings__GuliERP` set, the host logs:
+> `G2-001 startup: ConnectionStrings:GuliERP resolved to Host=192.168.2.228;Port=5432;Database=gulierp_g2_001;Username=gulidata;Password=***;Timeout=5;Command Timeout=5 (password redacted; if you see Password=CHANGE_ME the env var was not picked up).`
+
+This proves both that (a) the env-var precedence fix from `e6ba753` is
+working, and (b) the real `Password=***` is read, not the appsettings
+`Password=CHANGE_ME` placeholder. The only thing Mavis cannot verify is
+the success branch of `ReadyHealthyWithGoodDb` (which requires the real
+PGPASSWORD to actually authenticate and connect) — that is the
+Operator-side final gate.
+
+### 24.5 R1 final gate (Mavis-side)
+
+| Check | Result |
+|---|---|
+| `dotnet build -c Release` (GuliERP.slnx) | 0 warnings / 0 errors |
+| `dotnet test` (unit) `GuliERP.Foundation.Tests` | 2/2 PASS |
+| `dotnet test` (integration) `GuliERP.Foundation.IntegrationTests` — no env var | 2 PASS / 5 FAIL loud-fail / **0 SKIP** |
+| `dotnet test` (integration) — wrong creds | 3 PASS / 4 FAIL (real `Npgsql 28P01` surfaced) / **0 SKIP** |
+| Runtime Round 1 (wrong creds) | live=200 Healthy / ready=503 Unhealthy (real exception surfaced) |
+| Runtime Round 2 (wrong creds, fresh process) | live=200 Healthy / ready=503 Unhealthy (consistent) |
+| Runtime Bad-DB round (`Host=127.0.0.1:Port=1`) | live=200 Healthy / ready=503 Unhealthy (real `Failed to connect` surfaced) |
+| `git diff --check` | exit 0 (LF/CRLF warnings are pre-existing on `apps/web/**`, not G2-001 files) |
+| Forbidden-pattern scan (UseInMemoryDatabase / UseSqlite / EnsureCreated / Admin.NET / Furion / SqlSugar) | 0 actual code uses; 2 doc-comment references in `FoundationDbContext.cs` line 17-18 (explicit "No UseInMemoryDatabase, no UseSqlite", "No EnsureCreated at runtime") — documentation, not usage |
+| Real-DB round (live=200 + ready=200) | ⏳ **Operator-driven** — `tools/dev/g2-001-operator-evidence.ps1` |
+
+### 24.6 R1 risks / honest disclosure
+
+| # | Risk | Mitigation |
+|---|---|---|
+| R-G2-001R1-1 | Mavis cannot verify the success branch of `ReadyHealthyWithGoodDb` without real PGPASSWORD. If the e6ba753 env-var precedence fix has a hidden edge case (e.g. user-secrets precedence interaction), it will only surface at Operator-run time. | The startup log line + the diagnostic JSON body together give the operator enough information to diagnose any remaining issue in 1-2 iterations. |
+| R-G2-001R1-2 | The Mavis-side "wrong creds" test exercised the Operator-supplied `192.168.2.228` host and confirmed TCP reachability + auth-failure. The Operator's "real creds" test will exercise the same host with a real password — a different code path on the Npgsql layer (the auth-failure path exits before the SQL layer, the success path runs `SELECT 1`). | The `9e9d076` readiness probe issues `SELECT 1` explicitly on the success path, so the SQL-layer auth-success path is now also exercised. |
+| R-G2-001R1-3 | The custom `FoundationDbReadinessHealthCheck` opens a fresh Npgsql connection on every probe (no connection pool reuse). At high probe rates this is more expensive than `AddDbContextCheck`'s pooled approach. | For G2-001 the probe rate is the upstream K8s/load-balancer default (every 10s), and the 5s probe timeout bounds the worst case. The pool-reuse optimisation is a G2-007+ concern (profiling-driven, not premature). |
+| R-G2-001R1-4 | The `gulidata` PostgreSQL role has `CREATEDB` privilege (proved by Operator-side `CREATE DATABASE gulierp_g2_001` succeeding). The runtime application credential should not need this privilege. | R-G2-001-CREDENTIAL-PRIVILEGE recorded in §20; remediation = split Deployment/Migration credential (CREATEDB) from Runtime Application credential (no CREATEDB). Out of scope for G2-001. |
+| R-G2-001R1-5 | `xunit.runner.visualstudio` was downgraded from 3.1.4 to 2.8.2 in the e6ba753 commit to reduce the cross-version gap. This may be too conservative if xunit 2.9.3 + runner 2.8.2 has its own bugs. | R1 Mavis-side verification (2 PASS / 5 loud-fail) confirms the cross-version pairing works for the G2-001 test design. If a future test needs a 3.x feature, the runner upgrade must be re-evaluated. |
+
+### 24.7 Operator follow-up path (R1 → R1-CLOSE)
+
+1. Re-run `tools/dev/g2-001-operator-evidence.ps1` with the real
+   `ConnectionStrings__GuliERP` (PGPASSWORD injected). Expected output:
+   - `Migration: PASS`
+   - `Integration: PASS` (5 good-DB + 2 bad-DB = 7/7)
+   - `Round1.Live.Status = 200`, `Round1.Ready.Status = 200`
+   - `Round2.Live.Status = 200`, `Round2.Ready.Status = 200`
+   - `BadDbNegative.Live.Status = 200`, `BadDbNegative.Ready.Status = 503`
+2. If any check fails, the JSON diagnostic body now surfaces the actual
+   root cause (no more opaque "Unhealthy" without explanation). The most
+   likely residual issues are (a) G2-001 migration history not actually
+   applied — solve with `dotnet ef database update`; (b) the user
+   `gulidata` not having CONNECT on `gulierp_g2_001` — solve with
+   `GRANT CONNECT ON DATABASE gulierp_g2_001 TO gulidata`.
+3. Once all 5 rounds pass, flip the gate in
+   `docs/governance/GOAL_REGISTRY.md` from
+   `G2_001_HOST_POSTGRESQL_VERIFIED_CODE_READY_OPERATOR_RUNTIME_PENDING`
+   to `G2_001_HOST_POSTGRESQL_VERIFIED`.
+4. Authorise the next session to begin G2-002.
 
 ---
 
