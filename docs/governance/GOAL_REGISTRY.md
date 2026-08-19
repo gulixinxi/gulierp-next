@@ -4,16 +4,16 @@
 
 | Field | Value |
 |---|---|
-| Goal | **G2-003V2 — Identity Database Referential Integrity Closure** |
-| Gate | `G2_003_IDENTITY_ORG_KERNEL_VERIFIED` (G2-003 + R1 + V1 closed; G2-R0 review published; D-002 HIGH finding) |
-| Status | **`G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED`** — Operator-observed 2026-08-19. Mavis-side: EF model + 14 `HasOne().WithMany().HasForeignKey(Restrict)` declarations added; G2003V2 additive migration applied (14 `AddForeignKey` + 9 `CreateIndex`); G2-003V2R1 self-contained test fix landed (3 tests now create + cleanup their own Tenant/Company via `SnowflakeIdGenerator` + Guid-derived codes). Operator-side: all 8 steps of `g2-003-operator-evidence.ps1` PASS, including the 3 G2-003V2R1 referential integrity tests with `SqlState=23503` on the FK violation. **G2-003V2 = CLOSED. G2-003V2R1 = CLOSED. G2-003 remains `G2_003_IDENTITY_ORG_KERNEL_VERIFIED` (unchanged).** |
-| Entry Gate | `G2_003_IDENTITY_ORG_KERNEL_VERIFIED` (G2-003 + R1 + V1 closed) |
-| Verification | `docs/verification/G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_REPORT.md` (14 sections, §8.1 actual Operator run recorded) |
-| Code Commits | `fa3365a` fix(identity): enforce identity referential integrity; `a9cdbac` test(identity): isolate referential integrity test data |
-| Operator Acceptance Date | 2026-08-19 (Asia/Taipei) — recorded in §8.1 of the verification report |
-| Next Goal | **G2-004 — Authentication Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
-| Hard Stop | G2-004 must NOT auto-start in the current Mavis session. G2-004 kickoff requires a fresh session with explicit user authorization. |
-| Forbidden follow-up without user authorization | `G2-004` implementation (any /api/v1/auth/* endpoint, JWT bearer config, refresh-token flow, [Authorize] attribute adoption, SignInManager.SignInAsync, IdentityContextMiddleware JWT-claim rewrite, /api/v1/identity/... read endpoints, UserPlantMembership table) |
+| Goal | **G2-004 — Authentication Kernel** (Cookie + ASP.NET Core Identity; D-003 closure; production-safe principal) |
+| Gate | `G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED` (G2-003 + R1 + V1 + V2 + R0 closed; 20 DEC-IDs frozen) |
+| Status | **`G2_004_CODE_READY_OPERATOR_DB_PENDING`** — Mavis-side code + 26/26 unit + 30/34 integration + 26/31 Foundation regression all PASS or LOUD-FAIL by design. 8 DEC-AUTH-001..008 frozen. D-003 (Production header trust) / D-001 (IsPlatformAdmin AsyncLocal) / D-010 (password policy tightening) all closed on Mavis side. Operator unlocks to `G2_004_AUTH_KERNEL_VERIFIED`. |
+| Entry Gate | `G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED` (G2-003 + R1 + V1 + V2 + R0 closed) |
+| Verification | `docs/verification/G2_004_AUTH_KERNEL_REPORT.md` (11 sections) |
+| Architecture | `docs/architecture/G2_004_AUTHENTICATION_ARCHITECTURE.md` (18 sections, 8 DEC-AUTH-001..008) |
+| Operator Unlock | `tools/dev/g2-004-operator-evidence.ps1` (8-step script; mirrors g2-003 pattern) |
+| Next Goal | **G2-005 — Authorization Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
+| Hard Stop | G2-005 must NOT auto-start in this Mavis session. G2-005 kickoff requires a fresh session with explicit user authorization. |
+| Forbidden follow-up without user authorization | `G2-005` implementation (any [Authorize] policy with permission / DataScope semantics, IPermissionService, role-permission matrix, menu / button / field permission, DataScope filters, JwtBearer scheme registration, OpenIddict server, the 8 read-only /api/v1/identity/... HTTP directory endpoints, UserPlantMembership table) |
 
 ## Previous Active Goal (superseded)
 
@@ -1273,11 +1273,148 @@ the brief.**
 
 ---
 
+## G2-004 — Authentication Kernel (Mavis-CLOSED 2026-08-20; Operator unlock pending)
+
+| Field | Value |
+|---|---|
+| Goal | **G2-004 — Authentication Kernel** (Cookie + ASP.NET Core Identity; D-003 closure; production-safe principal) |
+| Entry Gate | `G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED` (G2-003 + R1 + V1 + V2 + R0 closed; 20 DEC-IDs frozen) |
+| Exit Gate | **`G2_004_CODE_READY_OPERATOR_DB_PENDING`** (Mavis-side) — Operator unlocks to `G2_004_AUTH_KERNEL_VERIFIED` |
+| Status | **CODE_READY_OPERATOR_DB_PENDING** — code + 26 unit + 30/34 integration + 26/31 Foundation regression all PASS or LOUD-FAIL by design. 8 new DEC-AUTH-001..008 frozen. D-003 / D-001 / D-010 closed on Mavis side. |
+| Architecture | `docs/architecture/G2_004_AUTHENTICATION_ARCHITECTURE.md` (18 sections; 8 DEC-AUTH-IDs; 5 mature solution options compared; Option C chosen) |
+| Verification | `docs/verification/G2_004_AUTH_KERNEL_REPORT.md` (11 sections; 14 honest disclosures; 10 architecture tests) |
+| Operator Unlock | `tools/dev/g2-004-operator-evidence.ps1` (8-step script: build → Foundation migration → Identity migration → tests → Runtime Round 1 → Round 2 → Bad-DB negative → Security proof) |
+| Code Commit | (R1 atomic commits — see verification report §5.4) |
+| Next Goal | **G2-005 — Authorization Kernel** (NOT STARTED, HALTED) |
+
+### G2-004 — Implementation scope (what landed in this commit)
+
+| Layer | Project | What was added / changed |
+|---|---|---|
+| Cross-cutting | `GuliERP.Foundation` | `Kernel/ErrorCodes.cs` +5 constants (InvalidCredentials / AuthenticationRequired / PasswordPolicyViolation / CompanyAccessDenied / InvalidCompanySelection) |
+| Application | `GuliERP.Identity.Application` | `Authentication/IAuthenticationService.cs` + `AuthenticationDtos.cs` + `Exceptions.cs` (4 typed exceptions) |
+| Infrastructure | `GuliERP.Identity.Infrastructure` | `Authentication/GuliErpClaimTypes.cs` + `GuliErpAuthSchemes.cs` + `AuthenticationExceptionHandler.cs` + `AuthenticationService.cs` + `AuthenticationContextMiddleware.cs` (replaces `IdentityContextMiddleware`); `Contexts/CurrentUser.cs` IsPlatformAdmin now AsyncLocal-backed (D-001); `DependencyInjection.cs` AddIdentity policy tightened (D-010), `ConfigureApplicationCookie` (DEC-AUTH-001), AddAuthorization cookie-scheme default policy, IAuthenticationService + AuthenticationExceptionHandler registered, `UseAuthenticationContext` replaces `UseIdentityContext`; csproj `<InternalsVisibleTo>` for the 2 test projects |
+| Host | `GuliERP.Api` | `Program.cs`: AuthenticationExceptionHandler BEFORE FoundationExceptionHandler; `UseAuthentication()` + `UseAuthenticationContext()` + `UseAuthorization()` in sacred order; `UseIdentityContext()` REMOVED; root banner updated. `Authentication/AuthEndpoints.cs`: 4 endpoints (`/login` / `/logout` / `/me` / `/company/switch`). |
+| Tests | `GuliERP.Identity.Tests` | `PlatformAdminAsyncLocalTests.cs` (6 unit tests, D-001 fix); `AuthenticationExceptionContractTests.cs` (6 unit tests, 4 typed exceptions + error code distinction) |
+| Tests | `GuliERP.Identity.IntegrationTests` | `HeaderTrustFacts.cs` (5 tests, D-003 closure); `AuthenticationFacts.cs` (8 tests, 4 endpoints + G2-002 regression) |
+| Tools | `tools/dev/` | `g2-004-operator-evidence.ps1` (8-step Operator unlock). `g2-003-operator-evidence.ps1` (1-line housekeeping: `Next` prompt notes the G2-003V2 supersede) |
+| Docs | `docs/` | `architecture/G2_004_AUTHENTICATION_ARCHITECTURE.md` + `verification/G2_004_AUTH_KERNEL_REPORT.md` + `governance/GOAL_REGISTRY.md` (this section) |
+
+### G2-004 — Test count (re-counted)
+
+| Suite | Total | Pass | Loud-fail | Skip | Note |
+|---|---|---|---|---|---|
+| `GuliERP.Foundation.Tests` (unit) | 44 | 44 | 0 | 0 | G2-002 baseline, unchanged |
+| `GuliERP.Identity.Tests` (unit) | 26 | 26 | 0 | 0 | 14 G2-003 + 12 G2-004 new (6 PlatformAdmin + 6 Exception contract) |
+| `GuliERP.Foundation.IntegrationTests` | 31 | 26 | 5 | 0 | 5 G2-001 env-dep loud-fail (unchanged) |
+| `GuliERP.Identity.IntegrationTests` | 34 | 30 | 4 | 0 | 1 G2-003 + 3 G2-003V2 + 0 G2-004 (all 13 new G2-004 tests PASS on bad-DB) |
+| **Total** | **135** | **126** | **9** | **0** | 0 SKIP — the 9 fails are ALL loud-fail by design |
+
+### G2-004 — DEC-AUTH Compliance Matrix
+
+| DEC-AUTH | Frozen Value | G2-004 Compliance |
+|---|---|---|
+| 001 | Cookie for V1 (HttpOnly Secure SameSite=Lax; JWT reserved for V1.5+ per 005) | `AddIdentity` + `ConfigureApplicationCookie` registers the V1 cookie scheme; no `AddJwtBearer` wired |
+| 002 | Identity component reuse (`UserManager` + `SignInManager` + `PasswordHasher` + lockout) | `AuthenticationService` is a thin orchestrator; no custom password hashing |
+| 003 | Principal source = `HttpContext.User` claims in Production; headers honored ONLY in Testing | `AuthenticationContextMiddleware` reads claims first; `X-*-Id` headers gated to `IsEnvironment("Testing")`; `HeaderTrustFacts` (5 tests) PASS |
+| 004 | Company switch re-mints cookie without re-prompting password | `POST /api/v1/auth/company/switch` calls `ValidateSwitchAsync` then `SignInManager.SignInWithClaimsAsync` with new `company_id` claim |
+| 005 | Future JWT Bearer path | `GuliErpAuthSchemes.BearerScheme` constant reserved; AT-AUTH-010 architecture test locks it out (no `AddJwtBearer` wired) |
+| 006 | Login enumeration defense (uniform 401 + invalid_credentials) | `InvalidCredentialsException` thrown for 6+ failure modes; `AuthenticationExceptionHandler` maps to uniform `401 + invalid_credentials`; `InvalidCredentials_AllOutcomes_ShareSameMessage` PASS |
+| 007 | Lockout 5 / 5 min | `AddIdentity` policy block: `MaxFailedAccessAttempts=5` / `DefaultLockoutTimeSpan=5min`; `SignInManager.CheckPasswordSignInAsync(..., lockoutOnFailure: true)` enforces |
+| 008 | `IsPlatformAdmin` AsyncLocal-backed (D-001 fix) | `CurrentUser.IsPlatformAdmin` is `AsyncLocal<bool>` per instance; `SetPlatformAdmin` is `internal` and called by `AuthenticationContextMiddleware`; 6 tests in `PlatformAdminAsyncLocalTests` PASS |
+
+**8/8 DEC-AUTH-IDs compliant. 0 modified. 0 deferred.**
+
+### G2-004 — G2-R0 Closure Summary
+
+| G2-R0 Finding | Severity | G2-004 Status |
+|---|---|---|
+| D-001 `IsPlatformAdmin` AsyncLocal | HIGH | **CLOSED** (D-001 fix; AsyncLocal-backed; 6 unit tests) |
+| D-003 Production header trust | HIGH | **CLOSED** (D-003 fix; `HeaderTrustFacts` 5 integration tests; structural gate `IsEnvironment("Testing")`) |
+| D-008 `IdentityContext_PlatformAdmin` test coverage | INFO | **CLOSED** (the new `HeaderTrustFacts.PlatformAdminHeader_Trusted_InTestingEnv` + `PlatformAdminHeader_Ignored_InProductionEnv` tests cover the path) |
+| D-010 Password policy tightening | INFO | **CLOSED** (D-010 fix; `AddIdentity` policy tightened to 12 + uppercase + lowercase + digit + non-alphanumeric + 4 unique chars) |
+| D-005 Snowflake workerId | HIGH | DEFERRED (G2-005+ / before multi-instance; not in G2-004 scope) |
+| D-002 G2-003V2 cross-entity FKs | HIGH | CLOSED in G2-003V2 (G2-004 preserves) |
+| D-007 IDataFilter runtime scope | MEDIUM | DEFERRED (G2-005+ / G2-006+) |
+| D-015 CompanyDirectoryService cross-tenant guard | MEDIUM | DEFERRED (G2-005+ when read-only HTTP directory endpoints land) |
+| D-014 G2-003 §20 false claim | MEDIUM | CLOSED in G2-003V2 (G2-004 preserves) |
+| D-004 UseSetting anti-pattern | MEDIUM | PARTIALLY DEFERRED (14+ test sites still use UseSetting; D-004 recommendation: on-demand fix when a new test-class needs the pattern) |
+
+### G2-004 — Forbidden Amendments Respected
+
+| Forbidden | Did G2-004 trip it? |
+|---|---|
+| `git reset --hard` / `rebase` / `amend` / `revert` | NO (linear history; 3 atomic commits planned) |
+| `git add .` | NO (path-specific staging only) |
+| `git push` / `git tag` | NO (local repo; no remote) |
+| Modify `Admin.NET` / `Furion` / `SqlSugar` | NO (0 source diff in `poc\adminnet\`) |
+| `UseInMemoryDatabase` / `UseSqlite` / `EnsureCreated` | NO (0 actual uses; 2 doc comments in `FoundationDbContext.cs`) |
+| Re-introduce JWT Bearer | NO (DEC-AUTH-005 reserved; AT-AUTH-010 locks it out) |
+| Implement Permission / DataScope | NO (G2-005 territory) |
+| Implement UserPlantMembership | NO (DEC-ID-017; V1.5+) |
+| Modify frozen Sales/Inventory spec | NO |
+| Modify `gulierp-next` (16KB pre-existing) | NO (PRESERVED; out of scope) |
+| Modify pre-existing dirty `apps/web/**` | NO (PRESERVED) |
+| Modify pre-existing untracked `docs/architecture/G2_*.md` | NO (PRESERVED) |
+| Re-open G2-001 / G2-002 / G2-003 / V1 / V2 | NO (all 14 cross-entity FKs + 20 DEC-IDs + G2-003V2 closure preserved) |
+| Auto-advance to G2-005 | **NO** (per HR-1..HR-10; this Mavis session stops at G2-004) |
+
+### G2-004 — Hard-Stop Check (brief §三十九)
+
+| Brief condition | Did G2-004 trip it? |
+|---|---|
+| A. Need to change DEC-ID-001..020 | NO (20/20 preserved; G2-004 adds 8 new DEC-AUTH-IDs) |
+| B. Plant/Company/Organization boundary conflict | NO |
+| C. Pre-implement Permission | NO (DEC-AUTH-001..008 do NOT include permission) |
+| D. Pre-implement JWT/Auth | NO (G2-004 IS the Auth Goal; JWT reserved for V1.5+) |
+| E. Cross-tenant constraint unbuildable | NO |
+| F. Real PostgreSQL migration broken | NO (G2-004 adds NO new migration) |
+| G. Self-build Password Hash | NO (Identity `PasswordHasher` reused) |
+| H. Frozen Sales/Inventory spec modified | NO |
+
+**0 hard-stops tripped.** Gate is `G2_004_CODE_READY_OPERATOR_DB_PENDING`.
+
+### G2-004 — Operator Upgrade Path
+
+```powershell
+# Step 1: Set the real PostgreSQL connection
+$env:ConnectionStrings__GuliERP = "Host=192.168.2.228;Port=5432;Database=gulierp_g2_004_test;Username=gulidata;Password=***"
+
+# Step 2: Run the Operator evidence pack
+PS> .\tools\dev\g2-004-operator-evidence.ps1 -SkipPrompt
+
+# Expected: 8/8 steps PASS (the bad-DB round's login returns 401 + invalid_credentials; the real-DB round's login + /me + /logout + /company/switch all work; the security proof shows the X-Tenant-Id header is ignored in Production).
+
+# Step 3: Edit this file (docs/governance/GOAL_REGISTRY.md):
+#   - flip the G2-004 entry from
+#       G2_004_CODE_READY_OPERATOR_DB_PENDING
+#     to
+#       G2_004_AUTH_KERNEL_VERIFIED
+#   - add the Operator-verified date
+#   - update the Next Goal to G2-005 (HALTED, awaiting user authorization)
+
+# Step 4: Commit the flip.
+git add docs/governance/GOAL_REGISTRY.md
+git commit -m "docs(verification): operator-upgrade G2-004 to AUTH_KERNEL_VERIFIED"
+```
+
+### G2-004 = CLOSED (Mavis side)
+
+G2-004 Mavis-side is closed. The Operator unlock is the final
+step. Per META_GULI_GOVERNANCE_V1.md HR-1..HR-10, automated
+PASS ≠ business PASS; the real-PostgreSQL happy path
+(login + cookie roundtrip + company switch + lockout) is the
+Operator's responsibility.
+
+---
+
 ## STOP
 
-G2-003V2 / G2-003V2R1 fully closed. G2-003 remains VERIFIED · CLOSED.
+G2-004 Mavis-side is closed. Gate is
+`G2_004_CODE_READY_OPERATOR_DB_PENDING`. Operator unlock
+required to flip to `G2_004_AUTH_KERNEL_VERIFIED`.
 
-NEXT_GOAL_CANDIDATE = G2-004 Authentication Kernel (NOT STARTED,
-HALTED). **G2-004 must NOT auto-start in this Mavis session.**
+NEXT_GOAL_CANDIDATE = G2-005 Authorization Kernel (NOT STARTED,
+HALTED). **G2-005 must NOT auto-start in this Mavis session.**
 Per META_GULI_GOVERNANCE_V1.md HR-1..HR-10, explicit user
 authorization is required for the next Goal kickoff.
