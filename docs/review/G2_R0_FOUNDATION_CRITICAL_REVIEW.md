@@ -17,10 +17,16 @@
 **`FOUNDATION_SUFFICIENT_TO_PROCEED = YES`** with **2 mandatory BEFORE-AUTH / BEFORE-MDM follow-up Goals** explicitly carved out below.
 
 - **0 BLOCKER** (per brief §20 strict definition: no SECURITY / TENANT ISOLATION / DATA CORRUPTION / FUNDAMENTAL ARCHITECTURE blocker).
-- **3 HIGH** (1 mandatory before G2-004 ships; 1 mandatory before MDM; 1 mandatory before multi-instance production).
-- **4 MEDIUM**.
-- **4 LOW**.
-- **Several INFO**.
+- **4 HIGH** (D-001 IsPlatformAdmin AsyncLocal race latent — BEFORE-AUTH; D-002 missing DB FK constraints — G2-003V2 closure, BEFORE-MDM; D-003 Production header-based Tenant/User/Company spoofing — G2-004 fix; D-005 Snowflake workerId hardcoded to 0 — BEFORE-MULTI-INSTANCE).
+- **4 MEDIUM** (D-004 UseSetting anti-pattern in 14+ test sites; D-007 IDataFilter no-op + HasQueryFilter(e => true) placeholder; D-014 G2-003 verification report §20 contained a false claim — amended in the G2-003V2 commit; D-015 CompanyDirectoryService.GetByIdAsync cross-tenant guard gap).
+- **7 LOW** (D-006 Snowflake clock-rollback; D-009 DefaultTokenProviders unused; D-010 password policy permissive; D-011 design-time factory placeholder fallback; D-012 Snowflake process-restart ID recovery; D-016 design-time factory test coverage; D-021 appsettings.json Password=CHANGE_ME sentinel).
+- **6 INFO** (D-008 missing PlatformAdmin test coverage; D-013 X-Platform-Admin env check at request time; D-017 UserOrganizationMembership.CompanyId == Org.CompanyId invariant; D-018 UserRoleAssignment NULL CompanyId uniqueness; D-019 Company/Plant self-FK cycle detection; D-020 UserCompanyMembership.IsDefault cleanup on Status change).
+
+**Correction notice (G2-003V2):** the original §1 summary said
+`3 HIGH` + `4 LOW`; the correct count is `4 HIGH` + `7 LOW`.
+The §18 Final Decision block was correct; only §1 was wrong.
+This correction was applied as part of the G2-003V2 closure
+(commit `fa3365a`).
 
 Two non-blocker defects are non-negotiable follow-ups: **G2-003V2 — DB FK Constraint Closure** (BEFORE-MDM, recommended before G2-004) and **G2-004B — Identity Header Surface Hardening** (subsumed by G2-004 Authentication work).
 

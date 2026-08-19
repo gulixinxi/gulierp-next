@@ -251,34 +251,73 @@ standard `IdentityDbContext` (DEC-ID-012). 11 tables in the
 
 ## 20 Constraints
 
-PostgreSQL constraints enforced by EF Core mapping:
+### 20.1 G2-003 baseline (G2003 only)
 
-| Constraint | Table | On |
-|---|---|---|
-| `PK` bigint | all | `Id` (snowflake) |
-| `UNIQUE` | `gulierp_tenant` | `Code` |
-| `UNIQUE` | `gulierp_company` | `(TenantId, Code)` |
-| `UNIQUE` | `gulierp_plant` | `(TenantId, CompanyId, Code)` |
-| `UNIQUE` | `gulierp_organization_unit` | `(TenantId, CompanyId, Code)` |
-| `UNIQUE` | `gulierp_user_company_membership` | `(UserId, CompanyId)` partial filter Active |
-| `UNIQUE` | `gulierp_user_organization_membership` | `(UserId, OrganizationUnitId)` |
-| `UNIQUE` | `gulierp_user_role_assignment` | `(UserId, RoleId, CompanyId)` partial filter `CompanyId IS NULL` for Tenant-wide |
-| `FK` | `gulierp_company.TenantId → gulierp_tenant.Id` | Restrict |
-| `FK` | `gulierp_company.ParentCompanyId → gulierp_company.Id` | Restrict |
-| `FK` | `gulierp_plant.TenantId → gulierp_tenant.Id` | Restrict |
-| `FK` | `gulierp_plant.CompanyId → gulierp_company.Id` | Restrict |
-| `FK` | `gulierp_plant.ParentPlantId → gulierp_plant.Id` | Restrict |
-| `FK` | `gulierp_organization_unit.TenantId → gulierp_tenant.Id` | Restrict |
-| `FK` | `gulierp_organization_unit.CompanyId → gulierp_company.Id` | Restrict |
-| `FK` | `gulierp_organization_unit.ParentOrganizationUnitId → gulierp_organization_unit.Id` | Restrict |
-| `FK` | `gulierp_user_company_membership.TenantId → gulierp_tenant.Id` | Restrict |
-| `FK` | `gulierp_user_company_membership.CompanyId → gulierp_company.Id` | Restrict |
-| `FK` | `gulierp_user_company_membership.UserId → AspNetUsers.Id` | Restrict |
-| `FK` | `gulierp_user_organization_membership.*` | Restrict |
-| `FK` | `gulierp_user_role_assignment.*` | Restrict (CompanyId FK is nullable) |
+PostgreSQL constraints enforced by the G2003 migration as
+verified by the G2-003 Operator evidence pack on 2026-08-19:
 
-**0 textual-name relations. 0 comma-string IDs. 0 hidden FKs.** Old-DEV
-anti-patterns explicitly rejected.
+| Constraint | Table | On | Present in G2003? |
+|---|---|---|---|
+| `PK` bigint | all | `Id` (snowflake) | ✅ |
+| `UNIQUE` | `gulierp_tenant` | `Code` | ✅ |
+| `UNIQUE` | `gulierp_company` | `(TenantId, Code)` | ✅ |
+| `UNIQUE` | `gulierp_plant` | `(CompanyId, Code)` | ✅ |
+| `UNIQUE` | `gulierp_organization_unit` | `(CompanyId, Code)` | ✅ |
+| `UNIQUE` | `gulierp_user_company_membership` | `(TenantId, UserId, CompanyId)` | ✅ |
+| `UNIQUE` partial | `gulierp_user_company_membership` | `(TenantId, UserId) WHERE IsDefault = true` | ✅ |
+| `UNIQUE` | `gulierp_user_organization_membership` | `(TenantId, UserId, OrganizationUnitId)` | ✅ |
+| `UNIQUE` partial | `gulierp_user_organization_membership` | `(TenantId, UserId, CompanyId) WHERE IsPrimary = true` | ✅ |
+| `UNIQUE` | `gulierp_user_role_assignment` | `(TenantId, UserId, RoleId, CompanyId)` | ✅ |
+| `UNIQUE` | `AspNetUsers` | `(TenantId, NormalizedUserName)` | ✅ |
+| `UNIQUE` | `AspNetRoles` | `(TenantId, Code)` | ✅ |
+| `FK` self | `gulierp_company.ParentCompanyId → gulierp_company.Id` | Restrict | ✅ |
+| `FK` self | `gulierp_plant.ParentPlantId → gulierp_plant.Id` | Restrict | ✅ |
+| `FK` self | `gulierp_organization_unit.ParentOrganizationUnitId → gulierp_organization_unit.Id` | Restrict | ✅ |
+| `FK` | `AspNetUserClaims.UserId → AspNetUsers.Id` | Cascade (Identity default) | ✅ |
+| `FK` | `AspNetUserLogins.UserId → AspNetUsers.Id` | Cascade (Identity default) | ✅ |
+| `FK` | `AspNetUserRoles.UserId → AspNetUsers.Id` | Cascade (Identity default) | ✅ |
+| `FK` | `AspNetUserRoles.RoleId → AspNetRoles.Id` | Cascade (Identity default) | ✅ |
+| `FK` | `AspNetUserTokens.UserId → AspNetUsers.Id` | Cascade (Identity default) | ✅ |
+| `FK` | `AspNetRoleClaims.RoleId → AspNetRoles.Id` | Cascade (Identity default) | ✅ |
+
+### 20.2 AMENDMENT (G2-003V2 closure, commit `fa3365a`)
+
+**The original G2-003 verification report (this section, prior
+to the G2-003V2 commit) overstated the FK coverage.** The
+table above lists the constraints that were ACTUALLY emitted
+by the G2003 migration and verified by the G2-003 Operator
+round. The G2-003 report originally claimed a longer list that
+included the cross-entity FKs from `Company.TenantId` /
+`Plant.TenantId` / `Plant.CompanyId` / `OrganizationUnit.TenantId`
+/ `OrganizationUnit.CompanyId` / the 3 membership tables / and
+`AspNetUsers.TenantId` / `AspNetRoles.TenantId`. **Those 12
+cross-entity FKs were NOT in the G2003 migration.**
+
+**Root cause** (per G2-R0 review D-002): the G2003 migration
+created `gulierp_tenant` AFTER the child tables that reference
+it. EF Core's `CreateTable` can only emit FKs to tables created
+EARLIER in the same migration. EF should have used
+`migrationBuilder.AddForeignKey` follow-ups, but it did not.
+
+**Application-layer cross-Tenant invariant was correct**
+throughout G2-003 (CompanySwitchingService, directory service
+guards). The database was missing defense-in-depth.
+
+**G2-003V2 closure**: the G2003V2 additive migration
+(`20260819162500_G2003V2_AddIdentityReferentialIntegrity`)
+adds the 14 missing FKs via `migrationBuilder.AddForeignKey`,
+all with `OnDelete(DeleteBehavior.Restrict)` to preserve the
+DEC-ID-015 soft-delete semantics. See
+`docs/verification/G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_REPORT.md`
+for the full evidence. After the G2-003V2 Operator round, the
+PostgreSQL catalog reports 23 FKs total (12 self/Identity-default
+from G2003 + 14 GuliERP cross-entity from G2003V2 - 3
+self-overlap) in the `identity` schema.
+
+**0 textual-name relations. 0 comma-string IDs. 0 hidden FKs.**
+Old-DEV anti-patterns explicitly rejected (this conclusion
+still holds; the G2-003 §23 and §30 reports were the source of
+the overstatement, corrected here per D-014).
 
 ## 21 Migration
 
