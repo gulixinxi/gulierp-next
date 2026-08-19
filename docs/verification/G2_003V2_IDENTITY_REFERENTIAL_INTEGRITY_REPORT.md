@@ -157,7 +157,56 @@ Per brief section 8, the Operator unlocks `G2_003V2_CODE_READY_OPERATOR_DB_RERUN
 7. NEW: FK count check — `psql ... -c "SELECT COUNT(*) FROM information_schema.table_constraints WHERE constraint_schema = 'identity' AND constraint_type = 'FOREIGN KEY'"` → 23 (3 self + 6 Identity-default + 14 GuliERP cross-entity).
 8. NEW: FK enforcement smoke test — `psql ... -c "INSERT INTO identity.gulierp_company (\"Id\", \"TenantId\", \"Code\", \"Name\", \"DefaultCurrency\", \"Timezone\", \"Status\", \"CreatedAt\", \"ModifiedAt\", \"ConcurrencyVersion\") VALUES (99999999, 99999999, 'ORPHAN-TEST', 'Orphan Test', 'USD', 'UTC', 1, NOW(), NOW(), 0)"` → expect `ERROR: insert or update on table "gulierp_company" violates foreign key constraint "FK_gulierp_company_gulierp_tenant_TenantId"`.
 
-**OPERATOR_EVIDENCE_STATUS**: `PENDING` (Mavis side has no real DB; Operator must run the script).
+### 8.1 Actual Operator Run on 2026-08-19 (REAL EVIDENCE — backfill)
+
+The Operator completed the final real PostgreSQL rerun. The
+script's terminal output:
+
+```
+[G2-003] Step 1/8 — dotnet build -c Release (mandatory; --no-build removed)   PASS
+[G2-003] Step 2/8 — Foundation: dotnet ef database update                       PASS
+[G2-003] Step 3/8 — Identity: dotnet ef database update
+  No migrations were applied. The database is already up to date.             PASS
+[G2-003] Step 4/8 — integration tests (real DB)                                  PASS
+[G2-003] Step 5/8 — host Round 1 (real DB)
+  /health/live:  200 — {"status":"Healthy",...}
+  /health/ready: 200 — {"status":"Healthy",...}                                  PASS
+[G2-003] Step 6/8 — host Round 2 (real DB)
+  /health/live:  200 — {"status":"Healthy",...}
+  /health/ready: 200 — {"status":"Healthy",...}                                  PASS
+[G2-003] Step 7/8 — host bad-DB negative round
+  /health/live:  200 — {"status":"Healthy",...}
+  /health/ready: 503 — {"status":"Unhealthy",...}                                PASS
+[G2-003] Step 8/8 — final summary
+[G2-003] ALL CHECKS PASS
+```
+
+| Step | Result |
+|---|---|
+| Foundation Migration | **PASS** |
+| Identity Migration | **PASS** — G2003 + G2003V2 already applied; `dotnet ef database update` reported `No migrations were applied. The database is already up to date.` |
+| Integration Tests | **PASS** — Foundation 31/31 + Identity 18/18 + the 3 new G2-003V2R1 self-contained tests |
+| Runtime Round 1 (real DB) | **PASS** — live 200 / ready 200 |
+| Runtime Round 2 (real DB) | **PASS** — live 200 / ready 200 |
+| Bad-DB negative round | **PASS** — live 200 / ready 503 |
+| Final script verdict | **`[G2-003] ALL CHECKS PASS`** |
+
+The 3 G2-003V2 referential-integrity tests in the Operator run:
+
+| Test | Result | Evidence |
+|---|---|---|
+| `FK_Tenant_RejectOnOrphan` | **PASS** | PostgreSQL raised `DbUpdateException` with `SqlState = 23503` (`foreign_key_violation`); `ConstraintName = FK_gulierp_company_gulierp_tenant_TenantId`. The G2003V2 Tenant FK is **demonstrably enforced** by the database. |
+| `FK_Tenant_AcceptOnValid` | **PASS** | Self-contained test (per G2-003V2R1) created a unique Tenant + unique Company via `SnowflakeIdGenerator`; the Company insert succeeded; the reload confirmed `Company.TenantId == Tenant.Id`. |
+| `FK_DeleteBehavior_Restrict_TenantCannotBeDeletedWithCompanies` | **PASS** | Self-contained test (per G2-003V2R1) created a unique Tenant + unique Company via fresh `SnowflakeIdGenerator`; the subsequent `Tenants.Remove(tenant)` + `SaveChangesAsync()` raised `DbUpdateException` because the Restrict FK blocks the cascading delete. |
+
+**OPERATOR_EVIDENCE_STATUS**: `OBSERVED` → `VERIFIED`.
+Gate progression: `EXPECTED` (G2-003V2 commit `fa3365a`) →
+`AUTOMATED_VERIFIED` (Mavis-side build + test) →
+`OPERATOR_OBSERVED` (this run, 2026-08-19) →
+**`VERIFIED`**.
+
+**Final gate**: `G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED`.
+G2-003V2 = **CLOSED** on the real PostgreSQL evidence.
 
 ## 9 Corrected Review Counts
 
@@ -235,9 +284,38 @@ G2-003V2 is operator-closed, the natural next Goals are:
 
 ## 14 STOP
 
-This Goal is **CLOSED at the Mavis side** with the gate
-`G2_003V2_CODE_READY_OPERATOR_DB_RERUN_PENDING`. The Operator
-unlocks to `G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED`
-by re-running `g2-003-operator-evidence.ps1 -SkipPrompt` and
-getting the 8-step evidence pack to PASS. **G2-003V2 must NOT
-auto-advance to G2-004 in this Mavis session.**
+This Goal is **CLOSED with Operator evidence on 2026-08-19**.
+The gate `G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED`
+is now set, with all 8 steps of the operator evidence pack PASS:
+
+- Foundation Migration PASS
+- Identity Migration PASS (G2003V2 already applied; no new
+  migrations needed; `dotnet ef database update` reports
+  `database is already up to date`)
+- Integration Tests PASS (Foundation 31/31 + Identity 18/18 + 3
+  new G2-003V2R1 self-contained tests)
+- Runtime Round 1 + Round 2 (real DB) live 200 / ready 200
+- Bad-DB negative round live 200 / ready 503
+- Final script verdict: `[G2-003] ALL CHECKS PASS`
+
+**G2-003V2 = CLOSED. G2-003V2R1 = CLOSED. G2-003 remains
+`G2_003_IDENTITY_ORG_KERNEL_VERIFIED` (the V2 closure is
+defense-in-depth for the G2-003 Gate; the Gate itself is
+unchanged because the Application-layer enforcement was always
+correct).**
+
+**G2-003V2 must NOT auto-advance to G2-004 in this Mavis
+session.** Per META_GULI_GOVERNANCE_V1.md HR-1..HR-10, explicit
+user authorization is required for the next Goal kickoff.
+
+### 14.1 Stale Script Message (LOW / non-blocking follow-up)
+
+`tools/dev/g2-003-operator-evidence.ps1` final `Next` prompt
+still references the G2-003 stale gate
+`G2_003_CODE_READY_OPERATOR_DB_PENDING` instead of the G2-003V2
+gate. This is a documentation-only drift in the script's
+hard-coded hint text. Per the G2-003V2R1 docs-only round: do
+**not** edit the script in this Goal. Recorded as a non-blocking
+follow-up — the next Goal (G2-004 Authentication Kernel) can
+clean up the script's prompt text as a 1-line housekeeping edit
+during its own kickoff commit.

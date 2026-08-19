@@ -6,11 +6,11 @@
 |---|---|
 | Goal | **G2-003V2 — Identity Database Referential Integrity Closure** |
 | Gate | `G2_003_IDENTITY_ORG_KERNEL_VERIFIED` (G2-003 + R1 + V1 closed; G2-R0 review published; D-002 HIGH finding) |
-| Status | **G2_003V2_CODE_READY_OPERATOR_DB_RERUN_PENDING** — Mavis side: EF model + 14 `HasOne().WithMany().HasForeignKey(Restrict)` declarations added; G2003V2 additive migration generated (14 `AddForeignKey` + 9 `CreateIndex`); 3 new Operator-required tests added; build 0/0; tests 101 PASS / 9 LOUD-FAIL. G2-003 verification report §20 + G2-R0 review §1 counts corrected. Operator unlocks to `G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED` by re-running `g2-003-operator-evidence.ps1 -SkipPrompt`. |
+| Status | **`G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED`** — Operator-observed 2026-08-19. Mavis-side: EF model + 14 `HasOne().WithMany().HasForeignKey(Restrict)` declarations added; G2003V2 additive migration applied (14 `AddForeignKey` + 9 `CreateIndex`); G2-003V2R1 self-contained test fix landed (3 tests now create + cleanup their own Tenant/Company via `SnowflakeIdGenerator` + Guid-derived codes). Operator-side: all 8 steps of `g2-003-operator-evidence.ps1` PASS, including the 3 G2-003V2R1 referential integrity tests with `SqlState=23503` on the FK violation. **G2-003V2 = CLOSED. G2-003V2R1 = CLOSED. G2-003 remains `G2_003_IDENTITY_ORG_KERNEL_VERIFIED` (unchanged).** |
 | Entry Gate | `G2_003_IDENTITY_ORG_KERNEL_VERIFIED` (G2-003 + R1 + V1 closed) |
-| Verification | `docs/verification/G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_REPORT.md` (14 sections) |
-| Code Commit | `fa3365a` fix(identity): enforce identity referential integrity |
-| Operator Acceptance Date | 2026-08-19 (PENDING — Operator re-run required) |
+| Verification | `docs/verification/G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_REPORT.md` (14 sections, §8.1 actual Operator run recorded) |
+| Code Commits | `fa3365a` fix(identity): enforce identity referential integrity; `a9cdbac` test(identity): isolate referential integrity test data |
+| Operator Acceptance Date | 2026-08-19 (Asia/Taipei) — recorded in §8.1 of the verification report |
 | Next Goal | **G2-004 — Authentication Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
 | Hard Stop | G2-004 must NOT auto-start in the current Mavis session. G2-004 kickoff requires a fresh session with explicit user authorization. |
 | Forbidden follow-up without user authorization | `G2-004` implementation (any /api/v1/auth/* endpoint, JWT bearer config, refresh-token flow, [Authorize] attribute adoption, SignInManager.SignInAsync, IdentityContextMiddleware JWT-claim rewrite, /api/v1/identity/... read endpoints, UserPlantMembership table) |
@@ -1001,17 +1001,19 @@ authorization is required for the next Goal kickoff.
 
 ---
 
-## G2-003V2 — Identity Database Referential Integrity Closure (Mavis-CLOSED 2026-08-19; Operator re-run pending)
+## G2-003V2 — Identity Database Referential Integrity Closure (CLOSED 2026-08-19; Operator-OBSERVED + VERIFIED)
 
 | Field | Value |
 |---|---|
 | Goal | **G2-003V2 — Identity Database Referential Integrity Closure (closes G2-R0 D-002 HIGH)** |
 | Entry Gate | `G2_003_IDENTITY_ORG_KERNEL_VERIFIED` (G2-003 + R1 + V1 closed; G2-R0 review published) |
-| Exit Gate | `G2_003V2_CODE_READY_OPERATOR_DB_RERUN_PENDING` (Mavis side) — Operator unlocks to `G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED` via re-running `g2-003-operator-evidence.ps1 -SkipPrompt` |
-| Status | **CLOSED at Mavis side** |
+| Exit Gate | **`G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED`** (Operator-observed 2026-08-19) |
+| Status | **CLOSED — Operator-verified** |
 | Code Commit | `fa3365a` fix(identity): enforce identity referential integrity |
-| Docs Commit | (in this closure) `docs/verification/G2_003_IDENTITY_ORG_KERNEL_REPORT.md` §20 amended; `docs/review/G2_R0_FOUNDATION_CRITICAL_REVIEW.md` §1 corrected; `docs/verification/G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_REPORT.md` new; `docs/governance/GOAL_REGISTRY.md` (this entry) |
-| Verification | `docs/verification/G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_REPORT.md` (14 sections) |
+| Test Commit | `a9cdbac` test(identity): isolate referential integrity test data (G2-003V2R1) |
+| Docs Commits | `e002361` docs(verification): close G2-003V2 identity referential integrity finding; this commit `docs(verification): record G2-003V2 operator acceptance` (backfill) |
+| Operator Acceptance Date | 2026-08-19 (Asia/Taipei) — recorded in `G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_REPORT.md` §8.1 |
+| Verification | `docs/verification/G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_REPORT.md` (14 sections, §8.1 actual Operator run) |
 | Next Goal | **G2-004 — Authentication Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
 
 ### G2-003V2 — What the G2-R0 review found (D-002)
@@ -1102,7 +1104,7 @@ This is a documentation hygiene fix per brief section 10.
 | C. Pre-implement Permission | NO |
 | D. Pre-implement JWT/Auth | NO |
 | E. Cross-tenant constraint unbuildable | NO (FKs now machine-enforced; cross-tenant composite invariant remains Application-layer per brief §4) |
-| F. Real PostgreSQL migration broken | PENDING (Operator re-run owns the verification) |
+| F. Real PostgreSQL migration broken | **CLOSED 2026-08-19** (Operator rerun PASS; `dotnet ef database update` reports `database is already up to date` after G2003 + G2003V2 both applied) |
 | G. Self-build Password Hash | NO |
 | H. Frozen Sales/Inventory spec modified | NO |
 
@@ -1134,9 +1136,26 @@ git commit -m "docs(verification): operator-upgrade G2-003V2 to IDENTITY_REFEREN
 
 ### G2-003V2 = CLOSED
 
-After Operator re-run, the G2-003V2 Gate is
-`G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED`. The full
-closure lineage:
+After Operator re-run on 2026-08-19, the G2-003V2 Gate is
+**`G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED`**. All 8
+operator-side evidence steps PASS:
+
+- Step 1 (build) PASS
+- Step 2 (Foundation migration) PASS — already applied
+- Step 3 (Identity migration) PASS — `dotnet ef database update`
+  reported `No migrations were applied. The database is already up
+  to date.` (G2003 + G2003V2 both applied in previous rounds)
+- Step 4 (integration tests) PASS — Foundation 31/31 + Identity
+  18/18 + 3 G2-003V2R1 self-contained referential integrity tests
+  PASS, including `FK_Tenant_RejectOnOrphan` confirmed raising
+  `SqlState 23503` (`foreign_key_violation`) and
+  `ConstraintName = FK_gulierp_company_gulierp_tenant_TenantId`
+- Step 5 (Round 1, real DB) PASS — live 200 / ready 200
+- Step 6 (Round 2, real DB) PASS — live 200 / ready 200
+- Step 7 (Bad-DB negative) PASS — live 200 / ready 503
+- Step 8 (final summary) `[G2-003] ALL CHECKS PASS`
+
+The full closure lineage:
 
 ```
 G2-001 Host & PostgreSQL               = CLOSED (Operator-verified 2026-08-19)
@@ -1149,8 +1168,8 @@ G2-003   Identity Org Kernel (impl)    = CLOSED (Operator-verified 2026-08-19)
 G2-003R1 EF Core Design-Time Fix       = CLOSED
 G2-003V1 Bad-DB Test Isolation Closure = CLOSED
 G2-R0    Foundation Critical Review    = CLOSED
-G2-003V2 Identity DB FK Closure        = CLOSED (Mavis-side; Operator-side
-                                              PENDING re-run)
+G2-003V2 Identity DB FK Closure        = CLOSED (Mavis + Operator both PASS)
+G2-003V2R1 Test Data Isolation Fix     = CLOSED (test only; Operator PASS)
 ```
 
 NEXT_GOAL_CANDIDATE = G2-004 Authentication Kernel (NOT
@@ -1158,3 +1177,107 @@ STARTED, HALTED). Hard stop: G2-004 must NOT auto-start in
 this Mavis session; per META_GULI_GOVERNANCE_V1.md HR-1..HR-10,
 explicit user authorization is required for the next Goal
 kickoff.
+
+---
+
+## G2-003V2R1 — Referential Integrity Test Data Isolation Fix (CLOSED 2026-08-19)
+
+| Field | Value |
+|---|---|
+| Goal | **G2-003V2R1 — Referential Integrity Test Data Isolation Fix (Operator-side test failure backfill)** |
+| Entry Gate | `G2_003V2_CODE_READY_OPERATOR_DB_RERUN_PENDING` (G2-003V2 Mavis-side closed; Operator round in progress) |
+| Exit Gate | **CLOSED 2026-08-19** (the 3 G2-003V2 referential integrity tests now PASS under the real Operator DB) |
+| Status | **CLOSED** |
+| Code Commit | `a9cdbac` test(identity): isolate referential integrity test data |
+
+### G2-003V2R1 — Root Cause
+
+The G2-003V2 commit `fa3365a` shipped 3 new
+`IdentityReferentialIntegrityFacts` tests that hard-coded a
+seed assumption: `t.Code == "default"` (the G2-003 dev seed
+Tenant). The Operator host runs in `Production` environment, so
+the G2-003 dev seed (`IdentitySeed.SeedAsync`) is gated off and
+never executes against `gulierp_g2_003_test`. The lookup
+returned null and `Assert.NotNull` failed (lines 157 and 209 of
+the original test file).
+
+Specifically:
+- `FK_Tenant_RejectOnOrphan` — **PASS** (does not depend on
+  seed data; inserts bogus TenantId and expects DbUpdateException
+  with `SqlState 23503`)
+- `FK_Tenant_AcceptOnValid` — **FAIL** at line 157 `Assert.NotNull(seedTenant)`
+- `FK_DeleteBehavior_Restrict_TenantCannotBeDeletedWithCompanies`
+  — **FAIL** at line 209 `Assert.NotNull(seedTenant)`
+
+### G2-003V2R1 — Fix (commit `a9cdbac`)
+
+Test data isolation. The 3 tests are now fully self-contained:
+
+- **SnowflakeIdGenerator** (DI-resolved Singleton) provides unique
+  Ids (no hard-coded `Id = 77_777_777L`)
+- **Guid-derived 8-hex-char suffix** for every `Code` / `Name`
+  field (no hard-coded `Code = "FK-VALID-..."`, no seed lookup)
+- **Each test creates its own Tenant + Company**, performs the
+  assertion, then **cleans up via a fresh DbContext** (raw SQL
+  `DELETE FROM identity.gulierp_company WHERE "Id" = ...; DELETE
+  FROM identity.gulierp_tenant WHERE "Id" = ...;` wrapped in
+  try/catch)
+- **FK_DeleteBehavior_Restrict** uses a third fresh DbContext
+  for the delete attempt (the test DbContext stays clean; per
+  brief §8 "优先新 DbContext cleanup")
+- **RejectOnOrphan** behavior unchanged; only the `Company.Id` is
+  now per-run unique
+
+The tests are now:
+- **SELF-CONTAINED** — no seed dependency
+- **DETERMINISTIC** — unique Ids + Codes, no collision
+- **ORDER-INDEPENDENT** — no shared state
+- **REAL-POSTGRESQL** — the loud-fail design still applies on
+  the Mavis side
+- **NO-SEED-ASSUMPTION** — the G2-003 dev seed is irrelevant
+
+### G2-003V2R1 — Operator-side final PASS (2026-08-19)
+
+| Test | Result | Evidence |
+|---|---|---|
+| `FK_Tenant_RejectOnOrphan` | **PASS** | `DbUpdateException` with `SqlState = 23503` (`foreign_key_violation`); `ConstraintName = FK_gulierp_company_gulierp_tenant_TenantId`. G2003V2 Tenant FK is **demonstrably enforced**. |
+| `FK_Tenant_AcceptOnValid` | **PASS** | Self-contained path created Tenant + Company via `SnowflakeIdGenerator`; insert succeeded; reload confirmed `Company.TenantId == Tenant.Id`. |
+| `FK_DeleteBehavior_Restrict_TenantCannotBeDeletedWithCompanies` | **PASS** | Self-contained path created Tenant + Company; the subsequent `Tenants.Remove(tenant)` raised `DbUpdateException` because the Restrict FK blocked the cascading delete. |
+
+### G2-003V2R1 — Hard-stop check (brief §三十九)
+
+| Brief condition | Did G2-003V2R1 trip it? |
+|---|---|
+| A. Need to change DEC-ID-001..020 | NO |
+| B. Plant/Company/Organization boundary conflict | NO |
+| C. Pre-implement Permission | NO |
+| D. Pre-implement JWT/Auth | NO |
+| E. Cross-tenant constraint unbuildable | NO |
+| F. Real PostgreSQL migration broken | NO |
+| G. Self-build Password Hash | NO |
+| H. Frozen Sales/Inventory spec modified | NO |
+
+0 hard-stops tripped.
+
+### G2-003V2R1 — Stale Script Message (LOW / non-blocking follow-up)
+
+`tools/dev/g2-003-operator-evidence.ps1` final `Next` prompt
+still references the G2-003 stale gate
+`G2_003_CODE_READY_OPERATOR_DB_PENDING` instead of the G2-003V2
+gate. This is a documentation-only drift in the script's
+hard-coded hint text. Recorded as a non-blocking follow-up —
+the next Goal (G2-004 Authentication Kernel) can clean up the
+script's prompt text as a 1-line housekeeping edit during its
+own kickoff commit. **Not addressed in this docs-only round per
+the brief.**
+
+---
+
+## STOP
+
+G2-003V2 / G2-003V2R1 fully closed. G2-003 remains VERIFIED · CLOSED.
+
+NEXT_GOAL_CANDIDATE = G2-004 Authentication Kernel (NOT STARTED,
+HALTED). **G2-004 must NOT auto-start in this Mavis session.**
+Per META_GULI_GOVERNANCE_V1.md HR-1..HR-10, explicit user
+authorization is required for the next Goal kickoff.

@@ -953,3 +953,40 @@ connection-string env vars (commit `b0fe241`).
 Strictly: **G2-004 must NOT auto-start in this Mavis session.**
 Per META_GULI_GOVERNANCE_V1.md HR-1..HR-10, explicit user
 authorization is required for the next Goal kickoff.
+
+---
+
+## 40 G2-003V2 / G2-003V2R1 — DB FK Closure (CROSS-REFERENCE)
+
+This section is a forward-pointer; the full evidence is in
+`docs/verification/G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_REPORT.md`
+and the GOAL_REGISTRY `G2-003V2` / `G2-003V2R1` sections.
+
+On 2026-08-19, the G2-003V2 closure was operator-verified:
+`dotnet ef database update` reported
+`No migrations were applied. The database is already up to date.`
+The G2003V2 additive migration (14 cross-entity FKs + 9 supporting
+indexes) was applied in a previous Operator round; the
+re-verification confirmed the schema state. The 3 new
+G2-003V2R1 self-contained referential integrity tests PASS
+under the real PostgreSQL:
+
+- `FK_Tenant_RejectOnOrphan` — `DbUpdateException` with
+  `SqlState = 23503` (`foreign_key_violation`) and
+  `ConstraintName = FK_gulierp_company_gulierp_tenant_TenantId`
+- `FK_Tenant_AcceptOnValid` — self-contained path created
+  Tenant + Company via `SnowflakeIdGenerator`; insert succeeded;
+  reload confirmed `Company.TenantId == Tenant.Id`
+- `FK_DeleteBehavior_Restrict_TenantCannotBeDeletedWithCompanies`
+  — self-contained path created Tenant + Company; subsequent
+  `Tenants.Remove(tenant)` raised `DbUpdateException` because the
+  Restrict FK blocked the cascading delete
+
+G2-003 itself is unchanged at `G2_003_IDENTITY_ORG_KERNEL_VERIFIED`
+— the V2 closure is defense-in-depth for the G2-003 Gate; the
+Application-layer enforcement was always correct. The amended
+§20 + §23 in this report (added in the V2 commit) is the
+authoritative description of the actual schema state at the
+G2-003 verification time (9 FKs in G2003 baseline + 14 FKs in
+G2003V2 = 23 FKs in the `identity` schema after both migrations
+apply).
