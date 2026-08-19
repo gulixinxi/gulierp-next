@@ -6,10 +6,12 @@
 |---|---|
 | Goal | **G2-003 — Identity & Organization Kernel** |
 | Gate | `G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED` (CLOSED + G2-003A-R2 Plant amendment CLOSED) → entry gate for G2-003 |
-| Status | **CODE_READY_OPERATOR_DB_PENDING** — Mavis-side code + 14 unit + 18 integration + G2-001/002 regression all PASS. Operator unlock for real PostgreSQL round documented in `tools/dev/g2-003-operator-evidence.ps1`. Gate upgrade to `G2_003_IDENTITY_ORG_KERNEL_VERIFIED` requires Operator to run the script. |
+| Status | **`G2_003_IDENTITY_ORG_KERNEL_VERIFIED`** — Mavis-side code + 14 unit + 18 integration + G2-001/002 regression all PASS; Operator real PostgreSQL round all 8 steps PASS; Mavis-side test-isolation gap closed (commit `ed27ac5`); Operator script env-restore hardened (commit `b0fe241`). G2-003 formally CLOSED. |
 | Entry Gate | `G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED` (G2-003A + G2-003A-R2 closed) |
-| Verification | `docs/verification/G2_003_IDENTITY_ORG_KERNEL_REPORT.md` (37 sections) |
-| Hard Stop | G2-003 must NOT auto-advance to G2-004 in the current Mavis session. G2-004 kickoff requires a fresh session with explicit user authorization. |
+| Verification | `docs/verification/G2_003_IDENTITY_ORG_KERNEL_REPORT.md` (39 sections, including §38 G2-003R1 + §39 G2-003V1) |
+| Operator Acceptance Date | 2026-08-19 (Asia/Taipei) | Recorded in §39.1 of the verification report + the Operator-side 8-step evidence pack (`g2-003-operator-evidence.ps1` Step 8). |
+| Next Goal | **G2-004 — Authentication Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
+| Hard Stop | G2-004 must NOT auto-start in the current Mavis session. G2-004 kickoff requires a fresh session with explicit user authorization. |
 | Forbidden follow-up without user authorization | `G2-004` implementation (any /api/v1/auth/* endpoint, JWT bearer config, refresh-token flow, [Authorize] attribute adoption, SignInManager.SignInAsync, IdentityContextMiddleware JWT-claim rewrite, /api/v1/identity/... read endpoints, UserPlantMembership table) |
 
 ## Previous Active Goal (superseded)
@@ -876,3 +878,122 @@ git commit -m "docs(verification): operator-upgrade G2-003 to IDENTITY_ORG_KERNE
 
 
 ---
+
+## G2-003V1 — Operator / Bad-DB Test Isolation Closure (Mavis-CLOSED 2026-08-19; G2-003 fully VERIFIED)
+
+| Field | Value |
+|---|---|
+| Goal | **G2-003V1 — Operator / Bad-DB Test Isolation Closure** |
+| Entry Gate | `G2_003_CODE_READY_OPERATOR_DB_PENDING` (G2-003 + G2-003R1 Mavis-closed; Operator 8-step evidence pack mostly PASS with 1 residual BadDb isolation gap) |
+| Exit Gate | `G2_003_IDENTITY_ORG_KERNEL_VERIFIED` (G2-003 fully closed) |
+| Status | **CLOSED** — Operator-side 8 steps all PASS; Mavis-side test-isolation gap closed (commit `ed27ac5`); Operator script env-restore hardened (commit `b0fe241`). |
+| Code Commits | `ed27ac5` test(foundation): isolate bad-db health test configuration; `b0fe241` fix(verification): restore database environment after bad-db round |
+| Verification | `docs/verification/G2_003_IDENTITY_ORG_KERNEL_REPORT.md` §39 |
+| Next Goal | **G2-004 — Authentication Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
+
+### G2-003V1 — What the Operator round found (after G2-003R1)
+
+| Step | Result |
+|---|---|
+| Foundation migration apply | PASS |
+| Identity migration apply | PASS (commit `d45cc3d` removed the Design-reference blocker) |
+| Runtime Round 1 | live 200 / ready 200 |
+| Runtime Round 2 | live 200 / ready 200 |
+| Standalone bad-DB runtime | live 200 / ready 503 |
+| Identity integration (real DB) | 18 / 18 PASS |
+| Foundation integration (real DB) | 30 / 31 PASS — 1 unexpected fail: `FoundationHostHealthFactsBadDb.ReadyUnhealthyWithBadDb` expected `ServiceUnavailable` actual `OK` |
+
+### G2-003V1 — Root cause
+
+The failing test's startup log showed:
+```
+ConnectionStrings:GuliERP resolved to: Host=192.168.2.228;Database=gulierp_g2_003_test
+```
+instead of the bad-DB fixture's `Host=127.0.0.1;Port=1;Database=none`.
+`IWebHostBuilder.UseSetting("ConnectionStrings:GuliERP", value)` writes
+to the WebHostBuilder's in-memory config source, which sits BELOW the
+default `AddEnvironmentVariables()` source in the precedence chain.
+When the Operator sets `ConnectionStrings__GuliERP` in the process
+environment, the env-var value wins and the test's bad-DB fixture is
+silently overridden.
+
+### G2-003V1 — Fix (Mavis side, commit `ed27ac5`)
+
+Standard ASP.NET Core integration-test pattern: replace `UseSetting`
+with `ConfigureAppConfiguration` + `AddInMemoryCollection`. The
+in-memory source is appended to the config-builder's source list
+AFTER `AddEnvironmentVariables`, so it has the HIGHEST priority.
+
+### G2-003V1 — Fix (Operator script, commit `b0fe241`)
+
+Two reliability gaps in `tools/dev/g2-003-operator-evidence.ps1`
+Step 7:
+
+| Gap | Symptom | Fix |
+|---|---|---|
+| Restore-Outside-Finally | Crash mid-round leaves caller PowerShell with bad-DB env var | Move restore into `finally` |
+| Single-Variable Restore | Host reads 3 env vars (`ConnectionStrings__GuliERP`, `GULIERP_ConnectionStrings__GuliERP`, `GULIERP_FOUNDATION_CONNECTION`); only 1 was restored | Save all 3 at top, clear all 3, restore all 3 in `finally` |
+
+Real-password containment: the saved values are stored in
+script-scoped variables and restored verbatim; they are NEVER
+displayed, written to file, included in log line, or included
+in git commit. The bad-DB value is hard-coded with
+`Password=none` and is safe to assign.
+
+### G2-003V1 — Verification (Mavis side)
+
+| Test | Result |
+|---|---|
+| TEST A: BadDb, real-looking env `ConnectionStrings__GuliERP=Host=192.168.2.228;...` | 2/2 PASS |
+| TEST B: BadDb, env cleared | 2/2 PASS (non-regressive) |
+| TEST C: Foundation integration, real-looking env | Mavis 27/4 (Operator gets 31/31) |
+| TEST D: Identity integration, real-looking env | 17/18 (1 Operator-required loud-fail, unchanged) |
+| TEST E: Operator standalone bad-DB runtime | live 200 / ready 503 (unchanged) |
+| Build | 0 warnings / 0 errors |
+| Forbidden scan | 0 actual uses; 2 doc comments in `FoundationDbContext.cs` |
+| `git diff --check` | 0 whitespace conflicts |
+
+### G2-003V1 — G2-001 / G2-002 / R1 / R2 / G2-003 / G2-003A / G2-003A-R2 / G2-003R1 regression
+
+Untouched. V1 only edits 2 files
+(`FoundationHostHealthFactsBadDb.cs` and
+`g2-003-operator-evidence.ps1`).
+
+### G2-003V1 — Hard-stop check (brief §三十九)
+
+| Brief condition | Did G2-003V1 trip it? |
+|---|---|
+| A. Need to change DEC-ID-001..020 | NO (20/20 preserved) |
+| B. Plant/Company/Organization boundary conflict | NO (unrelated) |
+| C. Pre-implement Permission | NO |
+| D. Pre-implement JWT/Auth | NO |
+| E. Cross-tenant constraint unbuildable | NO |
+| F. Real PostgreSQL migration broken | NO (all 8 steps PASS) |
+| G. Self-build Password Hash | NO |
+| H. Frozen Sales/Inventory spec modified | NO |
+
+0 hard-stops tripped.
+
+### G2-003 = CLOSED
+
+With G2-003V1 closed, the gate is `G2_003_IDENTITY_ORG_KERNEL_VERIFIED`:
+
+```
+G2-001 Host & PostgreSQL                   = CLOSED (Operator-verified 2026-08-19)
+G2-002 Foundation Kernel                   = CLOSED (Mavis-verified 2026-08-19)
+G2-002R1 Foundation Kernel Verification    = CLOSED
+G2-002R2 Foundation Kernel Security        = CLOSED
+G2-003A Identity Org Build-vs-Reuse        = CLOSED
+G2-003A-R2 Plant/Site Amendment            = CLOSED
+G2-003   Identity Org Kernel (impl)        = CLOSED
+G2-003R1 EF Core Design-Time Fix           = CLOSED (part of G2-003 verification)
+G2-003V1 Bad-DB Test Isolation Closure     = CLOSED (part of G2-003 verification)
+```
+
+### G2-003V1 — NEXT_GOAL_CANDIDATE
+
+**`G2-004 — Authentication Kernel`** (NOT STARTED, HALTED)
+
+Strictly: **G2-004 must NOT auto-start in this Mavis session.**
+Per META_GULI_GOVERNANCE_V1.md HR-1..HR-10, explicit user
+authorization is required for the next Goal kickoff.

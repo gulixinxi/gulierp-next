@@ -765,3 +765,152 @@ steps. The Operator then flips
 | H. Frozen Sales/Inventory spec modified | NO (0 spec touched) |
 
 0 hard-stops tripped.
+
+---
+
+## 39 G2-003V1 — Operator / Bad-DB Test Isolation Closure (2026-08-19)
+
+Supplementary closure after the Operator round completed. Mavis-side
+fixes landed in commits `ed27ac5` (test) and `b0fe241` (operator
+script). The Mavis-side final gate is
+`G2_003_IDENTITY_ORG_KERNEL_VERIFIED` (operator-side evidence
+already on 2026-08-19 covered all 8 steps PASS; the V1 commit
+closes the residual test-isolation gap that surfaced under
+`ConnectionStrings__GuliERP=Host=192.168.2.228;...` in the
+caller's PowerShell).
+
+### 39.1 What the Operator round found (after G2-003R1)
+
+| Step | Result |
+|---|---|
+| Foundation migration apply | PASS |
+| Identity migration apply | PASS (commit `d45cc3d` removed the Design-reference blocker) |
+| Runtime Round 1 | live 200 / ready 200 |
+| Runtime Round 2 | live 200 / ready 200 |
+| Standalone bad-DB runtime | live 200 / ready 503 |
+| Identity integration (real DB) | 18 / 18 PASS |
+| Foundation integration (real DB) | 30 / 31 PASS — 1 unexpected fail: `FoundationHostHealthFactsBadDb.ReadyUnhealthyWithBadDb` expected `ServiceUnavailable` actual `OK` |
+
+### 39.2 Root cause (the 1 unexpected fail)
+
+The failing test's startup log showed:
+```
+ConnectionStrings:GuliERP resolved to: Host=192.168.2.228;Database=gulierp_g2_003_test
+```
+
+instead of the bad-DB fixture's `Host=127.0.0.1;Port=1;Database=none`.
+The root cause is `IWebHostBuilder.UseSetting("ConnectionStrings:GuliERP",
+value)` writing to the WebHostBuilder's in-memory config source, which
+sits BELOW the default `AddEnvironmentVariables()` source in the
+precedence chain that `WebApplication.CreateBuilder` adds. When the
+Operator (or any caller) sets `ConnectionStrings__GuliERP` in the
+process environment, the env-var value wins and the test's bad-DB
+fixture is silently overridden. `/health/ready` then sees a real DB
+and returns 200 instead of the expected 503.
+
+The Good-DB twin (`FoundationHostHealthFactsGoodDb`) is unaffected
+because the Operator's env-var value IS a good DB — the precedence
+inversion has no observable effect there.
+
+### 39.3 Fix — Mavis side (commit `ed27ac5`)
+
+Standard ASP.NET Core integration-test pattern: replace `UseSetting`
+with `ConfigureAppConfiguration` + `AddInMemoryCollection`. In-memory
+sources added via `ConfigureAppConfiguration` are appended to the
+config-builder's source list AFTER `AddEnvironmentVariables`, so the
+in-memory value has the HIGHEST priority and is guaranteed to
+override any environment-supplied value. The test host is now
+self-contained — the fixture value travels with the test,
+independent of the caller's process environment.
+
+| File | Change |
+|---|---|
+| `tests/GuliERP.Foundation.IntegrationTests/FoundationHostHealthFactsBadDb.cs` | `LiveHealthyWithBadDb` + `ReadyUnhealthyWithBadDb`: replace `UseSetting` with `ConfigureAppConfiguration` + `AddInMemoryCollection`; add `using Microsoft.Extensions.Configuration;`; class-level XML doc explains the G2-003V1 root cause |
+
+No new project, no new package, no global state mutation, no
+Environment Variable poke.
+
+### 39.4 Fix — Operator script (commit `b0fe241`)
+
+Two reliability gaps in `tools/dev/g2-003-operator-evidence.ps1`
+Step 7 (bad-DB negative round):
+
+1. **Restore-Outside-Finally**: the previous block restored the
+   env var AFTER the `try/finally`. A script crash mid-round
+   left the caller's PowerShell with the bad-DB env var
+   contaminating the final summary and any subsequent shell
+   session. **Fix**: move the restore into `finally` (immediately
+   after `Stop-Process` + `Start-Sleep`).
+2. **Single-Variable Restore**: the previous block only saved
+   and restored `$env:ConnectionStrings__GuliERP`. The host also
+   reads `$env:GULIERP_ConnectionStrings__GuliERP` (via
+   `AddEnvironmentVariables(prefix: "GULIERP_")`) and
+   `$env:GULIERP_FOUNDATION_CONNECTION` (via the design-time
+   factory). If the Operator injected the real password through
+   either alternate path, the bad-DB round would not actually
+   be bad. **Fix**: save all three env vars at the top of the
+   block, clear all three (the GULIERP_-prefixed ones are set to
+   `$null` to represent "not set"), and restore all three in
+   the `finally` block.
+
+Real-password containment (brief §六):
+- The bad-DB value is hard-coded with `Password=none`; it is
+  safe to assign.
+- The three saved env vars may contain the real operator
+  password. They are stored in script-scoped variables
+  (`$script:SavedConnStandard` etc.) and restored verbatim —
+  they are NEVER displayed, NEVER written to a file, NEVER
+  included in a log line, NEVER included in a git commit.
+  The only place the connection string appears in operator
+  output is Step 0 (the redacted `$displayConn`) and Step 8
+  (the JSON summary, which shows the Bad-DB round result but
+  not the connection string).
+
+### 39.5 Verification
+
+| Test | Caller env | Expected | Result |
+|---|---|---|---|
+| TEST A (BadDb, real-looking env) | `ConnectionStrings__GuliERP = Host=192.168.2.228;...` | BadDb 2/2 PASS | **PASS** (2/2) |
+| TEST B (BadDb, no env) | (cleared) | BadDb 2/2 PASS | **PASS** (2/2) — non-regressive |
+| TEST C (Foundation integration, real-looking env) | `ConnectionStrings__GuliERP = Host=192.168.2.228;...` | Mavis: 26+1 = 27 PASS / 4 LOUD-FAIL (PG required); Operator: 31/31 PASS | **PASS** — Mavis gets 27/4; Operator gets 31/31 |
+| TEST D (Identity integration, real-looking env) | `ConnectionStrings__GuliERP = Host=192.168.2.228;...` | 17/18 PASS, 1 LOUD-FAIL (operator required) | **PASS** (unchanged from G2-003 commit `6f9ffe2`) |
+| TEST E (Operator standalone bad-DB runtime) | bad-DB env set, no real DB | live 200 / ready 503 | **PASS** (unchanged from G2-001 commit `e6ba753`) |
+
+Build: `dotnet build GuliERP.slnx -c Release` — 0 warnings / 0
+errors across 9 projects.
+
+Forbidden scan: 0 actual uses of `Admin.NET` / `Furion` /
+`SqlSugar` / `UseInMemoryDatabase` / `UseSqlite` /
+`EnsureCreated` in `*.cs`. Two doc comments in
+`FoundationDbContext.cs` still document the FORBIDDEN list.
+
+`git diff --check`: 0 whitespace conflicts.
+
+### 39.6 G2-001 / G2-002 / R1 / R2 / G2-003 / G2-003A / G2-003A-R2 / G2-003R1 regression
+
+Untouched. V1 only edits 2 test/source files
+(`FoundationHostHealthFactsBadDb.cs` and
+`g2-003-operator-evidence.ps1`). The Foundation production
+semantics, the readiness probe, the Identity domain, the
+Company switching service, the Tenant/Company/Plant/Org
+model, the migration, the Application services, the Identity
+integration tests, the Operator Round 1 + Round 2, the
+Operator Integration step, and the IdentityMigration step
+all preserved.
+
+### 39.7 Final gate
+
+`G2_003_IDENTITY_ORG_KERNEL_VERIFIED`
+
+All eight Operator-side evidence steps are PASS. The Mavis-side
+test-isolation gap is closed (commit `ed27ac5`). The Operator
+script env-restore is now exception-safe and covers all three
+connection-string env vars (commit `b0fe241`).
+
+### 39.8 NEXT_GOAL_CANDIDATE
+
+**`G2-004 — Authentication Kernel`** (NOT STARTED, HALTED)
+
+Strictly: **G2-004 must NOT auto-start in this Mavis session.**
+Per META_GULI_GOVERNANCE_V1.md HR-1..HR-10, explicit user
+authorization is required for the next Goal kickoff.
