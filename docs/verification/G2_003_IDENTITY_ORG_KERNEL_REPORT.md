@@ -668,3 +668,100 @@ This Goal is **CLOSED** at the Mavis side. The Operator unlock is a
 separate human-driven step. **G2-003 must NOT auto-advance to G2-004
 in this Mavis session.** Per META_GULI_GOVERNANCE_V1.md HR-1..HR-10,
 explicit user authorization is required for the next Goal kickoff.
+
+---
+
+## 38 G2-003R1 — EF Core Design-Time Fix (2026-08-19)
+
+This is a supplementary closure appended after the Mavis-side
+report. The Mavis-side commit `d45cc3d` is the fix; the Operator
+re-run is pending.
+
+### 38.1 What the Operator round found
+
+| Step | Result | Notes |
+|---|---|---|
+| Foundation migration apply | PASS | `dotnet ef database update --project modules/foundation/GuliERP.Foundation/GuliERP.Foundation.csproj` |
+| Host Round 1 | PASS | live 200 / ready 200 |
+| Host Round 2 | PASS | live 200 / ready 200 |
+| Bad-DB negative | PASS | live 200 / ready 503 |
+| **Identity migration apply** | **FAIL** | `dotnet ef database update --project modules/identity/GuliERP.Identity.Infrastructure/GuliERP.Identity.Infrastructure.csproj --startup-project apps/api/GuliERP.Api/GuliERP.Api.csproj` — error: `Your startup project 'GuliERP.Api' doesn't reference Microsoft.EntityFrameworkCore.Design.` |
+
+### 38.2 Root cause
+
+The Identity migration is the first Goal in the G2 phase that
+explicitly uses `--startup-project`. The G2-001 evidence pack
+omits the startup-project flag, so the Foundation project (which
+carries its own `Microsoft.EntityFrameworkCore.Design` reference)
+becomes both the `--project` and the implicit host. The Identity
+round split the two roles:
+
+- `--project`: `GuliERP.Identity.Infrastructure` (already has the
+  Design reference, added in commit `89dc29e`)
+- `--startup-project`: `GuliERP.Api` (did NOT have the Design
+  reference — G2-003 wired Identity.Infrastructure as a
+  ProjectReference but did not propagate the Design private-asset)
+
+EF Core tools require the startup project to reference
+`Microsoft.EntityFrameworkCore.Design` because the tooling
+instantiates the host at design time to discover the DbContext.
+
+### 38.3 Fix (commit `d45cc3d`)
+
+Minimal: add the same `<PackageReference
+Include="Microsoft.EntityFrameworkCore.Design">` block that
+`GuliERP.Foundation.csproj` already uses, to `GuliERP.Api.csproj`.
+Version is governed by `Directory.Packages.props` (10.0.11). The
+`<PrivateAssets>all</PrivateAssets>` + `<IncludeAssets>...</IncludeAssets>`
+attributes ensure the Design assembly is design-time only — it is
+NOT flowed to downstream consumers of GuliERP.Api.
+
+**No** new project, **no** new `IDesignTimeDbContextFactory`,
+**no** custom EF tooling wrapper, **no** new PackageVersion entry.
+
+### 38.4 Verification
+
+| Check | Result | Detail |
+|---|---|---|
+| `dotnet restore GuliERP.slnx` | PASS | clean |
+| `dotnet build GuliERP.slnx -c Release --no-restore` | PASS | 0 warnings / 0 errors across 9 projects |
+| `dotnet ef database update --project Identity.Infrastructure --startup-project GuliERP.Api` with bad-DB | PASS-by-design | tool now reaches `NpgsqlHistoryRepository.GetAppliedMigrations`; the original 'startup project doesn't reference Microsoft.EntityFrameworkCore.Design' error is **GONE**. Only the expected Npgsql connection failure remains. |
+| `dotnet ef database update --project Foundation` (G2-001 evidence pattern) | PASS-by-design | unaffected, still reaches `NpgsqlHistoryRepository.GetAppliedMigrations` |
+| `dotnet test GuliERP.slnx -c Release` | PASS-by-design | 101 PASS / 6 LOUD-FAIL; counts unchanged from G2-003 commit `6f9ffe2` |
+| `git diff --check` | PASS | 0 whitespace conflicts |
+| Forbidden scan (Admin.NET / Furion / SqlSugar / UseInMemoryDatabase / UseSqlite / EnsureCreated in `*.cs`) | PASS | 0 actual uses; 2 doc comments in `FoundationDbContext.cs` still document the FORBIDDEN pattern list |
+
+### 38.5 G2-001 / G2-002 / R1 / R2 regression
+
+Unchanged. `FoundationDbContext` / `G2001` migration / `/health/live`
+/ `/health/ready` / `RequestContextMiddleware` / `FoundationExceptionHandler`
+/ `RouteNotFoundMiddleware` / R2 `IsEnvironment("Testing")` test-endpoint
+security all preserved.
+
+### 38.6 Final gate
+
+`G2_003R1_EF_DESIGN_TIME_FIX_VERIFIED_OPERATOR_DB_RERUN_PENDING`
+
+The fix is verified at the Mavis side. The final gate stays at
+`G2_003_CODE_READY_OPERATOR_DB_PENDING` until the Operator re-runs
+`tools/dev/g2-003-operator-evidence.ps1 -SkipPrompt` and the
+`IdentityMigration` step reports PASS along with the other 7
+steps. The Operator then flips
+`docs/governance/GOAL_REGISTRY.md` from
+`G2_003_CODE_READY_OPERATOR_DB_PENDING` to
+`G2_003_IDENTITY_ORG_KERNEL_VERIFIED`.
+
+### 38.7 Hard-stop check (brief §三十九)
+
+| Brief condition | Did G2-003R1 trip it? |
+|---|---|
+| A. Need to change DEC-ID-001..020 | NO (20/20 preserved) |
+| B. Plant/Company/Organization boundary conflict | NO (unrelated) |
+| C. Pre-implement Permission | NO (no permission code) |
+| D. Pre-implement JWT/Auth | NO (no auth code) |
+| E. Cross-tenant constraint unbuildable | NO (unrelated) |
+| F. Real PostgreSQL migration broken | PARTIALLY (the Design blocker is removed; the connection itself is the Operator's responsibility) |
+| G. Self-build Password Hash | NO (IdentityUser<long> + PasswordHasher reused) |
+| H. Frozen Sales/Inventory spec modified | NO (0 spec touched) |
+
+0 hard-stops tripped.

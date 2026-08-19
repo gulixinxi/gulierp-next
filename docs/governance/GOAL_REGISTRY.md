@@ -764,3 +764,115 @@ git commit -m "docs(verification): operator-upgrade G2-003 to IDENTITY_ORG_KERNE
 ```
 
 ---
+
+## G2-003R1 — EF Core Design-Time Fix (Mavis-CLOSED 2026-08-19; Operator re-run pending)
+
+| Field | Value |
+|---|---|
+| Goal | **G2-003R1 — EF Core Identity Migration Design-Time Fix (minimal)** |
+| Entry Gate | `G2_003_CODE_READY_OPERATOR_DB_PENDING` (G2-003 closed at Mavis side, Operator round in progress) |
+| Exit Gate | `G2_003R1_EF_DESIGN_TIME_FIX_VERIFIED_OPERATOR_DB_RERUN_PENDING` (Mavis-side) — Operator unlocks by re-running `g2-003-operator-evidence.ps1` and getting IdentityMigration PASS |
+| Status | **EF_DESIGN_TIME_FIX_PASS** — `dotnet ef database update --startup-project GuliERP.Api` no longer complains about the missing Design reference. The tool now reaches `NpgsqlHistoryRepository.GetAppliedMigrations`. The Npgsql connection failure is the expected Operator-side blocker. |
+| Verification | `docs/verification/G2_003_IDENTITY_ORG_KERNEL_REPORT.md` §38 |
+| Code Commit | `d45cc3d` fix(migration): add EF Core design dependency for G2-003 startup project |
+| Operator Re-run | `tools/dev/g2-003-operator-evidence.ps1 -SkipPrompt` (the IdentityMigration step is the one that was failing) |
+| Next Goal | **G2-004 — Authentication Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
+
+### G2-003R1 — What the Operator round found
+
+| Step | Result | Notes |
+|---|---|---|
+| Foundation migration apply | PASS | `dotnet ef database update --project modules/foundation/GuliERP.Foundation/GuliERP.Foundation.csproj` |
+| Host Round 1 | PASS | live 200 / ready 200 |
+| Host Round 2 | PASS | live 200 / ready 200 |
+| Bad-DB negative | PASS | live 200 / ready 503 |
+| **Identity migration apply** | **FAIL** | original error: `Your startup project 'GuliERP.Api' doesn't reference Microsoft.EntityFrameworkCore.Design.` |
+
+### G2-003R1 — Root cause
+
+The Identity migration is the first Goal in the G2 phase that
+explicitly uses `--startup-project`. The G2-001 evidence pack
+omits the startup-project flag, so the Foundation project (which
+carries its own `Microsoft.EntityFrameworkCore.Design` reference)
+becomes both the `--project` and the implicit host. The Identity
+round split the two roles:
+
+- `--project`: `GuliERP.Identity.Infrastructure` (already has the
+  Design reference, added in commit `89dc29e`)
+- `--startup-project`: `GuliERP.Api` (did NOT have the Design
+  reference — G2-003 wired Identity.Infrastructure as a
+  ProjectReference but did not propagate the Design private-asset)
+
+EF Core tools require the startup project to reference
+`Microsoft.EntityFrameworkCore.Design` because the tooling
+instantiates the host at design time to discover the DbContext.
+
+### G2-003R1 — Fix (commit `d45cc3d`)
+
+Minimal: add the same `<PackageReference
+Include="Microsoft.EntityFrameworkCore.Design">` block that
+`GuliERP.Foundation.csproj` already uses, to `GuliERP.Api.csproj`.
+Version is governed by `Directory.Packages.props` (10.0.11). The
+`<PrivateAssets>all</PrivateAssets>` + `<IncludeAssets>...</IncludeAssets>`
+attributes ensure the Design assembly is design-time only.
+
+| Forbidden | Did G2-003R1 trip it? |
+|---|---|
+| New `IDesignTimeDbContextFactory` | NO (used the standard PackageReference) |
+| Custom EF tooling wrapper | NO |
+| New configuration framework | NO |
+| New migration project | NO |
+| New PackageVersion entry | NO (Directory.Packages.props 10.0.11 reused) |
+| `git add .` | NO (path-specific staging only) |
+| `git reset` / `rebase` / `amend` / `revert` | NO (linear history) |
+| Re-open G2-001 / G2-002 / R1 / R2 / G2-003A / G2-003 | NO (only the 1 csproj line added) |
+| Modify Domain / DbContext / Migration / tests | NO (out of scope) |
+
+### G2-003R1 — Verification (Mavis side)
+
+| Check | Result |
+|---|---|
+| `dotnet restore GuliERP.slnx` | clean |
+| `dotnet build GuliERP.slnx -c Release --no-restore` | 0 warnings / 0 errors across 9 projects |
+| `dotnet ef database update --project Identity.Infrastructure --startup-project GuliERP.Api` with bad-DB | reaches `NpgsqlHistoryRepository.GetAppliedMigrations`; original Design-reference error is **GONE** |
+| `dotnet ef database update --project Foundation` (G2-001 evidence pattern) | unaffected; still reaches `NpgsqlHistoryRepository.GetAppliedMigrations` |
+| `dotnet test GuliERP.slnx -c Release` | 101 PASS / 6 LOUD-FAIL; counts unchanged from G2-003 commit `6f9ffe2` |
+| `git diff --check` | 0 whitespace conflicts |
+| Forbidden scan (Admin.NET / Furion / SqlSugar / UseInMemoryDatabase / UseSqlite / EnsureCreated) | 0 actual uses; 2 doc comments in `FoundationDbContext.cs` document the FORBIDDEN list |
+
+### G2-003R1 — Operator upgrade path
+
+```powershell
+# Step 1: re-run the Operator evidence pack (Step 3 should now succeed)
+PS> $env:ConnectionStrings__GuliERP = "<npgsql-with-real-password>"
+PS> .\tools\dev\g2-003-operator-evidence.ps1 -SkipPrompt
+
+# Expected: 8/8 steps PASS (the IdentityMigration step in particular).
+
+# Step 2: flip the gate
+# Edit docs/governance/GOAL_REGISTRY.md:
+#   - Active Goal table: CODE_READY_OPERATOR_DB_PENDING → IDENTITY_ORG_KERNEL_VERIFIED
+#   - Add Operator-verified date
+
+# Step 3: commit the flip.
+git add docs/governance/GOAL_REGISTRY.md
+git commit -m "docs(verification): operator-upgrade G2-003 to IDENTITY_ORG_KERNEL_VERIFIED"
+```
+
+### G2-003R1 — Hard-stop check (brief §三十九)
+
+| Brief condition | Did G2-003R1 trip it? |
+|---|---|
+| A. Need to change DEC-ID-001..020 | NO |
+| B. Plant/Company/Organization boundary conflict | NO |
+| C. Pre-implement Permission | NO |
+| D. Pre-implement JWT/Auth | NO |
+| E. Cross-tenant constraint unbuildable | NO |
+| F. Real PostgreSQL migration broken | PARTIALLY (Design blocker removed; Operator re-run owns the rest) |
+| G. Self-build Password Hash | NO |
+| H. Frozen Sales/Inventory spec modified | NO |
+
+0 hard-stops tripped.
+
+
+---
