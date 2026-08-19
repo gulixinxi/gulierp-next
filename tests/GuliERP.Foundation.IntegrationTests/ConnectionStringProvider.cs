@@ -1,15 +1,13 @@
 namespace GuliERP.Foundation.IntegrationTests;
 
 /// <summary>
-/// Resolves the PostgreSQL connection string for the integration test suite.
-/// Honors the standard ASP.NET Core env-var override (<c>ConnectionStrings__GuliERP</c>)
-/// and falls back to <c>GULIERP_FOUNDATION_CONNECTION</c> (which the migration tool
-/// also reads).
+/// Resolves the PostgreSQL connection string for the integration test suite
+/// and provides a redacted form safe for logging.
 ///
-/// SECURITY: the test class NEVER hard-codes a real password. The Operator must
-/// supply one at runtime via the env var. When the env var is missing, the tests
-/// short-circuit with <see cref="SkipException"/> so that an unattended run
-/// never silently tries to connect with placeholder credentials.
+/// The class is deliberately NOT a singleton — every test that needs a
+/// connection obtains it via the <see cref="DatabaseFixture"/> class
+/// fixture, which guarantees the env var was present at the time the
+/// fixture was constructed.
 /// </summary>
 internal static class ConnectionStringProvider
 {
@@ -17,6 +15,11 @@ internal static class ConnectionStringProvider
     public const string EnvVarOverride = "ConnectionStrings__GuliERP";
     public const string DesignTimeEnvVar = "GULIERP_FOUNDATION_CONNECTION";
 
+    /// <summary>
+    /// Best-effort lookup that returns <c>null</c> when the env var is missing.
+    /// Used by legacy callers (e.g. <c>RequireConnection</c>); the
+    /// <see cref="DatabaseFixture"/> constructor is the authoritative check.
+    /// </summary>
     public static string? TryResolve()
     {
         var fromStandard = Environment.GetEnvironmentVariable(EnvVarOverride);
@@ -32,6 +35,35 @@ internal static class ConnectionStringProvider
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Replace the <c>Password=...</c> segment of a Npgsql connection string
+    /// with <c>Password=***</c> so the value is safe for diagnostic logging.
+    /// Returns the input unchanged if it does not contain a password segment.
+    /// </summary>
+    public static string Redact(string connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return connectionString;
+        }
+
+        var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        for (var i = 0; i < parts.Length; i++)
+        {
+            var eq = parts[i].IndexOf('=');
+            if (eq <= 0)
+            {
+                continue;
+            }
+            var key = parts[i][..eq];
+            if (string.Equals(key, "Password", StringComparison.OrdinalIgnoreCase))
+            {
+                parts[i] = "Password=***";
+            }
+        }
+        return string.Join(';', parts);
     }
 
     /// <summary>
