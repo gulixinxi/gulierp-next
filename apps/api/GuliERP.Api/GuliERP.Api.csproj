@@ -15,5 +15,23 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
   </ItemGroup>
+  <ItemGroup>
+    <!--
+      EF Core design-time tooling (dotnet ef database update / migrations add).
+      Per G2-003R1 the startup project used by `dotnet ef ... [startup-project
+      flag]` MUST reference Microsoft.EntityFrameworkCore.Design. The version
+      is governed by Directory.Packages.props (Microsoft.EntityFrameworkCore
+      .Design 10.0.11); this PackageReference is a PrivateAssets-only
+      design-time dependency. The Design assembly is NOT flowed to downstream
+      consumers of GuliERP.Api. The PrivateAssets + IncludeAssets pattern is
+      copied verbatim from modules/foundation/GuliERP.Foundation.csproj, the
+      project's already-verified EF Core Design pattern (Operator-verified on
+      2026-08-19 via tools/dev/g2-001-operator-evidence.ps1).
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 </Project>
 
