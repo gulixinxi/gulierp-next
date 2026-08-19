@@ -265,7 +265,27 @@ try {
 # --- 7. Bad-DB negative round --------------------------------------------
 if (-not $SkipBadDb) {
     Write-Host "`n[G2-003] Step 7/8 — host bad-DB negative round" -ForegroundColor Yellow
-    $env:ConnectionStrings__GuliERP = 'Host=127.0.0.1;Port=1;Database=none;Username=none;Password=none;Timeout=2;Command Timeout=2'
+
+    # G2-003V1 — save all three connection-string env vars so we can
+    # restore EXACTLY what the Operator set, regardless of which variable
+    # they used to inject the real password. The previous version of
+    # this block only saved and restored $env:ConnectionStrings__GuliERP
+    # AND restored it AFTER the try/finally block — a process crash or
+    # Ctrl+C between the host start and the restore left the
+    # caller's PowerShell with the bad-DB env var, contaminating the
+    # final summary and any subsequent shell session.
+    $script:SavedConnStandard   = $env:ConnectionStrings__GuliERP
+    $script:SavedConnGulierp    = $env:GULIERP_ConnectionStrings__GuliERP
+    $script:SavedConnDesignTime = $env:GULIERP_FOUNDATION_CONNECTION
+
+    # The bad-DB value itself is redacted (Password=none); it is safe to
+    # assign. We also clear the GULIERP_-prefixed and the design-time
+    # vars so the host does not see the operator's real connection
+    # through any of the three configuration paths.
+    $env:ConnectionStrings__GuliERP          = 'Host=127.0.0.1;Port=1;Database=none;Username=none;Password=none;Timeout=2;Command Timeout=2'
+    $env:GULIERP_ConnectionStrings__GuliERP  = $null
+    $env:GULIERP_FOUNDATION_CONNECTION       = $null
+
     $proc3 = Start-GuliHost -Port 5099
     try {
         if (-not (Wait-ForHostReady -Url 'http://127.0.0.1:5099/' -TimeoutSec 30)) {
@@ -282,11 +302,19 @@ if (-not $SkipBadDb) {
             Ready = $ready
         }
     } finally {
+        # G2-003V1 — restore the env vars in finally, BEFORE any
+        # other step can run. This guarantees the Operator's caller
+        # PowerShell is back to the pre-Step-7 state regardless of
+        # whether the probes passed, threw, or the script was Ctrl+C'd
+        # mid-round. The saved values are NEVER echoed (they may
+        # contain the real operator password); the redacted summary
+        # above is the only place the connection string is displayed.
         Stop-Process -Id $proc3.Id -Force -ErrorAction SilentlyContinue
         Start-Sleep -Seconds 2
+        $env:ConnectionStrings__GuliERP          = $script:SavedConnStandard
+        $env:GULIERP_ConnectionStrings__GuliERP  = $script:SavedConnGulierp
+        $env:GULIERP_FOUNDATION_CONNECTION       = $script:SavedConnDesignTime
     }
-    # Restore the real connection for the summary.
-    $env:ConnectionStrings__GuliERP = $ConnectionString
 }
 
 # --- 8. Final summary ---------------------------------------------------
