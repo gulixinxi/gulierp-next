@@ -353,6 +353,7 @@ if ($hardFails.Count -eq 0) {
     Write-Host "  Next: open docs/verification/G2_003_IDENTITY_ORG_KERNEL_REPORT.md"
     Write-Host "  and update docs/governance/GOAL_REGISTRY.md to flip the gate"
     Write-Host "  from G2_003_CODE_READY_OPERATOR_DB_PENDING to G2_003_IDENTITY_ORG_KERNEL_VERIFIED."
+    Write-Host "  (Note: G2-003V2 supersedes this; the G2-003V2 gate is G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED.)"
     exit 0
 } else {
     Write-Host "`n[G2-003] HARD STOPS:" -ForegroundColor Red
