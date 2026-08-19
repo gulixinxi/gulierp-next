@@ -4,13 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Goal | **G2-004 — Authentication Kernel** (Cookie + ASP.NET Core Identity; D-003 closure; production-safe principal) |
-| Gate | `G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED` (G2-003 + R1 + V1 + V2 + R0 closed; 20 DEC-IDs frozen) |
-| Status | **`G2_004_CODE_READY_OPERATOR_DB_PENDING`** — Mavis-side code + 26/26 unit + 30/34 integration + 26/31 Foundation regression all PASS or LOUD-FAIL by design. 8 DEC-AUTH-001..008 frozen. D-003 (Production header trust) / D-001 (IsPlatformAdmin AsyncLocal) / D-010 (password policy tightening) all closed on Mavis side. Operator unlocks to `G2_004_AUTH_KERNEL_VERIFIED`. |
-| Entry Gate | `G2_003V2_IDENTITY_REFERENTIAL_INTEGRITY_VERIFIED` (G2-003 + R1 + V1 + V2 + R0 closed) |
-| Verification | `docs/verification/G2_004_AUTH_KERNEL_REPORT.md` (11 sections) |
-| Architecture | `docs/architecture/G2_004_AUTHENTICATION_ARCHITECTURE.md` (18 sections, 8 DEC-AUTH-001..008) |
-| Operator Unlock | `tools/dev/g2-004-operator-evidence.ps1` (8-step script; mirrors g2-003 pattern) |
+| Goal | **G2-004R1 — Cookie Authentication CSRF Hardening** (ASP.NET Core native antiforgery on state-changing auth endpoints; DEC-AUTH-009) |
+| Gate | `G2_004_CODE_READY_OPERATOR_DB_PENDING` (G2-004 Mavis-side closed; G2-004R1 amendment landed) |
+| Status | **`G2_004_AUTH_CSRF_HARDENED_OPERATOR_DB_PENDING`** — Mavis-side 26/26 unit + 55/59 integration PASS or LOUD-FAIL by design. 0 G2-001 / G2-002 / G2-003 / R1 / V1 / V2 / R0 / G2-004 regressions. 1 new DEC-AUTH-009 (antiforgery / CSRF). Architecture §6.1 "no antiforgery" assumption REJECTED + recorded. Operator unlocks to `G2_004_AUTHENTICATION_KERNEL_VERIFIED`. |
+| Entry Gate | `G2_004_CODE_READY_OPERATOR_DB_PENDING` (G2-004 Mavis-side closed) |
+| Verification | `docs/verification/G2_004R1_CSRF_HARDENING_REPORT.md` (9 sections) |
+| Architecture | `docs/architecture/G2_004_AUTHENTICATION_ARCHITECTURE.md` §6.1 AMENDMENT + §4.2 + §9 (DEC-AUTH-009) |
+| TRAE Handoff | `docs/architecture/TRAE_FRONTEND_AUTH_HANDOFF.md` (12 sections; binding contract) |
+| Operator Unlock | `tools/dev/g2-004-operator-evidence.ps1` (updated Step 5 + Step 7 + Step 8 to auto-fetch X-CSRF-TOKEN + add CSRF negative proofs) |
 | Next Goal | **G2-005 — Authorization Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
 | Hard Stop | G2-005 must NOT auto-start in this Mavis session. G2-005 kickoff requires a fresh session with explicit user authorization. |
 | Forbidden follow-up without user authorization | `G2-005` implementation (any [Authorize] policy with permission / DataScope semantics, IPermissionService, role-permission matrix, menu / button / field permission, DataScope filters, JwtBearer scheme registration, OpenIddict server, the 8 read-only /api/v1/identity/... HTTP directory endpoints, UserPlantMembership table) |
