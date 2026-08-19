@@ -1,3 +1,4 @@
+using GuliERP.Foundation.Kernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,10 +11,13 @@ namespace GuliERP.Foundation;
 /// the Host MUST NOT register Foundation services directly — every Foundation
 /// service is wired through this single extension method.
 ///
-/// G2-001 wires exactly two things:
+/// G2-001 wires:
 /// 1. <see cref="IFoundationBoundary"/> as a singleton (G0 boundary catalogue).
 /// 2. <see cref="FoundationDbContext"/> as a scoped service, configured for PostgreSQL
 ///    with the EF Migrations History table co-located in the <c>foundation</c> schema.
+///
+/// G2-002 additionally wires:
+/// 3. <see cref="IRequestContextAccessor"/> as a singleton (AsyncLocal-backed).
 ///
 /// The connection string is intentionally NOT a nullable parameter — the Host must
 /// have already validated it. See <c>apps/api/GuliERP.Api/Program.cs</c> for the
@@ -26,6 +30,7 @@ public static class DependencyInjection
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
         services.AddSingleton<IFoundationBoundary, FoundationBoundary>();
+        services.AddSingleton<IRequestContextAccessor, RequestContextAccessor>();
 
         services.AddDbContext<FoundationDbContext>(options =>
         {
