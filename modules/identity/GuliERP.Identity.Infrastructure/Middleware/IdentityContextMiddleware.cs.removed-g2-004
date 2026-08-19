@@ -1,0 +1,26 @@
+using System;
+
+namespace GuliERP.Identity.Infrastructure.Middleware;
+
+/// <summary>
+/// G2-004 — REMOVED. The G2-003 header-based
+/// <c>IdentityContextMiddleware</c> was REPLACED by the
+/// claim-based <c>AuthenticationContextMiddleware</c> in
+/// <c>GuliERP.Identity.Infrastructure.Authentication</c>.
+/// See docs/architecture/G2_004_AUTHENTICATION_ARCHITECTURE.md
+/// §10 for the D-003 root cause + the REPLACE-not-patch rule.
+///
+/// <para>
+/// This file is preserved as a tombstone so the removal is
+/// auditable in git history. Any code path that imports
+/// <c>GuliERP.Identity.Infrastructure.Middleware.IdentityContextMiddleware</c>
+/// will fail to compile, surfacing the removal to anyone
+/// who tries to use the old API.
+/// </para>
+/// </summary>
+public sealed class IdentityContextMiddleware
+{
+    [Obsolete("Removed in G2-004. Use AuthenticationContextMiddleware in GuliERP.Identity.Infrastructure.Authentication.", error: true)]
+    public IdentityContextMiddleware() => throw new PlatformNotSupportedException("Removed in G2-004. Use AuthenticationContextMiddleware.");
+}
+

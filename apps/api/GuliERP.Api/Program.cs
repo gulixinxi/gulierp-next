@@ -1,8 +1,10 @@
 using GuliERP.Api;
+using GuliERP.Api.Authentication;
 using GuliERP.Api.Kernel;
 using GuliERP.Foundation;
 using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Infrastructure;
+using GuliERP.Identity.Infrastructure.Authentication;
 using TestValidationRequest = GuliERP.Api.Kernel.TestEndpoints.TestValidationRequest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -92,18 +94,20 @@ startupLogger.LogInformation(
 //     directly; that lives in the Foundation module.
 builder.Services.AddGuliErpFoundation(connectionString);
 
-// --- 4b. Identity services (G2-003) ---
+// --- 4b. Identity services (G2-003 + G2-004) ---
 //     Per G2-003A DEC-ID-012 the Identity module uses
 //     IDENTITY_COMPONENT_REUSE: the ASP.NET Core Identity machinery
 //     (UserManager, RoleManager, lockout, security stamp, claims) is
-//     wired, but NO login endpoint / JWT / cookie auth / SignInManager
-//     surface is exposed. The G2-004 Authentication Goal will do that.
+//     wired. G2-004 ADDS the cookie auth scheme (DEC-AUTH-001) +
+//     SignInManager + IAuthenticationService + the
+//     AuthenticationExceptionHandler. JWT is reserved for the future
+//     mobile / 3rd-party API (DEC-AUTH-005).
 //
 //     The ICurrentTenant / ICurrentCompany / ICurrentUser contracts
-//     (DEC-ID-009, 010) are resolved from HTTP headers in the
-//     IdentityContextMiddleware; the future G2-004 Auth Goal will
-//     replace header-based resolution with JWT-claim-based resolution
-//     without changing the contracts.
+//     (DEC-ID-009, 010) are resolved from the cookie's
+//     ClaimsPrincipal in the AuthenticationContextMiddleware; the
+//     legacy X-Tenant-Id / X-User-Id / X-Company-Id headers are now
+//     honored ONLY in ASPNETCORE_ENVIRONMENT=Testing (D-003 closure).
 builder.Services.AddGuliErpIdentity(connectionString);
 
 // --- 5. ProblemDetails + Exception Handler (G2-002 §8) ---
@@ -155,6 +159,7 @@ builder.Services.AddProblemDetails(options =>
             rc?.TraceId);
     };
 });
+builder.Services.AddExceptionHandler<AuthenticationExceptionHandler>();
 builder.Services.AddExceptionHandler<FoundationExceptionHandler>();
 
 // --- 6. ASP.NET Core health checks (native, G2-001 preserved) ---
@@ -196,9 +201,11 @@ var app = builder.Build();
 //       6. RouteNotFoundMiddleware     — last-resort 404 → ProblemDetails.
 
 app.UseMiddleware<RequestContextMiddleware>();
-app.UseExceptionHandler();   // delegates to FoundationExceptionHandler
+app.UseExceptionHandler();   // delegates to AuthenticationExceptionHandler FIRST, then FoundationExceptionHandler
 app.UseMiddleware<RequestLoggingMiddleware>();
-app.UseIdentityContext();    // G2-003: resolves ICurrentTenant/Company/User from headers
+app.UseAuthentication();     // G2-004: sets HttpContext.User from the auth cookie
+app.UseAuthenticationContext();   // G2-004: claims → ICurrentTenant/Company/User (D-003 closure)
+app.UseAuthorization();      // G2-004: cookie-scheme default policy (RequireAuthenticatedUser)
 app.UseRouting();
 
 // --- 9. OpenAPI (dev) ---
@@ -227,6 +234,15 @@ app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.Health
 //     that proves the API v1 routing convention works. No auth, no DB,
 //     no envelope wrapper.
 app.MapFoundationSystemEndpoints();
+
+// --- 11c. G2-004 Authentication endpoints ---
+//     /api/v1/auth/login, /api/v1/auth/logout, /api/v1/auth/me,
+//     /api/v1/auth/company/switch. See AuthEndpoints.cs for the
+//     full contract. The login + company-switch endpoints are
+//     public; the logout + me + company-switch require a valid
+//     authentication ticket. The cookie scheme is HttpOnly +
+//     Secure + SameSite=Lax (see AddGuliErpIdentity).
+app.MapGuliErpAuthEndpoints();
 
 // --- 11b. G2-002R2 test-only endpoints (Environment-gated) ---
 //     These two endpoints exist ONLY to let the Foundation Kernel
@@ -319,12 +335,16 @@ app.UseMiddleware<RouteNotFoundMiddleware>();
 
 // --- 13. Root / banner ---
 app.MapGet("/", () => Results.Text(
-    "GuliERP Api (G2-001 + G2-002)\n" +
+    "GuliERP Api (G2-001 + G2-002 + G2-003 + G2-004)\n" +
     "Endpoints:\n" +
-    "  GET /health/live            Host process liveness\n" +
-    "  GET /health/ready           PostgreSQL readiness\n" +
-    "  GET /api/v1/system/ping     Foundation liveness + version\n" +
-    (app.Environment.IsDevelopment() ? "  GET /openapi/v1.json        OpenAPI spec (dev only)\n" : ""),
+    "  GET  /health/live               Host process liveness\n" +
+    "  GET  /health/ready              PostgreSQL readiness\n" +
+    "  GET  /api/v1/system/ping        Foundation liveness + version\n" +
+    "  POST /api/v1/auth/login         Authentication (no envelope)\n" +
+    "  POST /api/v1/auth/logout        Sign out (204)\n" +
+    "  GET  /api/v1/auth/me            Current user DTO (authenticated)\n" +
+    "  POST /api/v1/auth/company/switch Re-mint cookie with new company_id\n" +
+    (app.Environment.IsDevelopment() ? "  GET  /openapi/v1.json            OpenAPI spec (dev only)\n" : ""),
     "text/plain"));
 
 app.Run();

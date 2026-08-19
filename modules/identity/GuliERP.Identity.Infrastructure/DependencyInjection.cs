@@ -2,56 +2,50 @@ using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Application.CompanySwitching;
 using GuliERP.Identity.Application.Directory;
 using GuliERP.Identity.Domain.Entities;
+using GuliERP.Identity.Infrastructure.Authentication;
 using GuliERP.Identity.Infrastructure.CompanySwitching;
 using GuliERP.Identity.Infrastructure.Contexts;
 using GuliERP.Identity.Infrastructure.Directory;
-using GuliERP.Identity.Infrastructure.Middleware;
 using GuliERP.Identity.Infrastructure.Persistence;
 using GuliERP.Identity.Infrastructure.Seed;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using IAppAuthenticationService = GuliERP.Identity.Application.Authentication.IAuthenticationService;
 
 namespace GuliERP.Identity.Infrastructure;
 
 /// <summary>
-/// DI extension for the G2-003 Identity module. Mirrors
-/// <c>AddGuliErpFoundation</c> in the G2-001 Foundation module;
-/// the Host calls <c>AddGuliErpIdentity(connectionString)</c>
-/// in <c>Program.cs</c> after <c>AddGuliErpFoundation</c>.
-///
-/// <para>
-/// Wires:
+/// G2-004 — DI extension for the Identity module. Wires:
 /// <list type="number">
 ///   <item>EF Core <see cref="IdentityDbContext"/> (scoped) with
-///         Npgsql + the <c>identity</c> schema.</item>
+///         Npgsql + the <c>identity</c> schema (G2-003, unchanged).</item>
 ///   <item>ASP.NET Core Identity (<c>UserManager&lt;GuliErpUser&gt;</c>,
-///         <c>RoleManager&lt;GuliErpRole&gt;</c>, etc.) — G2-003 wires
-///         the machinery but does NOT expose login endpoints.</item>
+///         <c>RoleManager&lt;GuliErpRole&gt;</c>, <c>SignInManager</c>)
+///         — G2-004 also wires <c>AddAuthentication</c> +
+///         <c>AddCookie</c> for the V1 cookie scheme.</item>
 ///   <item>The <c>ICurrent*</c> context contracts
 ///         (<c>ICurrentTenant</c>, <c>ICurrentCompany</c>,
 ///         <c>ICurrentUser</c>, <c>IDataFilter</c>) — registered
 ///         as Scoped (one instance per HTTP request).</item>
 ///   <item>Directory services (Tenant / Company / Plant / Org /
-///         User) — registered as Scoped.</item>
-///   <item>Company switching service — Scoped.</item>
-///   <item><see cref="SnowflakeIdGenerator"/> — Singleton (V1 single-host,
-///         worker id 0).</item>
+///         User) — registered as Scoped (G2-003, unchanged).</item>
+///   <item>Company switching service — Scoped (G2-003, unchanged).</item>
+///   <item><see cref="SnowflakeIdGenerator"/> — Singleton
+///         (V1 single-host, worker id 0; D-005 / D-006 deferred).</item>
+///   <item><see cref="IAuthenticationService"/> — Scoped
+///         (uses <c>SignInManager</c> which is request-scoped).</item>
+///   <item><see cref="AuthenticationExceptionHandler"/> —
+///         Singleton, registered BEFORE the foundation handler so
+///         the auth-specific codes win the race.</item>
 /// </list>
-/// </para>
-///
-/// <para>
-/// Does NOT wire (deferred to G2-004 / future Goals):
-/// <list type="bullet">
-///   <item>SignInManager (no login endpoint in G2-003).</item>
-///   <item>JWT bearer authentication (G2-004).</item>
-///   <item>OpenIddict server (V1.5+).</item>
-///   <item>IPermissionService / DataScope (G2-005).</item>
-/// </list>
-/// </para>
 /// </summary>
 public static class DependencyInjection
 {
@@ -72,21 +66,24 @@ public static class DependencyInjection
         });
 
         // ----- ASP.NET Core Identity -----
+        // G2-004 — D-010 fix: tighten the password policy. The dev
+        // seed user `admin` / `platform_admin` keeps the legacy
+        // `ChangeMe!2026` password (the seed is G2-003's
+        // `G2-003 seed only` boundary); the policy applies to NEW
+        // passwords (the future `change-password` endpoint).
         services.AddIdentity<GuliErpUser, GuliErpRole>(options =>
         {
-            // V1: permissive password policy (the seed creates the
-            // first user; the future Authz Goal tightens the policy
-            // based on the G2-003A Gate §5 password-hashing note).
-            options.Password.RequiredLength = 8;
-            options.Password.RequireDigit = false;
-            options.Password.RequireNonAlphanumeric = false;
-            options.Password.RequireUppercase = false;
-            options.Password.RequireLowercase = false;
-            options.User.RequireUniqueEmail = false;
-            options.SignIn.RequireConfirmedEmail = false;
+            options.Password.RequiredLength = 12;
+            options.Password.RequireDigit = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireNonAlphanumeric = true;
+            options.Password.RequiredUniqueChars = 4;
+            options.User.RequireUniqueEmail = true;
+            options.SignIn.RequireConfirmedEmail = false;   // V1: no email channel
+            options.SignIn.RequireConfirmedPhoneNumber = false;
 
-            // Lockout defaults from G2-003A DEC-ID-012 (ASP.NET Core
-            // Identity defaults: 5 attempts / 5 min).
+            // Lockout (DEC-AUTH-007): 5 failed attempts / 5 min.
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
             options.Lockout.MaxFailedAccessAttempts = 5;
             options.Lockout.AllowedForNewUsers = true;
@@ -94,7 +91,53 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<IdentityDbContext>()
         .AddDefaultTokenProviders();
 
-        // ----- Context contracts (Scoped) -----
+        // ----- Authentication + Cookie scheme (G2-004) -----
+        // V1 uses Cookie Authentication per DEC-AUTH-001.
+        // The cookie scheme is added by AddIdentity with name
+        // "Identity.Application" (= GuliErpAuthSchemes.CookieScheme).
+        // We configure it via ConfigureApplicationCookie so we
+        // don't double-register the scheme.
+        services.ConfigureApplicationCookie(options =>
+        {
+            options.Cookie.Name = GuliErpAuthSchemes.CookieName;
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.Path = "/";
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            options.ExpireTimeSpan = TimeSpan.FromHours(8);
+            options.SlidingExpiration = true;
+
+            // 401 + ProblemDetails instead of 302 redirect. The
+            // SPA reads the JSON, not the Location header.
+            options.Events.OnRedirectToLogin = ctx =>
+            {
+                ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                ctx.Response.ContentType = "application/problem+json";
+                return Task.CompletedTask;
+            };
+            options.Events.OnRedirectToAccessDenied = ctx =>
+            {
+                ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                ctx.Response.ContentType = "application/problem+json";
+                return Task.CompletedTask;
+            };
+        });
+
+        // ----- Authorization (cookie-scheme default policy) -----
+        // G2-004 only wires the "authenticated or anonymous" split.
+        // Fine-grained permission policies are G2-005 territory.
+        services.AddAuthorization(options =>
+        {
+            options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder(
+                    GuliErpAuthSchemes.CookieScheme)
+                .RequireAuthenticatedUser()
+                .Build();
+        });
+
+        // ----- HttpContextAccessor (SignInManager needs it) -----
+        services.AddHttpContextAccessor();
+
+        // ----- Context contracts (Scoped; G2-003 unchanged) -----
         services.AddScoped<ICurrentTenant, CurrentTenant>();
         services.AddScoped<ICurrentCompany, CurrentCompany>();
         services.AddScoped<ICurrentUser, CurrentUser>();
@@ -103,37 +146,45 @@ public static class DependencyInjection
         // ----- Snowflake ID generator (Singleton; V1 single-host worker=0) -----
         services.AddSingleton<SnowflakeIdGenerator>(_ => new SnowflakeIdGenerator(workerId: 0));
 
-        // ----- Directory services -----
+        // ----- Directory services (G2-003 unchanged) -----
         services.AddScoped<ITenantDirectoryService, TenantDirectoryService>();
         services.AddScoped<ICompanyDirectoryService, CompanyDirectoryService>();
         services.AddScoped<IPlantDirectoryService, PlantDirectoryService>();
         services.AddScoped<IOrganizationDirectoryService, OrganizationDirectoryService>();
         services.AddScoped<IUserDirectoryService, UserDirectoryService>();
 
-        // ----- Company switching service -----
+        // ----- Company switching service (G2-003 unchanged) -----
         services.AddScoped<ICompanySwitchingService, CompanySwitchingService>();
+
+        // ----- G2-004 — Authentication service -----
+        services.AddScoped<IAppAuthenticationService, GuliERP.Identity.Infrastructure.Authentication.AuthenticationService>();
+
+        // ----- G2-004 — Authentication exception handler -----
+        // Registered as Singleton (it's stateless). The host wires
+        // it BEFORE the foundation exception handler so the
+        // auth-specific codes win the race.
+        services.AddSingleton<AuthenticationExceptionHandler>();
 
         return services;
     }
 
     /// <summary>
-    /// Add the <see cref="IdentityContextMiddleware"/> to the request
-    /// pipeline. The middleware runs AFTER
-    /// <c>RequestContextMiddleware</c> (so RequestId / TraceId are
-    /// already established) and BEFORE
-    /// <c>UseRouting()</c> (so the resolved context is available to
-    /// all downstream services and endpoints).
+    /// Add the <see cref="AuthenticationContextMiddleware"/> to the
+    /// request pipeline. Replaces the G2-003
+    /// <c>UseIdentityContext</c> extension (D-003 closure). The
+    /// middleware runs AFTER <c>UseAuthentication()</c> (so
+    /// <c>HttpContext.User</c> is populated) and BEFORE
+    /// <c>UseAuthorization()</c> / <c>UseRouting()</c>.
     /// </summary>
-    public static IApplicationBuilder UseIdentityContext(this IApplicationBuilder app)
+    public static IApplicationBuilder UseAuthenticationContext(this IApplicationBuilder app)
     {
-        return app.UseMiddleware<IdentityContextMiddleware>();
+        return app.UseMiddleware<AuthenticationContextMiddleware>();
     }
 
     /// <summary>
-    /// Run the G2-003 dev/test seed. Per brief §二十六 this is
-    /// only safe in Development / Testing environments. The Host
-    /// is responsible for gating the call (typically
-    /// <c>if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))</c>).
+    /// Run the G2-003 dev/test seed. Per G2-003 brief §二十六 this
+    /// seed only runs in development + test environments;
+    /// Production must NOT auto-create tenants/companies/users.
     /// </summary>
     public static async Task SeedIdentityAsync(
         this IServiceProvider services,
