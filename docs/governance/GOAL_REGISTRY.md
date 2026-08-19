@@ -87,10 +87,83 @@ must be amended (future Goal) to reflect the new ordering.
 
 | # | Item | Owner / Trigger |
 |---|---|---|
-| F-G2-002-1 | Wire `IConfigureOptions<ApiBehaviorOptions>` so `[ApiController]` auto-injects `code=validation_failed` into `ValidationProblemDetails`. The shape is locked in G2-002 §14; the first DTO lands with a business module in a later Goal. | F-G2-002-1; first DTO-bearing Goal |
-| F-G2-002-2 | Document the `X-Trace-Id` propagation contract in a new `tools/dev/g2-002-operator-evidence.ps1`. Currently trace id is populated when upstream proxy propagates W3C `traceparent`. | G2-003 or a future dev-env Goal |
-| F-G2-002-3 | Add an architecture test that fails the build if any file under `modules/foundation/**` references `Microsoft.AspNetCore.*`. The §14 "Foundation MUST NOT depend on ASP.NET Core" rule is currently enforced by review, not by CI. | G2-007 Module Runtime |
-| F-G2-002-4 | Amend `G2_FOUNDATION_EXECUTION_PLAN.md` §3 to reflect the user's G2-002 re-scoping (Cross-Cutting Baseline vs. Identity tables). | Future G2 Goal; non-blocking |
+| F-G2-002-1 | ~~Wire `IConfigureOptions<ApiBehaviorOptions>` so `[ApiController]` auto-injects `code=validation_failed` into `ValidationProblemDetails`. The shape is locked in G2-002 §14; the first DTO lands with a business module in a later Goal.~~ | **CLOSED in G2-002R1**: `ProblemDetailsOptions.CustomizeProblemDetails` callback is wired in `Program.cs` and automatically attaches `code` / `requestId` / `traceId` to every ProblemDetails response (including `Results.ValidationProblem` and any future `Results.Problem` caller). Verified by the 5 R1 integration tests. |
+| F-G2-002-2 | ~~Document the `X-Trace-Id` propagation contract in a new `tools/dev/g2-002-operator-evidence.ps1`. Currently trace id is populated when upstream proxy propagates W3C `traceparent`.~~ | **PARTIALLY CLOSED in G2-002R1**: `X-Trace-Id` is now non-empty in ALL response surfaces (response header + ProblemDetails body + logging scope) — even when no upstream W3C propagation exists. A local 32-hex correlation fallback is used. W3C `traceparent` propagation is also verified end-to-end (upstream trace id `11111111111111111111111111111111` is correctly echoed back). No new `tools/dev/g2-002-operator-evidence.ps1` is needed. |
+| F-G2-002-3 | Add an architecture test that fails the build if any file under `modules/foundation/**` references `Microsoft.AspNetCore.*`. The §14 "Foundation MUST NOT depend on ASP.NET Core" rule is currently enforced by review, not by CI. | G2-007 Module Runtime; non-blocking |
+| F-G2-002-4 | ~~Amend `G2_FOUNDATION_EXECUTION_PLAN.md` §3 to reflect the user's G2-002 re-scoping (Cross-Cutting Baseline vs. Identity tables).~~ | **CLOSED in G2-002R1 (working tree only)**: a `> ## ⚠️ AUTHORITATIVE PHASE MAP — G2-002R1 update (2026-08-19)` section was prepended to `docs/goals/G2_FOUNDATION_EXECUTION_PLAN.md` recording the new binding. The file is untracked and is NOT staged into the R1 commit. The authoritative binding is now in this registry. |
+
+---
+
+## G2-002R1 — Foundation Kernel Verification Closure (CLOSED — Mavis-verified 2026-08-19)
+
+| Field | Value |
+|---|---|
+| Goal | **G2-002R1 — Foundation Kernel Verification Closure (4 verification gaps)** |
+| Entry Gate | `G2_002_FOUNDATION_KERNEL_VERIFIED` (G2-002 closure) |
+| Exit Gate | **`G2_002_FOUNDATION_KERNEL_VERIFIED` (R1 closed, gate preserved)** |
+| Status | **CLOSED** — all 4 R1 verification gaps resolved; brief §十六 PASS-1..PASS-4 all PASS |
+| Commits | (R1 atomic commits — see verification report §R1.13) |
+| Verification | `docs/verification/G2_002_FOUNDATION_KERNEL_REPORT.md` §29 (R1 section) |
+
+### G2-002R1 — The Four Verification Gaps
+
+| # | Gap | Root cause | Fix | Verified by |
+|---|---|---|---|---|
+| PASS-1 | `ValidationProblemDetails` 400 contract had been **shaped** but never **triggered** by an HTTP request through the GuliERP pipeline. | No test-only endpoint that runs the standard ASP.NET Core validation pipeline; the first DTO lands with a future business module. | Added config-gated `/__test/validation` and `/__test/throw` endpoints in `Program.cs` (gated by `GuliERP:TestEndpoints:Enable`, off by default). Plus `ProblemDetailsOptions.CustomizeProblemDetails` callback that auto-attaches `code`/`requestId`/`traceId` to every ProblemDetails. | `FoundationKernelFacts.ValidationProblemContainsGuliExtensions` — POST `/__test/validation` returns 400 + `application/problem+json` + `code=validation_failed` + `errors: {name, age}` + non-empty `requestId`/`traceId` + no secret leak. |
+| PASS-2 | `X-Trace-Id` and `ProblemDetails.traceId` could be empty when no upstream W3C `traceparent` was sent. | `RequestContextMiddleware` only used `Activity.Current.TraceId`, which is the default all-zero trace id when no W3C activity is present. | `RequestContextMiddleware` now falls back to `ActivityTraceId.CreateRandom().ToHexString()` when `Activity.Current?.TraceId` is null or default. The fallback is documented as a LOCAL correlation id (32 hex, non-empty, per-request stable), not a W3C trace context. | 4 R1 trace tests: `TraceId_NoUpstream_Is32HexNonEmpty` (32 hex non-empty in response header), `TraceId_W3CUpstream_Propagates` (upstream `traceparent: 00-11111...-22222...-01` → response `X-Trace-Id: 11111111111111111111111111111111`), `TraceId_404ProblemDetails_MatchesHeader`, `TraceId_500ProblemDetails_MatchesHeader`. |
+| PASS-3 | The original report's test-count math was inconsistent: "44 unit PASS" was said to come from "44 new RequestIdValidatorTests + 2 baseline", which sums to 46 — not 44. | Counters were conflated. | Re-counted from `dotnet test` output. Honest disclosure below. | See `G2_002_FOUNDATION_KERNEL_REPORT.md` §29.3 — actual counts. |
+| PASS-4 | `docs/goals/G2_FOUNDATION_EXECUTION_PLAN.md` still listed G2-002 as "Identity (Tenant/Company/Org/User/Role)" (legacy pre-brief draft). | Phase map was written before the G2-002 brief explicitly re-scoped the goal to Cross-Cutting Baseline ONLY. | Prepended `> ## ⚠️ AUTHORITATIVE PHASE MAP — G2-002R1 update (2026-08-19)` block at the top of `G2_FOUNDATION_EXECUTION_PLAN.md` recording the binding. The file is **untracked** so the R1 commit does NOT stage it; the authoritative source of truth for the new phase map is this registry + the G2-002 verification report. | Working tree only. Documented in §29.4 of the verification report. |
+
+### G2-002R1 — Re-counted test numbers (PASS-3 evidence)
+
+| Suite | Total | Pass | Fail | Skip | Notes |
+|---|---|---|---|---|---|
+| `GuliERP.Foundation.Tests` (unit) | 44 | 44 | 0 | 0 | 42 G2-002 new + 2 G0 baseline (`FoundationBoundaryTests`). The 42 = 12 accept Theory + 5 reject-null Theory + 23 reject-unsafe Theory + 2 length-boundary Fact. |
+| `GuliERP.Foundation.IntegrationTests` (integration) | 26 | 21 | 5 | 0 | See split below. |
+
+**Integration split (PASS-3 honest disclosure):**
+
+| Group | Total | Pass | Fail | Notes |
+|---|---|---|---|---|
+| G2-002 relevant (`FoundationKernelFacts`) | 19 cases (14 test methods incl. Theory cases) | 19 | 0 | Includes 5 R1 new tests: `TraceId_NoUpstream_Is32HexNonEmpty`, `TraceId_W3CUpstream_Propagates`, `TraceId_404ProblemDetails_MatchesHeader`, `TraceId_500ProblemDetails_MatchesHeader`, `ValidationProblemContainsGuliExtensions`. |
+| G2-001 always-run bad-DB regression (`FoundationHostHealthFactsBadDb`) | 2 | 2 | 0 | `/health/live` 200 + `/health/ready` 503 with real `NpgsqlException` surfaced (G2-001R1 contract preserved). |
+| G2-001 env-dependent (`FoundationDatabaseFacts` + `FoundationHostHealthFactsGoodDb`) | 5 | 0 | 5 | Loud-fail `InvalidOperationException` when `ConnectionStrings__GuliERP` env var is missing. **NOT PART OF G2-002 REQUIRED GATE** — these are G2-001's F2 follow-up (real-PostgreSQL integration profile), preserved as-is per G2-001R1 design. Operator runs `tools/dev/g2-001-operator-evidence.ps1` to satisfy. |
+| **Total integration** | **26** | **21** | **5** | **0 SKIP** — the 5 fails are G2-001 env-dep, expected. |
+
+### G2-002R1 — Runtime Rounds (live host, bad-DB, `GuliERP:TestEndpoints:Enable=true`)
+
+| Probe | Status | X-Request-Id | X-Trace-Id | Body traceId | Match |
+|---|---|---|---|---|---|
+| `GET /api/v1/system/ping` (no upstream) | 200 | `c765a54d...` | `63b8548053020a11bd5b6410f78a063e` (32 hex, non-empty) | n/a | n/a |
+| `GET /api/v1/system/ping` (with W3C `traceparent: 00-11111111...-22222...-01`) | 200 | `df99d54f...` | `11111111111111111111111111111111` | n/a | ✅ W3C propagated exactly |
+| `GET /this/does/not/exist` | 404 | `ddf37ee0...` | `42fc99f829c7da63c2d78478c57d2088` | `42fc99f829c7da63c2d78478c57d2088` | ✅ header == body |
+| `GET /__test/throw` (test-only) | 500 | `8363b38e...` | `9ee838b26eb4fa0bf7ca64cd594a6367` | `9ee838b26eb4fa0bf7ca64cd594a6367` | ✅ header == body |
+| `POST /__test/validation` (test-only, name="" age=-1) | 400 | `61db47fe...` | `1e27f37def1b8a5fef1187557cfe03b2` | `1e27f37def1b8a5fef1187557cfe03b2` | ✅ header == body; `code=validation_failed`; `errors: {name, age}`; no secret leak |
+
+### G2-002R1 — Forbidden amendments respected
+
+| Forbidden | Did it? | Evidence |
+|---|---|---|
+| `git reset --hard` | NO | `dbc29db` intact in `git log` |
+| `git rebase` | NO | linear history; `git log --oneline -5` shows `dbc29db` still at the tip before R1 commits |
+| `git revert` | NO | R1 only appends new commits |
+| `git commit --amend` | NO | R1 uses fresh commit SHAs |
+| `git add .` | NO | path-specific staging only — see commit subjects |
+| `git push` | NO | local repo; no remote |
+| `git tag` | NO | none created |
+| Modify Admin.NET.Core | NO | no source diff in `poc\adminnet\` |
+| Re-open G2-001 | NO | `FoundationDbContext` / `G2001_*.cs` / `/health/live` / `/health/ready` all unchanged in R1 commit |
+| Enter Identity / Tenant / JWT / Permission | NO | R1 only adds `TestEndpoints` (config-gated, DTO with no business semantics) + `ProblemDetailsOptions.CustomizeProblemDetails` callback. No new table, no `[Authorize]`, no `IUserContext`, no `ITenantContext`. |
+
+### G2-002R1 — Honest disclosure
+
+| # | Disclosure |
+|---|---|
+| HD-R1-1 | The `GuliERP:TestEndpoints:Enable` config flag must remain `false` (the default) in the Production environment. If it is ever set to `true` in Production, the `/__test/throw` + `/__test/validation` routes will appear in the Production URL space. This is a runtime-config concern, not a code defect; the routes are gated by configuration, not by compile-time symbol. The Configuration Validation baseline (§11) does NOT validate the absence of this flag — that is intentional, since the flag is allowed to be `true` in dev / test hosts. |
+| HD-R1-2 | The `instance` field in `ValidationProblemDetails` is NOT asserted by `ValidationProblemContainsGuliExtensions`. ASP.NET Core's `Results.ValidationProblem(errors)` does not auto-populate `instance`. The test uses `TryGetProperty` and only checks that the field, if present, is non-empty. This is a permissive contract: a future ASP.NET Core update that starts populating `instance` will not break the test. |
+| HD-R1-3 | The 5 G2-001 env-dependent test failures (`FoundationDatabaseFacts` × 3 + `FoundationHostHealthFactsGoodDb` × 2) are NOT a G2-002 regression. They have been loud-failing since G2-001R1 by design — the loud-fail pattern is preferred over `[Fact(Skip = "...")]` per the G2-001R1 root cause (xunit 2.9 + xunit.runner.visualstudio 3.x mismatch). The G2-001 F2 follow-up (real-PostgreSQL integration profile) is still open. |
+| HD-R1-4 | `docs/goals/G2_FOUNDATION_EXECUTION_PLAN.md` is untracked. The R1 commit does NOT include it. The "AUTHORITATIVE PHASE MAP" block prepended in R1 is for working-tree consistency only. The binding source of truth is this registry + the verification report. |
+| HD-R1-5 | Two pre-existing untracked files (`TestEndpointDataSource.cs.removed` + `TestPipelineStartupFilter.cs.removed`) are kept as a record of the failed test-endpoint registration approaches. They are NOT staged in the R1 commit and have no effect on build/test/runtime. A `_FAILED_APPROACHES_README.md` was added to document why they exist. |
 
 ---
 
