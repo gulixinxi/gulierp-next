@@ -509,3 +509,92 @@ LICENSE_IMPACT = NONE — no source code copied, no runtime dependency added.
 | HD-A7 | VOL.NET research evidence is reused from prior sessions (docs/research/vol-pro/), not re-extracted. This is a deliberate scope-discipline decision. |
 
 ---
+
+---
+
+## G2-003A-R2 — Plant/Site Architecture Amendment (CLOSED — Mavis-approved 2026-08-19)
+
+| Field | Value |
+|---|---|
+| Goal | **G2-003A-R2 — Plant/Site Architecture Amendment (mandatory manufacturing-ERP boundary)** |
+| Entry Gate | G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED (the base G2-003A gate) |
+| Exit Gate | **G2_003A_IDENTITY_ORG_ARCHITECTURE_APPROVED (R2 amended; gate preserved)** |
+| Status | **CLOSED** — 4 new DEC-IDs (017-020) added to the G2-003A gate; 8 new Q11-Q18 answered; no previous DEC-ID changed; 0 source code change. |
+| Verification | docs/research/G2_003A_IDENTITY_ORG_BUILD_VS_REUSE_GATE.md §40 (Plant/Site Architecture Amendment) + docs/architecture/G2_003_IDENTITY_ORG_ARCHITECTURE_V1_DRAFT.md §3.2.1 (Plant entity) + §4.5 (IPlantScoped marker) + §1 (Architecture Goals updated) |
+| Next Goal | **G2-003 — Identity & Organization Kernel** (NOT STARTED, HALTED; now includes Plant) |
+
+### G2-003A-R2 — The Plant/Site Boundary (the core decision)
+
+| Concept | What it is | Cardinality |
+|---|---|---|
+| Company | Legal entity (books, currency, tax) | 1 Tenant → N Company (DEC-ID-002) |
+| **Plant** | **Logistics organizational unit. Physical location for production / storage / dispatch. Carries its own address, calendar, working hours, status.** | **1 Company → N Plant (DEC-ID-018)** |
+
+**Plant is NOT a subtype of OrganizationUnit** (DEC-ID-019). The two are independent dimensions. A User can simultaneously be a member of an OrganizationUnit (HR scope: Sales Department) AND operate in a Plant (production scope: Shenzhen Factory).
+
+### G2-003A-R2 — Q11..Q18 Answers
+
+| # | Question | Answer |
+|---|---|---|
+| Q11 | Company vs Plant/Site boundary | Company = legal entity (books); Plant = logistics site (production/storage). Different concerns, different lifecycles. |
+| Q12 | 1 Company → N Plant | YES. 0/1/N plants per company supported. |
+| Q13 | Plant as first-class V1 entity | **YES**. First-class entity in GuliERP.Identity. Not a subtype of OrganizationUnit. |
+| Q14 | Warehouse ownership | Warehouse (future Inventory) is **Plant-owned**, NOT Company-owned. PlantId FK required. |
+| Q15 | WorkCenter / ProductionOrder → Plant | WorkCenter and ProductionOrder (future Production) are **Plant-scoped** (1:N from Plant). |
+| Q16 | OrganizationUnit vs Plant boundary | Two independent dimensions. NOT parent-child. NOT same-thing. |
+| Q17 | User → Plant membership | **DEFER** to V1.5+ / DataScope Goal. V1 relies on UserCompanyMembership for V1 DataScope. The optional UserPlantMembership table is a V1.5+ upgrade. |
+| Q18 | IDs/Contracts reserved for Inventory/Production | IPlantScoped marker interface in GuliERP.Foundation.Kernel; future Warehouse / WorkCenter / ProductionOrder / InventoryTransaction contracts reserve PlantId FK + SourcePlantId + TargetPlantId (cross-Plant transfer). |
+
+### G2-003A-R2 — 4 New DEC-IDs (DEC-ID-017..020)
+
+| # | Decision | Frozen value |
+|---|---|---|
+| DEC-ID-017 | Plant/Site semantics | Plant = logistics organizational unit. Independent of OrganizationUnit. First-class entity in GuliERP.Identity. |
+| DEC-ID-018 | Company → Plant cardinality | 1:N. Company may have 0/1/N Plants. Plant suspension is independent. |
+| DEC-ID-019 | Plant vs OrganizationUnit boundary | Two independent dimensions, NOT parent-child, NOT same-thing. A User can be a member of both. |
+| DEC-ID-020 | Future Warehouse/WorkCenter/ProductionOrder Plant ownership | Warehouse → PlantId FK; WorkCenter → PlantId FK; ProductionOrder → PlantId FK; InventoryTransaction → SourcePlantId + TargetPlantId FK. IPlantScoped marker interface reserved in GuliERP.Foundation.Kernel. |
+
+### G2-003A-R2 — Mature ERP Pattern Study (summary)
+
+| ERP | Plant as separate entity? | GuliERP choice |
+|---|---|---|
+| **SAP S/4HANA** (canonical) | YES (Plant is a logistics org unit; Storage Location is sub-Plant; Work Center is sub-Plant) | **DIRECT PATTERN REUSE** |
+| **Odoo** | NO (Warehouse = Plant; Location sub-Warehouse) | Reject — conflation is an anti-pattern for multi-Plant |
+| **ERPNext** | NO (Warehouse naming; Work Order uses Source/WIP/Target Warehouse) | Reject — same reason |
+| **VOL.NET (GuliERP reference)** | NO (no Plant concept) | Reject — mid-market backoffice, not multi-Plant |
+| **GuliERP (this amendment)** | **YES (DEC-ID-017)** | Aligned with SAP; supports SMB + multi-Plant group |
+
+### G2-003A-R2 — Updated G2-003 Implementation Scope
+
+The future G2-003 Implementation Goal must now also include:
+
+- **Plant entity** (§3.2.1 of the architecture draft).
+- **IPlantScoped marker interface** in GuliERP.Foundation.Kernel (G2-003A-R2 DEC-ID-020).
+- **IPlantDirectoryService** in GuliERP.Identity.Application.
+- **Seed**: 1 default Plant under the default Company.
+- **Migration order**: G2003_002_InitializeIdentityCoreTables now includes the plant table.
+
+### G2-003A-R2 — Updated Final Count
+
+| Item | Base gate | R2 amendment | Total |
+|---|---|---|---|
+| DEC-IDs frozen | 16 (001-016) | +4 (017-020) | **20** |
+| Q&As answered | 10 (Q1-Q10) | +8 (Q11-Q18) | **18** |
+| H1..H12 verified | 12/12 | unchanged | **12/12** |
+| Source code change | NONE | NONE | **NONE** |
+| Mature solution objects | 5 (Identity, VOL, ABP, ERPNext, Finbuckle) | +3 (SAP, Odoo re-look, ERPNext re-look) | covered |
+
+### G2-003A-R2 — Honest Disclosure
+
+| # | Disclosure |
+|---|---|
+| HD-R2-1 | The amendment freezes Plant as a first-class entity. The future G2-003 Implementation must create the plant table. If a future contributor argues "but our customer has only 1 Plant, why bother with the table", the DEC-ID-019 boundary + the 8 architecture tests prevent the collapse. |
+| HD-R2-2 | UserPlantMembership is DEFERRED. V1 DataScope relies on UserCompanyMembership only. If a customer genuinely needs "this user is admin in Plant A but not in Plant B" (rare for SMB; common for enterprise), the Authz Goal can add UserPlantMembership as a V1.5+ upgrade. |
+| HD-R2-3 | ICurrentPlant is NOT in G2-003. The future Inventory / Production / Quality Goals that need runtime Plant-scope switching can introduce it; the IPlantScoped marker is sufficient for the G2-003 contract. |
+| HD-R2-4 | PlantCalendar (working days, shifts, holidays) is DEFERRED to V1.5+. G2-003 carries CalendarCode (string reference) only. |
+| HD-R2-5 | The legacy G2_FOUNDATION_EXECUTION_PLAN.md is still stale (does not mention Plant). The authoritative phase map is in §40.16 of the Gate + this registry. |
+| HD-R2-6 | No git push / git tag. Local repo; no remote. |
+| HD-R2-7 | The 3 docs (G2_003A_IDENTITY_ORG_BUILD_VS_REUSE_GATE.md, G2_003_IDENTITY_ORG_ARCHITECTURE_V1_DRAFT.md, GOAL_REGISTRY.md) are the only amended files. All other pre-existing dirty / untracked is preserved. |
+| HD-R2-8 | The amendment does NOT add any new G2-003 migration or new source code. It is docs/ only. |
+
+---
