@@ -359,9 +359,12 @@ public class FoundationKernelFacts : IClassFixture<WebApplicationFactory<Program
 
     // -----------------------------------------------------------------
     // G2-002R1 §五 TEST 4: 500 ProblemDetails traceId matches the
-    // response header X-Trace-Id. Uses the config-gated /__test/throw
-    // endpoint (Program.cs maps it only when
-    // GuliERP:TestEndpoints:Enable=true).
+    // response header X-Trace-Id. Uses the Environment-gated
+    // /__test/error endpoint (Program.cs maps it only when
+    // ASPNETCORE_ENVIRONMENT == "Testing"). G2-002R2 renamed the
+    // endpoint from /__test/throw to /__test/error and replaced
+    // the GuliERP:TestEndpoints:Enable flag with the host
+    // environment check.
     // -----------------------------------------------------------------
     [Fact]
     public async Task TraceId_500ProblemDetails_MatchesHeader()
@@ -369,12 +372,11 @@ public class FoundationKernelFacts : IClassFixture<WebApplicationFactory<Program
         using var factory = _factory.WithWebHostBuilder(builder =>
         {
             builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString);
-            builder.UseEnvironment("Production");
-            builder.UseSetting("GuliERP:TestEndpoints:Enable", "true");
+            builder.UseEnvironment("Testing");
         });
         using var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/__test/throw");
+        var response = await client.GetAsync("/__test/error");
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
 
         Assert.True(response.Headers.TryGetValues("X-Trace-Id", out var headerValues));
@@ -403,8 +405,10 @@ public class FoundationKernelFacts : IClassFixture<WebApplicationFactory<Program
     // G2-002R1 §三 PASS-1 VALIDATION: real HTTP 400 with
     // application/problem+json, code=validation_failed, errors,
     // non-empty requestId + traceId, and no secret leak.
-    // Uses the config-gated /__test/validation endpoint
-    // (Program.cs maps it only when GuliERP:TestEndpoints:Enable=true).
+    // Uses the Environment-gated /__test/validation endpoint
+    // (Program.cs maps it only when ASPNETCORE_ENVIRONMENT == "Testing").
+    // G2-002R2 replaced the GuliERP:TestEndpoints:Enable flag with
+    // the host environment check.
     // -----------------------------------------------------------------
     [Fact]
     public async Task ValidationProblemContainsGuliExtensions()
@@ -412,8 +416,7 @@ public class FoundationKernelFacts : IClassFixture<WebApplicationFactory<Program
         using var factory = _factory.WithWebHostBuilder(builder =>
         {
             builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString);
-            builder.UseEnvironment("Production");
-            builder.UseSetting("GuliERP:TestEndpoints:Enable", "true");
+            builder.UseEnvironment("Testing");
         });
         using var client = factory.CreateClient();
 
@@ -464,5 +467,151 @@ public class FoundationKernelFacts : IClassFixture<WebApplicationFactory<Program
         Assert.DoesNotContain("D:\\", body);
         Assert.DoesNotContain("C:\\", body);
         Assert.DoesNotContain("at GuliERP.", body);
+    }
+
+    // -----------------------------------------------------------------
+    // G2-002R2 §十 TEST A: Production environment + /__test/validation
+    // → 404. This locks the security boundary: even though the old
+    // GuliERP:TestEndpoints:Enable flag may be set to "true", the
+    // Production host environment does NOT register the test
+    // endpoints. The /__test/validation URL becomes a 404 just like
+    // any other unmatched path.
+    // -----------------------------------------------------------------
+    [Fact]
+    public async Task TestEndpoint_Production_Returns404()
+    {
+        // Even with the OLD config flag set to "true" (the G2-002R1
+        // boundary), the Production environment must NOT register
+        // the test endpoints. The G2-002R2 boundary is the
+        // ASPNETCORE_ENVIRONMENT == "Testing" check, which makes
+        // the old flag irrelevant.
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString);
+            builder.UseEnvironment("Production");
+            builder.UseSetting("GuliERP:TestEndpoints:Enable", "true");
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/__test/validation",
+            new { name = "", age = -1 });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        // 404 body must use the route_not_found ProblemDetails shape.
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(body);
+        Assert.Equal("route_not_found", doc.RootElement.GetProperty("code").GetString());
+    }
+
+    // -----------------------------------------------------------------
+    // G2-002R2 §十 TEST B: Production environment + /__test/error
+    // → 404. Same boundary as TEST A; proves the error endpoint is
+    // also unregistered. (This is the critical security test — a
+    // registered /__test/error in Production would let an attacker
+    // force a 500 with controlled exception content.)
+    // -----------------------------------------------------------------
+    [Fact]
+    public async Task TestErrorEndpoint_Production_Returns404()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString);
+            builder.UseEnvironment("Production");
+            builder.UseSetting("GuliERP:TestEndpoints:Enable", "true");
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/__test/error");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(body);
+        Assert.Equal("route_not_found", doc.RootElement.GetProperty("code").GetString());
+        // Security: must NOT have leaked any "internal_error" or
+        // exception details (the /__test/error handler ran in
+        // a prior, R1 era when this was gated by config flag).
+        Assert.DoesNotContain("synthetic test exception", body);
+        Assert.DoesNotContain("InvalidOperationException", body);
+    }
+
+    // -----------------------------------------------------------------
+    // G2-002R2 §十 TEST C: Development environment + /__test/validation
+    // → 404. Per brief §五, Development must NOT auto-enable the test
+    // endpoints. Only the "Testing" environment does.
+    // -----------------------------------------------------------------
+    [Fact]
+    public async Task TestEndpoint_Development_Returns404()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString);
+            builder.UseEnvironment("Development");
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/__test/validation",
+            new { name = "", age = -1 });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(body);
+        Assert.Equal("route_not_found", doc.RootElement.GetProperty("code").GetString());
+    }
+
+    // -----------------------------------------------------------------
+    // G2-002R2 §十 TEST D: Testing environment + /__test/validation
+    // → 400 validation_failed. This is the POSITIVE test that proves
+    // the test endpoints DO register when the environment is "Testing".
+    // Pairs with TEST A (Production) and TEST C (Development) to lock
+    // the environment boundary in both directions.
+    // -----------------------------------------------------------------
+    [Fact]
+    public async Task TestEndpoint_Testing_ValidationReturns400()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString);
+            builder.UseEnvironment("Testing");
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/__test/validation",
+            new { name = "", age = -1 });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(body);
+        Assert.Equal("validation_failed", doc.RootElement.GetProperty("code").GetString());
+        Assert.Equal(400, doc.RootElement.GetProperty("status").GetInt32());
+    }
+
+    // -----------------------------------------------------------------
+    // G2-002R2 §十 TEST E: Testing environment + /__test/error
+    // → 500 internal_error. Positive proof that the IExceptionHandler
+    // pipeline is reachable from a test-only endpoint, gated by
+    // ASPNETCORE_ENVIRONMENT == "Testing".
+    // -----------------------------------------------------------------
+    [Fact]
+    public async Task TestErrorEndpoint_Testing_Returns500()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString);
+            builder.UseEnvironment("Testing");
+        });
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/__test/error");
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(body);
+        Assert.Equal("internal_error", doc.RootElement.GetProperty("code").GetString());
+        Assert.Equal(500, doc.RootElement.GetProperty("status").GetInt32());
     }
 }

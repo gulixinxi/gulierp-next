@@ -212,23 +212,49 @@ app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.Health
 //     no envelope wrapper.
 app.MapFoundationSystemEndpoints();
 
-// --- 11b. G2-002R1 test-only endpoints (config-gated) ---
+// --- 11b. G2-002R2 test-only endpoints (Environment-gated) ---
 //     These two endpoints exist ONLY to let the Foundation Kernel
 //     integration tests trigger the real ASP.NET Core validation + 500
-//     pipelines. They are gated by `GuliERP:TestEndpoints:Enable` (off
-//     by default; only the WebApplicationFactory tests turn this on via
-//     `WithWebHostBuilder.UseSetting("GuliERP:TestEndpoints:Enable",
-//     "true")`). The Production host never has the flag set, so these
-//     routes do not exist there.
+//     pipelines. The ONLY gating condition is the host environment
+//     being "Testing" — there is NO runtime config flag, NO
+//     `GuliERP:TestEndpoints:Enable`, NO other switchable boundary.
 //
-//     Why not /__test/throw + /__test/validation in production code?
-//     The brief §15 #8 explicitly forbids /throw /test-error /debug-
-//     exception in the Production surface. By gating with a config
-//     flag we get the ASP.NET Core pipeline to be tested without ever
-//     exposing the endpoints in production.
-if (app.Configuration.GetValue<bool>("GuliERP:TestEndpoints:Enable", false))
+//     Why "Environment" and not a config flag?
+//     G2-002R1 used `GuliERP:TestEndpoints:Enable` as the gate. That
+//     was insecure: any operator who accidentally set the flag in a
+//     Production appsettings*.json (or via env var) would expose
+//     `POST /__test/validation` + `GET /__test/error` in the
+//     Production URL space. A boolean config is a wrong abstraction
+//     for a security boundary.
+//
+//     G2-002R2 replaces the config flag with a structural check
+//     against the host environment name. The default ASP.NET Core
+//     host environments are "Development", "Staging", and
+//     "Production" (the brief §三 explicitly calls these out). The
+//     WebApplicationFactory test host is configured by the integration
+//     tests to use "Testing" via `UseEnvironment("Testing")`. No
+//     other value triggers the test-endpoint registration.
+//
+//     What about Staging?
+//     Staging is NOT Testing. Staging is treated as a Production-like
+//     surface for this check. The test endpoints will NOT register in
+//     Staging either. This is the safe default.
+//
+//     What about Development?
+//     Development is NOT Testing. The test endpoints will NOT
+//     register in Development. The brief §五 requires this.
+//
+//     Security proof (per brief §四 + §十):
+//     1. Production + `GET /__test/validation`  → 404
+//     2. Production + `GET /__test/error`       → 404
+//     3. Development + `GET /__test/validation` → 404
+//     4. Testing    + validation POST           → 400 validation_failed
+//     5. Testing    + `GET /__test/error`       → 500 internal_error
+//     All five are locked by automated integration tests in
+//     `tests/GuliERP.Foundation.IntegrationTests/Kernel/FoundationKernelFacts.cs`.
+if (app.Environment.IsEnvironment("Testing"))
 {
-    var testGroup = app.MapGroup("/__test").WithTags("TestOnly-DisabledInProduction");
+    var testGroup = app.MapGroup("/__test").WithTags("TestOnly-TestingEnvironment");
 
     // POST /__test/validation — drives the standard ASP.NET Core
     // ValidationProblemDetails contract. The DTO is decorated with
@@ -236,8 +262,8 @@ if (app.Configuration.GetValue<bool>("GuliERP:TestEndpoints:Enable", false))
     // endpoint surfaces ModelState via Results.ValidationProblem
     // (RFC 7807 / 9457). Our RequestContextMiddleware runs first and
     // attaches X-Request-Id / X-Trace-Id; the JSON body inherits the
-    // requestId / traceId via the GuliERP extensions attached after
-    // Results.ValidationProblem.
+    // requestId / traceId via the GuliERP extensions attached by the
+    // ProblemDetailsOptions.CustomizeProblemDetails callback.
     testGroup.MapPost("/validation", (TestValidationRequest req) =>
     {
         var errors = new Dictionary<string, string[]>();
@@ -256,13 +282,15 @@ if (app.Configuration.GetValue<bool>("GuliERP:TestEndpoints:Enable", false))
         return Results.ValidationProblem(errors);
     });
 
-    // GET /__test/throw — drives the IExceptionHandler pipeline.
+    // GET /__test/error — drives the IExceptionHandler pipeline.
     // Throws a plain InvalidOperationException; FoundationExceptionHandler
     // catches it, logs the full exception with RequestId/TraceId, and
     // returns 500 + application/problem+json with code=internal_error.
     // The response MUST NOT carry any stack frame, password,
-    // connection string, or internal path.
-    testGroup.MapGet("/throw", () =>
+    // connection string, or internal path. The endpoint name is
+    // /__test/error (not /__test/throw) so the URL is consistent with
+    // the brief's TEST B (Production + /__test/error → 404).
+    testGroup.MapGet("/error", () =>
     {
         throw new InvalidOperationException("synthetic test exception (test-only endpoint)");
     });
