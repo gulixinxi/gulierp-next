@@ -4,17 +4,29 @@
 
 | Field | Value |
 |---|---|
-| Goal | **G2-005 — Minimum Authorization + DataScope** |
-| Gate | `G2_005_CODE_READY_OPERATOR_EVIDENCE_PENDING` |
-| Status | **CODE_READY** — architecture frozen; ASP.NET Core Authorization policy/requirement/handler implemented; Role -> Permission reuses Identity RoleClaims; User -> Role scope reuses existing UserRoleAssignment; minimum CurrentCompany DataScope guard implemented; Testing-only G2-005 probe endpoint proves 401/403/200/cross-tenant/cross-company/PlatformAdmin non-bypass/Production non-exposure. Local build and focused tests pass; real PostgreSQL Operator evidence pending. |
-| Entry Gate | `G2_004_AUTHENTICATION_KERNEL_VERIFIED` |
-| Architecture | `docs/architecture/G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_ARCHITECTURE.md` |
-| Verification | `docs/verification/G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_REPORT.md` |
-| Local Evidence | Build PASS 0 warnings/0 errors; G2-005 focused 7/7 PASS; Foundation unit 44/44 PASS; Identity unit 26/26 PASS; Bootstrap unit 18/18 PASS; Identity integration 62/66 PASS with 4 existing real-PostgreSQL Operator-required failures. |
-| Next Gate | Operator real PostgreSQL evidence to upgrade to `G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED`. |
-| Forbidden follow-up without user authorization | Full IAM platform, menu/button/field permissions, ABAC/DSL, permission UI, Redis/distributed permission cache, JWT/OIDC/OpenIddict migration, UserPlantMembership, MDM/Inventory/Sales/Purchase business API implementation. |
+| Goal | **ID Strategy Final Decision Before MDM** |
+| Gate | **`ID_STRATEGY_FINALIZED_FOR_MDM`** |
+| Status | **CLOSED** — `PRIMARY_TECHNICAL_ID_STRATEGY = UUIDV7`; custom Snowflake workerId=0 finding D-005 closed by decision, not implementation. MDM must not start until a dedicated ID migration goal converts Foundation / Identity technical PK/FK contracts to UUIDv7 or explicitly supersedes this decision. |
+| Entry Gate | `G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED · CLOSED` |
+| Decision | `docs/architecture/ID_STRATEGY_FINAL_DECISION.md` |
+| Current Proven Foundation / Identity / Auth / Authz State | `G2_004_AUTHENTICATION_KERNEL_VERIFIED · CLOSED`; `FOUNDATION_SUFFICIENT_TO_PROCEED_G2_005 = YES`; `G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED · CLOSED` |
+| Operator Evidence Carried Forward | Build PASS; Foundation Migration PASS; Identity Migration PASS; 195/195 tests PASS; runtime 401/403/403/200/404/404 PASS; Production test endpoint 404 PASS; Production spoof identity 401 PASS; environment restoration PASS. |
+| Next Mainline | **MDM-000 Convention Freeze** after UUIDv7 migration planning/implementation gate is explicitly authorized. |
+| Forbidden follow-up without user authorization | ID platform, distributed worker registry, Numbering Engine, document numbering implementation, master-data coding implementation, MDM/Inventory/Sales/Purchase business API implementation. |
 
 ## Previous Active Goal (superseded)
+
+| Field | Value |
+|---|---|
+| Goal | **G2-005 — Minimum Authorization + DataScope** |
+| Gate | `G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED · CLOSED` |
+| Status | **CLOSED** — Operator evidence accepted: Build PASS; Foundation/Identity migrations PASS; 195/195 tests PASS; runtime unauthenticated 401, authenticated deny 403, PlatformAdmin no-permission 403, real PostgreSQL permission wiring 200, cross-company 404, cross-tenant 404; Production Testing-only endpoint 404; Production spoof identity 401; environment restoration PASS. |
+| Entry Gate | `G2_004_AUTHENTICATION_KERNEL_VERIFIED · CLOSED` |
+| Architecture | `docs/architecture/G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_ARCHITECTURE.md` |
+| Verification | `docs/verification/G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_REPORT.md` |
+| Next Goal | **ID Strategy Final Decision Before MDM** |
+
+## Historical Goal Snapshot
 
 | Field | Value |
 |---|---|
