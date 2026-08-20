@@ -93,4 +93,14 @@ public static class ErrorCodes
     /// secret, or any stack frame (G2-002 ban list).
     /// </summary>
     public const string CsrfValidationFailed = "csrf_validation_failed";
+
+    // ----------------------------------------------------------------
+    // G2-005 — Minimum Authorization + DataScope error codes
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Authenticated actor reached a protected endpoint but did not
+    /// satisfy the required permission / policy.
+    /// </summary>
+    public const string AuthorizationForbidden = "authorization_forbidden";
 }

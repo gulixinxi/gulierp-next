@@ -4,6 +4,7 @@ using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Infrastructure.Contexts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 
 namespace GuliERP.Identity.Infrastructure.Authentication;
 
@@ -65,7 +66,7 @@ public sealed class AuthenticationContextMiddleware
         ICurrentUser currentUser)
     {
         var disposables = new List<IDisposable>(3);
-        var isTesting = IsTestingEnvironment();
+        var isTesting = IsTestingEnvironment(context);
 
         try
         {
@@ -184,9 +185,9 @@ public sealed class AuthenticationContextMiddleware
             && value > 0;
     }
 
-    private static bool IsTestingEnvironment()
+    private static bool IsTestingEnvironment(HttpContext context)
     {
-        var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-        return string.Equals(env, "Testing", StringComparison.OrdinalIgnoreCase);
+        var env = context.RequestServices.GetService(typeof(IHostEnvironment)) as IHostEnvironment;
+        return env?.IsEnvironment("Testing") == true;
     }
 }

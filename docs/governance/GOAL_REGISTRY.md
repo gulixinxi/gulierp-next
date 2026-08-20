@@ -4,15 +4,15 @@
 
 | Field | Value |
 |---|---|
-| Goal | **G2-004V1R6 — Operator Harness PowerShell Automatic Variable Collision Final Audit** (1 real defect: PowerShell `$PID` automatic-variable collision in 2 function parameters; tooling only) |
-| Gate | `G2_004_OPERATOR_EVIDENCE_HARNESS_R4_READY` (G2-004 + R1 + V1 + V1R1 + V1R2 + V1R3 + V1R4 + V1R5 closed) |
-| Status | **`G2_004_OPERATOR_EVIDENCE_HARNESS_READY`** — Mavis-side 165/174 tests PASS / 9 LOUD-FAIL (+1 new PowerShellAutomaticVariableCollisionFacts test; baseline 173 → 174). 0 production code change. 1 real defect fixed: PowerShell `$PID` automatic-variable collision (2 function-scope `param([int]$Pid)` → `param([int]$ProcessId)`; all 6 call sites `-Pid X` → `-ProcessId X`). Added a static AST-based regression guard that locks the harness against the V1R3 / V1R6 class of defects (19-name frozen automatic-variable list: `args` / `Host` / `PID` / `Error` / `HOME` / `input` / `LASTEXITCODE` / `Matches` / `MyInvocation` / `PROFILE` / `PSBoundParameters` / `PSCommandPath` / `PSScriptRoot` / `PSVersionTable` / `PWD` / `true` / `false` / `null`). Operator unlocks to `G2_004_AUTHENTICATION_KERNEL_VERIFIED` after the 8-step evidence run with the new harness. |
-| Entry Gate | `G2_004_OPERATOR_EVIDENCE_HARNESS_R4_READY` (G2-004 + R1 + V1 + V1R1 + V1R2 + V1R3 + V1R4 + V1R5 closed) |
-| Verification | `docs/verification/G2_004V1R6_AUTOMATIC_VARIABLE_COLLISION_REPORT.md` |
-| Harness | `tools/dev/g2-004-operator-evidence.ps1` (`param([int]$ProcessId)` for `Register-OwnedHostPid` / `Stop-OwnedHost`; `-ProcessId` at all 6 call sites; `$script:BaselineAtG2_004=174` minimum gate) + `tools/dev/g2-004-bootstrap-operator-user.ps1` (no changes) + `tools/GuliERP.Identity.Bootstrap/StderrLoggerProvider.cs` (unchanged) + `tests/GuliERP.Identity.Bootstrap.Tests/PowerShellAutomaticVariableCollisionFacts.cs` (NEW: 1 AST-based static regression test) + `tests/GuliERP.Identity.Bootstrap.Tests/ProcessIoDeadlockFacts.cs` (2 V1R4 deadlock tests) + `Directory.Packages.props` (+ `System.Management.Automation 7.6.5`) |
-| Next Goal | **G2-005 — Authorization Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
-| Hard Stop | G2-005 must NOT auto-start in this Mavis session. G2-005 kickoff requires a fresh session with explicit user authorization. |
-| Forbidden follow-up without user authorization | `G2-005` implementation (any [Authorize] policy with permission / DataScope semantics, IPermissionService, role-permission matrix, menu / button / field permission, DataScope filters, JwtBearer scheme registration, OpenIddict server, the 8 read-only /api/v1/identity/... HTTP directory endpoints, UserPlantMembership table) |
+| Goal | **G2-005 — Minimum Authorization + DataScope** |
+| Gate | `G2_005_CODE_READY_OPERATOR_EVIDENCE_PENDING` |
+| Status | **CODE_READY** — architecture frozen; ASP.NET Core Authorization policy/requirement/handler implemented; Role -> Permission reuses Identity RoleClaims; User -> Role scope reuses existing UserRoleAssignment; minimum CurrentCompany DataScope guard implemented; Testing-only G2-005 probe endpoint proves 401/403/200/cross-tenant/cross-company/PlatformAdmin non-bypass/Production non-exposure. Local build and focused tests pass; real PostgreSQL Operator evidence pending. |
+| Entry Gate | `G2_004_AUTHENTICATION_KERNEL_VERIFIED` |
+| Architecture | `docs/architecture/G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_ARCHITECTURE.md` |
+| Verification | `docs/verification/G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_REPORT.md` |
+| Local Evidence | Build PASS 0 warnings/0 errors; G2-005 focused 7/7 PASS; Foundation unit 44/44 PASS; Identity unit 26/26 PASS; Bootstrap unit 18/18 PASS; Identity integration 62/66 PASS with 4 existing real-PostgreSQL Operator-required failures. |
+| Next Gate | Operator real PostgreSQL evidence to upgrade to `G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED`. |
+| Forbidden follow-up without user authorization | Full IAM platform, menu/button/field permissions, ABAC/DSL, permission UI, Redis/distributed permission cache, JWT/OIDC/OpenIddict migration, UserPlantMembership, MDM/Inventory/Sales/Purchase business API implementation. |
 
 ## Previous Active Goal (superseded)
 

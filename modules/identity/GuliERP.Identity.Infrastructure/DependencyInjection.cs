@@ -1,7 +1,9 @@
 using GuliERP.Foundation.Kernel;
+using GuliERP.Identity.Application.Authorization;
 using GuliERP.Identity.Application.CompanySwitching;
 using GuliERP.Identity.Application.Directory;
 using GuliERP.Identity.Domain.Entities;
+using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Infrastructure.Authentication;
 using GuliERP.Identity.Infrastructure.CompanySwitching;
 using GuliERP.Identity.Infrastructure.Contexts;
@@ -13,6 +15,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -123,16 +127,26 @@ public static class DependencyInjection
             };
         });
 
-        // ----- Authorization (cookie-scheme default policy) -----
-        // G2-004 only wires the "authenticated or anonymous" split.
-        // Fine-grained permission policies are G2-005 territory.
+        // ----- Authorization -----
+        // G2-005 keeps ASP.NET Core Authorization as the policy shell.
+        // Permission codes remain centralized; endpoints reference policy
+        // names, and the handler resolves RoleClaims + UserRoleAssignment.
         services.AddAuthorization(options =>
         {
             options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder(
                     GuliErpAuthSchemes.CookieScheme)
                 .RequireAuthenticatedUser()
                 .Build();
+
+            options.AddPolicy(
+                GuliErpAuthorizationPolicies.G2ProbeRead,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(GuliErpPermissions.G2ProbeRead)));
         });
+        services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddScoped<IDataScopeAuthorizationService, DataScopeAuthorizationService>();
+        services.AddSingleton<IAuthorizationMiddlewareResultHandler, GuliErpAuthorizationMiddlewareResultHandler>();
 
         // ----- HttpContextAccessor (SignInManager needs it) -----
         services.AddHttpContextAccessor();

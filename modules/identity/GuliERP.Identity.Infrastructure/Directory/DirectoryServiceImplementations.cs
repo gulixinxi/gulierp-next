@@ -61,7 +61,23 @@ public sealed class CompanyDirectoryService : ICompanyDirectoryService
 
     public async Task<CompanyDirectoryEntryDto?> GetByIdAsync(long companyId, CancellationToken ct = default)
     {
-        var c = await _db.Companies.AsNoTracking().FirstOrDefaultAsync(x => x.Id == companyId, ct);
+        var tenantId = _currentTenant.Id
+            ?? throw new InvalidOperationException(
+                "ICompanyDirectoryService.GetByIdAsync requires ICurrentTenant.IsAvailable.");
+
+        var query = _db.Companies.AsNoTracking()
+            .Where(x => x.Id == companyId && x.TenantId == tenantId);
+
+        if (_currentUser.Id.HasValue && !_currentUser.IsPlatformAdmin)
+        {
+            var userId = _currentUser.Id.Value;
+            var accessibleCompanyIds = _db.UserCompanyMemberships.AsNoTracking()
+                .Where(m => m.UserId == userId && m.Status == Domain.Enums.MembershipStatus.Active)
+                .Select(m => m.CompanyId);
+            query = query.Where(c => accessibleCompanyIds.Contains(c.Id));
+        }
+
+        var c = await query.FirstOrDefaultAsync(ct);
         if (c is null) return null;
         return ToDto(c);
     }
@@ -116,7 +132,11 @@ public sealed class PlantDirectoryService : IPlantDirectoryService
 
     public async Task<PlantDirectoryEntryDto?> GetByIdAsync(long plantId, CancellationToken ct = default)
     {
-        var p = await _db.Plants.AsNoTracking().FirstOrDefaultAsync(x => x.Id == plantId, ct);
+        var tenantId = _currentTenant.Id
+            ?? throw new InvalidOperationException(
+                "IPlantDirectoryService.GetByIdAsync requires ICurrentTenant.IsAvailable.");
+        var p = await _db.Plants.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == plantId && x.TenantId == tenantId, ct);
         if (p is null) return null;
         return ToDto(p);
     }
@@ -171,8 +191,11 @@ public sealed class OrganizationDirectoryService : IOrganizationDirectoryService
     public async Task<OrganizationDirectoryEntryDto?> GetByIdAsync(
         long organizationUnitId, CancellationToken ct = default)
     {
+        var tenantId = _currentTenant.Id
+            ?? throw new InvalidOperationException(
+                "IOrganizationDirectoryService.GetByIdAsync requires ICurrentTenant.IsAvailable.");
         var o = await _db.OrganizationUnits.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == organizationUnitId, ct);
+            .FirstOrDefaultAsync(x => x.Id == organizationUnitId && x.TenantId == tenantId, ct);
         if (o is null) return null;
         return ToDto(o);
     }
@@ -225,7 +248,11 @@ public sealed class UserDirectoryService : IUserDirectoryService
 
     public async Task<UserDirectoryEntryDto?> GetByIdAsync(long userId, CancellationToken ct = default)
     {
-        var u = await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId, ct);
+        var tenantId = _currentTenant.Id
+            ?? throw new InvalidOperationException(
+                "IUserDirectoryService.GetByIdAsync requires ICurrentTenant.IsAvailable.");
+        var u = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == userId && x.TenantId == tenantId, ct);
         if (u is null) return null;
         return ToDto(u);
     }

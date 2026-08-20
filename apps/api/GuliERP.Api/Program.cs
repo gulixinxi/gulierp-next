@@ -196,17 +196,20 @@ var app = builder.Build();
 //                                       delegates to FoundationExceptionHandler.
 //       3. RequestLoggingMiddleware    — BeginScope(RequestId, TraceId),
 //                                       one structured log line per request.
-//       4. UseRouting                  — (built-in) minimal API routing.
-//       5. (endpoints are mapped below)
-//       6. RouteNotFoundMiddleware     — last-resort 404 → ProblemDetails.
+//       4. UseRouting                  — (built-in) endpoint selection.
+//       5. UseAuthentication           — sets HttpContext.User.
+//       6. UseAuthenticationContext    — claims → ICurrentTenant/Company/User.
+//       7. UseAuthorization            — evaluates endpoint policies.
+//       8. (endpoints are mapped below)
+//       9. RouteNotFoundMiddleware     — last-resort 404 → ProblemDetails.
 
 app.UseMiddleware<RequestContextMiddleware>();
 app.UseExceptionHandler();   // delegates to AuthenticationExceptionHandler FIRST, then FoundationExceptionHandler
 app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseRouting();
 app.UseAuthentication();     // G2-004: sets HttpContext.User from the auth cookie
 app.UseAuthenticationContext();   // G2-004: claims → ICurrentTenant/Company/User (D-003 closure)
-app.UseAuthorization();      // G2-004: cookie-scheme default policy (RequireAuthenticatedUser)
-app.UseRouting();
+app.UseAuthorization();      // G2-005: endpoint policy evaluation after routing
 
 // --- 9. OpenAPI (dev) ---
 if (app.Environment.IsDevelopment())
@@ -326,6 +329,8 @@ if (app.Environment.IsEnvironment("Testing"))
     {
         throw new InvalidOperationException("synthetic test exception (test-only endpoint)");
     });
+
+    app.MapG2_005TestAuthorizationEndpoints();
 }
 
 // --- 12. Last-resort 404 → ProblemDetails (G2-002 §8) ---
