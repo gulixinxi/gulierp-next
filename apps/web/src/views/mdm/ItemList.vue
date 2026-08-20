@@ -67,7 +67,9 @@
             {{ row.categoryName || '—' }}
           </template>
         </el-table-column>
-        <el-table-column prop="baseUomName" label="基本单位" width="90" align="center" />
+        <el-table-column label="基本单位" width="90" align="center">
+          <template #default="{ row }">{{ findUom(row.baseUomId)?.name || '—' }}</template>
+        </el-table-column>
         <el-table-column prop="itemNature" label="物料性质" width="90" align="center">
           <template #default="{ row }">
             {{ natureLabel(row.itemNature) }}
@@ -83,10 +85,14 @@
             {{ formatDate(row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="140" fixed="right" align="center">
+        <el-table-column label="操作" width="120" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button text size="small" type="primary" @click="openDetail(row)">详情</el-button>
-            <el-button text size="small" type="primary" @click="openEdit(row)">编辑</el-button>
+            <MdmTableRowActions
+              :status="row.status"
+              @edit="openEdit(row)"
+              @deactivate="confirmDeactivate(row)"
+              @activate="confirmActivate(row)"
+            />
           </template>
         </el-table-column>
         <template #empty>
@@ -182,7 +188,7 @@
             <el-descriptions-item label="物料名称">{{ detailData?.name }}</el-descriptions-item>
             <el-descriptions-item label="规格型号">{{ detailData?.specification || '—' }}</el-descriptions-item>
             <el-descriptions-item label="物料分类">{{ detailData?.categoryName || '—' }}</el-descriptions-item>
-            <el-descriptions-item label="基本单位">{{ detailData?.baseUomName || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="基本单位">{{ findUom(detailData?.baseUomId ?? null)?.name || '—' }}</el-descriptions-item>
             <el-descriptions-item label="物料性质">{{ natureLabel(detailData?.itemNature) }}</el-descriptions-item>
             <el-descriptions-item label="状态">{{ getStatusLabel(detailData?.status) }}</el-descriptions-item>
             <el-descriptions-item label="说明">{{ detailData?.description || '—' }}</el-descriptions-item>
@@ -191,7 +197,7 @@
 
         <el-tab-pane label="库存" name="inventory">
           <el-descriptions :column="2" border size="small">
-            <el-descriptions-item label="基本单位">{{ detailData?.baseUomName || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="基本单位">{{ findUom(detailData?.baseUomId ?? null)?.name || '—' }}</el-descriptions-item>
           </el-descriptions>
           <div class="mdm-tab-placeholder">
             <el-icon :size="32"><Box /></el-icon>
@@ -232,7 +238,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { Download, Box, ShoppingCart, Goods, Collection } from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormRules } from 'element-plus';
 
 import MdmListToolbar from '../../components/mdm/MdmListToolbar.vue';
@@ -241,8 +247,9 @@ import MdmFormDrawer from '../../components/mdm/MdmFormDrawer.vue';
 import MdmDetailDrawer from '../../components/mdm/MdmDetailDrawer.vue';
 import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
+import MdmTableRowActions from '../../components/mdm/MdmTableRowActions.vue';
 
-import { mockItems, mockItemCategories, mockUoms } from '../../mock/mdm';
+import { mockItems, mockItemCategories, mockUoms, findUom } from '../../mock/mdm';
 import { STATUS_OPTIONS, ITEM_NATURE_OPTIONS } from '../../types/mdm';
 import type { Item, ItemForm, ItemNature, MasterDataStatus } from '../../types/mdm';
 
@@ -361,6 +368,31 @@ function getStatusLabel(status?: MasterDataStatus): string {
 
 function natureLabel(nature?: ItemNature): string {
   return ITEM_NATURE_OPTIONS.find(o => o.value === nature)?.label || '—';
+}
+
+// ===== Status change (active/inactive, NO delete) =====
+async function confirmDeactivate(row: Item) {
+  try {
+    await ElMessageBox.confirm(
+      `确定停用"${row.name}"吗？停用后将不能用于新的业务单据，历史数据不受影响。`,
+      '停用确认',
+      { confirmButtonText: '停用', cancelButtonText: '取消', type: 'warning' },
+    );
+  } catch { return; }
+  row.status = 'inactive';
+  ElMessage.success('已停用（Mock）');
+}
+
+async function confirmActivate(row: Item) {
+  try {
+    await ElMessageBox.confirm(
+      `确定启用"${row.name}"吗？`,
+      '启用确认',
+      { confirmButtonText: '启用', cancelButtonText: '取消', type: 'info' },
+    );
+  } catch { return; }
+  row.status = 'active';
+  ElMessage.success('已启用（Mock）');
 }
 
 function exportData() {

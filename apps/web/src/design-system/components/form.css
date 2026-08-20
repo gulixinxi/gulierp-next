@@ -1,0 +1,193 @@
+/* GuliERP Design System — Form components
+   ERP-compact density; Element Plus remaps via density.css already.
+   This file adds component-level classes: form-grid, field drawer,
+   lookup input, upload area, etc. */
+
+/* — Form grid — document header forms — */
+.gs-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0 var(--space-7);
+}
+.gs-form-grid .el-form-item {
+  margin-bottom: var(--space-6);
+}
+.gs-form-grid .el-form-item.full-row {
+  grid-column: span 4;
+}
+
+/* — Form label — */
+.el-form-item__label {
+  font-size: var(--erp-font-size);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* — Input control density — */
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select,
+.el-input-number {
+  font-size: var(--erp-font-size);
+}
+.el-select .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--border-default) inset;
+}
+.el-select:hover .el-input__wrapper,
+.el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--primary-default) inset !important;
+}
+.el-select .el-input.is-focus .el-input__wrapper,
+.el-input.is-focus .el-input__wrapper,
+.el-input-number.is-focus .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--primary-default) inset,
+              0 0 0 3px var(--focus-ring) !important;
+}
+
+/* — Button — */
+.el-button {
+  font-size: var(--erp-font-size);
+  border-radius: var(--radius);
+}
+.el-button--primary {
+  --el-button-bg-color: var(--primary-default);
+  --el-button-border-color: var(--primary-default);
+  --el-button-hover-bg-color: var(--primary-hover);
+  --el-button-hover-border-color: var(--primary-hover);
+  --el-button-active-bg-color: var(--primary-active);
+  --el-button-active-border-color: var(--primary-active);
+}
+
+/* — Lookup input wrapper (append-search-button pattern) — */
+.gs-lookup-input .el-input-group__append {
+  background: var(--bg-container);
+  border-color: var(--border-default);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 var(--space-3);
+}
+.gs-lookup-input .el-input-group__append:hover {
+  color: var(--primary-default);
+  border-color: var(--primary-default);
+}
+
+/* — Radio group (price mode) — */
+.el-radio-button__inner {
+  font-size: var(--erp-font-size);
+  padding: var(--space-2) var(--space-4);
+}
+
+/* — Upload area — */
+.gs-upload-area {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+.gs-upload-hint {
+  font-size: var(--erp-font-size-sm);
+  color: var(--text-muted);
+}
+
+/* — Field settings drawer list — */
+.gs-field-settings {
+  padding: var(--space-4) var(--space-7);
+}
+.gs-field-hint {
+  color: var(--text-muted);
+  font-size: var(--erp-font-size-sm);
+  margin: 0 0 var(--space-6);
+  line-height: 1.6;
+}
+.gs-field-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.gs-field-item {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-container);
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  cursor: grab;
+  transition: var(--transition-color);
+}
+.gs-field-item:hover {
+  border-color: var(--primary-default);
+  background: var(--primary-bg);
+}
+.gs-field-item.is-core {
+  cursor: default;
+  background: var(--bg-subtle);
+  border-color: var(--border-subtle);
+}
+.gs-field-item.is-core .el-checkbox {
+  opacity: 0.5;
+}
+.gs-field-core-tag {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+}
+
+/* — Column settings drawer (sales line) — */
+.gs-col-settings {
+  padding: var(--space-4) var(--space-7);
+}
+.gs-col-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.gs-col-item {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-container);
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  transition: var(--transition-color);
+}
+.gs-col-item:hover {
+  border-color: var(--primary-default);
+  background: var(--primary-bg);
+}
+.gs-col-item.is-core {
+  background: var(--bg-subtle);
+  border-color: var(--border-subtle);
+}
+.gs-col-item.is-core .el-checkbox {
+  opacity: 0.5;
+}
+.gs-col-item.is-dragging {
+  opacity: 0.6;
+  border-style: dashed;
+}
+.gs-col-item.drag-over-top {
+  border-top: 2px solid var(--primary-default);
+}
+.gs-col-item.drag-over-bottom {
+  border-bottom: 2px solid var(--primary-default);
+}
+.gs-col-handle {
+  color: var(--text-muted);
+  cursor: grab;
+  font-size: var(--icon-lg);
+}
+.gs-col-handle:active { cursor: grabbing; }
+.gs-col-width {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--gap-xs);
+}
+.gs-col-width .el-input-number {
+  width: 90px;
+}

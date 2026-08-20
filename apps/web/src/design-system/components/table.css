@@ -1,0 +1,111 @@
+/* GuliERP Design System — Table components
+   ERP compact density by default.
+   Uses token variables instead of hard-coded colors. */
+
+/* — Element Plus table density overrides (consumed by all tables in app) — */
+.el-table {
+  --el-table-font-size: var(--erp-font-size);
+  --el-table-header-font-size: var(--erp-font-size);
+  font-size: var(--erp-font-size);
+}
+.el-table .el-table__cell {
+  padding: 0;
+}
+.el-table th.el-table__cell {
+  height: var(--table-header-h);
+  padding: 0 var(--space-3);
+}
+.el-table td.el-table__cell {
+  height: var(--table-row-h);
+  padding: 0 var(--space-3);
+}
+.el-table--small th.el-table__cell {
+  height: var(--table-row-compact-h);
+  padding: 0 var(--space-3);
+}
+.el-table--small td.el-table__cell {
+  height: var(--table-row-compact-h);
+  padding: 0 var(--space-3);
+}
+.el-table :deep(.cell) {
+  padding: 0;
+}
+
+/* Numeric / amount columns */
+.gs-num-cell {
+  font-family: var(--erp-mono-font);
+  text-align: right;
+  display: inline-block;
+  width: 100%;
+  color: var(--text-secondary);
+}
+.gs-num-cell.gs-strong { color: #c2410c; font-weight: 700; }
+.gs-num-cell.gs-partial { color: var(--status-warning); }
+.gs-num-cell.gs-done { color: var(--status-success); }
+.gs-num-cell.gs-open { color: var(--color-blue-600); }
+
+/* — Row status colors (execution visual) — */
+.el-table__row.gs-line-done {
+  background: #F0FDF4 !important;
+}
+.el-table__row.gs-line-partial {
+  background: #FFFBEB !important;
+}
+
+/* — Action button cells (row operations single-line) — */
+.gs-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.gs-row-actions .el-button {
+  margin: 0;
+  padding: 0 6px;
+  min-height: 24px;
+  height: 24px;
+  line-height: 1;
+}
+:deep(.actions-col .cell),
+:deep(.att-actions-col .cell) {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  display: flex;
+  justify-content: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+/* Attachment row actions: icon-only, single line */
+.gs-att-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.gs-att-actions .el-button {
+  margin: 0;
+  padding: 0 4px;
+  min-height: 24px;
+  height: 24px;
+}
+
+/* — Bulk action bar — */
+.gs-bulk-bar {
+  background: var(--primary-bg);
+  border: 1px solid var(--primary-border);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  margin: 0 var(--space-4) var(--space-4);
+}
+.gs-bulk-bar b {
+  color: var(--primary-default);
+  font-weight: 700;
+}

@@ -76,10 +76,14 @@
             {{ formatDate(row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="140" fixed="right" align="center">
+        <el-table-column label="操作" width="120" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button text size="small" type="primary" @click="openDetail(row)">详情</el-button>
-            <el-button text size="small" type="primary" @click="openEdit(row)">编辑</el-button>
+            <MdmTableRowActions
+              :status="row.status"
+              @edit="openEdit(row)"
+              @deactivate="confirmDeactivate(row)"
+              @activate="confirmActivate(row)"
+            />
           </template>
         </el-table-column>
         <template #empty>
@@ -166,7 +170,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { Download } from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormRules } from 'element-plus';
 
 import MdmListToolbar from '../../components/mdm/MdmListToolbar.vue';
@@ -175,6 +179,7 @@ import MdmFormDrawer from '../../components/mdm/MdmFormDrawer.vue';
 import MdmDetailDrawer from '../../components/mdm/MdmDetailDrawer.vue';
 import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
+import MdmTableRowActions from '../../components/mdm/MdmTableRowActions.vue';
 
 import { mockUoms } from '../../mock/mdm';
 import { STATUS_OPTIONS, DIMENSION_OPTIONS, KIND_OPTIONS } from '../../types/mdm';
@@ -287,6 +292,32 @@ function dimensionLabel(dim?: UomDimension): string {
 
 function kindLabel(k?: UomKind): string {
   return KIND_OPTIONS.find(o => o.value === k)?.label || '—';
+}
+
+// ===== Status change (active/inactive, NO delete) =====
+async function confirmDeactivate(row: Uom) {
+  try {
+    await ElMessageBox.confirm(
+      `确定停用"${row.name}"吗？停用后将不能用于新的业务单据，历史数据不受影响。`,
+      '停用确认',
+      { confirmButtonText: '停用', cancelButtonText: '取消', type: 'warning' },
+    );
+  } catch { return; }
+  // MOCK: no real API. Update local status.
+  row.status = 'inactive';
+  ElMessage.success('已停用（Mock）');
+}
+
+async function confirmActivate(row: Uom) {
+  try {
+    await ElMessageBox.confirm(
+      `确定启用"${row.name}"吗？`,
+      '启用确认',
+      { confirmButtonText: '启用', cancelButtonText: '取消', type: 'info' },
+    );
+  } catch { return; }
+  row.status = 'active';
+  ElMessage.success('已启用（Mock）');
 }
 
 function exportData() {

@@ -1,0 +1,31 @@
+/* GuliERP Design System — Spacing Tokens
+   4px grid (ERP-compact: no relaxed SaaS 8px feel) */
+
+:root {
+  --space-1:  2px;
+  --space-2:  4px;
+  --space-3:  6px;
+  --space-4:  8px;
+  --space-5:  10px;
+  --space-6:  12px;
+  --space-7:  16px;
+  --space-8:  20px;
+  --space-9:  24px;
+  --space-10: 32px;
+  --space-11: 40px;
+  --space-12: 48px;
+
+  /* Semantic mapping — components should prefer these */
+  --gap-xs:  var(--space-2);
+  --gap-sm:  var(--space-3);
+  --gap:     var(--space-4);   /* default between controls */
+  --gap-md:  var(--space-5);
+  --gap-lg:  var(--space-6);
+  --gap-xl:  var(--space-7);
+
+  --pad-section: var(--space-7);   /* card inner padding */
+  --pad-control: var(--space-4);   /* input / btn inner */
+  --pad-cell:    var(--space-2) var(--space-3); /* table cell */
+
+  --section-gutter: var(--space-4); /* between edit sections (8px) */
+}

@@ -1,0 +1,80 @@
+/* GuliERP Design System — Density Tokens
+   Default ERP density: compact, information-dense.
+   Element Plus does not have a "density" preset at CSS level,
+   so we override its sizing variables to match our tokens. */
+
+:root {
+  /* Font — ERP default 13px, NOT SaaS 14-16px */
+  --erp-font-size:      13px;
+  --erp-font-size-sm:   12px;
+  --erp-font-size-lg:   14px;
+  --erp-line-height:    1.45;
+  --erp-font-family:    -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                        "Hiragino Sans GB", "Microsoft YaHei", Roboto, sans-serif;
+
+  /* ERP monospace font (for amount, code columns) */
+  --erp-mono-font:      "JetBrains Mono", "Consolas", "SF Mono", Menlo, monospace;
+
+  /* Density factor — controls padding in cells / items
+     1.0 = compact (default for GuliERP) */
+  --erp-density:        1;
+
+  /* === Element Plus CSS variable overrides ===
+     EP v2.x exposes --el-* vars; we remap them to GuliERP tokens
+     so Element components match design system automatically. */
+  --el-font-size-base:            var(--erp-font-size);
+  --el-font-size-small:           var(--erp-font-size-sm);
+  --el-font-size-extra-small:     11px;
+
+  --el-color-primary:             var(--primary-default);
+  --el-color-primary-light-3:     #38BDF8;
+  --el-color-primary-light-5:     #7DD3FC;
+  --el-color-primary-light-7:     #BAE6FD;
+  --el-color-primary-light-8:     #E0F2FE;
+  --el-color-primary-light-9:     #EFF6FF;
+  --el-color-primary-dark-2:      var(--primary-hover);
+
+  --el-color-success:             var(--status-success);
+  --el-color-warning:             var(--status-warning);
+  --el-color-danger:              var(--status-danger);
+  --el-color-info:                var(--status-info);
+
+  --el-text-color-primary:        var(--text-primary);
+  --el-text-color-regular:        var(--text-secondary);
+  --el-text-color-secondary:      var(--text-muted);
+  --el-text-color-placeholder:    var(--text-disabled);
+
+  --el-border-color:              var(--border-default);
+  --el-border-color-light:        var(--border-subtle);
+  --el-border-color-lighter:      #F1F5F9;
+  --el-border-radius-base:        var(--radius);
+  --el-border-radius-small:       var(--radius-sm);
+
+  --el-fill-color-blank:          var(--bg-container);
+  --el-bg-color:                  var(--bg-container);
+  --el-bg-color-page:             var(--bg-canvas);
+  --el-fill-color-light:          var(--bg-subtle);
+  --el-fill-color-lighter:        var(--color-slate-50);
+
+  --el-component-size:            var(--size-input);
+  --el-component-size-small:      var(--size-input-sm);
+  --el-component-size-large:      var(--size-input-lg);
+
+  /* Table density */
+  --el-table-border-color:        var(--border-default);
+  --el-table-header-bg-color:     var(--bg-subtle);
+  --el-table-row-hover-bg-color:  var(--color-slate-50);
+  --el-table-tr-bg-color:         var(--bg-container);
+
+  /* Misc */
+  --el-disabled-opacity:          0.55;
+  --el-transition-duration:       200ms;
+}
+
+body {
+  font-family: var(--erp-font-family);
+  font-size: var(--erp-font-size);
+  line-height: var(--erp-line-height);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}

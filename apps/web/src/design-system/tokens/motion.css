@@ -1,0 +1,29 @@
+/* GuliERP Design System — Motion Tokens
+   ERP ergonomics: fast but not jumpy. 180~220ms sweet spot.
+   Use ease-out for enter, ease-in for leave. */
+
+:root {
+  --motion-fast:      120ms;
+  --motion-normal:    200ms;   /* default: collapse, drawer, tab switch */
+  --motion-slow:      320ms;   /* full-screen transitions */
+  --motion-expand:    220ms;
+
+  --ease-standard:    cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out:         cubic-bezier(0, 0, 0.2, 1);
+  --ease-in:          cubic-bezier(0.4, 0, 1, 1);
+
+  /* Semantic shortcuts */
+  --transition-nav:   width var(--motion-normal) var(--ease-standard),
+                      padding var(--motion-normal) var(--ease-standard);
+  --transition-opacity: opacity var(--motion-normal) var(--ease-out);
+  --transition-color:  color var(--motion-fast) var(--ease-standard),
+                       background-color var(--motion-fast) var(--ease-standard),
+                       border-color var(--motion-fast) var(--ease-standard);
+  --transition-all:    all var(--motion-normal) var(--ease-standard);
+}
+
+/* Body during drag-resize: disable transitions so move feels instant */
+body.menu-resizing *,
+body.col-resizing * {
+  transition: none !important;
+}

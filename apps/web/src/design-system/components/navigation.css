@@ -1,0 +1,426 @@
+/* GuliERP Design System — Navigation components
+   Two-level ERP nav: Module Rail (60px, always) + Secondary Menu (resizable)
+   Fullscreen hides everything; collapse hides only secondary menu.
+   Transition 200ms ease-standard; no instant width:0 collapse. */
+
+/* =====================================================
+   Module Rail
+   ===================================================== */
+.gs-rail {
+  width: var(--nav-rail-width);
+  flex-shrink: 0;
+  background: var(--rail-bg);
+  color: var(--rail-fg);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: var(--space-2) 0;
+  position: relative;
+  user-select: none;
+  z-index: 2;
+}
+.gs-rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  height: 52px;
+  font-size: 11px;
+  color: var(--rail-fg);
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition-color);
+}
+.gs-rail-item .gs-rail-icon {
+  font-size: 20px;
+}
+.gs-rail-item:hover {
+  color: var(--rail-fg-hover);
+  background: rgba(255,255,255,0.04);
+}
+.gs-rail-item.is-active {
+  color: var(--rail-active-fg);
+  background: var(--rail-active-bg);
+}
+.gs-rail-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 8px; bottom: 8px;
+  width: 3px;
+  background: var(--color-amber-500);
+  border-radius: 0 2px 2px 0;
+}
+.gs-rail-tooltip {
+  position: absolute;
+  left: calc(var(--nav-rail-width) + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-slate-800);
+  color: #fff;
+  font-size: var(--erp-font-size-sm);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+  z-index: 100;
+  box-shadow: var(--shadow-md);
+}
+.gs-rail-item:hover .gs-rail-tooltip {
+  opacity: 1;
+}
+
+/* =====================================================
+   Secondary Menu
+   ===================================================== */
+.gs-secondary {
+  background: var(--bg-container);
+  border-right: 1px solid var(--border-default);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: width var(--motion-normal) var(--ease-standard),
+              opacity var(--motion-normal) var(--ease-standard),
+              visibility var(--motion-normal) var(--ease-standard);
+}
+.gs-secondary.is-collapsed {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  /* keep panel collapsed but not width:0 to keep transition smooth */
+}
+.gs-secondary-head {
+  height: 40px;
+  padding: 0 var(--space-5) 0 var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-subtle);
+  flex-shrink: 0;
+}
+.gs-secondary-title {
+  font-size: var(--erp-font-size);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.gs-collapse-btn {
+  width: 22px;
+  height: 22px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+  transition: var(--transition-color), border-color var(--motion-fast);
+}
+.gs-collapse-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--primary-default);
+  border-color: var(--border-default);
+}
+.gs-menu-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-2) 0;
+}
+.gs-menu-group-title {
+  padding: var(--space-3) var(--space-6) var(--space-2);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.gs-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  height: 34px;
+  padding: 0 var(--space-6);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: var(--erp-font-size);
+  border-left: 3px solid transparent;
+  transition: var(--transition-color);
+}
+.gs-menu-item:hover {
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+}
+.gs-menu-item.is-active {
+  color: var(--primary-default);
+  background: var(--primary-bg);
+  border-left-color: var(--primary-default);
+  font-weight: 500;
+}
+.gs-menu-badge {
+  margin-left: auto;
+  background: var(--color-amber-500);
+  color: #fff;
+  font-size: 10px;
+  padding: 0 5px;
+  border-radius: 10px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+/* =====================================================
+   Resizer (for secondary menu width drag)
+   ===================================================== */
+.gs-secondary-resizer {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 5;
+  transition: background var(--motion-fast);
+}
+.gs-secondary-resizer:hover {
+  background: var(--primary-default);
+}
+
+/* =====================================================
+   Top brand bar (ErpShell)
+   ===================================================== */
+.gs-topbar {
+  height: var(--topbar-height);
+  background: linear-gradient(90deg, var(--color-slate-900) 0%, var(--color-slate-800) 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-7);
+  gap: var(--space-9);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+.gs-topbar .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gs-topbar .brand-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--color-amber-500) 0%, var(--color-amber-600) 100%);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 18px;
+}
+.gs-topbar .brand-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.gs-topbar .brand-edition {
+  background: rgba(255, 255, 255, 0.12);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 4px;
+}
+.gs-topbar .brand-sub {
+  font-size: 11px;
+  color: var(--color-slate-400);
+  margin-top: 2px;
+}
+.gs-topbar-center {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  font-size: 13px;
+  color: #d1d5db;
+}
+.gs-org-chip {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+.gs-org-sep { color: var(--color-slate-500); }
+.gs-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gs-role-tag {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+.gs-topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.gs-topbar-right .el-button { color: #d1d5db; }
+.gs-topbar-right .el-button:hover { color: #fff; }
+
+/* =====================================================
+   Tab strip (ErpShell)
+   ===================================================== */
+.gs-tabstrip {
+  height: var(--tabstrip-height);
+  background: var(--bg-container);
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  padding: 0 4px 0 var(--space-2);
+  flex-shrink: 0;
+  gap: var(--space-1);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===== Top Secondary Panel Toggle (left of tabs) — small, subtle ===== */
+.gs-paneltoggle {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+  margin-right: var(--space-2);
+  transition: color var(--motion-fast) var(--ease-out),
+              background var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out);
+}
+.gs-paneltoggle:hover {
+  background: var(--bg-subtle);
+  color: var(--primary-default);
+  border-color: var(--border-default);
+}
+.gs-paneltoggle:active {
+  background: var(--primary-bg);
+}
+.gs-paneltoggle .el-icon { font-size: 14px; }
+.gs-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  transition: var(--transition-color), background var(--motion-fast);
+}
+.gs-tab:hover { background: var(--bg-subtle); }
+.gs-tab.is-active {
+  background: var(--primary-bg);
+  color: var(--color-blue-600);
+  border-color: var(--primary-border);
+  font-weight: 500;
+}
+.gs-tab-icon { font-size: 13px; }
+.gs-tab-title { font-weight: 500; }
+.gs-tab-close {
+  font-size: 12px;
+  border-radius: 50%;
+  padding: 2px;
+  color: var(--text-muted);
+}
+.gs-tab-close:hover { background: #fee2e2; color: var(--status-danger); }
+.gs-dirty-dot { color: var(--color-amber-500); font-size: 10px; }
+.gs-tabstrip-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-right: 4px;
+}
+
+/* =====================================================
+   Tab list overflow + context menu (WEB-UX-SHELL-001)
+   ===================================================== */
+.gs-tab-list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1, 4px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 2px;
+}
+.gs-tab-list::-webkit-scrollbar { height: 4px; }
+.gs-tab-list::-webkit-scrollbar-thumb {
+  background: var(--border-default, #CBD5E1);
+  border-radius: 2px;
+}
+
+/* Teleported context menu — must be global, not scoped */
+.gs-tab-ctxmenu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 140px;
+  background: #fff;
+  border: 1px solid var(--border-default, #E2E8F0);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 4px 0;
+  user-select: none;
+}
+.gs-ctxmenu-item {
+  padding: 6px 16px;
+  font-size: 13px;
+  color: var(--text-primary, #0F172A);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 100ms ease;
+}
+.gs-ctxmenu-item:hover { background: var(--bg-subtle, #F1F5F9); }
+.gs-ctxmenu-item.is-disabled {
+  color: var(--text-muted, #94A3B8);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.gs-ctxmenu-divider {
+  height: 1px;
+  background: var(--border-subtle, #E2E8F0);
+  margin: 4px 0;
+}
+
+/* ===== MDM table row actions shared pattern (WEB-UX-SHELL-001) ===== */
+.mdm-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.mdm-row-actions .el-button {
+  padding: 0 4px;
+  margin: 0;
+  font-size: 13px;
+}
+.mdm-row-actions .mdm-action-sep {
+  color: var(--border-default, #CBD5E1);
+  font-size: 12px;
+  user-select: none;
+}

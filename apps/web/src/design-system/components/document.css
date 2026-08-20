@@ -1,0 +1,368 @@
+/* GuliERP Design System — Document components
+   Card sections, header bar, line summary, status tags —
+   used by SalesOrder edit/detail and other ERP documents. */
+
+/* =====================================================
+   ErpShell layout helpers (used in ErpShell.vue)
+   ===================================================== */
+.gs-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-canvas);
+  overflow: hidden;
+}
+.gs-shell.is-fullscreen .gs-rail,
+.gs-shell.is-fullscreen .gs-secondary,
+.gs-shell.is-fullscreen .gs-topbar {
+  display: none;
+}
+.gs-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.gs-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-canvas);
+}
+/* KEY: erp-content must allow vertical scrolling for child pages */
+.gs-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-canvas);
+}
+
+/* =====================================================
+   Document edit wrapper (SalesOrderEdit, etc.)
+   ===================================================== */
+.gs-doc-edit {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--bg-canvas);
+}
+
+/* =====================================================
+   Document header bar (sticky top) — status + actions
+   ===================================================== */
+.gs-doc-headerbar {
+  background: var(--bg-container);
+  border-bottom: 1px solid var(--border-default);
+  padding: var(--space-2) var(--space-7);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: var(--shadow-sm);
+}
+.gs-doc-headerbar .hdr-left {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-lg);
+  flex-wrap: wrap;
+}
+.gs-doc-no {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.gs-status-tags {
+  display: flex;
+  gap: var(--space-2);
+}
+.gs-version-tag {
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-family: var(--erp-mono-font);
+}
+.gs-dirty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #FEF3C7;
+  color: #92400E;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.gs-doc-headerbar .hdr-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.gs-kbd-hint {
+  margin-left: 6px;
+  background: rgba(255,255,255,0.2);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: var(--erp-mono-font);
+}
+
+/* =====================================================
+   Reject reason banner
+   ===================================================== */
+.gs-reject-banner {
+  background: #FEF2F2;
+  border-left: 4px solid var(--status-danger);
+  border-bottom: 1px solid #FECACA;
+  padding: 10px var(--space-7);
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  color: #991B1B;
+  font-size: var(--erp-font-size);
+}
+
+/* =====================================================
+   Section / card
+   ===================================================== */
+.gs-section {
+  background: var(--bg-container);
+  margin: var(--section-gutter);
+  border-radius: var(--radius);
+  padding: var(--space-6) var(--space-7);
+  box-shadow: var(--shadow-sm);
+}
+.gs-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-xs);
+  font-size: var(--erp-font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+.gs-section-sub {
+  font-size: var(--erp-font-size-sm);
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: var(--space-2);
+}
+.gs-section-tools {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* =====================================================
+   Line section (grid + sticky summary)
+   ===================================================== */
+.gs-lines-section {
+  display: flex;
+  flex-direction: column;
+}
+.gs-lines-toolbar {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  flex-wrap: wrap;
+}
+.gs-price-mode-hint {
+  font-size: var(--erp-font-size-sm);
+  color: var(--text-muted);
+}
+.gs-info-icon {
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: help;
+}
+
+/* Line table wrapper — el-table handles its own horizontal scroll internally.
+   Do NOT set min-width on .el-table (would suppress native scrollbar). */
+.gs-lines-wrap {
+  width: 100%;
+  overflow: visible;
+  margin-bottom: var(--space-4);
+}
+.gs-lines-wrap .el-table {
+  width: 100% !important;
+}
+.gs-lines-wrap .el-table__body-wrapper {
+  overflow-x: auto !important;
+}
+.gs-lines-wrap .el-table__body,
+.gs-lines-wrap .el-table__header {
+  /* sum of column widths — keeps columns wide so horizontal scroll triggers */
+  width: 2400px !important;
+}
+
+/* Item cell inside grid (clickable) */
+.gs-cell-item {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+}
+.gs-cell-item:hover { background: var(--primary-bg); }
+.gs-item-code {
+  font-size: var(--erp-font-size-sm);
+  color: var(--text-muted);
+  font-family: var(--erp-mono-font);
+}
+.gs-item-name {
+  font-size: var(--erp-font-size);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =====================================================
+   Sticky line summary footer
+   ===================================================== */
+.gs-lines-summary {
+  background: var(--bg-subtle);
+  border-top: 2px solid var(--border-default);
+  padding: 10px 12px;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  position: sticky;
+  bottom: 0;
+}
+.gs-summary-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.gs-summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.gs-summary-item .label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.gs-summary-item .value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--erp-mono-font);
+}
+.gs-summary-item.highlight .value {
+  color: var(--color-amber-600);
+  font-size: 18px;
+}
+.gs-summary-item .value.discount {
+  color: var(--status-warning);
+}
+
+/* =====================================================
+   Approval timeline
+   ===================================================== */
+.gs-approval-item {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  flex-wrap: wrap;
+}
+.gs-approval-item .step {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.gs-approval-item .approver {
+  color: var(--text-muted);
+  font-size: var(--erp-font-size-sm);
+}
+.gs-approval-item .comment {
+  width: 100%;
+  color: var(--text-secondary);
+  font-size: var(--erp-font-size-sm);
+  padding-left: 4px;
+  border-left: 2px solid var(--border-subtle);
+}
+
+/* =====================================================
+   Relations section
+   ===================================================== */
+.gs-rel-section { margin-bottom: var(--space-7); }
+.gs-rel-section h4 {
+  margin: 0 0 var(--space-3);
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* =====================================================
+   Tabs content padding (bottom tabs)
+   ===================================================== */
+.gs-tab-content {
+  padding: var(--space-4) var(--space-2);
+  min-height: 120px;
+}
+
+/* =====================================================
+   List toolbar + filter + pagination
+   ===================================================== */
+.gs-list-toolbar {
+  background: var(--bg-container);
+  padding: var(--space-4) var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--gap);
+  flex-wrap: wrap;
+}
+.gs-toolbar-left,
+.gs-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  flex-wrap: wrap;
+}
+.gs-advanced-filter {
+  background: var(--bg-container);
+  padding: var(--space-6) var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.gs-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0 var(--space-7);
+}
+.gs-filter-grid .el-form-item {
+  margin-bottom: var(--space-6);
+}
+.gs-list-wrap {
+  padding: var(--section-gutter) var(--section-gutter) 0;
+}
+.gs-list-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-6) var(--space-7);
+  background: var(--bg-container);
+  margin: 0 var(--section-gutter) var(--section-gutter);
+  border-radius: 0 0 var(--radius) var(--radius);
+  border: 1px solid var(--border-subtle);
+  border-top: none;
+}
+.gs-summary-text {
+  font-size: var(--erp-font-size);
+  color: var(--text-muted);
+}
+.gs-summary-text b {
+  color: var(--text-primary);
+  font-weight: 700;
+}

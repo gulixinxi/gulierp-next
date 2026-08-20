@@ -1,0 +1,77 @@
+/* GuliERP Design System — Color Tokens
+   User brand: Blue (ocean) + Slate (neutral) + Semantic status colors
+   Declared as CSS Variables, consumed by component sheets and Element Plus overrides */
+
+:root {
+  /* — Palette: Blue — */
+  --color-blue-500: #0284C7;
+  --color-blue-600: #0369A1;
+  --color-blue-700: #075985;
+
+  /* — Palette: Slate (neutral) — */
+  --color-slate-50:  #F8FAFC;
+  --color-slate-100: #F1F5F9;
+  --color-slate-200: #E2E8F0;
+  --color-slate-300: #CBD5E1;
+  --color-slate-400: #94A3B8;
+  --color-slate-500: #64748B;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1E293B;
+  --color-slate-900: #0F172A;
+
+  /* — Palette: Status — */
+  --status-danger:  #DC2626;
+  --status-warning: #D97706;
+  --status-success: #059669;
+  --status-info:    #0284C7;
+
+  /* — Amber (accent / dirty / selected) — */
+  --color-amber-500: #F59E0B;
+  --color-amber-600: #D97706;
+
+  /* =======================================================
+     Semantic mapping — business UI should use these,
+     NEVER the raw palette names above.
+     ======================================================= */
+
+  /* Background layers */
+  --bg-canvas:     #F8FAFC;   /* overall page shell */
+  --bg-container:  #FFFFFF;   /* cards, panels, tables */
+  --bg-subtle:     #F1F5F9;   /* zebra rows, header bg */
+  --bg-muted:      #E2E8F0;   /* dividers, disabled surface */
+
+  /* Text */
+  --text-primary:   #0F172A;   /* labels, values, titles */
+  --text-secondary: #334155;   /* sub-labels, descriptions */
+  --text-muted:     #64748B;   /* hints, meta, placeholders */
+  --text-disabled:  #94A3B8;
+  --text-inverse:   #FFFFFF;
+
+  /* Border / stroke */
+  --border-default:  #CBD5E1;   /* standard grid/form border */
+  --border-strong:   #94A3B8;
+  --border-subtle:   #E2E8F0;   /* internal dividers */
+
+  /* Primary action */
+  --primary-default: #0284C7;
+  --primary-hover:   #0369A1;
+  --primary-active:  #075985;
+  --primary-bg:      #EFF6FF;
+  --primary-border:  #BAE6FD;
+
+  /* Danger / warning / success actions & badges */
+  --danger-default:  #DC2626;
+  --warning-default: #D97706;
+  --success-default: #059669;
+
+  /* Module Rail (dark) */
+  --rail-bg:        #0F172A;
+  --rail-fg:        #94A3B8;
+  --rail-fg-hover:  #E2E8F0;
+  --rail-active-bg: #0284C7;
+  --rail-active-fg: #FFFFFF;
+
+  /* Selection / focus ring */
+  --focus-ring: rgba(2, 132, 199, 0.35);
+}
