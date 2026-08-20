@@ -1,0 +1,270 @@
+{
+  "meta": {
+    "goal": "MDM-000A",
+    "extraction_time": "2026-08-20T17:43:18+08:00",
+    "session": "mvs_11a243eed8e544d6b19087711a392283",
+    "status": "EVIDENCE_READY",
+    "purpose": "Pre-organize MDM-000 Convention evidence so that MDM-000 implementation does not need to re-research DEV or re-establish basic conventions.",
+    "policy": "Not FROZEN. Not IMPLEMENTED. No DB writes. No application code changes. No mainline governance writes."
+  },
+  "sources_referenced": [
+    "data/bootstrap/reference/manifest.json (MDM-000D R1)",
+    "data/bootstrap/reference/system/uom.json",
+    "data/bootstrap/reference/system/currency.json",
+    "data/bootstrap/reference/system/country.json",
+    "data/bootstrap/reference/system/ethnic-group.json",
+    "data/bootstrap/reference/system/education.json",
+    "data/bootstrap/reference/system/semantic-data-type.json",
+    "data/bootstrap/reference/tenant-template/payment-method.json",
+    "data/bootstrap/reference/tenant-template/business-partner-type.json",
+    "data/bootstrap/reference/tenant-template/position.json",
+    "docs/architecture/MDM_000D_SOURCE_EXTRACTION_AND_SEED_PREPARATION.md",
+    "docs/architecture/MDM_000D_BUSINESS_SEMANTIC_TYPE_MAPPING.md",
+    "tools/discovery/sup-001/_canonical/*.json",
+    "docs/architecture/SUP_001_NUMBERING_CODING_PRECISION_EVIDENCE.md",
+    "tools/discovery/base-000/_canonical/*.json",
+    "docs/architecture/GULIERP_FOUNDATION_AND_BUSINESS_CONFIGURATION_MASTER_CHECKLIST.md",
+    "docs/governance/DATABASE_TARGET_REGISTRY.md",
+    "docs/architecture/G2_003_IDENTITY_ORG_ARCHITECTURE_V1_DRAFT.md",
+    "docs/architecture/G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_ARCHITECTURE.md",
+    "docs/architecture/ID_STRATEGY_FINAL_DECISION.md (PENDING_CODEX_ID_STRATEGY_R1)",
+    "apps/web/src/types/mdm.ts (READ-ONLY)",
+    "apps/web/src/views/mdm/* (READ-ONLY)",
+    "apps/web/src/mock/mdm.ts (READ-ONLY)",
+    "D:\\guli\\gulierp\\docs\\reverse-engineering\\dev-meta\\ (READ-ONLY, not re-scanned)"
+  ],
+  "convention_topics": {
+    "A_entity_naming": {
+      "status": "OPEN",
+      "candidate": "C# singular (Uom, Currency, Item, ItemCategory, BusinessPartner, Warehouse, Location, WorkCenter); DB plural.",
+      "evidence": "TRAE types/mdm.ts uses singular; MDM-000D uses singular in canonical_code."
+    },
+    "B_code_naming": {
+      "status": "OPEN",
+      "candidate_per_master": {
+        "UOM": "ISO 80000 3-letter (KGM, MTR, MTQ...)",
+        "Currency": "ISO 4217 alpha-3 (CNY, USD, EUR)",
+        "Country": "ISO 3166 alpha-2/3",
+        "PaymentMethod": "PM_<NAME>",
+        "PaymentTerm": "PT_<NAME>",
+        "BusinessPartnerType": "BPT_<NAME>",
+        "Position": "POS_<ROLE>",
+        "Item": "FG-/RM-/SF-/PH- prefix (RECOMMENDATION; DEV uses pure numeric)",
+        "ItemCategory": "3-letter (RAW, FIN, PKG) (RECOMMENDATION; no DEV evidence)",
+        "Warehouse": "Code+Name separate (RECOMMENDATION; DEV name-as-code)",
+        "BusinessPartner": "CUST-/SUPP-/SUB-/LOG- prefix (RECOMMENDATION; no DEV BP table)"
+      }
+    },
+    "C_status": {
+      "master_data": "active / inactive / draft (per TRAE; PROPOSED)",
+      "document": "DocumentStatus + ApprovalStatus + ExecutionStatus 3D (per G2-002 R0 / G1A-FINAL; FROZEN)"
+    },
+    "D_active_inactive_semantics": {
+      "status": "OPEN",
+      "candidate": "MASTER_INACTIVE_DOES_NOT_BLOCK_REFERENCES (POC-003 pattern)",
+      "evidence": "DEV has ISActive int; SUP-001 does not address semantics."
+    },
+    "E_scope": {
+      "SYSTEM": ["UOM", "Currency", "Country", "EthnicGroup", "Education", "SemanticType"],
+      "TENANT_TEMPLATE": ["PaymentMethod", "BusinessPartnerType", "Position"],
+      "TENANT_SCOPED_CANDIDATE": ["BusinessPartner", "Item", "ItemCategory", "Warehouse", "Location", "WorkCenter"],
+      "COMPANY_SCOPED_CANDIDATE": ["Warehouse", "WorkCenter"],
+      "PLANT_SCOPED_CANDIDATE": ["InventoryBalance", "ProductionOrder (deferred)"]
+    },
+    "F_code_uniqueness_scope": {
+      "UOM_Currency_Country_Education_Ethnic_SemanticType": "GLOBAL (no TenantId)",
+      "PaymentMethod_BusinessPartnerType_Position": "unique per Tenant",
+      "BusinessPartner": "unique per Tenant (per BASE-000 UNC-009)",
+      "Item": "unique per Tenant (per BASE-000 UNC-014)",
+      "ItemCategory": "unique per Tenant",
+      "Warehouse": "unique per (TenantId, CompanyId, Code)",
+      "Location": "unique per (WarehouseId, Code)",
+      "WorkCenter": "unique per Plant"
+    },
+    "G_technical_id": {
+      "status": "PENDING_CODEX_ID_STRATEGY_R1",
+      "current_state": "long via SnowflakeIdGenerator (per ID_STRATEGY_FINAL_DECISION.md)",
+      "must_not_decide": ["UUIDv7", "HiLo", "Guid", "long"]
+    },
+    "H_master_data_coding": {
+      "UOM": "HYBRID (DEV 13 manual + 8 EXTERNAL_STANDARD_CANDIDATE)",
+      "Currency": "EXTERNAL (ISO 4217)",
+      "Country": "EXTERNAL (GB/T 2260 + ISO 3166)",
+      "Education": "HYBRID (DEV 6 + GB/T 4658 4)",
+      "EthnicGroup": "EXTERNAL (GB/T 3304) INCOMPLETE 42/56",
+      "PaymentMethod_PaymentTerm": "MANUAL (DEV 5 mixed; split pending)",
+      "BusinessPartnerType": "MANUAL (DEV 4)",
+      "Position": "MANUAL (DEV 4)",
+      "BusinessPartner_Item_ItemCategory_Warehouse_Location_WorkCenter": "UNKNOWN in DEV"
+    },
+    "I_uom": {
+      "is_standalone_master": true,
+      "is_not_generic_dictionary": true,
+      "evidence_status": {
+        "canonical_code": "SUPPORTED (21 items: 13 SAFE_TO_SEED_SYSTEM + 8 PROPOSED ISO 80000)",
+        "canonical_name_zh": "SUPPORTED",
+        "symbol": "SUPPORTED for SI; null for COUNT (per MDM-000D uom.json)",
+        "dimension": "SUPPORTED (COUNT/MASS/LENGTH/AREA/VOLUME/TIME)",
+        "kind": "SUPPORTED (DISCRETE/SI)",
+        "DecimalPlaces": "PROPOSED in TRAE UI (min 0 max 4); NOT supported by per-UOM MDM-000D evidence. RECOMMEND: derive from dimension."
+      }
+    },
+    "J_item_category": {
+      "hierarchy_decision": "HIERARCHY_NOT_YET_PROVEN from DEV; TRAE assumes hierarchy; V1 recommend 2 levels (root + subcategory).",
+      "field_evidence": {
+        "code": "PROPOSED (3-letter like RAW/FIN/PKG)",
+        "name": "PROPOSED",
+        "parentId": "PROPOSED (nullable, null = root)",
+        "level": "DERIVED (0 = root, computed from parentId chain)",
+        "fullPath": "DENORMALIZED (display only, dev-projected)",
+        "status": "PROPOSED (active/inactive/draft)"
+      }
+    },
+    "K_item": {
+      "minimum_contract_v1_candidate": {
+        "id": "PENDING_CODEX_ID_STRATEGY_R1",
+        "code": "PROPOSED (structured prefix)",
+        "name": "SUPPORTED",
+        "specification": "SUPPORTED (DEV 商品表.规格)",
+        "categoryId": "PROPOSED (FK to ItemCategory)",
+        "baseUomId": "SUPPORTED (DEV 商品表.单位)",
+        "itemType": "PROPOSED (3-value TRAE goods/service/package; reconcile with 7-flag DEV)",
+        "status": "PROPOSED (active/inactive/draft)",
+        "tenantId": "PROPOSED (auto from context)",
+        "createdAt_updatedAt": "PROPOSED (Foundation IAuditWriter pattern)",
+        "createdBy_updatedBy": "PROPOSED"
+      },
+      "do_not_freeze": ["Item.inventoryMethod (UNKN OK to remove from V1)", "color/material/size (defer to SKU variant)", "image column anti-pattern", "50+ ERP fields"]
+    },
+    "L_business_partner": {
+      "is_new_aggregate": true,
+      "dev_evidence_for_aggregate": "NONE (DEV has no 客户表/供应商表/外协表)",
+      "dev_evidence_for_type_taxonomy": "4 types (BPT_CUSTOMER, BPT_SUPPLIER, BPT_SUBCONTRACTOR, +1) per MDM-000D business-partner-type.json",
+      "minimum_contract_v1_candidate": {
+        "id": "PENDING_CODEX_ID_STRATEGY_R1",
+        "code": "PROPOSED (CUST-/SUPP-/SUB-/LOG- prefix)",
+        "name": "PROPOSED",
+        "partnerType": "FK to BusinessPartnerType",
+        "status": "PROPOSED",
+        "tenantId": "PROPOSED",
+        "taxId": "PROPOSED",
+        "paymentTermId": "PROPOSED (FK to PaymentTerm)",
+        "paymentMethodId": "PROPOSED (FK to PaymentMethod)",
+        "currencyId": "PROPOSED (FK to Currency)"
+      },
+      "do_not_in_v1": ["single Both flag; use multi-row partnerType"]
+    },
+    "M_warehouse_location": {
+      "warehouse_vs_location": "Warehouse != Location; Location belongs to Warehouse",
+      "warehouse_minimum_v1": {
+        "id": "PENDING",
+        "code": "PROPOSED (separate from name)",
+        "name": "PROPOSED",
+        "plantId": "PROPOSED (FK to Plant per G2-003A-R2)",
+        "status": "PROPOSED",
+        "tenantId_companyId": "PROPOSED"
+      },
+      "location_minimum_v1": {
+        "id": "PENDING",
+        "code": "PROPOSED",
+        "name": "PROPOSED",
+        "warehouseId": "PROPOSED (FK to Warehouse)",
+        "status": "PROPOSED"
+      },
+      "code_uniqueness": "Warehouse: per (tenantId, companyId, code); Location: per (warehouseId, code)"
+    },
+    "N_work_center": {
+      "minimum_v1": ["id", "code", "name", "plantId (FK)", "status", "tenantId"],
+      "out_of_v1_scope": ["Manufacturing", "Routing", "Scheduling", "Capacity"]
+    },
+    "O_semantic_precision": {
+      "ROUNDING_MODE_NOT_FOUND": true,
+      "must_not_pick": ["HALF_EVEN", "HALF_UP", "ToEven", "AwayFromZero", "Bankers"],
+      "conflict_to_resolve": {
+        "UNIT_PRICE": {
+          "dev_scales": ["商品表.单价 decimal(36, 4)", "报价表s.单价 decimal(34, 6)"],
+          "mdm_000d_proposed": "numeric(20, 6) HALF_EVEN",
+          "status": "CONVENTION_DECISION_REQUIRED"
+        }
+      },
+      "per_semantic": [
+        {"code": "AMOUNT",         "dev": "decimal(34, 2)",      "mdm_000d_proposed": "numeric(20, 4) HALF_EVEN", "status": "CONVENTION_DECISION_REQUIRED"},
+        {"code": "UNIT_PRICE",     "dev": "(36,4) vs (34,6)",     "mdm_000d_proposed": "numeric(20, 6) HALF_EVEN", "status": "CONVENTION_DECISION_REQUIRED (CONFLICT)"},
+        {"code": "COST",           "dev": "decimal(34, 2)",      "mdm_000d_proposed": "numeric(20, 6) HALF_EVEN", "status": "CONVENTION_DECISION_REQUIRED"},
+        {"code": "QUANTITY_stock", "dev": "decimal(34, 3)",      "mdm_000d_proposed": "numeric(20, 4) HALF_UP",  "status": "CONVENTION_DECISION_REQUIRED"},
+        {"code": "QUANTITY_BOM",   "dev": "decimal(34, 6)",      "mdm_000d_proposed": "(not separated)",            "status": "CONVENTION_DECISION_REQUIRED"},
+        {"code": "EXCHANGE_RATE",  "dev": "decimal(34, 6)",      "mdm_000d_proposed": "numeric(18, 8) HALF_EVEN", "status": "CONVENTION_DECISION_REQUIRED"},
+        {"code": "TAX_RATE",       "dev": "NOT MODELED",         "mdm_000d_proposed": "numeric(6, 4) HALF_EVEN",  "status": "PROPOSED (no DEV evidence)"},
+        {"code": "DISCOUNT_RATE",  "dev": "NOT MODELED",         "mdm_000d_proposed": "numeric(6, 4) HALF_UP",    "status": "PROPOSED (no DEV evidence)"},
+        {"code": "PERCENTAGE",     "dev": "NOT MODELED",         "mdm_000d_proposed": "numeric(8, 6) HALF_EVEN",  "status": "PROPOSED (no DEV evidence)"},
+        {"code": "LENGTH",         "dev": "decimal(32, 3)",      "mdm_000d_proposed": "numeric(12, 4) HALF_EVEN", "status": "CONVENTION_DECISION_REQUIRED"},
+        {"code": "WEIGHT",         "dev": "decimal(34, 4)",      "mdm_000d_proposed": "numeric(12, 4) HALF_EVEN", "status": "SUPPORTED"},
+        {"code": "AREA",           "dev": "NOT MODELED",         "mdm_000d_proposed": "numeric(12, 4) HALF_EVEN", "status": "PROPOSED (no DEV evidence)"},
+        {"code": "VOLUME",         "dev": "decimal(32, 3)",      "mdm_000d_proposed": "numeric(12, 6) HALF_EVEN", "status": "CONVENTION_DECISION_REQUIRED"},
+        {"code": "TIME_DURATION",  "dev": "n/a",                 "mdm_000d_proposed": "n/a",                       "status": "UNKNOWN"}
+      ]
+    },
+    "P_soft_delete": {
+      "v1_strategy": "active/inactive/draft flag (per TRAE)",
+      "do_not_v1": "SoftDelete entity with restore window (defer to V2 per BASE-000 UNC-021)"
+    },
+    "Q_audit": {
+      "reuse_foundation": "IAuditWriter (per POC-003 / G2-002)",
+      "do_not_redesign": true
+    },
+    "R_document_numbering_separation": {
+      "technical_id": "PENDING_CODEX_ID_STRATEGY_R1 (long via Snowflake today)",
+      "master_data_code": "business-readable, scope-bounded per §F",
+      "document_number": "auto-allocated, scope-bounded, OPEN per SUP-001 §1.5"
+    }
+  },
+  "trae_ui_field_evidence_matrix": [
+    {"trae_field": "MasterDataStatus: active/inactive/draft", "verdict": "PROPOSED (UI; aligned with v1 master lifecycle)", "mdm_action": "adopt"},
+    {"trae_field": "Uom.decimalPlaces", "verdict": "PROPOSED (UI; not in MDM-000D uom.json)", "mdm_action": "drop; derive from dimension"},
+    {"trae_field": "Uom.symbol", "verdict": "SUPPORTED (SI items only)", "mdm_action": "keep nullable for COUNT items"},
+    {"trae_field": "Uom.dimension (COUNT/MASS/LENGTH/AREA/VOLUME/TIME)", "verdict": "SUPPORTED", "mdm_action": "keep"},
+    {"trae_field": "Uom.kind (DISCRETE/SI)", "verdict": "SUPPORTED", "mdm_action": "keep"},
+    {"trae_field": "ItemCategory.parentId (hierarchy)", "verdict": "HIERARCHY_NOT_YET_PROVEN from DEV", "mdm_action": "adopt 2-level (root + subcategory)"},
+    {"trae_field": "ItemCategory.level", "verdict": "DERIVED", "mdm_action": "compute from parentId chain; do not store"},
+    {"trae_field": "ItemCategory.fullPath", "verdict": "DENORMALIZED display", "mdm_action": "denormalized; dev-projected not user-edited"},
+    {"trae_field": "ItemType: goods/service/package", "verdict": "PROPOSED (UI; DEV has 7 booleans)", "mdm_action": "reconcile in MDM-000; 3-value vs 7-flag"},
+    {"trae_field": "Item.inventoryMethod: FIFO/LIFO/WEIGHTED_AVG/SPECIFIC", "verdict": "UNKNOWN (no DEV evidence)", "mdm_action": "REMOVE from V1 Item master; defer to Inventory module"},
+    {"trae_field": "Item.specification", "verdict": "SUPPORTED (DEV 商品表.规格)", "mdm_action": "keep"},
+    {"trae_field": "Item.baseUomId", "verdict": "SUPPORTED (DEV 商品表.单位)", "mdm_action": "keep"},
+    {"trae_field": "Item.categoryId", "verdict": "SUPPORTED (DEV 商品表.分类ID)", "mdm_action": "keep"},
+    {"trae_field": "SemanticType: text/code/quantity/enum/status/timestamp/description", "verdict": "PROPOSED (UI helper tag, not 13 Business Semantic Types)", "mdm_action": "keep as UI helper"},
+    {"trae_field": "SemanticField.precisionFromUom", "verdict": "PROPOSED (UI derivation rule)", "mdm_action": "if Uom.decimalPlaces dropped, derive from Uom.dimension"}
+  ],
+  "open_decisions_count": 18,
+  "open_decisions_list": [
+    {"n": 1, "topic": "Technical primary-key type", "decision_needed": "PENDING_CODEX_ID_STRATEGY_R1"},
+    {"n": 2, "topic": "Entity naming convention", "decision_needed": "MDM-000 implementation"},
+    {"n": 3, "topic": "Code naming", "decision_needed": "MDM-000 implementation"},
+    {"n": 4, "topic": "Item.itemType enum values (3-value vs 7-flag)", "decision_needed": "MDM-000 implementation"},
+    {"n": 5, "topic": "Item.inventoryMethod existence", "decision_needed": "Inventory module decision (defer)"},
+    {"n": 6, "topic": "UOM.DecimalPlaces field vs derivation", "decision_needed": "MDM-000 implementation"},
+    {"n": 7, "topic": "ItemCategory hierarchy depth", "decision_needed": "MDM-000 implementation"},
+    {"n": 8, "topic": "UnitPrice scale (4 vs 6)", "decision_needed": "CONVENTION_DECISION_REQUIRED (DEV conflict)"},
+    {"n": 9, "topic": "AMOUNT / QUANTITY / COST / RATE display precision per semantic", "decision_needed": "CONVENTION_DECISION_REQUIRED"},
+    {"n": 10, "topic": "RoundingMode per semantic type", "decision_needed": "CONVENTION_DECISION_REQUIRED (ROUNDING_MODE_NOT_FOUND in DEV)"},
+    {"n": 11, "topic": "Warehouse Code style", "decision_needed": "MDM-000 implementation"},
+    {"n": 12, "topic": "BusinessPartner cross-reference storage", "decision_needed": "MDM-000 implementation"},
+    {"n": 13, "topic": "PaymentMethod/PaymentTerm split", "decision_needed": "MDM-000 implementation (already partially done in seed)"},
+    {"n": 14, "topic": "Position vs Occupation separation", "decision_needed": "DONE (Position SAFE; Occupation OCCUPATION_SOURCE_NOT_FOUND)"},
+    {"n": 15, "topic": "Soft-delete strategy", "decision_needed": "MDM-000 implementation (V1: active/inactive/draft flag)"},
+    {"n": 16, "topic": "Stable DB name cutover", "decision_needed": "DONE (RECOMMEND_STABLE_DB_CUTOVER_BEFORE_MDM = NO)"},
+    {"n": 17, "topic": "Numbering tenant scope", "decision_needed": "CONVENTION_DECISION_REQUIRED"},
+    {"n": 18, "topic": "Document numbering format", "decision_needed": "CONVENTION_DECISION_REQUIRED"}
+  ],
+  "summary": {
+    "convention_topics_total": 18,
+    "convention_topics_OPEN": 16,
+    "convention_topics_DONE": 2,
+    "seed_datasets_total": 9,
+    "seed_datasets_SAFE_TO_SEED": 5,
+    "seed_datasets_PROPOSED_or_MIXED": 3,
+    "seed_datasets_DEFER": 1,
+    "open_decisions_count": 18,
+    "status": "EVIDENCE_READY (NOT FROZEN, NOT IMPLEMENTED)"
+  }
+}
