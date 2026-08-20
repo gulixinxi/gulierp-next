@@ -220,27 +220,6 @@ function Wait-HostReady {
     return $false
 }
 
-# Stop-HostProcess — robustly stops a host process and waits
-# for it to actually exit (avoids "port still in use" races
-# during Round 2).
-function Stop-HostProcess {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)] $Process
-    )
-    if (-not $Process) { return }
-    if ($Process.HasExited) { return }
-    try {
-        Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
-        $Process.WaitForExit(10000) | Out-Null
-        if (-not $Process.HasExited) {
-            # Force kill
-            Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
-            Start-Sleep -Milliseconds 500
-        }
-    } catch {}
-}
-
 # Start-HostProcess — starts the GuliERP.Api host on the given
 # URL. Returns the Process object.
 function Start-HostProcess {
@@ -423,30 +402,79 @@ if ($LASTEXITCODE -ne 0) {
 Pass "Identity migration applied (or already up to date)"
 
 # ===============================================================
-# 4. dotnet test — per-suite actual execution
+# 4. dotnet test — per-suite actual execution (TRX source of truth)
 # ===============================================================
-Step-Header 4 'Integration + unit tests (per-suite actual execution)'
+# G2-004V1R2 fix: the G2-004V1R1 harness parsed the localized
+# CN/EN console summary text (regex on "通过:" / "失败:" /
+# "Passed:" / "Failed:") to derive the actual test counts. That
+# was fragile (locale-sensitive, encoding-sensitive). The
+# authoritative source is the xUnit TRX file, which is stable
+# and machine-parseable. We now read the TRX directly and assert
+# on the structured Counters (total / executed / passed /
+# failed / notExecuted). If the TRX is missing, malformed, or
+# has failed > 0, the harness fails fast.
+Step-Header 4 'Integration + unit tests (per-suite TRX counters)'
 
-# Per-suite test execution. Each suite's PASS is conditional
-# on the suite's actual exit code 0. We DO NOT print PASS
-# without real evidence.
+# Baseline: G2-004V1R2 documents the real-PostgreSQL baseline as
+# 168 tests (8 + 26 + 44 + 59 + 31). On a stale environment
+# (e.g. the Mavis loud-fail baseline of 159 = 8+26+44+55+26) the
+# Operator MUST regenerate the DB / reapply migrations before
+# promoting to G2_004_AUTHENTICATION_KERNEL_VERIFIED. The
+# baseline is asserted as a minimum gate, NOT a hard equality
+# (so the harness does not break if new tests are added later
+# in this same gate).
+$script:BaselineAtG2_004 = 168
+
 $suites = @(
-    @{ Name = 'GuliERP.Identity.Bootstrap.Tests'; Project = 'tests/GuliERP.Identity.Bootstrap.Tests/GuliERP.Identity.Bootstrap.Tests.csproj' },
-    @{ Name = 'GuliERP.Identity.Tests'; Project = 'tests/GuliERP.Identity.Tests/GuliERP.Identity.Tests.csproj' },
-    @{ Name = 'GuliERP.Foundation.Tests'; Project = 'tests/GuliERP.Foundation.Tests/GuliERP.Foundation.Tests.csproj' },
-    @{ Name = 'GuliERP.Identity.IntegrationTests'; Project = 'tests/GuliERP.Identity.IntegrationTests/GuliERP.Identity.IntegrationTests.csproj' },
-    @{ Name = 'GuliERP.Foundation.IntegrationTests'; Project = 'tests/GuliERP.Foundation.IntegrationTests/GuliERP.Foundation.IntegrationTests.csproj' }
+    @{ Name = 'GuliERP.Identity.Bootstrap.Tests';        Project = 'tests/GuliERP.Identity.Bootstrap.Tests/GuliERP.Identity.Bootstrap.Tests.csproj' },
+    @{ Name = 'GuliERP.Identity.Tests';                  Project = 'tests/GuliERP.Identity.Tests/GuliERP.Identity.Tests.csproj' },
+    @{ Name = 'GuliERP.Foundation.Tests';                Project = 'tests/GuliERP.Foundation.Tests/GuliERP.Foundation.Tests.csproj' },
+    @{ Name = 'GuliERP.Identity.IntegrationTests';       Project = 'tests/GuliERP.Identity.IntegrationTests/GuliERP.Identity.IntegrationTests.csproj' },
+    @{ Name = 'GuliERP.Foundation.IntegrationTests';     Project = 'tests/GuliERP.Foundation.IntegrationTests/GuliERP.Foundation.IntegrationTests.csproj' }
 )
 
-# Trx output paths (the dotnet test --logger trx; we parse the
-# summary at the end for actual counts).
+# TRX output paths. We parse the xUnit Counters element
+# directly (no console regex).
 $trxDir = Join-Path $RepoRoot 'tests/_evidence_trx'
 if (-not (Test-Path $trxDir)) { New-Item -ItemType Directory -Path $trxDir -Force | Out-Null }
 
-$totalPassed = 0
-$totalFailed = 0
-$totalSkipped = 0
-$totalLoudFails = 0
+# Parse-TrxCounters — extracts the structured <Counters
+# total="N" executed="N" passed="N" failed="N" ... /> element
+# from a xUnit TRX file. Returns a hashtable { Total, Executed,
+# Passed, Failed, NotExecuted, Outcome, Path }. Throws on
+# missing or malformed TRX (the caller turns that into
+# Fail-Fatal).
+function Parse-TrxCounters {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [string]$TrxPath,
+        [Parameter(Mandatory = $true)] [string]$SuiteName
+    )
+    if (-not (Test-Path -LiteralPath $TrxPath -PathType Leaf)) {
+        throw "[$SuiteName] TRX file missing: $TrxPath"
+    }
+    [xml]$trx = Get-Content -LiteralPath $TrxPath -Raw -Encoding UTF8
+    $counters = $trx.TestRun.ResultSummary.Counters
+    if ($null -eq $counters) {
+        throw "[$SuiteName] TRX missing TestRun/ResultSummary/Counters element: $TrxPath"
+    }
+    $outcome = $trx.TestRun.ResultSummary.outcome
+    return @{
+        Suite = $SuiteName
+        Total = [int]$counters.total
+        Executed = [int]$counters.executed
+        Passed = [int]$counters.passed
+        Failed = [int]$counters.failed
+        NotExecuted = [int]$counters.notExecuted
+        Outcome = [string]$outcome
+        Path = $TrxPath
+    }
+}
+
+$grandTotal = 0
+$grandPassed = 0
+$grandFailed = 0
+$grandNotExecuted = 0
 $suiteHasFailure = $false
 
 foreach ($suite in $suites) {
@@ -457,59 +485,123 @@ foreach ($suite in $suites) {
     $trxLogger = "trx;LogFileName=$trxFile"
     & $Dotnet test $suiteProject -c Release --no-build --nologo --logger $trxLogger 2>&1 | Tee-Object -Variable suiteOut | Out-Null
     $suiteExit = $LASTEXITCODE
-    # Parse the summary line "Passed! - 失败: 0, 通过: N, 已跳过: 0, 总计: N, 持续时间..."
-    # The CN / EN format depends on the system locale. The
-    # pattern is robust to both: look for a number after the
-    # first "通过:" (or "Passed:") and a number after the
-    # first "失败:" (or "Failed:").
-    $line = ($suiteOut | Select-String -Pattern '(通过|失败|Passed|Failed|总|Failed:)' | Select-Object -First 3) -join ' | '
-    $counts = $suiteOut | Select-String -Pattern '总.*dll' | Select-Object -First 1
-    if ($null -eq $counts) { $counts = $suiteOut | Select-String -Pattern 'Failed:|Passed:' | Select-Object -First 1 }
-    Write-Host "    $($counts)"
 
-    # Parse the actual numbers (CN locale "通过:" / "失败:" / "已跳过:" / "总计:").
-    $passCount = 0; $failCount = 0; $skipCount = 0
-    $pm = ($suiteOut | Select-String -Pattern '通过[:：]\s*(\d+)' | Select-Object -First 1)
-    if ($pm) { $passCount = [int]$pm.Matches[0].Groups[1].Value }
-    $fm = ($suiteOut | Select-String -Pattern '失败[:：]\s*(\d+)' | Select-Object -First 1)
-    if ($fm) { $failCount = [int]$fm.Matches[0].Groups[1].Value }
-    $sm = ($suiteOut | Select-String -Pattern '已跳过[:：]\s*(\d+)' | Select-Object -First 1)
-    if ($sm) { $skipCount = [int]$sm.Matches[0].Groups[1].Value }
+    # The TRX is the source of truth. If it is missing or
+    # malformed, the harness fails fast.
+    $c = $null
+    try {
+        $c = Parse-TrxCounters -TrxPath $trxFile -SuiteName $suiteName
+    }
+    catch {
+        Fail-Fatal $_.Exception.Message 1
+    }
 
-    # The Operator round expects 0 actual failures; the
-    # G2-001 / G2-003 / G2-003V2 loud-fails must also be 0
-    # because the real PostgreSQL is now reachable. If any
-    # suite has failCount > 0, that is a fatal harness error
-    # (the suite was supposed to PASS).
-    if ($suiteExit -ne 0 -or $failCount -gt 0) {
-        Write-Host "  [FAIL] $suiteName exited $suiteExit; failed=$failCount" -ForegroundColor Red
+    Write-Host "    TRX: total=$($c.Total) executed=$($c.Executed) passed=$($c.Passed) failed=$($c.Failed) notExecuted=$($c.NotExecuted) outcome=$($c.Outcome)"
+
+    # Per-suite PASS conditions:
+    #   1. dotnet test exited 0
+    #   2. TRX outcome == "Completed" (or "Passed")
+    #   3. failed == 0
+    if ($suiteExit -ne 0) {
+        Write-Host "  [FAIL] $suiteName : dotnet test exited $suiteExit" -ForegroundColor Red
+        $suiteHasFailure = $true
+    }
+    elseif ($c.Failed -gt 0) {
+        Write-Host "  [FAIL] $suiteName : TRX reports failed=$($c.Failed)" -ForegroundColor Red
+        $suiteHasFailure = $true
+    }
+    elseif ($c.Outcome -ne 'Completed' -and $c.Outcome -ne 'Passed') {
+        Write-Host "  [FAIL] $suiteName : TRX outcome=$($c.Outcome) (expected Completed/Passed)" -ForegroundColor Red
         $suiteHasFailure = $true
     }
     else {
-        Write-Host "  [PASS] $suiteName : $passCount passed, $skipCount skipped" -ForegroundColor Green
+        Write-Host "  [PASS] $suiteName : $($c.Passed)/$($c.Total) passed (TRX)" -ForegroundColor Green
     }
-    $totalPassed += $passCount
-    $totalFailed += $failCount
-    $totalSkipped += $skipCount
+
+    $grandTotal += $c.Total
+    $grandPassed += $c.Passed
+    $grandFailed += $c.Failed
+    $grandNotExecuted += $c.NotExecuted
 }
 
 Write-Host ""
-Write-Host "  Summary: totalPassed=$totalPassed totalFailed=$totalFailed totalSkipped=$totalSkipped"
+Write-Host "  TRX Summary: total=$grandTotal passed=$grandPassed failed=$grandFailed notExecuted=$grandNotExecuted (baseline-at-G2-004 = $script:BaselineAtG2_004)"
 
-if ($suiteHasFailure -or $totalFailed -gt 0) {
-    Fail-Fatal "One or more test suites FAILED (totalFailed=$totalFailed). Harness aborts." 1
+if ($suiteHasFailure -or $grandFailed -gt 0 -or $grandNotExecuted -gt 0) {
+    Fail-Fatal "Test suites FAILED (failed=$grandFailed, notExecuted=$grandNotExecuted). Harness aborts." 1
 }
-Pass "All 5 suites PASS ($totalPassed total, $totalSkipped skipped)"
+
+# Baseline gate: G2-004V1R2 documents the real-PostgreSQL
+# baseline as $script:BaselineAtG2_004 = 168. We assert the
+# grand total is AT LEAST the baseline (not exact equality:
+# future tests added within the same gate must not silently
+# break the harness). If a future G2-004+ gate changes the
+# expected total, bump the constant AND the report.
+if ($grandTotal -lt $script:BaselineAtG2_004) {
+    Fail-Fatal "Test total $grandTotal is BELOW the G2-004V1R2 baseline of $script:BaselineAtG2_004. Real PostgreSQL is likely unreachable; the G2-001 env-dep / G2-003 / G2-003V2 loud-fails would not have flipped. Re-check DB connection and migrations." 1
+}
+
+Pass "All 5 suites PASS ($grandPassed/$grandTotal, baseline $script:BaselineAtG2_004 met)"
 
 # ===============================================================
 # 5. Runtime Round 1 — real-DB happy path
 # ===============================================================
 
 # The Round 1 + Round 2 + Bad-DB + Security sequences all
-# start a host process on a different port. The host is a
-# SCOPED variable that lives only for the step. Round 2
-# actually stops the Round 1 host, starts a fresh one, and
-# re-executes all Round 1 probes.
+# start a host process on a different port. G2-004V1R2
+# hardening: each host is started via Start-Process -PassThru
+# and its PID is registered in $script:OwnedHostPids. Cleanup
+# is strictly bounded to PIDs in that list — there is NO
+# `Get-Process -Name 'dotnet' | Stop-Process` anywhere. The
+# script can therefore run on a workstation with other .NET
+# dev processes without killing them.
+
+$script:OwnedHostPids = New-Object 'System.Collections.Generic.List[int]'
+
+function Register-OwnedHostPid {
+    [CmdletBinding()]
+    param([int]$Pid)
+    if ($Pid -gt 0 -and -not $script:OwnedHostPids.Contains($Pid)) {
+        $script:OwnedHostPids.Add($Pid)
+    }
+}
+
+function Stop-OwnedHost {
+    [CmdletBinding()]
+    param([int]$Pid)
+    if ($Pid -le 0) { return }
+    if (-not $script:OwnedHostPids.Contains($Pid)) {
+        # Defensive: only stop PIDs we started.
+        return
+    }
+    try {
+        $proc = Get-Process -Id $Pid -ErrorAction SilentlyContinue
+        if ($null -ne $proc -and -not $proc.HasExited) {
+            Stop-Process -Id $Pid -Force -ErrorAction SilentlyContinue
+            $proc.WaitForExit(10000) | Out-Null
+            if (-not $proc.HasExited) {
+                Stop-Process -Id $Pid -Force -ErrorAction SilentlyContinue
+                Start-Sleep -Milliseconds 500
+            }
+        }
+    } catch {}
+    $script:OwnedHostPids.Remove($Pid) | Out-Null
+}
+
+function Stop-AllOwnedHosts {
+    foreach ($p in @($script:OwnedHostPids)) {
+        Stop-OwnedHost -Pid $p
+    }
+}
+
+# Cleanup-on-exit: when the script ends (normal OR via
+# Fail-Fatal), only the script-owned PIDs are stopped. Other
+# .NET dev processes on the workstation are NEVER touched.
+Register-EngineEvent -SourceIdentifier 'PowerShell.Exiting' -Action {
+    foreach ($p in @($script:OwnedHostPids)) {
+        try { Stop-Process -Id $p -Force -ErrorAction SilentlyContinue } catch {}
+    }
+} -ErrorAction SilentlyContinue | Out-Null
 
 function Invoke-Round1-HappyPath {
     [CmdletBinding()]
@@ -519,11 +611,13 @@ function Invoke-Round1-HappyPath {
     )
     Write-Host "  [$Label] host @ $BaseUrl"
     $host = Start-HostProcess -Url $BaseUrl -LogPrefix "g2-004-$Label"
+    $hostPid = 0
+    if ($host -and $host.Id) { $hostPid = [int]$host.Id; Register-OwnedHostPid -Pid $hostPid }
     try {
         if (-not (Wait-HostReady -BaseUrl $BaseUrl -TimeoutSec 30)) {
-            Fail-Fatal "$Label host did not become ready at $BaseUrl" 1
+            Fail-Fatal "$Label host (PID $hostPid) did not become ready at $BaseUrl" 1
         }
-        Pass "$Label host ready at $BaseUrl"
+        Pass "$Label host ready at $BaseUrl (PID $hostPid)"
 
         # Probe: GET /health/live
         $live = Invoke-HttpProbe -Method Get -Uri "$BaseUrl/health/live"
@@ -625,42 +719,54 @@ function Invoke-Round1-HappyPath {
         else {
             Fail-Fatal "$Label POST /logout → $($logout.StatusCode) (expected 204)" 1
         }
+
+        # Return the PID so the caller can compare Round 1 vs
+        # Round 2 and assert they are different OS processes.
+        return $hostPid
     }
     finally {
-        Stop-HostProcess -Process $host
+        # Stop ONLY this script-owned PID. Never any other
+        # process on the workstation.
+        Stop-OwnedHost -Pid $hostPid
     }
 }
 
 Step-Header 5 'Runtime Round 1 (live DB, happy path)'
-Invoke-Round1-HappyPath -BaseUrl 'http://127.0.0.1:5099' -Label 'Round 1'
+$script:Round1HostPid = Invoke-Round1-HappyPath -BaseUrl 'http://127.0.0.1:5099' -Label 'Round 1'
+if ($script:Round1HostPid -le 0) {
+    Fail-Fatal "Round 1 did not return a host PID. Harness aborts." 1
+}
+Pass "Round 1 host PID = $script:Round1HostPid (script-owned)"
 
 # ===============================================================
 # 6. Runtime Round 2 — ACTUAL restart round-trip
 # ===============================================================
-# G2-004V1R1 reliability fix: Round 2 actually stops the Round 1
-# host (already stopped by the Invoke-Round1-HappyPath
-# finally block), waits for the port to free, starts a NEW
-# host on the same port, and re-executes ALL Round 1 probes.
-# No "operator manually re-run" PASS.
+# G2-004V1R2 hardening: Round 2 actually stops ONLY the Round 1
+# PID (already stopped by the Invoke-Round1-HappyPath finally
+# block), waits for the port to free, starts a NEW host on the
+# same port, and re-executes ALL Round 1 probes. The new PID
+# MUST be different from the Round 1 PID — this is a strict
+# freshness check. No `Get-Process -Name 'dotnet'` global
+# kill anywhere.
 Step-Header 6 'Runtime Round 2 (real restart round-trip)'
-# The Round 1 host was already stopped. Wait for the port
-# to actually free (defensive — Stop-HostProcess.WaitForExit
-# + a small sleep).
+# Defensive: the port should already be free (the Round 1
+# finally block stopped the PID). A small sleep lets the OS
+# release the listening socket.
 Start-Sleep -Seconds 2
-# Sanity: make sure no lingering GuliERP.Api process owns the
-# port. If it does, kill it.
-$lingering = Get-Process -Name 'dotnet' -ErrorAction SilentlyContinue | Where-Object {
-    $_.Modules.FileName -like '*GuliERP.Api*'
-} | ForEach-Object { $_.Id }
-if ($lingering) {
-    foreach ($pid in $lingering) {
-        Write-Host "  [WARN] Lingering GuliERP.Api process $pid — killing"
-        Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-    }
-    Start-Sleep -Seconds 2
+# Sanity: assert that the Round 1 PID is no longer in the
+# owned list (Stop-OwnedHost should have removed it).
+if ($script:OwnedHostPids.Contains($script:Round1HostPid)) {
+    Fail-Fatal "Round 1 PID $($script:Round1HostPid) is still in the owned list; Stop-OwnedHost failed." 1
 }
 # Re-execute the happy path on a fresh host.
-Invoke-Round1-HappyPath -BaseUrl 'http://127.0.0.1:5099' -Label 'Round 2'
+$script:Round2HostPid = Invoke-Round1-HappyPath -BaseUrl 'http://127.0.0.1:5099' -Label 'Round 2'
+if ($script:Round2HostPid -le 0) {
+    Fail-Fatal "Round 2 did not return a host PID. Harness aborts." 1
+}
+if ($script:Round2HostPid -eq $script:Round1HostPid) {
+    Fail-Fatal "Round 2 PID ($($script:Round2HostPid)) == Round 1 PID ($($script:Round1HostPid)). The OS did not actually start a new process — the restart is fake." 1
+}
+Pass "Round 1 host PID = $script:Round1HostPid (stopped); Round 2 host PID = $script:Round2HostPid (new process); both script-owned"
 Pass "Host restarted; Round 1 probes re-executed on a fresh process"
 
 # ===============================================================
@@ -671,18 +777,22 @@ $savedConn = $env:ConnectionStrings__GuliERP
 $savedGulierpConn = $env:GULIERP_ConnectionStrings__GuliERP
 $savedFoundationConn = $env:GULIERP_FOUNDATION_CONNECTION
 $badDb = 'Host=127.0.0.1;Port=1;Database=none;Username=none;Password=none;Timeout=2;Command Timeout=2'
-$baddbHost = $null
+$script:BadDbHostPid = 0
 try {
     $env:ConnectionStrings__GuliERP = $badDb
     $env:GULIERP_ConnectionStrings__GuliERP = $badDb
     $env:GULIERP_FOUNDATION_CONNECTION = $badDb
 
     $baddbHost = Start-HostProcess -Url 'http://127.0.0.1:5098' -LogPrefix 'g2-004-baddb'
+    if ($baddbHost -and $baddbHost.Id) {
+        $script:BadDbHostPid = [int]$baddbHost.Id
+        Register-OwnedHostPid -Pid $script:BadDbHostPid
+    }
     try {
         if (-not (Wait-HostReady -BaseUrl 'http://127.0.0.1:5098' -TimeoutSec 30)) {
-            Fail-Fatal "Bad-DB host did not become ready" 1
+            Fail-Fatal "Bad-DB host (PID $script:BadDbHostPid) did not become ready" 1
         }
-        Pass "Bad-DB host ready at http://127.0.0.1:5098"
+        Pass "Bad-DB host ready at http://127.0.0.1:5098 (PID $script:BadDbHostPid, script-owned)"
 
         # Probe: GET /health/live (must be 200 even on bad DB)
         $live = Invoke-HttpProbe -Method Get -Uri 'http://127.0.0.1:5098/health/live'
@@ -756,7 +866,9 @@ try {
         }
     }
     finally {
-        Stop-HostProcess -Process $baddbHost
+        # Stop ONLY this script-owned PID. Never any other
+        # process on the workstation.
+        Stop-OwnedHost -Pid $script:BadDbHostPid
     }
 }
 finally {
@@ -769,13 +881,17 @@ finally {
 # 8. Security proof (D-003 + DEC-AUTH-009)
 # ===============================================================
 Step-Header 8 'Security proof (D-003 + DEC-AUTH-009)'
-$prodHost = $null
+$script:ProdHostPid = 0
 try {
     $prodHost = Start-HostProcess -Url 'http://127.0.0.1:5097' -Environment 'Production' -LogPrefix 'g2-004-prod'
-    if (-not (Wait-HostReady -BaseUrl 'http://127.0.0.1:5097' -TimeoutSec 30)) {
-        Fail-Fatal "Production host did not become ready" 1
+    if ($prodHost -and $prodHost.Id) {
+        $script:ProdHostPid = [int]$prodHost.Id
+        Register-OwnedHostPid -Pid $script:ProdHostPid
     }
-    Pass "Production host ready at http://127.0.0.1:5097"
+    if (-not (Wait-HostReady -BaseUrl 'http://127.0.0.1:5097' -TimeoutSec 30)) {
+        Fail-Fatal "Production host (PID $script:ProdHostPid) did not become ready" 1
+    }
+    Pass "Production host ready at http://127.0.0.1:5097 (PID $script:ProdHostPid, script-owned)"
 
     # Probe: GET /health/ready in Production (must be 200 for real DB)
     $prodReady = Invoke-HttpProbe -Method Get -Uri 'http://127.0.0.1:5097/health/ready'
@@ -885,7 +1001,9 @@ try {
     }
 }
 finally {
-    Stop-HostProcess -Process $prodHost
+    # Stop ONLY this script-owned PID. Never any other
+    # process on the workstation.
+    Stop-OwnedHost -Pid $script:ProdHostPid
 }
 
 # ===============================================================
@@ -893,13 +1011,24 @@ finally {
 # ===============================================================
 Write-Host ""
 Write-Host "============================================================"
-Write-Host "[G2-004V1R1] ALL CHECKS PASS"
+Write-Host "[G2-004V1R2] ALL CHECKS PASS"
 Write-Host "============================================================"
-Write-Host "Next: open docs/verification/G2_004V1R1_HARNESS_RELIABILITY_REPORT.md"
+Write-Host "Next: open docs/verification/G2_004V1R2_HARNESS_FINAL_HARDENING_REPORT.md"
 Write-Host "       and flip the GOAL_REGISTRY gate to"
 Write-Host "       G2_004_AUTHENTICATION_KERNEL_VERIFIED."
+Write-Host ""
+Write-Host "Script-owned PIDs that were started and stopped:"
+foreach ($p in @($script:Round1HostPid, $script:Round2HostPid, $script:BadDbHostPid, $script:ProdHostPid)) {
+    if ($p -gt 0) { Write-Host "  - $p" }
+}
 
 Complete-Cleanup
+
+# Final defensive cleanup: stop any remaining script-owned
+# PIDs (e.g. if a step was skipped because the script exited
+# early). Other .NET dev processes on the workstation are
+# NEVER touched.
+Stop-AllOwnedHosts
 
 if (-not $SkipPrompt) {
     Read-Host "Press Enter to exit"
