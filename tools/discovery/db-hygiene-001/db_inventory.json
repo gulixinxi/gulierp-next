@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "goal": "DB-HYGIENE-001",
+    "extraction_time": "2026-08-20T17:12:13+08:00",
+    "session": "mvs_11a243eed8e544d6b19087711a392283",
+    "source_methods": [
+      "Read-only PostgreSQL connection probe (TCP 192.168.2.228:5432)",
+      "Repository reference scan (D:\\guli\\projects\\gulierp-next)",
+      "Read-only canonical (D:\\guli\\gulierp) — NOT touched"
+    ],
+    "policy": "NO DROP / NO DELETE / NO RENAME / NO CREATE DATABASE / NO SCHEMA CHANGE / NO DATA CHANGE. Password NOT printed. Password=*** in all evidence. PG database enumeration blocked by missing PGPASSWORD; DB existence evidenced by previous test/probe traces + repository refs."
+  },
+  "postgres_server": {
+    "host": "192.168.2.228",
+    "port": 5432,
+    "network_reachability": "PASS (Test-NetConnection -Port 5432)",
+    "auth_blocker": "PGPASSWORD not in agent session (per G2-001 design, PGPASSWORD is Operator-typed via Read-Host -AsSecureString in PowerShell)",
+    "consequence": "Cannot enumerate pg_database, pg_stat_database, owner, allowconn, active_connections, size directly. Database existence evidenced by historical Operator probes + test runs."
+  },
+  "databases": [
+    {
+      "name": "gulierp_g2_003_test",
+      "classification": "ACTIVE_CURRENT",
+      "host": "192.168.2.228:5432",
+      "evidence_sources": [
+        "tools/dev/g2-005-operator-evidence.ps1 L32: DefaultPgDatabase = 'gulierp_g2_003_test'",
+        "tests/_evidence_trx/g2-005/GuliERP.Identity.IntegrationTests.trx L427+: 'Database=gulierp_g2_003_test' (fresh Operator run 2026-08-20 17:03:16)",
+        "docs/verification/G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_REPORT.md §6: 'Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=***'",
+        "tools/discovery/base-000/_canonical/DATABASE_SOURCE_INVENTORY.json: gulierp_g2_003_test PARTIALLY_ACCESSED_VIA_MIGRATION_FILES (14 identity tables extracted from migration files)",
+        "tools/discovery/base-000/_pg_probe.log: NETWORK_OK",
+        "tests/GuliERP.Identity.IntegrationTests/IdentityReferentialIntegrityFacts.cs L33: 'Operator DB gulierp_g2_003_test is a Production-environment host'"
+      ],
+      "scope": "GuliERP Next Foundation / Identity / Authorization (G2-003, G2-004, G2-005)",
+      "owner": "gulidata (per G2-001 baseline)",
+      "allow_connections": "true (production-style host; G2-003 connection-strength evidence)",
+      "schema_state": "14 identity.* tables (from migration files): AspNetRoles, AspNetUsers, AspNetRoleClaims, AspNetUserClaims, AspNetUserLogins, AspNetUserRoles, AspNetUserTokens, gulierp_tenant, gulierp_company, gulierp_organization_unit, gulierp_plant, gulierp_user_company_membership, gulierp_user_organization_membership, gulierp_user_role_assignment",
+      "operator_verified_date": "2026-08-20 (G2-005 evidence run)",
+      "delete_candidate": "NO — ACTIVE_CURRENT"
+    },
+    {
+      "name": "gulierp_g2_001",
+      "classification": "HISTORICAL_G2_001",
+      "host": "192.168.2.228:5432",
+      "evidence_sources": [
+        "appsettings.Development.json: 'Database=gulierp_g2_001;Password=CHANGE_ME' (stale file content; env-var override pattern per G2-001 design)",
+        "tools/dev/g2-001-operator-evidence.ps1 L58: 'Host=192.168.2.228;Port=5432;Database=gulierp_g2_001;Username=gulidata;Password=***'",
+        "docs/verification/G2_001_HOST_POSTGRESQL_REPORT.md L185 L349 L758: G2-001 created this DB via Operator's CREATE DATABASE",
+        "tools/discovery/base-000/_pg_probe.log: NETWORK_OK",
+        "tools/discovery/base-000/_canonical/DATABASE_SOURCE_INVENTORY.json: gulierp_g2_001 status NOT_ACCESSED_PASSWORD_REQUIRED, Foundation module migration only created `foundation` schema, ZERO tables"
+      ],
+      "scope": "Historical G2-001 verification only. NOT in active runtime.",
+      "owner": "gulidata",
+      "schema_state": "Possibly `foundation` schema (empty) from G2-001 migration; no live evidence accessible",
+      "delete_candidate": "ARCHIVE_THEN_DELETE_CANDIDATE — see registry §3 for full criteria; NOT safe-to-delete-now (no pg_dump evidence in this task; requires Operator sign-off and explicit user approval per §1)"
+    },
+    {
+      "name": "gulierp_adminnet_poc",
+      "classification": "LEGACY_ADMINNET_POC",
+      "host": "192.168.2.228:5432",
+      "evidence_sources": [
+        "tools/discovery/base-000/_canonical/DATABASE_SOURCE_INVENTORY.json: gulierp_adminnet_poc NOT_ACCESSED_PASSWORD_REQUIRED",
+        "tools/discovery/base-000/_pg_probe.log: NETWORK_OK",
+        "DEV report line 758: 'gulidata not having CONNECT on gulierp_g2_001 — solve with GRANT CONNECT ON DATABASE gulierp_g2_001 TO gulidata'"
+      ],
+      "scope": "Old Admin.NET PoC (Furion-based, NOT GuliERP Next). NOT in active runtime.",
+      "owner": "unknown (Admin.NET PoC era, before GuliERP Next)",
+      "schema_state": "Unknown; Admin.NET PoC tables expected (Furion scaffold)",
+      "delete_candidate": "ARCHIVE_THEN_DELETE_CANDIDATE — out of GuliERP Next scope; requires explicit user approval per §1; do not touch"
+    },
+    {
+      "name": "gulierp_g2_004_test",
+      "classification": "EXAMPLE_ONLY_DOES_NOT_EXIST_AS_REAL_DB",
+      "host": "n/a (example placeholder only)",
+      "evidence_sources": [
+        "tools/dev/g2-004-operator-evidence.ps1 L77: 'Database=gulierp_g2_004_test' — actual runtime overrides via env var; runtime ACTUAL was gulierp_g2_003_test per trx",
+        "docs/governance/GOAL_REGISTRY.md L1380: 'Database=gulierp_g2_004_test' in example env-var hint",
+        "docs/verification/G2_004R1_CSRF_HARDENING_REPORT.md L136: same example",
+        "docs/verification/G2_004_AUTH_KERNEL_REPORT.md L184: same example",
+        "docs/verification/G2_004V1_OPERATOR_BOOTSTRAP_REPORT.md L188: same example",
+        "Task §0 explicit warning: 'gulierp_g2_004_test 等示例或陈旧引用' — listed as example/legacy reference"
+      ],
+      "scope": "NONE — script and report text references only; never an actual DB target",
+      "delete_candidate": "NOT_APPLICABLE — no DB to delete"
+    },
+    {
+      "name": "gulierp_design_time_placeholder",
+      "classification": "DESIGN_TIME_PLACEHOLDER",
+      "host": "localhost:5432 (design-time only)",
+      "evidence_sources": [
+        "modules/foundation/GuliERP.Foundation/DesignTimeFoundationDbContextFactory.cs L25: 'Host=localhost;Port=5432;Database=gulierp_design_time_placeholder;Username=design;Password=placeholder'"
+      ],
+      "scope": "EF Core design-time tools only (dotnet ef migrations add etc.). NOT a runtime DB; not real.",
+      "delete_candidate": "NOT_APPLICABLE — design-time placeholder, never created as real DB"
+    },
+    {
+      "name": "none (bad-DB fixture)",
+      "classification": "BAD_DB_FIXTURE",
+      "host": "127.0.0.1:1 (intentionally unreachable)",
+      "evidence_sources": [
+        "tests/GuliERP.Identity.IntegrationTests/IdentityReferentialIntegrityFacts.cs L55: 'Host=127.0.0.1;Port=1;Database=none;Username=none;Password=none;Timeout=2;Command Timeout=2'",
+        "tools/dev/g2-003-operator-evidence.ps1 L285, g2-004 L1022, g2-001 L249: same pattern"
+      ],
+      "scope": "Negative-path test fixture; not a real DB; intentionally unreachable",
+      "delete_candidate": "NOT_APPLICABLE — not a real DB"
+    }
+  ],
+  "stale_references_in_repo": [
+    {
+      "file": "appsettings.Development.json",
+      "stale_value": "Database=gulierp_g2_001",
+      "active_value": "Database=gulierp_g2_003_test",
+      "mitigation": "Per G2-001 design, runtime overrides appsettings via $env:ConnectionStrings__GuliERP. The appsettings value is dead-lettered; runtime evidence (trx) shows env var wins. This is by design but is a Wrong-DB trap if env var is unset.",
+      "action": "Flag for G2-001+ / Pre-G2-006 housekeeping: update appsettings.Development.json to canonical target (gulierp_g2_003_test). Out of scope for DB-HYGIENE-001 (would require Operator + code review)."
+    },
+    {
+      "file": "tools/dev/g2-004-operator-evidence.ps1 L77 + several docs",
+      "stale_value": "Database=gulierp_g2_004_test",
+      "active_value": "Database=gulierp_g2_003_test",
+      "mitigation": "g2-004-operator-evidence.ps1 L77 is an EXAMPLE/HINT shown in user prompt. Actual runtime (per trx) used gulierp_g2_003_test because the Operator supplied the real env var at runtime. The hint text is misleading and could trap a future Operator.",
+      "action": "Per G2-004 closure backfill: this task CANNOT edit g2-004-operator-evidence.ps1 (would require full Operator retest per closure §2). Recommend Codex at next safe point: update hint text to canonical target."
+    }
+  ],
+  "summary": {
+    "total_postgres_databases_known": 3,
+    "active_current": 1,
+    "historical_or_legacy": 2,
+    "example_or_placeholder": 2,
+    "delete_candidates": "0 immediately safe. 2 archive-then-delete candidates (gulierp_g2_001, gulierp_adminnet_poc) pending Operator pg_dump + explicit user approval per §1."
+  }
+}
