@@ -1,7 +1,7 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    G2-004V1 — Secure bootstrap of the operator-evidence test user.
+    G2-004 — Secure bootstrap of the operator-evidence test user.
 
 .DESCRIPTION
     The IdentitySeed.SeedAsync is dev-only and is NEVER called in
@@ -74,7 +74,7 @@ Set-Location -Path (Join-Path $PSScriptRoot '..\..')
 
 $DOTNET = 'D:\guli\gulierp\.dotnet\dotnet.exe'
 if (-not (Test-Path $DOTNET)) {
-    throw "G2-004V1 requires D:\guli\gulierp\.dotnet\dotnet.exe. Not found."
+    throw "G2-004 requires D:\guli\gulierp\.dotnet\dotnet.exe. Not found."
 }
 
 $BOOTSTRAP_PROJECT = Join-Path $PSScriptRoot '..\GuliERP.Identity.Bootstrap\GuliERP.Identity.Bootstrap.csproj'
@@ -94,7 +94,7 @@ if (-not $ConnectionString) {
 }
 
 $displayConn = ($ConnectionString -replace 'Password=[^;]+', 'Password=***')
-Write-Host "[G2-004V1] Using connection: $displayConn" -ForegroundColor Cyan
+Write-Host "[G2-004] Using connection: $displayConn" -ForegroundColor Cyan
 
 # --- 1. Read username / tenant / company (with marker guards) ------------
 # (The .NET tool also enforces the marker; the PS guard is for
@@ -158,19 +158,75 @@ try {
 
     $proc = New-Object System.Diagnostics.Process
     $proc.StartInfo = $psi
-    $null = $proc.Start()
 
-    # Write the password + newline to STDIN, then close.
+    # G2-004V1R4 fix: PROCESS IO DEADLOCK PREVENTION.
+    # The .NET bootstrap tool emits a LOT of diagnostic logs
+    # (now routed to stderr via StderrLoggerProvider — every
+    # EF Core / Identity / Bootstrap info line). On Windows
+    # the redirected stderr pipe buffer is ~4 KB. If the
+    # parent does NOT drain stderr while the child runs, the
+    # child blocks on its next stderr write, never reaches
+    # the final JSON on stdout, and never exits. The parent
+    # in turn is doing WaitForExit or a blocking ReadToEnd on
+    # stdout, and the two deadlock. The classic pattern is:
+    #   1. Start the process
+    #   2. CONCURRENTLY kick off ReadToEndAsync on stdout
+    #      AND stderr so the parent is draining both pipes
+    #   3. Write the password to stdin, flush, close stdin
+    #   4. WaitForExit (the read tasks are concurrently
+    #      draining the pipes; WaitForExit is now safe)
+    #   5. Await the read tasks to get the final strings
+    # The read tasks are Task<string> from the async stream
+    # readers; we use GetAwaiter().GetResult() to bridge
+    # them into PowerShell's synchronous flow.
+    $started = $proc.Start()
+    if (-not $started) {
+        Write-Host '[G2-004V1R4] Failed to start bootstrap process.' -ForegroundColor Red
+        exit 7
+    }
+
+    # Concurrently drain BOTH pipes. The read tasks are
+    # running on the .NET threadpool, so this does NOT
+    # block the caller.
+    $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
+    $stderrTask = $proc.StandardError.ReadToEndAsync()
+
+    # Write the password + newline to STDIN, then flush
+    # and close. The .NET bootstrap tool reads from
+    # Console.In; flushing ensures the bytes are actually
+    # in the pipe before the tool's ReadToEndAsync waits.
     $proc.StandardInput.WriteLine($plainPwd)
+    $proc.StandardInput.Flush()
     $proc.StandardInput.Close()
 
-    # Read stdout / stderr (do not echo).
-    $stdout = $proc.StandardOutput.ReadToEnd()
-    $stderr = $proc.StandardError.ReadToEnd()
-    $proc.WaitForExit()
+    # Defensive timeout: 60 seconds. If the bootstrap tool
+    # hangs (e.g. DB unreachable, EF migration loop), we
+    # kill ONLY this script-owned bootstrap PID. We NEVER
+    # touch other .NET dev processes on the workstation.
+    $bootstrapTimeoutMs = 60000
+    $exited = $proc.WaitForExit($bootstrapTimeoutMs)
+    if (-not $exited) {
+        try {
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+        } catch {}
+        Write-Host "[G2-004V1R4] BOOTSTRAP_PROCESS_TIMEOUT ($bootstrapTimeoutMs ms). Killed bootstrap PID $($proc.Id). Inspect the .NET tool's stderr for the cause." -ForegroundColor Red
+        # Try to collect whatever stderr was buffered before
+        # the kill. (After Stop-Process, ReadToEndAsync may
+        # complete quickly because the pipe is closed.)
+        $stderr = ''
+        try { $stderr = $stderrTask.GetAwaiter().GetResult() } catch {}
+        if ($stderr) { Write-Host "  --- stderr (partial) ---" -ForegroundColor Red; Write-Host $stderr -ForegroundColor Red }
+        exit 7
+    }
+
+    # Drain the read tasks. They are already complete
+    # because the child has exited, but we await them
+    # anyway to retrieve the strings.
+    $stdout = $stdoutTask.GetAwaiter().GetResult()
+    $stderr = $stderrTask.GetAwaiter().GetResult()
 
     if ($proc.ExitCode -ne 0) {
-        Write-Host '[G2-004V1] Bootstrap FAILED.' -ForegroundColor Red
+        Write-Host '[G2-004V1R4] Bootstrap FAILED.' -ForegroundColor Red
         if ($stderr) { Write-Host $stderr -ForegroundColor Red }
         exit $proc.ExitCode
     }
@@ -210,7 +266,7 @@ try {
         }
     }
     if ($null -eq $parsed) {
-        Write-Host '[G2-004V1] Bootstrap OK exit but stdout is not parseable as JSON.' -ForegroundColor Red
+        Write-Host '[G2-004] Bootstrap OK exit but stdout is not parseable as JSON.' -ForegroundColor Red
         if ($parseError) { Write-Host "  First attempt: $parseError" -ForegroundColor Red }
         Write-Host '  --- stdout ---' -ForegroundColor Red
         Write-Host $stdout -ForegroundColor Red
@@ -219,10 +275,10 @@ try {
         exit 7
     }
     if ($parsed.ok -ne $true) {
-        Write-Host "[G2-004V1] Bootstrap OK exit but JSON ok != true. Output: $($parsed | Out-String)" -ForegroundColor Red
+        Write-Host "[G2-004] Bootstrap OK exit but JSON ok != true. Output: $($parsed | Out-String)" -ForegroundColor Red
         exit 7
     }
-    Write-Host '[G2-004V1] Bootstrap OK.' -ForegroundColor Green
+    Write-Host '[G2-004] Bootstrap OK.' -ForegroundColor Green
     Write-Host "  userName       = $($parsed.userName)"
     Write-Host "  userId         = $($parsed.userId)"
     Write-Host "  tenantCode     = $($parsed.tenantCode)"

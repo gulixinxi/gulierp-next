@@ -1,6 +1,6 @@
 #requires -Version 5.1
 <#
-G2-004V1R1 — Authentication Kernel Operator Evidence Pack (reliability-fixed)
+G2-004 — Authentication Kernel Operator Evidence Pack
 
 Mirrors the g2-003-operator-evidence.ps1 pattern. 8 steps:
 
@@ -57,7 +57,7 @@ G2-004V1R1 reliability fixes (vs G2-004V1):
     failure, any host-not-ready aborts the harness with
     exit code != 0.
 
-The final verdict is `[G2-004V1R1] ALL CHECKS PASS` and the
+The final verdict is `[G2-004] ALL CHECKS PASS` and the
 GOAL_REGISTRY gate becomes `G2_004_AUTHENTICATION_KERNEL_VERIFIED`.
 
 G2-004V1 security preserved:
@@ -102,7 +102,7 @@ $Dotnet = 'D:\guli\gulierp\.dotnet\dotnet.exe'
 function Step-Header($n, $title) {
     Write-Host ""
     Write-Host "============================================================"
-    Write-Host "G2-004V1R1 Step $n : $title"
+    Write-Host "G2-004 Step $n : $title"
     Write-Host "============================================================"
 }
 
@@ -122,7 +122,7 @@ function Fail-Fatal($msg, $exitCode) {
     Write-Host "  [FATAL] $msg" -ForegroundColor Red
     Write-Host ""
     Write-Host "============================================================"
-    Write-Host "[G2-004V1R1] FATAL: harness aborted." -ForegroundColor Red
+    Write-Host "[G2-004] FATAL: harness aborted." -ForegroundColor Red
     Write-Host "============================================================"
     Complete-Cleanup
     exit $exitCode
@@ -250,7 +250,7 @@ function Start-HostProcess {
 # ===============================================================
 # 0. Pre-flight
 # ===============================================================
-Write-Host "G2-004V1R1 — Authentication Kernel Operator Evidence Pack (reliability-fixed)"
+Write-Host "G2-004 — Authentication Kernel Operator Evidence Pack"
 Write-Host "Repository: $RepoRoot"
 Write-Host "Dotnet: $Dotnet"
 
@@ -264,7 +264,7 @@ if (-not $conn) {
     $conn = Read-Host -Prompt 'Npgsql connection string'
 }
 $displayConn = ($conn -replace 'Password=[^;]+', 'Password=***')
-Write-Host "[G2-004V1R1] Using connection: $displayConn"
+Write-Host "[G2-004] Using connection: $displayConn"
 
 # Operator test user (marker prefix enforced)
 $MarkerPrefix = 'test_operator_'
@@ -285,14 +285,14 @@ foreach ($pair in @(
         Fail-Fatal "SAFETY: $name='$val' must start with '$MarkerPrefix'." 2
     }
 }
-Write-Host "[G2-004V1R1] Operator test user = $OperatorUser"
+Write-Host "[G2-004] Operator test user = $OperatorUser"
 
 # SecureString operator password (read once, BSTR zero-free, wipe on scope exit)
 $script:OperatorSecurePwd = $null
 $script:OperatorSecurePwdBSTR = [IntPtr]::Zero
 try {
     if (-not $SkipBootstrap -or $env:GULIERP_OPERATOR_USER) {
-        Write-Host "[G2-004V1R1] Password will be read via Read-Host -AsSecureString (NOT echoed)."
+        Write-Host "[G2-004] Password will be read via Read-Host -AsSecureString (NOT echoed)."
         $script:OperatorSecurePwd = Read-Host -Prompt 'Operator test user password' -AsSecureString
         if ($null -eq $script:OperatorSecurePwd -or $script:OperatorSecurePwd.Length -lt 1) {
             Fail-Fatal "Empty password. Aborting." 2
@@ -334,7 +334,7 @@ Register-EngineEvent -SourceIdentifier 'PowerShell.Exiting' -Action { Complete-C
 
 # Step 0a: bootstrap the operator test user (idempotent).
 if (-not $SkipBootstrap) {
-    Write-Host "[G2-004V1R1] Step 0a: bootstrap the operator test user via the .NET tool."
+    Write-Host "[G2-004] Step 0a: bootstrap the operator test user via the .NET tool."
     $bootstrapProject = Join-Path $RepoRoot 'tools/GuliERP.Identity.Bootstrap/GuliERP.Identity.Bootstrap.csproj'
     Use-OperatorPlainPassword {
         param($plainPwd)
@@ -353,14 +353,52 @@ if (-not $SkipBootstrap) {
         $psi.CreateNoWindow = $true
         $proc = New-Object System.Diagnostics.Process
         $proc.StartInfo = $psi
-        $null = $proc.Start()
+
+        # G2-004V1R4 fix: PROCESS IO DEADLOCK PREVENTION.
+        # The .NET bootstrap tool now emits a LOT of
+        # diagnostic logging on stderr (every EF Core /
+        # Identity / Bootstrap info line, via
+        # StderrLoggerProvider). On Windows the redirected
+        # stderr pipe buffer is ~4 KB. If the parent does
+        # NOT drain stderr while the child runs, the
+        # child blocks on its next stderr write, never
+        # reaches the final JSON on stdout, and never
+        # exits. The parent in turn is doing WaitForExit
+        # or a blocking ReadToEnd on stdout, and the two
+        # deadlock. The classic pattern is:
+        #   1. Start the process
+        #   2. CONCURRENTLY kick off ReadToEndAsync on
+        #      stdout AND stderr so the parent is draining
+        #      both pipes (Task<string>)
+        #   3. Write the password to stdin, flush, close
+        #   4. WaitForExit with a defensive timeout
+        #   5. Await the read tasks to get the final
+        #      strings
+        # On timeout, kill ONLY the script-owned bootstrap
+        # PID. Never any other .NET dev process.
+        $started = $proc.Start()
+        if (-not $started) {
+            Fail-Fatal "Failed to start bootstrap process." 7
+        }
+        $bootstrapOutTask = $proc.StandardOutput.ReadToEndAsync()
+        $bootstrapErrTask = $proc.StandardError.ReadToEndAsync()
         $proc.StandardInput.WriteLine($plainPwd)
+        $proc.StandardInput.Flush()
         $proc.StandardInput.Close()
-        $bootstrapOut = $proc.StandardOutput.ReadToEnd()
-        $bootstrapErr = $proc.StandardError.ReadToEnd()
-        $proc.WaitForExit()
+
+        $bootstrapTimeoutMs = 60000
+        $bootstrapExited = $proc.WaitForExit($bootstrapTimeoutMs)
+        if (-not $bootstrapExited) {
+            try { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue } catch {}
+            $partialErr = ''
+            try { $partialErr = $bootstrapErrTask.GetAwaiter().GetResult() } catch {}
+            Fail-Fatal "BOOTSTRAP_PROCESS_TIMEOUT ($bootstrapTimeoutMs ms). Killed bootstrap PID $($proc.Id). Inspect the .NET tool's stderr for the cause. stderr (partial): $partialErr" 7
+        }
+        $bootstrapOut = $bootstrapOutTask.GetAwaiter().GetResult()
+        $bootstrapErr = $bootstrapErrTask.GetAwaiter().GetResult()
+
         if ($proc.ExitCode -ne 0) {
-            Fail-Fatal "Bootstrap tool exited with code $($proc.ExitCode). $($bootstrapErr)" 7
+            Fail-Fatal "Bootstrap tool exited with code $($proc.ExitCode). stderr: $bootstrapErr" 7
         }
         # G2-004V1R3 fix: defensively parse the final JSON. The
         # .NET bootstrap tool now routes ALL diagnostic logging
@@ -390,7 +428,7 @@ if (-not $SkipBootstrap) {
         if ($null -eq $bootstrapJson -or $bootstrapJson.ok -ne $true) {
             Fail-Fatal "Bootstrap tool exited 0 but stdout is not parseable as the expected JSON result. stdout: $bootstrapOut. stderr: $bootstrapErr" 7
         }
-        Write-Host "[G2-004V1R3] Bootstrap OK. (Password hashed by Identity PBKDF2; not echoed.)"
+        Write-Host "[G2-004] Bootstrap OK. (Password hashed by Identity PBKDF2; not echoed.)"
         Write-Host "  userName     = $($bootstrapJson.userName)"
         Write-Host "  userId       = $($bootstrapJson.userId)"
         Write-Host "  tenantCode   = $($bootstrapJson.tenantCode)"
@@ -401,7 +439,7 @@ if (-not $SkipBootstrap) {
     }
 }
 else {
-    Write-Host "[G2-004V1R1] -SkipBootstrap set. Assuming the operator test user is already present."
+    Write-Host "[G2-004] -SkipBootstrap set. Assuming the operator test user is already present."
 }
 
 if (-not $SkipPrompt) {
@@ -453,16 +491,17 @@ Pass "Identity migration applied (or already up to date)"
 # has failed > 0, the harness fails fast.
 Step-Header 4 'Integration + unit tests (per-suite TRX counters)'
 
-# Baseline: G2-004V1R3 documents the real-PostgreSQL baseline as
-# 171 tests (11 + 26 + 44 + 59 + 31; the Bootstrap suite gained
-# 3 new StderrLoggerProvider tests in V1R3). On a stale
-# environment (e.g. the Mavis loud-fail baseline of 162 = 11+26+44+55+26) the
-# Operator MUST regenerate the DB / reapply migrations before
-# promoting to G2_004_AUTHENTICATION_KERNEL_VERIFIED. The
-# baseline is asserted as a minimum gate, NOT a hard equality
-# (so the harness does not break if new tests are added later
-# in this same gate).
-$script:BaselineAtG2_004 = 171
+# Baseline: G2-004V1R4 documents the real-PostgreSQL baseline as
+# 174 tests (13 + 26 + 44 + 59 + 31; the Bootstrap suite gained
+# 2 new ProcessIoDeadlockFacts tests in V1R4; it was 11 in V1R3).
+# On a stale environment (e.g. the Mavis loud-fail baseline of
+# 165 = 13+26+44+55+26) the Operator MUST regenerate the DB /
+# reapply migrations before promoting to
+# G2_004_AUTHENTICATION_KERNEL_VERIFIED. The baseline is
+# asserted as a minimum gate, NOT a hard equality (so the
+# harness does not break if new tests are added later in this
+# same gate).
+$script:BaselineAtG2_004 = 174
 
 $suites = @(
     @{ Name = 'GuliERP.Identity.Bootstrap.Tests';        Project = 'tests/GuliERP.Identity.Bootstrap.Tests/GuliERP.Identity.Bootstrap.Tests.csproj' },
@@ -570,14 +609,14 @@ if ($suiteHasFailure -or $grandFailed -gt 0 -or $grandNotExecuted -gt 0) {
     Fail-Fatal "Test suites FAILED (failed=$grandFailed, notExecuted=$grandNotExecuted). Harness aborts." 1
 }
 
-# Baseline gate: G2-004V1R3 documents the real-PostgreSQL
-# baseline as $script:BaselineAtG2_004 = 171. We assert the
+# Baseline gate: G2-004V1R4 documents the real-PostgreSQL
+# baseline as $script:BaselineAtG2_004 = 174. We assert the
 # grand total is AT LEAST the baseline (not exact equality:
 # future tests added within the same gate must not silently
 # break the harness). If a future G2-004+ gate changes the
 # expected total, bump the constant AND the report.
 if ($grandTotal -lt $script:BaselineAtG2_004) {
-    Fail-Fatal "Test total $grandTotal is BELOW the G2-004V1R3 baseline of $script:BaselineAtG2_004. Real PostgreSQL is likely unreachable; the G2-001 env-dep / G2-003 / G2-003V2 loud-fails would not have flipped. Re-check DB connection and migrations." 1
+    Fail-Fatal "Test total $grandTotal is BELOW the G2-004V1R4 baseline of $script:BaselineAtG2_004. Real PostgreSQL is likely unreachable; the G2-001 env-dep / G2-003 / G2-003V2 loud-fails would not have flipped. Re-check DB connection and migrations." 1
 }
 
 Pass "All 5 suites PASS ($grandPassed/$grandTotal, baseline $script:BaselineAtG2_004 met)"
