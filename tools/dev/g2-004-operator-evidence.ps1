@@ -130,6 +130,40 @@ function Fail-Fatal($msg, $exitCode) {
 
 $script:HasFailure = $false
 
+function Convert-HttpContentToString {
+    [CmdletBinding()]
+    param([object]$Content)
+
+    if ($null -eq $Content) { return '' }
+    if ($Content -is [byte[]]) {
+        return [System.Text.Encoding]::UTF8.GetString($Content)
+    }
+    return [string]$Content
+}
+
+function Assert-AntiforgeryCookieCaptured {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [Microsoft.PowerShell.Commands.WebRequestSession]$WebSession,
+        [Parameter(Mandatory = $true)] [string]$BaseUrl,
+        [Parameter(Mandatory = $true)] [string]$Label
+    )
+
+    $cookies = $WebSession.Cookies.GetCookies([Uri]$BaseUrl)
+    $hasAntiforgeryCookie = $false
+    foreach ($cookie in $cookies) {
+        if ($cookie.Name -eq '.GuliERP.Antiforgery') {
+            $hasAntiforgeryCookie = $true
+            break
+        }
+    }
+
+    if (-not $hasAntiforgeryCookie) {
+        Fail-Fatal "$Label /csrf did not store .GuliERP.Antiforgery in the WebRequestSession cookie jar" 1
+    }
+    Pass "$Label /csrf stored .GuliERP.Antiforgery in the same WebRequestSession"
+}
+
 # Invoke-HttpProbe — the G2-004V1R1 reliability fix.
 # Returns a hashtable { StatusCode, Content, Headers }.
 # DOES NOT throw on non-2xx (Invoke-WebRequest in PS 7 throws
@@ -167,7 +201,7 @@ function Invoke-HttpProbe {
         $resp = Invoke-WebRequest @params -ErrorAction Stop
         return @{
             StatusCode = [int]$resp.StatusCode
-            Content = $resp.Content
+            Content = Convert-HttpContentToString $resp.Content
             Headers = $resp.Headers
             Ok = $true
         }
@@ -185,7 +219,7 @@ function Invoke-HttpProbe {
             try {
                 $stream = $ex.Response.GetResponseStream()
                 if ($stream) {
-                    $reader = New-Object System.IO.StreamReader($stream)
+                    $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::UTF8)
                     $body = $reader.ReadToEnd()
                     $reader.Close()
                     $stream.Close()
@@ -746,8 +780,12 @@ function Invoke-Round1-HappyPath {
         }
         Pass "$Label GET /health/ready → 200"
 
-        # Probe: GET /api/v1/auth/csrf
-        $csrfResp = Invoke-HttpProbe -Method Get -Uri "$BaseUrl/api/v1/auth/csrf" -WebSession (New-Object Microsoft.PowerShell.Commands.WebRequestSession)
+        # Probe: GET /api/v1/auth/csrf. The request token and
+        # the antiforgery cookie are a matched pair; both must
+        # live in the same WebRequestSession used by /login and
+        # every later state-changing request in this round.
+        $roundSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+        $csrfResp = Invoke-HttpProbe -Method Get -Uri "$BaseUrl/api/v1/auth/csrf" -WebSession $roundSession
         if ($csrfResp.StatusCode -ne 200) {
             Fail-Fatal "$Label GET /csrf → $($csrfResp.StatusCode) (expected 200)" 1
         }
@@ -755,10 +793,10 @@ function Invoke-Round1-HappyPath {
         if ([string]::IsNullOrEmpty($csrfToken)) {
             Fail-Fatal "$Label /csrf response missing requestToken" 1
         }
+        Assert-AntiforgeryCookieCaptured -WebSession $roundSession -BaseUrl $BaseUrl -Label $Label
         Pass "$Label GET /api/v1/auth/csrf → 200 (token captured)"
 
         # Probe: POST /api/v1/auth/login
-        $script:RoundSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
         $loginSucceeded = $false
         Use-OperatorPlainPassword {
             param($plainPwd)
@@ -770,7 +808,7 @@ function Invoke-Round1-HappyPath {
             $loginResp = Invoke-HttpProbe -Method Post -Uri "$BaseUrl/api/v1/auth/login" `
                 -ContentType 'application/json' -Body $loginBody `
                 -Headers @{ 'X-CSRF-TOKEN' = $csrfToken } `
-                -WebSession $script:RoundSession
+                -WebSession $roundSession
             if ($loginResp.StatusCode -eq 200) {
                 Pass "$Label POST /api/v1/auth/login → 200 (happy path with X-CSRF-TOKEN)"
                 $loginSucceeded = $true
@@ -781,7 +819,7 @@ function Invoke-Round1-HappyPath {
         }
 
         # Probe: GET /api/v1/auth/me
-        $me = Invoke-HttpProbe -Method Get -Uri "$BaseUrl/api/v1/auth/me" -WebSession $script:RoundSession
+        $me = Invoke-HttpProbe -Method Get -Uri "$BaseUrl/api/v1/auth/me" -WebSession $roundSession
         if ($me.StatusCode -eq 200) {
             Pass "$Label GET /api/v1/auth/me → 200 (cookie roundtrip)"
         }
@@ -796,14 +834,15 @@ function Invoke-Round1-HappyPath {
         if ($null -eq $switchCompanyId) {
             Fail-Fatal "$Label /me response missing companyId; cannot build switch body" 1
         }
-        $csrf2 = Invoke-HttpProbe -Method Get -Uri "$BaseUrl/api/v1/auth/csrf" -WebSession $script:RoundSession
+        $csrf2 = Invoke-HttpProbe -Method Get -Uri "$BaseUrl/api/v1/auth/csrf" -WebSession $roundSession
         if ($csrf2.StatusCode -ne 200) { Fail-Fatal "$Label /csrf (for switch) → $($csrf2.StatusCode)" 1 }
         $csrfToken2 = ($csrf2.Content | ConvertFrom-Json).requestToken
+        Assert-AntiforgeryCookieCaptured -WebSession $roundSession -BaseUrl $BaseUrl -Label "$Label switch"
         $switchBody = (ConvertTo-Json -InputObject @{ targetCompanyId = [long]$switchCompanyId } -Compress)
         $switch = Invoke-HttpProbe -Method Post -Uri "$BaseUrl/api/v1/auth/company/switch" `
             -ContentType 'application/json' -Body $switchBody `
             -Headers @{ 'X-CSRF-TOKEN' = $csrfToken2 } `
-            -WebSession $script:RoundSession
+            -WebSession $roundSession
         # The bootstrap grants the operator user membership in
         # the bootstrap company, so switch should return 200.
         if ($switch.StatusCode -eq 200) {
@@ -820,12 +859,13 @@ function Invoke-Round1-HappyPath {
         }
 
         # Probe: POST /api/v1/auth/logout
-        $csrf3 = Invoke-HttpProbe -Method Get -Uri "$BaseUrl/api/v1/auth/csrf" -WebSession $script:RoundSession
+        $csrf3 = Invoke-HttpProbe -Method Get -Uri "$BaseUrl/api/v1/auth/csrf" -WebSession $roundSession
         if ($csrf3.StatusCode -ne 200) { Fail-Fatal "$Label /csrf (for logout) → $($csrf3.StatusCode)" 1 }
         $csrfToken3 = ($csrf3.Content | ConvertFrom-Json).requestToken
+        Assert-AntiforgeryCookieCaptured -WebSession $roundSession -BaseUrl $BaseUrl -Label "$Label logout"
         $logout = Invoke-HttpProbe -Method Post -Uri "$BaseUrl/api/v1/auth/logout" `
             -Headers @{ 'X-CSRF-TOKEN' = $csrfToken3 } `
-            -WebSession $script:RoundSession
+            -WebSession $roundSession
         if ($logout.StatusCode -eq 204) {
             Pass "$Label POST /api/v1/auth/logout → 204 (with X-CSRF-TOKEN)"
         }
@@ -943,11 +983,13 @@ try {
         }
 
         # Probe: GET /api/v1/auth/csrf (must work even on bad DB)
-        $csrfRespBad = Invoke-HttpProbe -Method Get -Uri 'http://127.0.0.1:5098/api/v1/auth/csrf'
+        $badDbSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+        $csrfRespBad = Invoke-HttpProbe -Method Get -Uri 'http://127.0.0.1:5098/api/v1/auth/csrf' -WebSession $badDbSession
         if ($csrfRespBad.StatusCode -ne 200) {
             Fail-Fatal "Bad-DB GET /csrf → $($csrfRespBad.StatusCode) (expected 200)" 1
         }
         $csrfBad = ($csrfRespBad.Content | ConvertFrom-Json).requestToken
+        Assert-AntiforgeryCookieCaptured -WebSession $badDbSession -BaseUrl 'http://127.0.0.1:5098' -Label 'Bad-DB'
 
         # Probe: POST /api/v1/auth/login (with X-CSRF-TOKEN) → 401 + invalid_credentials
         Use-OperatorPlainPassword {
@@ -959,7 +1001,8 @@ try {
             } -Compress)
             $loginResp = Invoke-HttpProbe -Method Post -Uri 'http://127.0.0.1:5098/api/v1/auth/login' `
                 -ContentType 'application/json' -Body $loginBody `
-                -Headers @{ 'X-CSRF-TOKEN' = $csrfBad }
+                -Headers @{ 'X-CSRF-TOKEN' = $csrfBad } `
+                -WebSession $badDbSession
             if ($loginResp.StatusCode -eq 401 -and $loginResp.Content -match 'invalid_credentials') {
                 Pass "POST /api/v1/auth/login (bad-DB) → 401 + invalid_credentials (enumeration defense)"
             }
@@ -1014,11 +1057,13 @@ try {
     Pass "Production GET /health/ready → 200 (real DB ready)"
 
     # Probe: GET /api/v1/auth/csrf in Production
-    $csrfProd = Invoke-HttpProbe -Method Get -Uri 'http://127.0.0.1:5097/api/v1/auth/csrf'
+    $prodSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+    $csrfProd = Invoke-HttpProbe -Method Get -Uri 'http://127.0.0.1:5097/api/v1/auth/csrf' -WebSession $prodSession
     if ($csrfProd.StatusCode -ne 200) {
         Fail-Fatal "Production GET /csrf → $($csrfProd.StatusCode) (expected 200)" 1
     }
     $csrfProdToken = ($csrfProd.Content | ConvertFrom-Json).requestToken
+    Assert-AntiforgeryCookieCaptured -WebSession $prodSession -BaseUrl 'http://127.0.0.1:5097' -Label 'Production'
 
     # Probe: POST /api/v1/auth/login in Production with FAKE
     # X-User-Id / X-Tenant-Id / X-Company-Id headers (D-003
@@ -1033,16 +1078,15 @@ try {
             password = $plainPwd
             tenantCode = $OperatorTenant
         } -Compress)
-        $session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
         $loginResp = Invoke-HttpProbe -Method Post -Uri 'http://127.0.0.1:5097/api/v1/auth/login' `
             -ContentType 'application/json' -Body $loginBody `
             -Headers @{ 'X-CSRF-TOKEN' = $csrfProdToken; 'X-User-Id' = '99999'; 'X-Tenant-Id' = '88888'; 'X-Company-Id' = '77777' } `
-            -WebSession $session
+            -WebSession $prodSession
         # Login may 200 (real credential) or 401 (any reason
         # — e.g. tenantCode mismatch on the Production DB).
         # Either way, the spoofed headers MUST be ignored. We
         # verify by probing /me.
-        $me = Invoke-HttpProbe -Method Get -Uri 'http://127.0.0.1:5097/api/v1/auth/me' -WebSession $session
+        $me = Invoke-HttpProbe -Method Get -Uri 'http://127.0.0.1:5097/api/v1/auth/me' -WebSession $prodSession
         if ($me.StatusCode -eq 200) {
             $meBody = $me.Content | ConvertFrom-Json
             if ($meBody.tenantId -eq 88888) {
