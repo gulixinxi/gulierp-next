@@ -47,6 +47,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
     /// <c>foundation</c> schema.
     /// </summary>
     public const string DefaultSchema = "identity";
+    public const string HiLoSequenceName = "gulierp_hilo_sequence";
 
     public IdentityDbContext(DbContextOptions<IdentityDbContext> options) : base(options)
     {
@@ -126,7 +127,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
         modelBuilder.Entity<Tenant>(b =>
         {
             b.HasKey(t => t.Id);
-            b.Property(t => t.Id).ValueGeneratedNever();   // snowflake
+            b.Property(t => t.Id).UseHiLo(HiLoSequenceName, DefaultSchema);
             b.Property(t => t.Code).IsRequired().HasMaxLength(40);
             b.Property(t => t.Name).IsRequired().HasMaxLength(200);
             b.Property(t => t.Description).HasMaxLength(2000);
@@ -138,7 +139,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
         modelBuilder.Entity<Company>(b =>
         {
             b.HasKey(c => c.Id);
-            b.Property(c => c.Id).ValueGeneratedNever();   // snowflake
+            b.Property(c => c.Id).UseHiLo(HiLoSequenceName, DefaultSchema);
             b.Property(c => c.Code).IsRequired().HasMaxLength(40);
             b.Property(c => c.Name).IsRequired().HasMaxLength(200);
             b.Property(c => c.LegalName).HasMaxLength(300);
@@ -160,7 +161,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
         modelBuilder.Entity<Plant>(b =>
         {
             b.HasKey(p => p.Id);
-            b.Property(p => p.Id).ValueGeneratedNever();   // snowflake
+            b.Property(p => p.Id).UseHiLo(HiLoSequenceName, DefaultSchema);
             b.Property(p => p.Code).IsRequired().HasMaxLength(40);
             b.Property(p => p.Name).IsRequired().HasMaxLength(200);
             b.Property(p => p.AddressLine1).HasMaxLength(200);
@@ -188,7 +189,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
         modelBuilder.Entity<OrganizationUnit>(b =>
         {
             b.HasKey(o => o.Id);
-            b.Property(o => o.Id).ValueGeneratedNever();   // snowflake
+            b.Property(o => o.Id).UseHiLo(HiLoSequenceName, DefaultSchema);
             b.Property(o => o.Code).IsRequired().HasMaxLength(40);
             b.Property(o => o.Name).IsRequired().HasMaxLength(200);
             b.Property(o => o.Type).HasConversion<int>();
@@ -212,6 +213,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
         // GuliERP-specific fields + indexes.
         modelBuilder.Entity<GuliErpUser>(b =>
         {
+            b.Property(u => u.Id).UseHiLo(HiLoSequenceName, DefaultSchema);
             b.Property(u => u.TenantId).IsRequired();
             b.Property(u => u.DisplayName).IsRequired().HasMaxLength(200);
             b.Property(u => u.IsPlatformAdmin).IsRequired();
@@ -232,6 +234,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
         // configures Name + NormalizedName; we add TenantId + Code.
         modelBuilder.Entity<GuliErpRole>(b =>
         {
+            b.Property(r => r.Id).UseHiLo(HiLoSequenceName, DefaultSchema);
             b.Property(r => r.TenantId).IsRequired();
             b.Property(r => r.Code).IsRequired().HasMaxLength(40);
             b.Property(r => r.IsSystem).IsRequired();
@@ -253,7 +256,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
         modelBuilder.Entity<UserCompanyMembership>(b =>
         {
             b.HasKey(m => m.Id);
-            b.Property(m => m.Id).ValueGeneratedNever();
+            b.Property(m => m.Id).UseHiLo(HiLoSequenceName, DefaultSchema);
             b.Property(m => m.TenantId).IsRequired();
             b.Property(m => m.CompanyId).IsRequired();
             b.Property(m => m.UserId).IsRequired();
@@ -285,7 +288,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
         modelBuilder.Entity<UserOrganizationMembership>(b =>
         {
             b.HasKey(m => m.Id);
-            b.Property(m => m.Id).ValueGeneratedNever();
+            b.Property(m => m.Id).UseHiLo(HiLoSequenceName, DefaultSchema);
             b.Property(m => m.TenantId).IsRequired();
             b.Property(m => m.CompanyId).IsRequired();
             b.Property(m => m.UserId).IsRequired();
@@ -320,7 +323,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
         modelBuilder.Entity<UserRoleAssignment>(b =>
         {
             b.HasKey(a => a.Id);
-            b.Property(a => a.Id).ValueGeneratedNever();
+            b.Property(a => a.Id).UseHiLo(HiLoSequenceName, DefaultSchema);
             b.Property(a => a.TenantId).IsRequired();
             b.Property(a => a.UserId).IsRequired();
             b.Property(a => a.RoleId).IsRequired();

@@ -1,4 +1,3 @@
-using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
 using GuliERP.Identity.Infrastructure.Persistence;
@@ -26,8 +25,8 @@ namespace GuliERP.Identity.IntegrationTests;
 /// <para>
 /// G2-003V2R1 (this revision) makes the 3 integration tests
 /// <strong>self-contained</strong>: each test creates its own
-/// unique Tenant + Company via the <see cref="SnowflakeIdGenerator"/>
-/// Singleton and unique Guid-derived Codes, performs the
+/// unique Tenant + Company via EF/Npgsql HiLo-generated IDs
+/// and unique Guid-derived Codes, performs the
 /// assertion, then cleans up via a fresh DbContext. The tests
 /// do NOT depend on any seed data (the Operator DB
 /// <c>gulierp_g2_003_test</c> is a Production-environment host
@@ -107,11 +106,8 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
                 "section 'Operator Evidence' for the unlock path.");
         }
 
-        var idGen = sp.GetRequiredService<SnowflakeIdGenerator>();
-
         var company = new Company
         {
-            Id = idGen.NextId(),
             TenantId = 99_999_999_999L,    // intentionally non-existent
             Code = $"FK-ORPHAN-{UniqueSuffix()}",
             Name = "FK Orphan Test Company",
@@ -163,13 +159,11 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
                 "Set ConnectionStrings__GuliERP to a working Npgsql connection string.");
         }
 
-        var idGen = sp.GetRequiredService<SnowflakeIdGenerator>();
         var db = sp.GetRequiredService<IdentityDbContext>();
 
         // 1. Create a unique Tenant via the test DbContext.
         var tenant = new Tenant
         {
-            Id = idGen.NextId(),
             Code = $"FK-AT-{UniqueSuffix()}",
             Name = "FK AcceptOnValid Test Tenant",
             Status = TenantStatus.Active,
@@ -184,7 +178,6 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
         //    inserted Tenant.
         var company = new Company
         {
-            Id = idGen.NextId(),
             TenantId = tenant.Id,
             Code = $"FK-AV-{UniqueSuffix()}",
             Name = "FK AcceptOnValid Test Company",
@@ -262,13 +255,11 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
                 "Set ConnectionStrings__GuliERP to a working Npgsql connection string.");
         }
 
-        var idGen = sp.GetRequiredService<SnowflakeIdGenerator>();
         var db = sp.GetRequiredService<IdentityDbContext>();
 
         // 1. Create the Tenant + Company via the test DbContext.
         var tenant = new Tenant
         {
-            Id = idGen.NextId(),
             Code = $"FK-DR-{UniqueSuffix()}",
             Name = "FK DeleteRestrict Test Tenant",
             Status = TenantStatus.Active,
@@ -276,9 +267,10 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
             ModifiedAt = DateTimeOffset.UtcNow,
             ConcurrencyVersion = 0,
         };
+        db.Tenants.Add(tenant);
+
         var company = new Company
         {
-            Id = idGen.NextId(),
             TenantId = tenant.Id,
             Code = $"FK-DR-C-{UniqueSuffix()}",
             Name = "FK DeleteRestrict Test Company",
@@ -289,7 +281,6 @@ public sealed class IdentityReferentialIntegrityFacts : IClassFixture<WebApplica
             ModifiedAt = DateTimeOffset.UtcNow,
             ConcurrencyVersion = 0,
         };
-        db.Tenants.Add(tenant);
         db.Companies.Add(company);
         await db.SaveChangesAsync();
 

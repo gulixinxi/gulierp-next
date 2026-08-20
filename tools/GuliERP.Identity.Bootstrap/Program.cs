@@ -1,4 +1,3 @@
-using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
 using GuliERP.Identity.Infrastructure.Persistence;
@@ -7,7 +6,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using SnowflakeIdGen = GuliERP.Foundation.Kernel.SnowflakeIdGenerator;
 
 namespace GuliERP.Identity.Bootstrap;
 
@@ -173,13 +171,11 @@ public static class Program
         })
         .AddEntityFrameworkStores<IdentityDbContext>()
         .AddDefaultTokenProviders();
-        services.AddSingleton<SnowflakeIdGen>();
 
         await using var sp = services.BuildServiceProvider();
         var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("Bootstrap");
         var db = sp.GetRequiredService<IdentityDbContext>();
         var userManager = sp.GetRequiredService<UserManager<GuliErpUser>>();
-        var idGen = sp.GetRequiredService<SnowflakeIdGen>();
 
         try
         {
@@ -192,7 +188,6 @@ public static class Program
             {
                 tenant = new Tenant
                 {
-                    Id = idGen.NextId(),
                     Code = tenantCode,
                     Name = $"Operator evidence test tenant ({tenantCode})",
                     Description = "Auto-created by g2-004-bootstrap-operator-user. dev/test only.",
@@ -214,7 +209,6 @@ public static class Program
             {
                 company = new Company
                 {
-                    Id = idGen.NextId(),
                     TenantId = tenant.Id,
                     ParentCompanyId = null,
                     Code = companyCode,
@@ -281,7 +275,6 @@ public static class Program
             {
                 var newUser = new GuliErpUser
                 {
-                    Id = idGen.NextId(),
                     TenantId = tenant.Id,
                     UserName = userName,
                     NormalizedUserName = userName.ToUpperInvariant(),
@@ -320,7 +313,6 @@ public static class Program
             {
                 db.UserCompanyMemberships.Add(new UserCompanyMembership
                 {
-                    Id = idGen.NextId(),
                     TenantId = tenant.Id,
                     CompanyId = company.Id,
                     UserId = existing.Id,

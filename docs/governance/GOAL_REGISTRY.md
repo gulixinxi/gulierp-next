@@ -4,14 +4,16 @@
 
 | Field | Value |
 |---|---|
-| Goal | **ID Strategy Final Decision Before MDM** |
-| Gate | **`ID_STRATEGY_FINALIZED_FOR_MDM`** |
-| Status | **CLOSED** — R1 supersedes the R0 UUIDv7 decision with `PRIMARY_TECHNICAL_ID_STRATEGY = POSTGRESQL_HILO_BIGINT`; existing Foundation / Identity entities keep `long`; custom Snowflake workerId=0 finding D-005 closes by retiring custom Snowflake in favor of PostgreSQL sequence-backed EF/Npgsql HiLo. MDM must not start until a dedicated minimal ID generation migration goal replaces Snowflake/`ValueGeneratedNever()` with HiLo and re-runs Operator evidence. |
+| Goal | **ID-GEN-001 — Migrate Custom Snowflake to PostgreSQL HiLo** |
+| Gate | **`ID_GENERATION_CODE_READY_OPERATOR_EVIDENCE_PENDING`** |
+| Status | **CODE_READY_OPERATOR_EVIDENCE_PENDING** — code-side migration to `PRIMARY_TECHNICAL_ID_STRATEGY = POSTGRESQL_HILO_BIGINT` is implemented; first-party Identity technical IDs remain `long` / `bigint`; custom Snowflake production path is retired; local build and non-database structural proofs pass. Real PostgreSQL migration/write evidence is pending because `ConnectionStrings__GuliERP` was not present in this session and the DB target guard stopped before any write. |
 | Entry Gate | `G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED · CLOSED` |
 | Decision | `docs/architecture/ID_STRATEGY_FINAL_DECISION.md` |
+| Verification | `docs/verification/ID_GEN_001_POSTGRES_HILO_REPORT.md` |
 | Current Proven Foundation / Identity / Auth / Authz State | `G2_004_AUTHENTICATION_KERNEL_VERIFIED · CLOSED`; `FOUNDATION_SUFFICIENT_TO_PROCEED_G2_005 = YES`; `G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED · CLOSED` |
-| Operator Evidence Carried Forward | Build PASS; Foundation Migration PASS; Identity Migration PASS; 195/195 tests PASS; runtime 401/403/403/200/404/404 PASS; Production test endpoint 404 PASS; Production spoof identity 401 PASS; environment restoration PASS. |
-| Next Mainline | **ID generation migration from custom Snowflake to PostgreSQL HiLo**, then **MDM-000 Convention Freeze** after the HiLo migration gate is closed. |
+| Local Evidence | `GuliERP.slnx` Release build PASS; Foundation unit 44/44 PASS; Identity unit 21/21 PASS; Bootstrap tests 27/27 PASS; ID-GEN-001 structural integration tests 2/2 PASS; active source Snowflake scan only hits absence assertions. |
+| Operator Evidence | **PENDING** — must run only after `tools/dev/assert-gulierp-db-target.ps1` confirms `gulierp_g2_003_test`; then apply the Identity migration and run focused real PostgreSQL HiLo tests. |
+| Next Mainline | **Operator PostgreSQL evidence for ID-GEN-001**, then **MDM-000 Convention Freeze** only after the HiLo migration gate is upgraded to `ID_GENERATION_POSTGRES_HILO_VERIFIED`. |
 | Forbidden follow-up without user authorization | ID platform, distributed worker registry, Numbering Engine, document numbering implementation, master-data coding implementation, MDM/Inventory/Sales/Purchase business API implementation. |
 
 ## Previous Active Goal (superseded)

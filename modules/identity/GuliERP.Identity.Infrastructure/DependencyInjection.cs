@@ -42,8 +42,8 @@ namespace GuliERP.Identity.Infrastructure;
 ///   <item>Directory services (Tenant / Company / Plant / Org /
 ///         User) — registered as Scoped (G2-003, unchanged).</item>
 ///   <item>Company switching service — Scoped (G2-003, unchanged).</item>
-///   <item><see cref="SnowflakeIdGenerator"/> — Singleton
-///         (V1 single-host, worker id 0; D-005 / D-006 deferred).</item>
+///   <item>PostgreSQL sequence-backed EF/Npgsql HiLo technical-ID
+///         generation for first-party <c>long</c> keys.</item>
 ///   <item><see cref="IAuthenticationService"/> — Scoped
 ///         (uses <c>SignInManager</c> which is request-scoped).</item>
 ///   <item><see cref="AuthenticationExceptionHandler"/> —
@@ -184,9 +184,6 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<IDataFilter, DataFilter>();
 
-        // ----- Snowflake ID generator (Singleton; V1 single-host worker=0) -----
-        services.AddSingleton<SnowflakeIdGenerator>(_ => new SnowflakeIdGenerator(workerId: 0));
-
         // ----- Directory services (G2-003 unchanged) -----
         services.AddScoped<ITenantDirectoryService, TenantDirectoryService>();
         services.AddScoped<ICompanyDirectoryService, CompanyDirectoryService>();
@@ -234,9 +231,8 @@ public static class DependencyInjection
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<GuliErpUser>>();
-        var idGenerator = scope.ServiceProvider.GetRequiredService<SnowflakeIdGenerator>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger("GuliERP.Identity.Seed");
-        await IdentitySeed.SeedAsync(db, userManager, idGenerator, logger, ct);
+        await IdentitySeed.SeedAsync(db, userManager, logger, ct);
     }
 }

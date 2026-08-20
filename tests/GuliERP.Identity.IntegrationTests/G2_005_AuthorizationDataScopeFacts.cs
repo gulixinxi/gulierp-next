@@ -267,7 +267,6 @@ public sealed class G2_005_AuthorizationDataScopeFacts
 
     private static async Task<RealPgFixture> CreateRealPgFixtureAsync(IServiceProvider sp)
     {
-        var idGen = sp.GetRequiredService<SnowflakeIdGenerator>();
         var userManager = sp.GetRequiredService<UserManager<GuliErpUser>>();
         var roleManager = sp.GetRequiredService<RoleManager<GuliErpRole>>();
         var db = sp.GetRequiredService<IdentityDbContext>();
@@ -276,7 +275,6 @@ public sealed class G2_005_AuthorizationDataScopeFacts
 
         var tenantA = new Tenant
         {
-            Id = idGen.NextId(),
             Code = $"test_operator_g2_005_ta_{suffix}",
             Name = "test_operator_g2_005 Tenant A",
             Status = TenantStatus.Active,
@@ -286,7 +284,6 @@ public sealed class G2_005_AuthorizationDataScopeFacts
         };
         var tenantB = new Tenant
         {
-            Id = idGen.NextId(),
             Code = $"test_operator_g2_005_tb_{suffix}",
             Name = "test_operator_g2_005 Tenant B",
             Status = TenantStatus.Active,
@@ -294,18 +291,17 @@ public sealed class G2_005_AuthorizationDataScopeFacts
             ModifiedAt = now,
             ConcurrencyVersion = 1,
         };
-        var companyA = NewCompany(idGen.NextId(), tenantA.Id, $"test_operator_g2_005_ca_{suffix}", "Company A", now);
-        var companyB = NewCompany(idGen.NextId(), tenantA.Id, $"test_operator_g2_005_cb_{suffix}", "Company B", now);
-        var companyWithoutMembership = NewCompany(idGen.NextId(), tenantA.Id, $"test_operator_g2_005_cx_{suffix}", "Company Without Membership", now);
-        var tenantBCompany = NewCompany(idGen.NextId(), tenantB.Id, $"test_operator_g2_005_tc_{suffix}", "Tenant B Company", now);
-
         db.Tenants.AddRange(tenantA, tenantB);
+
+        var companyA = NewCompany(tenantA.Id, $"test_operator_g2_005_ca_{suffix}", "Company A", now);
+        var companyB = NewCompany(tenantA.Id, $"test_operator_g2_005_cb_{suffix}", "Company B", now);
+        var companyWithoutMembership = NewCompany(tenantA.Id, $"test_operator_g2_005_cx_{suffix}", "Company Without Membership", now);
+        var tenantBCompany = NewCompany(tenantB.Id, $"test_operator_g2_005_tc_{suffix}", "Tenant B Company", now);
         db.Companies.AddRange(companyA, companyB, companyWithoutMembership, tenantBCompany);
         await db.SaveChangesAsync();
 
         var user = new GuliErpUser
         {
-            Id = idGen.NextId(),
             TenantId = tenantA.Id,
             UserName = $"test_operator_g2_005_user_{suffix}",
             NormalizedUserName = $"TEST_OPERATOR_G2_005_USER_{suffix}",
@@ -324,7 +320,6 @@ public sealed class G2_005_AuthorizationDataScopeFacts
 
         var role = new GuliErpRole
         {
-            Id = idGen.NextId(),
             TenantId = tenantA.Id,
             Name = $"test_operator_g2_005_role_{suffix}",
             NormalizedName = $"TEST_OPERATOR_G2_005_ROLE_{suffix}",
@@ -340,7 +335,6 @@ public sealed class G2_005_AuthorizationDataScopeFacts
 
         db.UserCompanyMemberships.Add(new UserCompanyMembership
         {
-            Id = idGen.NextId(),
             TenantId = tenantA.Id,
             CompanyId = companyA.Id,
             UserId = user.Id,
@@ -364,10 +358,9 @@ public sealed class G2_005_AuthorizationDataScopeFacts
             role.Id);
     }
 
-    private static Company NewCompany(long id, long tenantId, string code, string name, DateTimeOffset now) =>
+    private static Company NewCompany(long tenantId, string code, string name, DateTimeOffset now) =>
         new()
         {
-            Id = id,
             TenantId = tenantId,
             Code = code,
             Name = name,
@@ -387,7 +380,6 @@ public sealed class G2_005_AuthorizationDataScopeFacts
         var sp = scope.ServiceProvider;
         var roleManager = sp.GetRequiredService<RoleManager<GuliErpRole>>();
         var db = sp.GetRequiredService<IdentityDbContext>();
-        var idGen = sp.GetRequiredService<SnowflakeIdGenerator>();
         var now = DateTimeOffset.UtcNow;
         var role = await roleManager.FindByIdAsync(fixture.RoleId.ToString(System.Globalization.CultureInfo.InvariantCulture));
         Assert.NotNull(role);
@@ -399,7 +391,6 @@ public sealed class G2_005_AuthorizationDataScopeFacts
 
         db.UserRoleAssignments.Add(new UserRoleAssignment
         {
-            Id = idGen.NextId(),
             TenantId = fixture.TenantAId,
             UserId = fixture.UserId,
             RoleId = fixture.RoleId,

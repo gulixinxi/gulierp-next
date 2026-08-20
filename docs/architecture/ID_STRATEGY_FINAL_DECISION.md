@@ -286,6 +286,39 @@ This R1 decision supersedes the R0 UUIDv7 final strategy while preserving the
 correct R0 finding that custom Snowflake worker coordination must not continue
 into MDM.
 
+## IMPLEMENTATION STATUS
+
+ID-GEN-001 started the dedicated migration goal on 2026-08-20.
+
+Current code status:
+
+- First-party Identity technical primary keys remain `long` / PostgreSQL
+  `bigint`.
+- Identity now owns the PostgreSQL HiLo sequence
+  `identity.gulierp_hilo_sequence`.
+- First-party Identity mappings use EF Core / Npgsql property-level HiLo for
+  `Tenant`, `Company`, `Plant`, `OrganizationUnit`, `GuliErpUser`,
+  `GuliErpRole`, `UserCompanyMembership`, `UserOrganizationMembership`, and
+  `UserRoleAssignment`.
+- ASP.NET Core Identity internal integer claim-token tables are not converted
+  to the first-party HiLo strategy.
+- The production `SnowflakeIdGenerator` path is retired from source, DI, seed,
+  bootstrap, and active fixtures.
+- Migration `20260820100503_IDGEN001_PostgresHiLo` creates
+  `identity.gulierp_hilo_sequence`, initializes it above the existing maximum
+  Identity technical ID range, and removes identity-column value-generation
+  metadata from `AspNetUsers.Id` and `AspNetRoles.Id`.
+
+Current gate status:
+
+`ID_GENERATION_CODE_READY_OPERATOR_EVIDENCE_PENDING`
+
+Reason: local compile and non-database structural proofs pass, but real
+PostgreSQL migration/write evidence was not executed in this session because
+`ConnectionStrings__GuliERP` was not present. The required target guard must
+pass against `gulierp_g2_003_test` before running the migration or HiLo write
+tests.
+
 ## FOUNDATION COMPATIBILITY
 
 Compatibility decision:
