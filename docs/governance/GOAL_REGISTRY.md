@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Goal | **G2-004R1 — Cookie Authentication CSRF Hardening** (ASP.NET Core native antiforgery on state-changing auth endpoints; DEC-AUTH-009) |
-| Gate | `G2_004_CODE_READY_OPERATOR_DB_PENDING` (G2-004 Mavis-side closed; G2-004R1 amendment landed) |
-| Status | **`G2_004_AUTH_CSRF_HARDENED_OPERATOR_DB_PENDING`** — Mavis-side 26/26 unit + 55/59 integration PASS or LOUD-FAIL by design. 0 G2-001 / G2-002 / G2-003 / R1 / V1 / V2 / R0 / G2-004 regressions. 1 new DEC-AUTH-009 (antiforgery / CSRF). Architecture §6.1 "no antiforgery" assumption REJECTED + recorded. Operator unlocks to `G2_004_AUTHENTICATION_KERNEL_VERIFIED`. |
-| Entry Gate | `G2_004_CODE_READY_OPERATOR_DB_PENDING` (G2-004 Mavis-side closed) |
-| Verification | `docs/verification/G2_004R1_CSRF_HARDENING_REPORT.md` (9 sections) |
-| Architecture | `docs/architecture/G2_004_AUTHENTICATION_ARCHITECTURE.md` §6.1 AMENDMENT + §4.2 + §9 (DEC-AUTH-009) |
-| TRAE Handoff | `docs/architecture/TRAE_FRONTEND_AUTH_HANDOFF.md` (12 sections; binding contract) |
-| Operator Unlock | `tools/dev/g2-004-operator-evidence.ps1` (updated Step 5 + Step 7 + Step 8 to auto-fetch X-CSRF-TOKEN + add CSRF negative proofs) |
+| Goal | **G2-004V1 — Secure Operator Authentication Bootstrap** (separate .NET tool + SecureString operator script; no hardcoded passwords) |
+| Gate | `G2_004_AUTH_CSRF_HARDENED_OPERATOR_DB_PENDING` (G2-004 + G2-004R1 closed) |
+| Status | **`G2_004V1_OPERATOR_BOOTSTRAP_READY`** — Mavis-side 8 bootstrap safety unit tests + 26 G2-004 unit + 55 G2-004R1 integration all PASS. 0 G2-001 / G2-002 / G2-003 / R1 / V1 / V2 / R0 / G2-004 / G2-004R1 regressions. 0 hardcoded passwords. 0 secret leaks. Operator unlocks to `G2_004_AUTHENTICATION_KERNEL_VERIFIED` after real-DB bootstrap + 9-step evidence. |
+| Entry Gate | `G2_004_AUTH_CSRF_HARDENED_OPERATOR_DB_PENDING` (G2-004 + G2-004R1 closed) |
+| Verification | `docs/verification/G2_004V1_OPERATOR_BOOTSTRAP_REPORT.md` |
+| Bootstrap Tool | `tools/GuliERP.Identity.Bootstrap/GuliERP.Identity.Bootstrap.csproj` (separate .NET 10 console; uses Identity UserManager.CreateAsync; refuses to touch any user WITHOUT the `test_operator_` marker prefix) |
+| Bootstrap Wrapper | `tools/dev/g2-004-bootstrap-operator-user.ps1` (PowerShell wrapper; `Read-Host -AsSecureString`; BSTR zero-free; no plain-text log) |
+| Operator Unlock | `tools/dev/g2-004-operator-evidence.ps1` (updated; `Use-OperatorPlainPassword` helper; SecureString lifecycle: read once → convert per use → wipe on exit) |
 | Next Goal | **G2-005 — Authorization Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
 | Hard Stop | G2-005 must NOT auto-start in this Mavis session. G2-005 kickoff requires a fresh session with explicit user authorization. |
 | Forbidden follow-up without user authorization | `G2-005` implementation (any [Authorize] policy with permission / DataScope semantics, IPermissionService, role-permission matrix, menu / button / field permission, DataScope filters, JwtBearer scheme registration, OpenIddict server, the 8 read-only /api/v1/identity/... HTTP directory endpoints, UserPlantMembership table) |
