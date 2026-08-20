@@ -10,6 +10,8 @@
     <ProjectReference Include="..\..\..\modules\identity\GuliERP.Identity.Infrastructure\GuliERP.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\modules\mdm\GuliERP.Mdm.Application\GuliERP.Mdm.Application.csproj" />
     <ProjectReference Include="..\..\..\modules\mdm\GuliERP.Mdm.Infrastructure\GuliERP.Mdm.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\modules\document-kernel\GuliERP.DocumentKernel.Application\GuliERP.DocumentKernel.Application.csproj" />
+    <ProjectReference Include="..\..\..\modules\document-kernel\GuliERP.DocumentKernel.Infrastructure\GuliERP.DocumentKernel.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" />

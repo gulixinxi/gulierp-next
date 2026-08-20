@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>GuliERP.DocumentKernel.Tests</RootNamespace>
+    <AssemblyName>GuliERP.DocumentKernel.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\modules\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\..\modules\document-kernel\GuliERP.DocumentKernel.Domain\GuliERP.DocumentKernel.Domain.csproj" />
+    <ProjectReference Include="..\..\modules\document-kernel\GuliERP.DocumentKernel.Application\GuliERP.DocumentKernel.Application.csproj" />
+    <ProjectReference Include="..\..\modules\document-kernel\GuliERP.DocumentKernel.Infrastructure\GuliERP.DocumentKernel.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

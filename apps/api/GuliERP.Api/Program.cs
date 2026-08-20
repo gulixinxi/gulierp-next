@@ -2,6 +2,7 @@ using GuliERP.Api;
 using GuliERP.Api.Authentication;
 using GuliERP.Api.Kernel;
 using GuliERP.Api.Mdm;
+using GuliERP.DocumentKernel.Infrastructure;
 using GuliERP.Foundation;
 using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Infrastructure;
@@ -118,6 +119,17 @@ builder.Services.AddGuliErpIdentity(connectionString);
 //     IMultiTenant. The 6 authorization policies (read + manage
 //     per entity) are wired here; the endpoint mapping is below.
 builder.Services.AddGuliErpMdm(connectionString);
+
+// --- 4d. DOC-KERNEL-001 services (Document Numbering) ---
+//     Per BUSINESS_DOCUMENT_NUMBERING_V1.md: the atomic
+//     counter service is the SINGLE source of truth for Sales /
+//     Purchase / Inventory / Production Document Number
+//     generation. No HTTP endpoint is exposed in V1 — the
+//     service is consumed by the future Sales / PO / Inventory
+//     modules via DI. We register it now so the API host can
+//     serve as the EF design-time startup project for
+//     DocumentKernel migrations.
+builder.Services.AddGuliErpDocumentKernel(connectionString);
 
 // --- 5. ProblemDetails + Exception Handler (G2-002 §8) ---
 //     Native ASP.NET Core 10 IExceptionHandler chain. The Foundation
@@ -358,7 +370,7 @@ app.UseMiddleware<RouteNotFoundMiddleware>();
 
 // --- 13. Root / banner ---
 app.MapGet("/", () => Results.Text(
-    "GuliERP Api (G2-001 + G2-002 + G2-003 + G2-004 + MDM-001)\n" +
+    "GuliERP Api (G2-001 + G2-002 + G2-003 + G2-004 + MDM-001 + DOC-KERNEL-001)\n" +
     "Endpoints:\n" +
     "  GET  /health/live               Host process liveness\n" +
     "  GET  /health/ready              PostgreSQL readiness\n" +
@@ -370,6 +382,7 @@ app.MapGet("/", () => Results.Text(
     "  GET/POST/PUT /api/v1/mdm/uoms            UOM master data\n" +
     "  GET/POST/PUT /api/v1/mdm/item-categories ItemCategory master data\n" +
     "  GET/POST/PUT /api/v1/mdm/items           Item master data\n" +
+    "  (Document Numbering: IDocumentNumberService, consumed by future Sales/PO/Inventory)\n" +
     (app.Environment.IsDevelopment() ? "  GET  /openapi/v1.json            OpenAPI spec (dev only)\n" : ""),
     "text/plain"));
 

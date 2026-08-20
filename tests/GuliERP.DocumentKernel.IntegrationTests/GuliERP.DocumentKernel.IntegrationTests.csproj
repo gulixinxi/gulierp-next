@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>GuliERP.DocumentKernel.IntegrationTests</RootNamespace>
+    <AssemblyName>GuliERP.DocumentKernel.IntegrationTests</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Xunit.SkippableFact" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\modules\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\..\modules\identity\GuliERP.Identity.Domain\GuliERP.Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\modules\identity\GuliERP.Identity.Application\GuliERP.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\modules\identity\GuliERP.Identity.Infrastructure\GuliERP.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\document-kernel\GuliERP.DocumentKernel.Domain\GuliERP.DocumentKernel.Domain.csproj" />
+    <ProjectReference Include="..\..\modules\document-kernel\GuliERP.DocumentKernel.Application\GuliERP.DocumentKernel.Application.csproj" />
+    <ProjectReference Include="..\..\modules\document-kernel\GuliERP.DocumentKernel.Infrastructure\GuliERP.DocumentKernel.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\apps\api\GuliERP.Api\GuliERP.Api.csproj" />
+  </ItemGroup>
+</Project>
