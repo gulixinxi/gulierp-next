@@ -229,14 +229,18 @@ function Start-HostProcess {
         [string]$Environment,
         [string]$LogPrefix = 'g2-004'
     )
-    $args = @(
+    # G2-004V1R3 fix: `$args` is an automatic variable (the array of
+    # undeclared positional parameters to a function). Inside a
+    # function with a `param()` block it is unused, but reassigning
+    # it is fragile and shadows the automatic. Use `$dotnetArgs`.
+    $dotnetArgs = @(
         'run', '--project', 'apps/api/GuliERP.Api/GuliERP.Api.csproj',
         '-c', 'Release', '--no-build', '--urls', $Url
     )
-    if ($Environment) { $args += @('--environment', $Environment) }
+    if ($Environment) { $dotnetArgs += @('--environment', $Environment) }
     $stdout = "$env:TEMP\$LogPrefix-host.log"
     $stderr = "$env:TEMP\$LogPrefix-host.err.log"
-    return Start-Process -FilePath $Dotnet -ArgumentList $args `
+    return Start-Process -FilePath $Dotnet -ArgumentList $dotnetArgs `
         -PassThru `
         -RedirectStandardOutput $stdout `
         -RedirectStandardError $stderr `
@@ -358,8 +362,42 @@ if (-not $SkipBootstrap) {
         if ($proc.ExitCode -ne 0) {
             Fail-Fatal "Bootstrap tool exited with code $($proc.ExitCode). $($bootstrapErr)" 7
         }
-        Write-Host "[G2-004V1R1] Bootstrap OK. (Password hashed by Identity PBKDF2; not echoed.)"
-        Write-Host $bootstrapOut
+        # G2-004V1R3 fix: defensively parse the final JSON. The
+        # .NET bootstrap tool now routes ALL diagnostic logging
+        # to stderr so stdout contains only the final JSON line,
+        # but if any future log leaks through we want a clear
+        # failure (NOT a silent PASS).
+        $bootstrapJson = $null
+        try {
+            $bootstrapJson = $bootstrapOut | ConvertFrom-Json -ErrorAction Stop
+        }
+        catch {
+            # Fallback: find the last valid JSON object with
+            # the expected shape.
+            $candidates = $bootstrapOut -split "(`r`n|`n|`r)"
+            for ($i = $candidates.Count - 1; $i -ge 0; $i--) {
+                $line = $candidates[$i].Trim()
+                if (-not $line -or $line[0] -ne '{') { continue }
+                try {
+                    $cand = $line | ConvertFrom-Json -ErrorAction Stop
+                    if ($cand.ok -eq $true -and $cand.userName -and $cand.userId -and $cand.markerPrefix) {
+                        $bootstrapJson = $cand
+                        break
+                    }
+                } catch {}
+            }
+        }
+        if ($null -eq $bootstrapJson -or $bootstrapJson.ok -ne $true) {
+            Fail-Fatal "Bootstrap tool exited 0 but stdout is not parseable as the expected JSON result. stdout: $bootstrapOut. stderr: $bootstrapErr" 7
+        }
+        Write-Host "[G2-004V1R3] Bootstrap OK. (Password hashed by Identity PBKDF2; not echoed.)"
+        Write-Host "  userName     = $($bootstrapJson.userName)"
+        Write-Host "  userId       = $($bootstrapJson.userId)"
+        Write-Host "  tenantCode   = $($bootstrapJson.tenantCode)"
+        Write-Host "  tenantId     = $($bootstrapJson.tenantId)"
+        Write-Host "  companyCode  = $($bootstrapJson.companyCode)"
+        Write-Host "  companyId    = $($bootstrapJson.companyId)"
+        Write-Host "  markerPrefix = $($bootstrapJson.markerPrefix)"
     }
 }
 else {
@@ -415,15 +453,16 @@ Pass "Identity migration applied (or already up to date)"
 # has failed > 0, the harness fails fast.
 Step-Header 4 'Integration + unit tests (per-suite TRX counters)'
 
-# Baseline: G2-004V1R2 documents the real-PostgreSQL baseline as
-# 168 tests (8 + 26 + 44 + 59 + 31). On a stale environment
-# (e.g. the Mavis loud-fail baseline of 159 = 8+26+44+55+26) the
+# Baseline: G2-004V1R3 documents the real-PostgreSQL baseline as
+# 171 tests (11 + 26 + 44 + 59 + 31; the Bootstrap suite gained
+# 3 new StderrLoggerProvider tests in V1R3). On a stale
+# environment (e.g. the Mavis loud-fail baseline of 162 = 11+26+44+55+26) the
 # Operator MUST regenerate the DB / reapply migrations before
 # promoting to G2_004_AUTHENTICATION_KERNEL_VERIFIED. The
 # baseline is asserted as a minimum gate, NOT a hard equality
 # (so the harness does not break if new tests are added later
 # in this same gate).
-$script:BaselineAtG2_004 = 168
+$script:BaselineAtG2_004 = 171
 
 $suites = @(
     @{ Name = 'GuliERP.Identity.Bootstrap.Tests';        Project = 'tests/GuliERP.Identity.Bootstrap.Tests/GuliERP.Identity.Bootstrap.Tests.csproj' },
@@ -531,14 +570,14 @@ if ($suiteHasFailure -or $grandFailed -gt 0 -or $grandNotExecuted -gt 0) {
     Fail-Fatal "Test suites FAILED (failed=$grandFailed, notExecuted=$grandNotExecuted). Harness aborts." 1
 }
 
-# Baseline gate: G2-004V1R2 documents the real-PostgreSQL
-# baseline as $script:BaselineAtG2_004 = 168. We assert the
+# Baseline gate: G2-004V1R3 documents the real-PostgreSQL
+# baseline as $script:BaselineAtG2_004 = 171. We assert the
 # grand total is AT LEAST the baseline (not exact equality:
 # future tests added within the same gate must not silently
 # break the harness). If a future G2-004+ gate changes the
 # expected total, bump the constant AND the report.
 if ($grandTotal -lt $script:BaselineAtG2_004) {
-    Fail-Fatal "Test total $grandTotal is BELOW the G2-004V1R2 baseline of $script:BaselineAtG2_004. Real PostgreSQL is likely unreachable; the G2-001 env-dep / G2-003 / G2-003V2 loud-fails would not have flipped. Re-check DB connection and migrations." 1
+    Fail-Fatal "Test total $grandTotal is BELOW the G2-004V1R3 baseline of $script:BaselineAtG2_004. Real PostgreSQL is likely unreachable; the G2-001 env-dep / G2-003 / G2-003V2 loud-fails would not have flipped. Re-check DB connection and migrations." 1
 }
 
 Pass "All 5 suites PASS ($grandPassed/$grandTotal, baseline $script:BaselineAtG2_004 met)"
@@ -610,9 +649,15 @@ function Invoke-Round1-HappyPath {
         [string]$Label = 'Round'
     )
     Write-Host "  [$Label] host @ $BaseUrl"
-    $host = Start-HostProcess -Url $BaseUrl -LogPrefix "g2-004-$Label"
+    # G2-004V1R3 fix: do NOT use `$host` as a local variable.
+    # PowerShell `$Host` is a READ-ONLY AUTOMATIC variable
+    # (case-insensitive). Reassigning `$host` to a Process object
+    # throws "Cannot overwrite variable Host because it is read-only
+    # or constant." at runtime. Use `$hostProcess` (a regular
+    # user-scope variable) instead.
+    $hostProcess = Start-HostProcess -Url $BaseUrl -LogPrefix "g2-004-$Label"
     $hostPid = 0
-    if ($host -and $host.Id) { $hostPid = [int]$host.Id; Register-OwnedHostPid -Pid $hostPid }
+    if ($hostProcess -and $hostProcess.Id) { $hostPid = [int]$hostProcess.Id; Register-OwnedHostPid -Pid $hostPid }
     try {
         if (-not (Wait-HostReady -BaseUrl $BaseUrl -TimeoutSec 30)) {
             Fail-Fatal "$Label host (PID $hostPid) did not become ready at $BaseUrl" 1

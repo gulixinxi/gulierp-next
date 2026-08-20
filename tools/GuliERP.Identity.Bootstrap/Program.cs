@@ -127,8 +127,23 @@ public static class Program
         var password = passwordLine.Trim();
 
         // Build the DI container.
+        // G2-004V1R3 fix: route ALL diagnostic logging to stderr so
+        // stdout is reserved for the final machine-readable JSON
+        // result. Without this, the PowerShell wrapper's
+        // `$stdout | ConvertFrom-Json` fails because the
+        // default AddSimpleConsole writes log lines to stdout
+        // (mixed with the JSON). The bootstrap tool now uses a
+        // tiny custom ILoggerProvider (StderrLoggerProvider)
+        // that writes every log record to Console.Error with
+        // a single-line format. The contract is:
+        //   stdout = machine-readable JSON (1 line)
+        //   stderr = human-readable diagnostics
         var services = new ServiceCollection();
-        services.AddLogging(b => b.AddSimpleConsole(o => o.SingleLine = true));
+        services.AddLogging(b =>
+        {
+            b.SetMinimumLevel(LogLevel.Information);
+            b.AddProvider(new StderrLoggerProvider());
+        });
         services.AddDbContext<IdentityDbContext>(options =>
         {
             options.UseNpgsql(

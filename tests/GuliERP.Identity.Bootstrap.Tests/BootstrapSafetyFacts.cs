@@ -1,4 +1,5 @@
 using GuliERP.Identity.Bootstrap;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace GuliERP.Identity.Bootstrap.Tests;
@@ -130,5 +131,110 @@ public class BootstrapSafetyFacts
             Program.ExitOtherException,
         };
         Assert.Equal(codes.Length, codes.Distinct().Count());
+    }
+
+    // ===============================================================
+    // G2-004V1R3 — Stdout/Stdderr split tests
+    // ===============================================================
+    // The PowerShell wrapper reads stdout and runs
+    // `ConvertFrom-Json` on it. If any diagnostic log leaks to
+    // stdout (e.g. an AddSimpleConsole formatter defaulting to
+    // Console.Out), the JSON parse fails with
+    // "Unexpected character encountered while parsing value: i".
+    // The bootstrap tool MUST route all diagnostic logging to
+    // stderr so stdout is reserved for the final JSON.
+
+    [Fact]
+    public void StderrLoggerProvider_LogsToStderr_NotStdout()
+    {
+        // Capture both streams.
+        var savedOut = Console.Out;
+        var savedErr = Console.Error;
+        var stdout = new System.IO.StringWriter();
+        var stderr = new System.IO.StringWriter();
+        Console.SetOut(stdout);
+        Console.SetError(stderr);
+        try
+        {
+            using var provider = new StderrLoggerProvider();
+            var logger = provider.CreateLogger("TestCategory");
+            logger.LogInformation("info line");
+            logger.LogError("error line");
+
+            var outText = stdout.ToString();
+            var errText = stderr.ToString();
+            Assert.Empty(outText);                    // nothing on stdout
+            Assert.Contains("info line", errText);    // info -> stderr
+            Assert.Contains("error line", errText);   // error -> stderr
+            Assert.Contains("TestCategory", errText); // category preserved
+        }
+        finally
+        {
+            Console.SetOut(savedOut);
+            Console.SetError(savedErr);
+        }
+    }
+
+    [Fact]
+    public void StderrLoggerProvider_RespectsLogLevelThreshold()
+    {
+        var savedOut = Console.Out;
+        var savedErr = Console.Error;
+        var stdout = new System.IO.StringWriter();
+        var stderr = new System.IO.StringWriter();
+        Console.SetOut(stdout);
+        Console.SetError(stderr);
+        try
+        {
+            using var provider = new StderrLoggerProvider();
+            var logger = provider.CreateLogger("TestCategory");
+            // The provider is configured with IsEnabled
+            // LogLevel.Information. Trace/Debug are filtered.
+            logger.LogTrace("trace line");
+            logger.LogDebug("debug line");
+            logger.LogInformation("info line");
+
+            Assert.Empty(stdout.ToString());
+            Assert.DoesNotContain("trace line", stderr.ToString());
+            Assert.DoesNotContain("debug line", stderr.ToString());
+            Assert.Contains("info line", stderr.ToString());
+        }
+        finally
+        {
+            Console.SetOut(savedOut);
+            Console.SetError(savedErr);
+        }
+    }
+
+    [Fact]
+    public void StderrLoggerProvider_FormatsSingleLine()
+    {
+        // The log line must be a SINGLE line (no embedded
+        // newlines, no multi-line stacks). This is the
+        // contract the PowerShell wrapper relies on when
+        // it splits stdout by lines.
+        var savedOut = Console.Out;
+        var savedErr = Console.Error;
+        var stdout = new System.IO.StringWriter();
+        var stderr = new System.IO.StringWriter();
+        Console.SetOut(stdout);
+        Console.SetError(stderr);
+        try
+        {
+            using var provider = new StderrLoggerProvider();
+            var logger = provider.CreateLogger("TestCategory");
+            logger.LogInformation("hello world");
+
+            var errText = stderr.ToString();
+            // One non-empty log line. Use the xUnit filter
+            // overload (xUnit2031).
+            Assert.Single(errText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None),
+                l => !string.IsNullOrEmpty(l));
+        }
+        finally
+        {
+            Console.SetOut(savedOut);
+            Console.SetError(savedErr);
+        }
     }
 }

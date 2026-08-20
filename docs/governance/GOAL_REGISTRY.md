@@ -4,12 +4,12 @@
 
 | Field | Value |
 |---|---|
-| Goal | **G2-004V1R2 — Operator Evidence Harness Final Hardening** (3 corrections: 168 baseline gate + PID ownership + TRX XML counters; docs/tooling only) |
-| Gate | `G2_004_OPERATOR_EVIDENCE_HARNESS_READY` (G2-004 + G2-004R1 + G2-004V1 + G2-004V1R1 closed) |
-| Status | **`G2_004_OPERATOR_EVIDENCE_HARNESS_FINAL_READY`** — Mavis-side 159/168 tests PASS / 9 LOUD-FAIL unchanged. 0 production code change. 3 forward-looking corrections applied (test baseline 159→168, process ownership PID-only, TRX XML counters). Operator unlocks to `G2_004_AUTHENTICATION_KERNEL_VERIFIED` after the 8-step evidence run with the new harness. |
-| Entry Gate | `G2_004_OPERATOR_EVIDENCE_HARNESS_READY` (G2-004 + G2-004R1 + G2-004V1 + G2-004V1R1 closed) |
-| Verification | `docs/verification/G2_004V1R2_HARNESS_FINAL_HARDENING_REPORT.md` |
-| Harness | `tools/dev/g2-004-operator-evidence.ps1` (rewritten; `Invoke-HttpProbe` / `Wait-HostReady` / `Start-HostProcess` / `Complete-Cleanup` / `Parse-TrxCounters` / `Register-OwnedHostPid` / `Stop-OwnedHost` / `Stop-AllOwnedHosts` helpers; per-suite TRX counters; Round 2 PID freshness check; `$script:BaselineAtG2_004=168` minimum gate; real fail-fast via `Fail-Fatal`) |
+| Goal | **G2-004V1R3 — Operator Harness PowerShell Reliability Fix** (2 root causes: PowerShell `$Host` collision + bootstrap stdout/stderr split; tooling only) |
+| Gate | `G2_004_OPERATOR_EVIDENCE_HARNESS_FINAL_READY` (G2-004 + G2-004R1 + G2-004V1 + G2-004V1R1 + G2-004V1R2 closed) |
+| Status | **`G2_004_OPERATOR_EVIDENCE_HARNESS_R3_READY`** — Mavis-side 162/171 tests PASS / 9 LOUD-FAIL (+3 new StderrLoggerProvider tests). 0 production code change. 2 root causes fixed: (1) PowerShell `$Host` read-only collision (local `$host` → `$hostProcess`); (2) bootstrap .NET tool logging moved to stderr via `StderrLoggerProvider` so stdout = pure JSON. Operator unlocks to `G2_004_AUTHENTICATION_KERNEL_VERIFIED` after the 8-step evidence run with the new harness. |
+| Entry Gate | `G2_004_OPERATOR_EVIDENCE_HARNESS_FINAL_READY` (G2-004 + G2-004R1 + G2-004V1 + G2-004V1R1 + G2-004V1R2 closed) |
+| Verification | `docs/verification/G2_004V1R3_POWERSHELL_RELIABILITY_REPORT.md` |
+| Harness | `tools/dev/g2-004-operator-evidence.ps1` (rewritten; `Invoke-HttpProbe` / `Wait-HostReady` / `Start-HostProcess` / `Complete-Cleanup` / `Parse-TrxCounters` / `Register-OwnedHostPid` / `Stop-OwnedHost` / `Stop-AllOwnedHosts` helpers; per-suite TRX counters; Round 2 PID freshness check; `$script:BaselineAtG2_004=171` minimum gate; defensive JSON parse; real fail-fast via `Fail-Fatal`) + `tools/dev/g2-004-bootstrap-operator-user.ps1` (defensive JSON parse with last-valid-JSON fallback) + `tools/GuliERP.Identity.Bootstrap/StderrLoggerProvider.cs` (custom `ILoggerProvider` writing to stderr; stdout reserved for final JSON) |
 | Next Goal | **G2-005 — Authorization Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
 | Hard Stop | G2-005 must NOT auto-start in this Mavis session. G2-005 kickoff requires a fresh session with explicit user authorization. |
 | Forbidden follow-up without user authorization | `G2-005` implementation (any [Authorize] policy with permission / DataScope semantics, IPermissionService, role-permission matrix, menu / button / field permission, DataScope filters, JwtBearer scheme registration, OpenIddict server, the 8 read-only /api/v1/identity/... HTTP directory endpoints, UserPlantMembership table) |

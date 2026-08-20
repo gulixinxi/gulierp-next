@@ -136,7 +136,9 @@ try {
     }
 
     # Build the .NET tool args.
-    $args = @(
+    # G2-004V1R3 fix: do NOT use `$args` as a local variable; it
+    # is a PowerShell automatic variable. Use `$dotnetArgs`.
+    $dotnetArgs = @(
         'run', '--project', $BOOTSTRAP_PROJECT,
         '-c', 'Release', '--no-restore',
         '--', $ConnectionString, $UserName, $TenantCode, $CompanyCode
@@ -147,7 +149,7 @@ try {
     # tool reads password from Console.In.
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $DOTNET
-    foreach ($a in $args) { $psi.ArgumentList.Add($a) }
+    foreach ($a in $dotnetArgs) { $psi.ArgumentList.Add($a) }
     $psi.RedirectStandardInput = $true
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
@@ -173,8 +175,53 @@ try {
         exit $proc.ExitCode
     }
 
-    # Parse the JSON and emit a friendly summary (no password).
-    $parsed = $stdout | ConvertFrom-Json
+    # G2-004V1R3 fix: parse the final machine-readable JSON from
+    # stdout. The .NET bootstrap tool routes ALL diagnostic
+    # logging to stderr (LogToStandardErrorThreshold = Trace),
+    # so stdout is reserved for the final JSON. Even so, this
+    # wrapper is defensive: it tries the whole stdout first;
+    # if that fails (mixed content, trailing whitespace,
+    # accidental log line), it falls back to a line-by-line
+    # search for the LAST line that is a valid JSON object
+    # with the expected shape (ok=true, userName, userId,
+    # markerPrefix). The fallback never silently swallows
+    # errors; on failure it exits with a clear message.
+    $parsed = $null
+    $parseError = $null
+    try {
+        $parsed = $stdout | ConvertFrom-Json -ErrorAction Stop
+    }
+    catch {
+        $parseError = $_.Exception.Message
+        # Fallback: find the last line that ConvertFrom-Json
+        # can parse AND has the expected shape.
+        $candidates = $stdout -split "(`r`n|`n|`r)"
+        for ($i = $candidates.Count - 1; $i -ge 0; $i--) {
+            $line = $candidates[$i].Trim()
+            if (-not $line) { continue }
+            if ($line[0] -ne '{') { continue }
+            try {
+                $cand = $line | ConvertFrom-Json -ErrorAction Stop
+                if ($cand.ok -eq $true -and $cand.userName -and $cand.userId -and $cand.markerPrefix) {
+                    $parsed = $cand
+                    break
+                }
+            } catch {}
+        }
+    }
+    if ($null -eq $parsed) {
+        Write-Host '[G2-004V1] Bootstrap OK exit but stdout is not parseable as JSON.' -ForegroundColor Red
+        if ($parseError) { Write-Host "  First attempt: $parseError" -ForegroundColor Red }
+        Write-Host '  --- stdout ---' -ForegroundColor Red
+        Write-Host $stdout -ForegroundColor Red
+        Write-Host '  --- stderr ---' -ForegroundColor Red
+        Write-Host $stderr -ForegroundColor Red
+        exit 7
+    }
+    if ($parsed.ok -ne $true) {
+        Write-Host "[G2-004V1] Bootstrap OK exit but JSON ok != true. Output: $($parsed | Out-String)" -ForegroundColor Red
+        exit 7
+    }
     Write-Host '[G2-004V1] Bootstrap OK.' -ForegroundColor Green
     Write-Host "  userName       = $($parsed.userName)"
     Write-Host "  userId         = $($parsed.userId)"
@@ -188,9 +235,12 @@ try {
     Write-Host 'Next: run the operator evidence pack:'
     Write-Host '  PS> .\tools\dev\g2-004-operator-evidence.ps1 -SkipPrompt'
 
-    # Emit the JSON for downstream scripting (e.g.
-    # g2-004-operator-evidence.ps1 can read this).
-    Write-Output $stdout
+    # Emit the canonical final JSON line on stdout for
+    # downstream scripting (e.g. g2-004-operator-evidence.ps1
+    # can pipe it). We emit the re-serialized compact form so
+    # downstream consumers always get a single line.
+    $finalJson = $parsed | ConvertTo-Json -Compress
+    Write-Output $finalJson
     exit 0
 }
 finally {
