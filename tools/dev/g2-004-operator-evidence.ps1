@@ -124,6 +124,7 @@ function Fail-Fatal($msg, $exitCode) {
     Write-Host "============================================================"
     Write-Host "[G2-004] FATAL: harness aborted." -ForegroundColor Red
     Write-Host "============================================================"
+    Restore-OperatorConnectionEnvironment
     Complete-Cleanup
     exit $exitCode
 }
@@ -139,6 +140,86 @@ function Convert-HttpContentToString {
         return [System.Text.Encoding]::UTF8.GetString($Content)
     }
     return [string]$Content
+}
+
+function Redact-SecretText {
+    [CmdletBinding()]
+    param([object]$Value)
+
+    if ($null -eq $Value) { return '' }
+    $text = ($Value | Out-String)
+    $text = $text -replace "(?i)(Password|Pwd)\s*=\s*[^;`r`n]+", '$1=***'
+    return $text
+}
+
+function Write-RedactedCommandDiagnostics {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [string]$Label,
+        [object]$Output
+    )
+
+    $redacted = Redact-SecretText $Output
+    $lines = @($redacted -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
+    if ($lines.Count -eq 0) {
+        Write-Host "  [INFO] $Label diagnostics: <empty>" -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "  [INFO] $Label diagnostics (redacted, last 80 lines):" -ForegroundColor Yellow
+    foreach ($line in ($lines | Select-Object -Last 80)) {
+        Write-Host "    $line" -ForegroundColor Yellow
+    }
+}
+
+function Save-OperatorConnectionEnvironment {
+    [CmdletBinding()]
+    param()
+
+    return @{
+        ConnectionStrings__GuliERP = @{
+            Exists = Test-Path Env:ConnectionStrings__GuliERP
+            Value = $env:ConnectionStrings__GuliERP
+        }
+        GULIERP_ConnectionStrings__GuliERP = @{
+            Exists = Test-Path Env:GULIERP_ConnectionStrings__GuliERP
+            Value = $env:GULIERP_ConnectionStrings__GuliERP
+        }
+        GULIERP_FOUNDATION_CONNECTION = @{
+            Exists = Test-Path Env:GULIERP_FOUNDATION_CONNECTION
+            Value = $env:GULIERP_FOUNDATION_CONNECTION
+        }
+    }
+}
+
+function Set-OperatorConnectionEnvironment {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)] [string]$ConnectionString)
+
+    $env:ConnectionStrings__GuliERP = $ConnectionString
+    $env:GULIERP_ConnectionStrings__GuliERP = $ConnectionString
+    $env:GULIERP_FOUNDATION_CONNECTION = $ConnectionString
+}
+
+function Restore-OperatorConnectionEnvironment {
+    [CmdletBinding()]
+    param()
+
+    if ($null -eq $script:OriginalOperatorConnectionEnvironment) { return }
+
+    foreach ($name in @(
+            'ConnectionStrings__GuliERP',
+            'GULIERP_ConnectionStrings__GuliERP',
+            'GULIERP_FOUNDATION_CONNECTION'
+        )) {
+        $state = $script:OriginalOperatorConnectionEnvironment[$name]
+        if ($state.Exists) {
+            Set-Item -Path "Env:$name" -Value $state.Value
+        }
+        else {
+            Remove-Item -Path "Env:$name" -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 function Assert-AntiforgeryCookieCaptured {
@@ -288,6 +369,8 @@ Write-Host "G2-004 — Authentication Kernel Operator Evidence Pack"
 Write-Host "Repository: $RepoRoot"
 Write-Host "Dotnet: $Dotnet"
 
+$script:OriginalOperatorConnectionEnvironment = Save-OperatorConnectionEnvironment
+
 # Connection string
 $conn = $env:ConnectionStrings__GuliERP
 if (-not $conn) { $conn = $env:GULIERP_FOUNDATION_CONNECTION }
@@ -297,8 +380,9 @@ if (-not $conn) {
     }
     $conn = Read-Host -Prompt 'Npgsql connection string'
 }
-$displayConn = ($conn -replace 'Password=[^;]+', 'Password=***')
+$displayConn = (Redact-SecretText $conn).Trim()
 Write-Host "[G2-004] Using connection: $displayConn"
+Set-OperatorConnectionEnvironment -ConnectionString $conn
 
 # Operator test user (marker prefix enforced)
 $MarkerPrefix = 'test_operator_'
@@ -478,7 +562,11 @@ else {
 
 if (-not $SkipPrompt) {
     $ans = Read-Host "Proceed with the 8-step evidence pack? (y/N)"
-    if ($ans -ne 'y' -and $ans -ne 'Y') { exit 1 }
+    if ($ans -ne 'y' -and $ans -ne 'Y') {
+        Restore-OperatorConnectionEnvironment
+        Complete-Cleanup
+        exit 1
+    }
 }
 
 # ===============================================================
@@ -497,6 +585,7 @@ Pass "Build clean"
 Step-Header 2 'Foundation migration'
 & $Dotnet ef database update --project modules/foundation/GuliERP.Foundation/GuliERP.Foundation.csproj --no-build 2>&1 | Tee-Object -Variable migOut | Out-Null
 if ($LASTEXITCODE -ne 0) {
+    Write-RedactedCommandDiagnostics -Label 'Foundation migration' -Output $migOut
     Fail-Fatal "Foundation migration failed (exit=$LASTEXITCODE)." 1
 }
 Pass "Foundation migration applied (or already up to date)"
@@ -507,6 +596,7 @@ Pass "Foundation migration applied (or already up to date)"
 Step-Header 3 'Identity migration'
 & $Dotnet ef database update --project modules/identity/GuliERP.Identity.Infrastructure/GuliERP.Identity.Infrastructure.csproj --startup-project apps/api/GuliERP.Api/GuliERP.Api.csproj --no-build 2>&1 | Tee-Object -Variable idMigOut | Out-Null
 if ($LASTEXITCODE -ne 0) {
+    Write-RedactedCommandDiagnostics -Label 'Identity migration' -Output $idMigOut
     Fail-Fatal "Identity migration failed (exit=$LASTEXITCODE)." 1
 }
 Pass "Identity migration applied (or already up to date)"
@@ -1180,6 +1270,7 @@ foreach ($p in @($script:Round1HostPid, $script:Round2HostPid, $script:BadDbHost
 }
 
 Complete-Cleanup
+Restore-OperatorConnectionEnvironment
 
 # Final defensive cleanup: stop any remaining script-owned
 # PIDs (e.g. if a step was skipped because the script exited

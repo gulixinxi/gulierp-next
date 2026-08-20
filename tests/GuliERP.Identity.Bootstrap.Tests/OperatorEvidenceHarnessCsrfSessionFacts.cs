@@ -68,6 +68,43 @@ public class OperatorEvidenceHarnessCsrfSessionFacts
         Assert.Contains("New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::UTF8)", script);
     }
 
+    [Fact]
+    public void OperatorEvidenceHarness_PropagatesResolvedConnection_AndRestoresCallerEnvironment()
+    {
+        var script = NormalizeNewlines(ReadOperatorEvidenceScript());
+
+        Assert.Contains("$script:OriginalOperatorConnectionEnvironment = Save-OperatorConnectionEnvironment", script);
+        Assert.Contains("function Set-OperatorConnectionEnvironment", script);
+        Assert.Contains("$env:ConnectionStrings__GuliERP = $ConnectionString", script);
+        Assert.Contains("$env:GULIERP_ConnectionStrings__GuliERP = $ConnectionString", script);
+        Assert.Contains("$env:GULIERP_FOUNDATION_CONNECTION = $ConnectionString", script);
+        Assert.Contains("Set-OperatorConnectionEnvironment -ConnectionString $conn", script);
+
+        Assert.Contains("function Restore-OperatorConnectionEnvironment", script);
+        Assert.Contains("Set-Item -Path \"Env:$name\" -Value $state.Value", script);
+        Assert.Contains("Remove-Item -Path \"Env:$name\" -ErrorAction SilentlyContinue", script);
+        Assert.Contains("Restore-OperatorConnectionEnvironment\n    Complete-Cleanup\n    exit $exitCode", script);
+        Assert.Contains("Complete-Cleanup\nRestore-OperatorConnectionEnvironment", script);
+
+        Assert.Contains("$savedConn = $env:ConnectionStrings__GuliERP", script);
+        Assert.Contains("$env:ConnectionStrings__GuliERP = $savedConn", script);
+        Assert.Contains("$env:GULIERP_ConnectionStrings__GuliERP = $savedGulierpConn", script);
+        Assert.Contains("$env:GULIERP_FOUNDATION_CONNECTION = $savedFoundationConn", script);
+    }
+
+    [Fact]
+    public void OperatorEvidenceHarness_PrintsRedactedMigrationDiagnostics_OnMigrationFailure()
+    {
+        var script = NormalizeNewlines(ReadOperatorEvidenceScript());
+
+        Assert.Contains("function Redact-SecretText", script);
+        Assert.Contains("\"(?i)(Password|Pwd)\\s*=\\s*[^;`r`n]+\"", script);
+        Assert.Contains("Write-RedactedCommandDiagnostics -Label 'Foundation migration' -Output $migOut", script);
+        Assert.Contains("Write-RedactedCommandDiagnostics -Label 'Identity migration' -Output $idMigOut", script);
+        Assert.DoesNotContain("Write-Host $migOut", script);
+        Assert.DoesNotContain("Write-Host $idMigOut", script);
+    }
+
     private static string NormalizeNewlines(string value)
     {
         return value.Replace("\r\n", "\n");
