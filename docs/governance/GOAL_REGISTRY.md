@@ -4,14 +4,12 @@
 
 | Field | Value |
 |---|---|
-| Goal | **G2-004V1 — Secure Operator Authentication Bootstrap** (separate .NET tool + SecureString operator script; no hardcoded passwords) |
-| Gate | `G2_004_AUTH_CSRF_HARDENED_OPERATOR_DB_PENDING` (G2-004 + G2-004R1 closed) |
-| Status | **`G2_004V1_OPERATOR_BOOTSTRAP_READY`** — Mavis-side 8 bootstrap safety unit tests + 26 G2-004 unit + 55 G2-004R1 integration all PASS. 0 G2-001 / G2-002 / G2-003 / R1 / V1 / V2 / R0 / G2-004 / G2-004R1 regressions. 0 hardcoded passwords. 0 secret leaks. Operator unlocks to `G2_004_AUTHENTICATION_KERNEL_VERIFIED` after real-DB bootstrap + 9-step evidence. |
-| Entry Gate | `G2_004_AUTH_CSRF_HARDENED_OPERATOR_DB_PENDING` (G2-004 + G2-004R1 closed) |
-| Verification | `docs/verification/G2_004V1_OPERATOR_BOOTSTRAP_REPORT.md` |
-| Bootstrap Tool | `tools/GuliERP.Identity.Bootstrap/GuliERP.Identity.Bootstrap.csproj` (separate .NET 10 console; uses Identity UserManager.CreateAsync; refuses to touch any user WITHOUT the `test_operator_` marker prefix) |
-| Bootstrap Wrapper | `tools/dev/g2-004-bootstrap-operator-user.ps1` (PowerShell wrapper; `Read-Host -AsSecureString`; BSTR zero-free; no plain-text log) |
-| Operator Unlock | `tools/dev/g2-004-operator-evidence.ps1` (updated; `Use-OperatorPlainPassword` helper; SecureString lifecycle: read once → convert per use → wipe on exit) |
+| Goal | **G2-004V1R1 — Operator Evidence Harness Reliability Fix** (Invoke-HttpProbe helper + real Round 2 restart + per-suite test parsing; docs/tooling only) |
+| Gate | `G2_004V1_OPERATOR_BOOTSTRAP_READY` (G2-004 + G2-004R1 + G2-004V1 closed) |
+| Status | **`G2_004_OPERATOR_EVIDENCE_HARNESS_READY`** — Mavis-side 159/168 tests PASS / 9 LOUD-FAIL unchanged. 0 production code change. 2 real harness defects fixed (HTTP negative handling + Round 2 false-PASS). Operator unlocks to `G2_004_AUTHENTICATION_KERNEL_VERIFIED` after the 8-step evidence run with the new harness. |
+| Entry Gate | `G2_004V1_OPERATOR_BOOTSTRAP_READY` (G2-004 + G2-004R1 + G2-004V1 closed) |
+| Verification | `docs/verification/G2_004V1R1_HARNESS_RELIABILITY_REPORT.md` |
+| Harness | `tools/dev/g2-004-operator-evidence.ps1` (rewritten; `Invoke-HttpProbe` / `Wait-HostReady` / `Start-HostProcess` / `Stop-HostProcess` / `Complete-Cleanup` helpers; per-suite test parsing; real Round 2; real fail-fast via `Fail-Fatal`) |
 | Next Goal | **G2-005 — Authorization Kernel** (NOT STARTED, HALTED; explicit user authorization required) |
 | Hard Stop | G2-005 must NOT auto-start in this Mavis session. G2-005 kickoff requires a fresh session with explicit user authorization. |
 | Forbidden follow-up without user authorization | `G2-005` implementation (any [Authorize] policy with permission / DataScope semantics, IPermissionService, role-permission matrix, menu / button / field permission, DataScope filters, JwtBearer scheme registration, OpenIddict server, the 8 read-only /api/v1/identity/... HTTP directory endpoints, UserPlantMembership table) |
