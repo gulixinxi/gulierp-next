@@ -928,7 +928,8 @@ try {
     Write-Host "============================================================"
     Write-Host "[G2-005] OPERATOR EVIDENCE HARNESS — ALL CHECKS PASS"
     Write-Host "============================================================"
-    Write-Host "Gate remains: G2_005_CODE_READY_OPERATOR_EVIDENCE_PENDING until this Operator evidence is reviewed and accepted."
+    Write-Host "Operator evidence: ALL CHECKS PASS."
+    Write-Host "Governance status: see GOAL_REGISTRY.md (current Gate: G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED)."
     Write-Host "Environment restoration status:"
     foreach ($name in @('ConnectionStrings__GuliERP', 'GULIERP_ConnectionStrings__GuliERP', 'GULIERP_FOUNDATION_CONNECTION')) {
         Write-Host "  $name = RESTORED (verify in caller shell if desired; values are not printed)"

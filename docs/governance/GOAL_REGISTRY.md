@@ -4,17 +4,27 @@
 
 | Field | Value |
 |---|---|
+| Goal | **MDM-000 — Master Data Convention Freeze** |
+| Gate | **`MDM_000_MASTER_DATA_CONVENTION_FROZEN`** |
+| Status | **FROZEN** — V1 Master Data Convention locked at 2026-08-20. Frozen entities: Uom / ItemCategory / Item / BusinessPartner / Warehouse / Location. WorkCenter DEFERRED to Manufacturing MDM extension. Common entity fields frozen (Id/Code/Name/Status/TenantId/Description/Audit). Status = ACTIVE/INACTIVE only in V1. Code is MANUAL (no auto-coding engine). ItemNature = MATERIAL/SEMI_FINISHED/FINISHED_GOOD/SERVICE; InventoryMethod EXCLUDED from V1 Item (Inventory Accounting owns it). PACKAGE ItemNature DEFERRED. BusinessPartner = new aggregate (NOT DEV copy); normalized BusinessPartnerRole (3 confirmed: BPT_CUSTOMER/SUPPLIER/SUBCONTRACTOR, 4th role DEFERRED). Warehouse has OPTIONAL PlantId. TRAE UX handoff recorded (decimalPlaces removed; itemType→itemNature; inventoryMethod removed). Precision DEFERRED (ROUNDING_MODE_NOT_FOUND; UNIT_PRICE conflict; trigger = first Qty/Price/Amount/TaxRate entity). |
+| Entry Gate | `ID_GENERATION_POSTGRES_HILO_VERIFIED · CLOSED` (per ID-GEN-001 closure, gate flip recorded below in Previous Active section) |
+| Architecture / Decision | `docs/architecture/MDM_000_MASTER_DATA_CONVENTION_V1.md` |
+| Verification | `tools/discovery/mdm-000/frozen-convention.json` (machine-readable mirror); 25 sections, 18 open decisions, 10 deferred items (D-001..D-010) |
+| Local Evidence | Markdown internal consistency PASS; JSON parse PASS; PENDING_CODEX_ID_STRATEGY_R1 fully replaced by POSTGRESQL_HILO_BIGINT; no InventoryMethod in V1 Item; no mandatory PlantId in Warehouse; no Uom.DecimalPlaces in V1; no Both boolean in BP; Technical ID != Business Code != Document Number; DB target = gulierp_g2_003_test. No PostgreSQL migration in this Goal (CONVENTION FREEZE only). |
+| TRAE UX Reconciliation | commit `06056b1` will need a follow-up commit to: (a) remove Uom.decimalPlaces; (b) rename Item.itemType to Item.itemNature; (c) remove Item.inventoryMethod; (d) add BusinessPartner / Warehouse / Location types. This Goal does NOT modify apps/web. |
+| Stale governance housekeeping | `tools/dev/g2-005-operator-evidence.ps1` L931 replaced with version-independent wording (no hardcoded Gate; refer to GOAL_REGISTRY.md). |
+| Next Mainline | **MDM-001 Real Master Data Vertical Slice** (separate future Goal). MDM-001 must (a) use `gulierp_g2_003_test` only (assert via `tools/dev/assert-gulierp-db-target.ps1`); (b) auto-seed only SAFE_TO_SEED_SYSTEM / SAFE_TO_SEED_TENANT_TEMPLATE; (c) implement WorkCenter is DEFERRED. |
+| Forbidden follow-up without user authorization | MDM-001 implementation, Coding Engine, Precision / Rounding implementation, Document Numbering implementation, Master Data Coding implementation, Inventory / Sales / Purchase business API implementation, MDM-000 re-freeze (V1 is final; V2 only via new Goal). |
+
+## Previous Active Goal (superseded)
+
+| Field | Value |
+|---|---|
 | Goal | **ID-GEN-001 — Migrate Custom Snowflake to PostgreSQL HiLo** |
-| Gate | **`ID_GENERATION_CODE_READY_OPERATOR_EVIDENCE_PENDING`** |
-| Status | **CODE_READY_OPERATOR_EVIDENCE_PENDING** — code-side migration to `PRIMARY_TECHNICAL_ID_STRATEGY = POSTGRESQL_HILO_BIGINT` is implemented; first-party Identity technical IDs remain `long` / `bigint`; custom Snowflake production path is retired; local build and non-database structural proofs pass. ID-GEN-001R1 diagnosed the Operator `42P01` missing sequence failure as a harness migration command issue: `dotnet ef --no-build` was using the stale Debug migration assembly unless `--configuration Release` was supplied. The harness is corrected; real PostgreSQL migration/write evidence still requires Operator rerun. |
-| Entry Gate | `G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED · CLOSED` |
-| Decision | `docs/architecture/ID_STRATEGY_FINAL_DECISION.md` |
-| Verification | `docs/verification/ID_GEN_001_POSTGRES_HILO_REPORT.md`; `docs/verification/ID_GEN_001R1_MISSING_HILO_SEQUENCE_REPORT.md` |
-| Current Proven Foundation / Identity / Auth / Authz State | `G2_004_AUTHENTICATION_KERNEL_VERIFIED · CLOSED`; `FOUNDATION_SUFFICIENT_TO_PROCEED_G2_005 = YES`; `G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED · CLOSED` |
-| Local Evidence | `GuliERP.slnx` Release build PASS; Foundation unit 44/44 PASS; Identity unit 21/21 PASS; Bootstrap tests 27/27 PASS; ID-GEN-001 structural integration tests 2/2 PASS; active source Snowflake scan only hits absence assertions. |
-| Operator Evidence | **PENDING** — after ID-GEN-001R1, the G2-005 harness applies migrations with `--configuration Release --no-build`; Operator must rerun only after the DB target confirms `gulierp_g2_003_test`, then verify `identity.gulierp_hilo_sequence` exists and focused real PostgreSQL HiLo tests pass. |
-| Next Mainline | **Operator PostgreSQL evidence for ID-GEN-001**, then **MDM-000 Convention Freeze** only after the HiLo migration gate is upgraded to `ID_GENERATION_POSTGRES_HILO_VERIFIED`. |
-| Forbidden follow-up without user authorization | ID platform, distributed worker registry, Numbering Engine, document numbering implementation, master-data coding implementation, MDM/Inventory/Sales/Purchase business API implementation. |
+| Gate | `ID_GENERATION_POSTGRES_HILO_VERIFIED · CLOSED` |
+| Status | **CLOSED** — code-side migration to `PRIMARY_TECHNICAL_ID_STRATEGY = POSTGRESQL_HILO_BIGINT` is implemented; first-party Identity technical IDs are `long` / `bigint`; custom Snowflake production path is retired. ID-GEN-001R1 (commit `0463a8d fix(identity): repair missing postgres hilo sequence`) repaired the Operator `42P01` missing sequence failure. R1 also aligned the Operator harness to apply migrations with `--configuration Release --no-build`. Final state: HiLo sequence `identity.gulierp_hilo_sequence` exists; focused real PostgreSQL HiLo tests pass; D-005 (custom Snowflake) is CLOSED. Operator evidence pack recorded in `docs/verification/ID_GEN_001_POSTGRES_HILO_REPORT.md` + `ID_GEN_001R1_MISSING_HILO_SEQUENCE_REPORT.md`. |
+| Architecture | `docs/architecture/ID_STRATEGY_FINAL_DECISION.md` (re-evaluated by Codex during ID-GEN-001: `7c908fa docs(architecture): re-evaluate id strategy with postgres hilo`) |
+| Next Goal | **MDM-000 — Master Data Convention Freeze** (now ACTIVE above) |
 
 ## Previous Active Goal (superseded)
 

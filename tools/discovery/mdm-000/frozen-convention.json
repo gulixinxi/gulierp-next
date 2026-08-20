@@ -1,0 +1,303 @@
+{
+  "meta": {
+    "goal": "MDM-000",
+    "task": "MDM-000 — Master Data Convention Freeze",
+    "frozen_at": "2026-08-20T19:03:33+08:00",
+    "session": "mvs_11a243eed8e544d6b19087711a392283",
+    "status": "FROZEN",
+    "evidence_inputs": [
+      "MDM-000A Convention Evidence Synthesis (EVIDENCE_READY 2026-08-20)",
+      "MDM-000D R1 curated seed assets (9 seed JSONs + manifest)",
+      "SUP-001 Numbering/Coding/Precision Evidence",
+      "BASE-000 ERP Configuration Inventory",
+      "G2-003/004/005 architecture (Tenant/Company/Plant/Authorization)",
+      "TRAE UX prototype (commit 06056b1)",
+      "DEV reverse-engineering (READ-ONLY)"
+    ],
+    "supersedes": "tools/discovery/mdm-000a/convention-evidence.json (was EVIDENCE_READY; this is the FROZEN product)"
+  },
+  "technical_id": {
+    "type": "long",
+    "postgresql_type": "bigint",
+    "generation": "EF Core / Npgsql PostgreSQL HiLo via sequence",
+    "status": "FROZEN",
+    "forbidden_alternatives": ["Guid", "UUIDv7", "Snowflake", "manual workerId"],
+    "evidence_ref": "ID_STRATEGY_FINAL_DECISION.md + ID-GEN-001R1 (Hilo sequence repair)",
+    "separation": {
+      "TECHNICAL_ID": "long / bigint, application-side HiLo sequence",
+      "MASTER_DATA_CODE": "business-readable, scope-bounded, human-typed or external standard",
+      "DOCUMENT_NUMBER": "auto-allocated, time-bounded, scope-bounded (per SUP-001 §1.5)"
+    }
+  },
+  "common_entity_convention": {
+    "fields": [
+      {"name": "Id",                "type": "long",            "required": true,  "kind": "TechnicalID", "description": "Snowflake/HiLo bigint primary key"},
+      {"name": "Code",              "type": "string",          "required": true,  "kind": "BusinessCode", "description": "Business code; case-normalized; scoped per entity uniqueness rule"},
+      {"name": "Name",              "type": "string",          "required": true,  "kind": "Display", "description": "Display name (localizable in V2)"},
+      {"name": "Status",            "type": "enum(ACTIVE,INACTIVE)", "required": true,  "kind": "Lifecycle", "description": "ACTIVE / INACTIVE only in V1"},
+      {"name": "TenantId",          "type": "long",            "required": "contextual", "kind": "TenantScope", "description": "Required if entity is tenant-owned"},
+      {"name": "Description",       "type": "string",          "required": false, "kind": "Display", "description": "Optional; only if business value"},
+      {"name": "CreatedAt",         "type": "datetime",        "required": true,  "kind": "Audit", "description": "Reuse Foundation IAuditWriter"},
+      {"name": "CreatedBy",         "type": "long",            "required": true,  "kind": "Audit", "description": "FK to User"},
+      {"name": "UpdatedAt",         "type": "datetime",        "required": true,  "kind": "Audit"},
+      {"name": "UpdatedBy",         "type": "long",            "required": true,  "kind": "Audit"}
+    ],
+    "forbidden_v1": [
+      "Per-entity Audit framework (reuse Foundation IAuditWriter)",
+      "Per-entity Tenant framework (reuse Foundation ITenantContext)",
+      "Per-entity SoftDelete framework (use Status=INACTIVE)"
+    ]
+  },
+  "status_lifecycle": {
+    "v1_values": ["ACTIVE", "INACTIVE"],
+    "forbidden_v1": ["Draft", "Approved", "Archived", "Deleted", "Pending"],
+    "policy": "INACTIVE stops new references; existing references are preserved (MASTER_INACTIVE_DOES_NOT_BLOCK_REFERENCES, per POC-003 pattern). Hard delete is forbidden in V1."
+  },
+  "code_convention": {
+    "required": true,
+    "trimmed": true,
+    "case_normalized_for_uniqueness": true,
+    "uniqueness_scope": "per entity, per tenant/company/parent (entity-specific)",
+    "forbidden_v1": [
+      "SELECT MAX(Code) + 1 (no implicit auto-increment on Code)",
+      "Using HiLo Id as Code (Id is technical, Code is business)"
+    ],
+    "v1_coding_mode": "MANUAL: user types Code. Auto-coding engine DEFERRED to Master Data Coding Goal (post MDM-001).",
+    "evidence_ref": "SUP-001 §1.5 (open) + per-master decisions in this document"
+  },
+  "entities": [
+    {
+      "name": "Uom",
+      "category": "SystemReferenceData",
+      "scope": "SYSTEM (cross-tenant)",
+      "uniqueness": "(Code) globally unique",
+      "frozen_fields": ["Id", "Code", "Name", "Symbol(nullable)", "Dimension", "Kind", "Status", "Description", "CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy"],
+      "frozen_enums": {
+        "Dimension": ["COUNT", "MASS", "LENGTH", "AREA", "VOLUME", "TIME"],
+        "Kind": ["DISCRETE", "SI"]
+      },
+      "explicitly_excluded_v1": [
+        "DecimalPlaces (PROPOSED in TRAE prototype; MDM-000D has no per-UOM evidence; precision handled by Business Semantic Precision Convention)"
+      ],
+      "seed_status": "13 DEV items SAFE_TO_SEED_SYSTEM + 8 EXTERNAL_STANDARD_CANDIDATE opt-in",
+      "evidence_ref": "MDM-000D R1 system/uom.json (21 items)"
+    },
+    {
+      "name": "ItemCategory",
+      "category": "MasterData",
+      "scope": "TENANT_SCOPED",
+      "uniqueness": "(TenantId, Code) unique; (TenantId, ParentId, Code) if hierarchy used",
+      "frozen_fields": ["Id", "TenantId", "Code", "Name", "ParentId(nullable)", "Status", "Description", "CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy"],
+      "hierarchy_decision": {
+        "status": "ALLOWED_BUT_NOT_REQUIRED",
+        "evidence": "DEV has no hierarchy evidence (商品表.分类ID is flat reference)",
+        "v1_constraint": "ParentId nullable; cycle detection (no self-reference, no transitive cycle)",
+        "forbidden_v1": [
+          "MAX_DEPTH = 2 (no fixed-depth freeze; depth is contextual)",
+          "3-level or unlimited enterprise tree framework"
+        ],
+        "derived_not_stored": ["Level (computed from ParentId chain)", "FullPath (denormalized display; compute on read)"]
+      },
+      "explicitly_excluded_v1": [
+        "Level (derived; do not store unless perf evidence requires)",
+        "FullPath (derived; do not persist)"
+      ],
+      "seed_status": "no MDM-000D seed file (REUSE MDM-001 implementation phase)"
+    },
+    {
+      "name": "Item",
+      "category": "MasterData",
+      "scope": "TENANT_SCOPED",
+      "uniqueness": "(TenantId, Code) unique",
+      "frozen_fields": ["Id", "TenantId", "Code", "Name", "Specification(nullable)", "CategoryId(nullable)", "BaseUomId", "ItemNature", "Status", "Description", "CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy"],
+      "frozen_enums": {
+        "ItemNature": ["MATERIAL", "SEMI_FINISHED", "FINISHED_GOOD", "SERVICE"]
+      },
+      "nature_sourcing_separation": {
+        "ItemNature": "what the item IS (raw material / semi-finished / finished good / service)",
+        "SourcingPolicy": "where the item COMES FROM (Purchased / Manufactured / Subcontracted / CustomerSupplied) — separate dimension, NOT in V1 Item",
+        "evidence": "DEV 商品表 mixes 7 booleans (产品/物料/半成品/外购/自制/外协/客供) into one field; V1 splits the two semantics",
+        "package_status": "PACKAGE (TRAE prototype): DEFERRED — no business evidence in this session; reintroduce when V2 SKU variant work begins"
+      },
+      "explicitly_excluded_v1": [
+        "InventoryMethod (FIFO/LIFO/WEIGHTED_AVG/SPECIFIC) — this is Inventory Accounting / Valuation, NOT a Master Data field. Defer to Inventory module.",
+        "PACKAGE ItemNature (no business evidence yet)",
+        "Color/Material/Size (SKU variant per P1-005 plan, deferred)",
+        "image column (DEV anti-pattern per BASE-000)",
+        "50+ ERP fields (V2+)",
+        "7 booleans (collapsed to ItemNature enum; SourcingPolicy is separate dimension)"
+      ],
+      "seed_status": "no MDM-000D seed file (Item is tenant-mastered)"
+    },
+    {
+      "name": "BusinessPartner",
+      "category": "MasterData (new aggregate, NOT a copy of DEV physical table)",
+      "scope": "TENANT_SCOPED",
+      "uniqueness": "(TenantId, Code) unique",
+      "frozen_fields": ["Id", "TenantId", "Code", "Name", "Status", "TaxId(optional)", "DefaultCurrencyId(optional)", "PaymentTermId(optional)", "PaymentMethodId(optional)", "CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy"],
+      "role_model": {
+        "decision": "Normalized role relation: BusinessPartnerRole table",
+        "evidence": "GuliERP new aggregate; DEV has no dedicated BP table",
+        "forbidden": [
+          "Duplicate BP rows to express multiple roles (one BP, multiple role rows)",
+          "Both boolean flag (use BusinessPartnerRole instead)"
+        ],
+        "confirmed_role_codes_from_MDM_000D": [
+          "BPT_CUSTOMER",
+          "BPT_SUPPLIER",
+          "BPT_SUBCONTRACTOR"
+        ],
+        "deferred_role_codes": [
+          "MDM-000D business-partner-type.json had 4 items; the 4th item name was elided in MDM-000A evidence (PENDING re-extract). V1 ships with 3 confirmed roles; 4th role is DEFERRED until evidence is reconfirmed."
+        ]
+      },
+      "explicitly_excluded_v1": [
+        "Both boolean (replaced by BusinessPartnerRole)",
+        "Sales-specific fields in BP main table (extend via module)",
+        "Purchase-specific fields in BP main table (extend via module)"
+      ],
+      "seed_status": "BusinessPartnerType seed (3 confirmed + 1 deferred) is TENANT_TEMPLATE; BP itself is tenant-mastered"
+    },
+    {
+      "name": "Warehouse",
+      "category": "MasterData",
+      "scope": "COMPANY_SCOPED (per TenantId + CompanyId)",
+      "uniqueness": "(TenantId, CompanyId, Code) unique",
+      "frozen_fields": ["Id", "TenantId", "CompanyId", "Code", "Name", "PlantId(nullable)", "Status", "Description", "CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy"],
+      "plant_dependency": {
+        "decision": "PlantId is OPTIONAL in V1",
+        "evidence": "Warehouse must work even when Manufacturing module is not enabled",
+        "forbidden_v1": ["Mandatory PlantId on Warehouse (must be optional)"]
+      },
+      "explicitly_excluded_v1": [
+        "Bin/Aisle/Shelf hierarchy (defer to V2 WMS)",
+        "Mandatory Plant dependency"
+      ],
+      "seed_status": "no MDM-000D seed (per-Tenant; MDM-001 will provide skeleton)"
+    },
+    {
+      "name": "Location",
+      "category": "MasterData",
+      "scope": "WAREHOUSE_SCOPED",
+      "uniqueness": "(WarehouseId, Code) unique",
+      "frozen_fields": ["Id", "TenantId", "Code", "Name", "WarehouseId", "Status", "Description", "CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy"],
+      "principle": "Warehouse != Location. Location belongs to Warehouse. V1 only supports internal location/bin; no large WMS bin hierarchy engine.",
+      "explicitly_excluded_v1": ["Multi-level WMS bin hierarchy", "Zone/Aisle/Bin 3-level"]
+    },
+    {
+      "name": "WorkCenter",
+      "category": "MasterData (DEFERRED_FROM_MDM_001)",
+      "scope": "PLANT_SCOPED",
+      "uniqueness": "(PlantId, Code) unique",
+      "frozen_fields": ["Id", "TenantId", "Code", "Name", "PlantId", "Status", "CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy"],
+      "deferred_reason": "Inventory / Sales / Purchase do not require WorkCenter in V1. Including it now risks Manufacturing module creep into MDM-001.",
+      "convention_status": "DEFERRED_TO_MANUFACTURING_MDM_EXTENSION",
+      "do_not_implement_in_mdm_001": true
+    }
+  ],
+  "reference_data_seeds": {
+    "policy": "Only SAFE_TO_SEED_SYSTEM and SAFE_TO_SEED_TENANT_TEMPLATE auto-load",
+    "forbidden_auto_seed": ["REFERENCE_ONLY", "PROPOSED", "INCOMPLETE", "MIXED"],
+    "v1_first_batch": {
+      "uom_dev_13": "SAFE_TO_SEED_SYSTEM (manifest first batch)",
+      "uom_external_8": "PROPOSED; require explicit opt-in (do NOT auto-seed)",
+      "currency": "REFERENCE_ONLY (defer; no DEV evidence; depends on external rate feed)",
+      "country": "NEEDS_EXTERNAL_STANDARD_UPDATE (defer; runtime load from GB/T 2260 + ISO 3166)",
+      "ethnic_group": "INCOMPLETE 42/56 (defer; re-extract to 56/56 first)",
+      "education_6_dev": "SAFE_TO_SEED_SYSTEM",
+      "education_4_gbt": "PROPOSED; require opt-in",
+      "semantic_data_type": "PROPOSED (do NOT auto-seed; await Business Semantic Precision Freeze)",
+      "payment_method_5": "SAFE_TO_SEED_TENANT_TEMPLATE (per Tenant)",
+      "business_partner_type_3_confirmed": "SAFE_TO_SEED_TENANT_TEMPLATE; 4th role DEFERRED",
+      "position_4": "SAFE_TO_SEED_TENANT_TEMPLATE (Occupation is OCCUPATION_SOURCE_NOT_FOUND; do not seed Occupation)"
+    }
+  },
+  "tenant_company_scope": {
+    "SYSTEM": ["Uom", "Currency (when loaded)", "Country (when loaded)", "EthnicGroup (when complete)", "Education (DEV 6 only)", "SemanticType (post Precision Freeze)"],
+    "TENANT_SCOPED": ["ItemCategory", "Item", "BusinessPartner", "WorkCenter (deferred)"],
+    "COMPANY_SCOPED": ["Warehouse"],
+    "WAREHOUSE_SCOPED": ["Location"],
+    "TENANT_TEMPLATE": ["PaymentMethod", "PaymentTerm", "BusinessPartnerType (3 confirmed)", "Position"]
+  },
+  "audit": {
+    "reuse_foundation": "IAuditWriter (per POC-003 + G2-002)",
+    "fields": ["CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy"],
+    "do_not_rebuild": true,
+    "do_not_per_row_audit": true
+  },
+  "precision": {
+    "status": "DEFERRED_TO_BUSINESS_SEMANTIC_PRECISION_FREEZE",
+    "evidence": "SUP-001 §3.4 ROUNDING_MODE_NOT_FOUND; UNIT_PRICE conflict (36,4) vs (34,6)",
+    "trigger": "Before the first entity that contains Quantity, UnitPrice, Amount, or TaxRate is implemented (Inventory / Sales / Purchase)",
+    "do_not_block": ["UOM", "ItemCategory", "Item", "BusinessPartner", "Warehouse", "Location"],
+    "may_not_pick": ["HALF_EVEN", "HALF_UP", "ToEven", "AwayFromZero", "Bankers", "HalfDown"]
+  },
+  "business_number_separation": {
+    "TECHNICAL_ID": "long / bigint (per ID Strategy Final Decision; FROZEN)",
+    "MASTER_DATA_CODE": "business-readable, scope-bounded (per entity)",
+    "DOCUMENT_NUMBER": "auto-allocated, time-bounded, scope-bounded (DEFERRED to Document Numbering Convention; SUP-001 §1.5 OPEN)",
+    "tenant_scope_open": "GLOBAL vs PER_TENANT vs PER_PLANT (SUP-001 NUM-OBS-001 UNKNOWN; Convention decision required)"
+  },
+  "trae_ux_reconciliation": {
+    "status": "MDM_UX_RECONCILIATION_REQUIRED",
+    "scope": "TRAE commit 06056b1 has 2 fields that must be reshaped per MDM-000 freeze; TRAE file ownership is NOT changed by this task (handoff only)",
+    "changes_required": [
+      {"file": "apps/web/src/types/mdm.ts Uom interface", "remove": "decimalPlaces field", "reason": "MDM-000 excludes Uom.DecimalPlaces; precision handled by Business Semantic Precision Convention"},
+      {"file": "apps/web/src/types/mdm.ts UomList / UomForm", "remove": "小数位 column + form input", "reason": "Same as above"},
+      {"file": "apps/web/src/types/mdm.ts ItemCategory interface", "keep": "parentId nullable (PROPOSED → FROZEN with cycle detection)", "note": "level and fullPath are DERIVED, not stored"},
+      {"file": "apps/web/src/types/mdm.ts Item interface", "replace": "itemType: 'goods' | 'service' | 'package' → itemNature: 'MATERIAL' | 'SEMI_FINISHED' | 'FINISHED_GOOD' | 'SERVICE'", "remove": "inventoryMethod field (defer to Inventory module)"},
+      {"file": "apps/web/src/types/mdm.ts ItemList / ItemForm", "remove": "inventoryMethod column + form input", "reason": "MDM-000 explicitly excludes InventoryMethod from V1 Item"},
+      {"file": "apps/web/src/types/mdm.ts ItemList / ItemForm", "add": "sourcing policy placeholder (NOT FROZEN; defer to SourcingPolicy sub-system)"}
+    ],
+    "do_not_modify_apps_web_in_this_task": true
+  },
+  "stale_governance_messages": {
+    "g2-005_operator_evidence_ps1": {
+      "lines": [929, 931],
+      "current_text": "[G2-005] OPERATOR EVIDENCE HARNESS — ALL CHECKS PASS / Gate remains: G2_005_CODE_READY_OPERATOR_EVIDENCE_PENDING until this Operator evidence is reviewed and accepted.",
+      "frozen_replacement": "[G2-005] OPERATOR EVIDENCE HARNESS — ALL CHECKS PASS. Operator evidence: ALL CHECKS PASS. Governance status: see GOAL_REGISTRY.md (current Gate: G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED).",
+      "do_not_hardcode_gate": true,
+      "rationale": "Avoid future drift between script final verdict and governance Gate."
+    }
+  },
+  "deferred_items": {
+    "D-001": "WorkCenter master (DEFERRED_TO_MANUFACTURING_MDM_EXTENSION)",
+    "D-002": "PACKAGE ItemNature (DEFERRED; re-evaluate when V2 SKU variant work begins)",
+    "D-003": "BusinessPartner 4th role (DEFERRED; re-extract MDM-000D business-partner-type.json to confirm 4th item name)",
+    "D-004": "DocumentNumbering Convention tenant scope (DEFERRED; SUP-001 NUM-OBS-001 UNKNOWN)",
+    "D-005": "Business Semantic Precision + RoundingMode (DEFERRED; trigger = first Qty/Price/Amount/TaxRate entity)",
+    "D-006": "Master Data Coding Engine (DEFERRED; MDM-001 uses MANUAL code; auto-coding is a separate future Goal)",
+    "D-007": "Cross-reference codes (客户料号 / 供应商料号 / U8 import / 内控码) — separate table, deferred to V2",
+    "D-008": "SoftDelete entity with restore window (defer to V2; V1 uses Status=INACTIVE)",
+    "D-009": "SourcingPolicy sub-system (separate dimension from ItemNature; defer to V2 Procurement/MFG)",
+    "D-010": "Stable DB name cutover (RECOMMEND_STABLE_DB_CUTOVER_BEFORE_MDM = NO; trigger = first formal env split or Production deployment prep)"
+  },
+  "implementation_entry_contract": {
+    "mdm_001_entry": "MDM-001 Real Master Data Vertical Slice may begin using THIS document as input",
+    "first_class_in_mdm_001": ["Uom", "ItemCategory", "Item", "BusinessPartner", "Warehouse", "Location"],
+    "deferred_in_mdm_001": ["WorkCenter"],
+    "first_seeds": ["uom_dev_13 (auto-seed)", "payment_method_5 (per Tenant)", "business_partner_type_3_confirmed (per Tenant)", "position_4 (per Tenant)", "education_6_dev (System)"],
+    "forbidden_in_mdm_001": [
+      "Coding Engine (DEFERRED; user types Code)",
+      "Precision / Rounding implementation (DEFERRED; trigger = first Qty/Price/Amount/TaxRate entity)",
+      "WorkCenter (DEFERRED)",
+      "PACKAGE ItemNature (DEFERRED)",
+      "Image columns (DEV anti-pattern)",
+      "Reference-only seeds as auto-seed"
+    ]
+  },
+  "validation": {
+    "markdown_internal_consistency": "PASS",
+    "json_parse": "PASS",
+    "checks": {
+      "no_PENDING_CODEX_ID_STRATEGY_R1_in_frozen": true,
+      "no_InventoryMethod_in_Item_V1": true,
+      "no_mandatory_PlantId_in_Warehouse": true,
+      "no_Uom_DecimalPlaces_in_frozen": true,
+      "no_Both_boolean_in_BusinessPartner": true,
+      "Technical_ID_is_POSTGRESQL_HILO_BIGINT": true,
+      "Technical_ID_ne_Business_Code_ne_Document_Number": true,
+      "DB_target_registry_alignment": "gulierp_g2_003_test ACTIVE_CURRENT"
+    }
+  }
+}
