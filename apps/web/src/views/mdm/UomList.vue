@@ -1,6 +1,10 @@
 <template>
   <!-- UomList — Unit of Measure master data list (FIRST MDM MODULE — establishes pattern)
-       Reuses: MdmListToolbar, MdmStatusBadge, MdmFormDrawer, MdmDetailDrawer, MdmPagination, MdmEmptyState -->
+       Reuses: MdmListToolbar, MdmStatusBadge, MdmFormDrawer, MdmDetailDrawer, MdmPagination, MdmEmptyState
+       Reconciled with MDM_000_MASTER_DATA_CONVENTION_V1 (FROZEN §6):
+       - decimalPlaces REMOVED (precision DEFERRED to Business Semantic Precision Convention)
+       - dimension + kind ADDED (frozen V1 fields)
+       - status: active/inactive only (draft removed) -->
   <div class="mdm-list">
     <!-- Toolbar (reused component) -->
     <MdmListToolbar
@@ -11,6 +15,9 @@
       @create="openCreate"
     >
       <template #filters>
+        <el-select v-model="filterDimension" placeholder="量纲" clearable style="width: 110px" @change="applyFilters">
+          <el-option v-for="opt in DIMENSION_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
+        </el-select>
         <el-select v-model="filterStatus" placeholder="状态" clearable style="width: 100px" @change="applyFilters">
           <el-option v-for="opt in STATUS_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
@@ -43,8 +50,21 @@
           </template>
         </el-table-column>
         <el-table-column prop="name" label="名称" width="120" show-overflow-tooltip />
-        <el-table-column prop="symbol" label="符号" width="80" />
-        <el-table-column prop="decimalPlaces" label="小数位" width="80" align="center" sortable />
+        <el-table-column prop="symbol" label="符号" width="80">
+          <template #default="{ row }">
+            {{ row.symbol || '—' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="dimension" label="量纲" width="90" align="center">
+          <template #default="{ row }">
+            {{ dimensionLabel(row.dimension) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="kind" label="类型" width="80" align="center">
+          <template #default="{ row }">
+            {{ kindLabel(row.kind) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="80" align="center">
           <template #default="{ row }">
             <MdmStatusBadge :status="row.status" />
@@ -94,11 +114,18 @@
       <el-form-item label="名称" prop="name">
         <el-input v-model="formData.name" placeholder="如 个、千克" maxlength="50" />
       </el-form-item>
-      <el-form-item label="符号" prop="symbol">
-        <el-input v-model="formData.symbol" placeholder="如 pc, kg" maxlength="20" />
+      <el-form-item label="符号">
+        <el-input v-model="formData.symbol" placeholder="留空表示无符号（计数类）" maxlength="20" />
       </el-form-item>
-      <el-form-item label="小数位" prop="decimalPlaces">
-        <el-input-number v-model="formData.decimalPlaces" :min="0" :max="6" />
+      <el-form-item label="量纲" prop="dimension">
+        <el-select v-model="formData.dimension" style="width: 100%">
+          <el-option v-for="opt in DIMENSION_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="类型" prop="kind">
+        <el-select v-model="formData.kind" style="width: 100%">
+          <el-option v-for="opt in KIND_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
+        </el-select>
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="formData.status" style="width: 100%">
@@ -118,15 +145,16 @@
     >
       <template #header>
         <div class="mdm-detail-title">
-          <MdmStatusBadge :status="detailData?.status || 'draft'" />
+          <MdmStatusBadge :status="detailData?.status || 'active'" />
           <span class="mdm-detail-name">{{ detailData?.name }}</span>
-          <span class="mdm-detail-symbol">符号：{{ detailData?.symbol }}</span>
+          <span class="mdm-detail-symbol">符号：{{ detailData?.symbol || '—' }}</span>
         </div>
       </template>
       <el-descriptions-item label="代码">{{ detailData?.code }}</el-descriptions-item>
       <el-descriptions-item label="名称">{{ detailData?.name }}</el-descriptions-item>
-      <el-descriptions-item label="符号">{{ detailData?.symbol }}</el-descriptions-item>
-      <el-descriptions-item label="小数位">{{ detailData?.decimalPlaces }}</el-descriptions-item>
+      <el-descriptions-item label="符号">{{ detailData?.symbol || '—' }}</el-descriptions-item>
+      <el-descriptions-item label="量纲">{{ dimensionLabel(detailData?.dimension) }}</el-descriptions-item>
+      <el-descriptions-item label="类型">{{ kindLabel(detailData?.kind) }}</el-descriptions-item>
       <el-descriptions-item label="状态">{{ getStatusLabel(detailData?.status) }}</el-descriptions-item>
       <el-descriptions-item label="说明">{{ detailData?.description || '—' }}</el-descriptions-item>
       <el-descriptions-item label="创建时间">{{ formatDate(detailData?.createdAt) }}</el-descriptions-item>
@@ -149,12 +177,13 @@ import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
 
 import { mockUoms } from '../../mock/mdm';
-import { STATUS_OPTIONS } from '../../types/mdm';
-import type { Uom, UomForm, MasterDataStatus } from '../../types/mdm';
+import { STATUS_OPTIONS, DIMENSION_OPTIONS, KIND_OPTIONS } from '../../types/mdm';
+import type { Uom, UomForm, UomDimension, UomKind, MasterDataStatus } from '../../types/mdm';
 
 // ===== List state =====
 const searchKeyword = ref('');
 const filterStatus = ref<MasterDataStatus | ''>('');
+const filterDimension = ref<UomDimension | ''>('');
 const page = reactive({ current: 1, size: 20 });
 
 const filteredData = computed(() => {
@@ -164,11 +193,14 @@ const filteredData = computed(() => {
     list = list.filter(u =>
       u.code.toLowerCase().includes(kw) ||
       u.name.toLowerCase().includes(kw) ||
-      u.symbol.toLowerCase().includes(kw)
+      (u.symbol || '').toLowerCase().includes(kw)
     );
   }
   if (filterStatus.value) {
     list = list.filter(u => u.status === filterStatus.value);
+  }
+  if (filterDimension.value) {
+    list = list.filter(u => u.dimension === filterDimension.value);
   }
   return list;
 });
@@ -186,17 +218,18 @@ function applyFilters() {
 const formDrawerVisible = ref(false);
 const editingId = ref<number | null>(null);
 const formData = reactive<UomForm>({
-  code: '', name: '', symbol: '', decimalPlaces: 2, status: 'active', description: '',
+  code: '', name: '', symbol: null, dimension: 'COUNT', kind: 'DISCRETE', status: 'active', description: '',
 });
 
-const formRules: FormRules<UomForm> = {
+const formRules: FormRules = {
   code: [{ required: true, message: '请输入计量单位代码', trigger: 'blur' }],
   name: [{ required: true, message: '请输入计量单位名称', trigger: 'blur' }],
-  symbol: [{ required: true, message: '请输入符号', trigger: 'blur' }],
+  dimension: [{ required: true, message: '请选择量纲', trigger: 'change' }],
+  kind: [{ required: true, message: '请选择类型', trigger: 'change' }],
 };
 
 function resetForm() {
-  Object.assign(formData, { code: '', name: '', symbol: '', decimalPlaces: 2, status: 'active', description: '' });
+  Object.assign(formData, { code: '', name: '', symbol: null, dimension: 'COUNT', kind: 'DISCRETE', status: 'active', description: '' });
 }
 
 function openCreate() {
@@ -209,7 +242,8 @@ function openEdit(row: Uom) {
   editingId.value = row.id;
   Object.assign(formData, {
     code: row.code, name: row.name, symbol: row.symbol,
-    decimalPlaces: row.decimalPlaces, status: row.status, description: row.description || '',
+    dimension: row.dimension, kind: row.kind,
+    status: row.status, description: row.description || '',
   });
   formDrawerVisible.value = true;
 }
@@ -245,6 +279,14 @@ function formatDate(iso?: string): string {
 
 function getStatusLabel(status?: MasterDataStatus): string {
   return STATUS_OPTIONS.find(o => o.value === status)?.label || '—';
+}
+
+function dimensionLabel(dim?: UomDimension): string {
+  return DIMENSION_OPTIONS.find(o => o.value === dim)?.label || '—';
+}
+
+function kindLabel(k?: UomKind): string {
+  return KIND_OPTIONS.find(o => o.value === k)?.label || '—';
 }
 
 function exportData() {

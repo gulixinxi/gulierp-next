@@ -2,7 +2,12 @@
   <!-- ItemList — Item master data (THIRD MODULE — reuses all MDM components + adds tabbed detail)
        This is the key page. Detail drawer includes tabbed sections:
        Basic | Inventory | Sales | Purchase | Attributes
-       Only Basic + Inventory have content (frozen evidence). Others are reserved placeholders. -->
+       Only Basic + Inventory have content (frozen evidence). Others are reserved placeholders.
+
+       Reconciled with MDM_000_MASTER_DATA_CONVENTION_V1 (FROZEN §8):
+       - itemType → itemNature (MATERIAL / SEMI_FINISHED / FINISHED_GOOD / SERVICE)
+       - inventoryMethod removed (deferred; no business evidence in V1)
+       - status default 'active' (only ACTIVE / INACTIVE in V1; no 'draft') -->
   <div class="mdm-list">
     <!-- Toolbar (reused) -->
     <MdmListToolbar
@@ -21,10 +26,8 @@
             :value="c.id"
           />
         </el-select>
-        <el-select v-model="filterType" placeholder="类型" clearable style="width: 110px" @change="applyFilters">
-          <el-option label="物品" value="goods" />
-          <el-option label="服务" value="service" />
-          <el-option label="包装" value="package" />
+        <el-select v-model="filterType" placeholder="物料性质" clearable style="width: 140px" @change="applyFilters">
+          <el-option v-for="opt in ITEM_NATURE_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
         <el-select v-model="filterStatus" placeholder="状态" clearable style="width: 100px" @change="applyFilters">
           <el-option v-for="opt in STATUS_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
@@ -65,9 +68,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="baseUomName" label="基本单位" width="90" align="center" />
-        <el-table-column prop="itemType" label="类型" width="80" align="center">
+        <el-table-column prop="itemNature" label="物料性质" width="90" align="center">
           <template #default="{ row }">
-            {{ typeLabel(row.itemType) }}
+            {{ natureLabel(row.itemNature) }}
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="80" align="center">
@@ -142,24 +145,14 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="物料类型" prop="itemType">
-        <el-radio-group v-model="formData.itemType">
-          <el-radio value="goods">物品</el-radio>
-          <el-radio value="service">服务</el-radio>
-          <el-radio value="package">包装</el-radio>
+      <el-form-item label="物料性质" prop="itemNature">
+        <el-radio-group v-model="formData.itemNature">
+          <el-radio v-for="opt in ITEM_NATURE_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</el-radio>
         </el-radio-group>
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="formData.status" style="width: 100%">
           <el-option v-for="opt in STATUS_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item v-if="formData.itemType === 'goods'" label="计价方法">
-        <el-select v-model="formData.inventoryMethod" placeholder="选择计价方法" clearable style="width: 100%">
-          <el-option label="先进先出 (FIFO)" value="FIFO" />
-          <el-option label="后进先出 (LIFO)" value="LIFO" />
-          <el-option label="加权平均" value="WEIGHTED_AVG" />
-          <el-option label="个别计价" value="SPECIFIC" />
         </el-select>
       </el-form-item>
       <el-form-item label="说明">
@@ -175,7 +168,7 @@
     >
       <template #header>
         <div class="mdm-detail-title">
-          <MdmStatusBadge :status="detailData?.status || 'draft'" />
+          <MdmStatusBadge :status="detailData?.status || 'active'" />
           <span class="mdm-detail-name">{{ detailData?.name }}</span>
           <span v-if="detailData?.specification" class="mdm-detail-spec">{{ detailData.specification }}</span>
         </div>
@@ -190,7 +183,7 @@
             <el-descriptions-item label="规格型号">{{ detailData?.specification || '—' }}</el-descriptions-item>
             <el-descriptions-item label="物料分类">{{ detailData?.categoryName || '—' }}</el-descriptions-item>
             <el-descriptions-item label="基本单位">{{ detailData?.baseUomName || '—' }}</el-descriptions-item>
-            <el-descriptions-item label="物料类型">{{ typeLabel(detailData?.itemType) }}</el-descriptions-item>
+            <el-descriptions-item label="物料性质">{{ natureLabel(detailData?.itemNature) }}</el-descriptions-item>
             <el-descriptions-item label="状态">{{ getStatusLabel(detailData?.status) }}</el-descriptions-item>
             <el-descriptions-item label="说明">{{ detailData?.description || '—' }}</el-descriptions-item>
           </el-descriptions>
@@ -198,7 +191,6 @@
 
         <el-tab-pane label="库存" name="inventory">
           <el-descriptions :column="2" border size="small">
-            <el-descriptions-item label="计价方法">{{ invMethodLabel(detailData?.inventoryMethod) }}</el-descriptions-item>
             <el-descriptions-item label="基本单位">{{ detailData?.baseUomName || '—' }}</el-descriptions-item>
           </el-descriptions>
           <div class="mdm-tab-placeholder">
@@ -251,13 +243,13 @@ import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
 
 import { mockItems, mockItemCategories, mockUoms } from '../../mock/mdm';
-import { STATUS_OPTIONS } from '../../types/mdm';
-import type { Item, ItemForm, ItemType, MasterDataStatus, InventoryMethod } from '../../types/mdm';
+import { STATUS_OPTIONS, ITEM_NATURE_OPTIONS } from '../../types/mdm';
+import type { Item, ItemForm, ItemNature, MasterDataStatus } from '../../types/mdm';
 
 // ===== List state =====
 const searchKeyword = ref('');
 const filterCategory = ref<number | ''>('');
-const filterType = ref<ItemType | ''>('');
+const filterType = ref<ItemNature | ''>('');
 const filterStatus = ref<MasterDataStatus | ''>('');
 const page = reactive({ current: 1, size: 20 });
 
@@ -275,7 +267,7 @@ const filteredData = computed(() => {
     list = list.filter(i => i.categoryId === filterCategory.value);
   }
   if (filterType.value) {
-    list = list.filter(i => i.itemType === filterType.value);
+    list = list.filter(i => i.itemNature === filterType.value);
   }
   if (filterStatus.value) {
     list = list.filter(i => i.status === filterStatus.value);
@@ -297,8 +289,8 @@ const formDrawerVisible = ref(false);
 const editingId = ref<number | null>(null);
 const formData = reactive<ItemForm>({
   code: '', name: '', specification: '', categoryId: null,
-  baseUomId: null, itemType: 'goods', status: 'active',
-  inventoryMethod: 'WEIGHTED_AVG', description: '',
+  baseUomId: null, itemNature: 'MATERIAL', status: 'active',
+  description: '',
 });
 
 const formRules: FormRules<ItemForm> = {
@@ -311,8 +303,8 @@ const formRules: FormRules<ItemForm> = {
 function resetForm() {
   Object.assign(formData, {
     code: '', name: '', specification: '', categoryId: null,
-    baseUomId: null, itemType: 'goods', status: 'active',
-    inventoryMethod: 'WEIGHTED_AVG', description: '',
+    baseUomId: null, itemNature: 'MATERIAL', status: 'active',
+    description: '',
   });
 }
 
@@ -327,8 +319,7 @@ function openEdit(row: Item) {
   Object.assign(formData, {
     code: row.code, name: row.name, specification: row.specification || '',
     categoryId: row.categoryId, baseUomId: row.baseUomId,
-    itemType: row.itemType, status: row.status,
-    inventoryMethod: row.inventoryMethod || 'WEIGHTED_AVG',
+    itemNature: row.itemNature, status: row.status,
     description: row.description || '',
   });
   formDrawerVisible.value = true;
@@ -368,20 +359,8 @@ function getStatusLabel(status?: MasterDataStatus): string {
   return STATUS_OPTIONS.find(o => o.value === status)?.label || '—';
 }
 
-function typeLabel(type?: ItemType): string {
-  const map: Record<ItemType, string> = { goods: '物品', service: '服务', package: '包装' };
-  return type ? map[type] : '—';
-}
-
-function invMethodLabel(method?: InventoryMethod): string {
-  if (!method) return '—';
-  const map: Record<InventoryMethod, string> = {
-    FIFO: '先进先出 (FIFO)',
-    LIFO: '后进先出 (LIFO)',
-    WEIGHTED_AVG: '加权平均',
-    SPECIFIC: '个别计价',
-  };
-  return map[method];
+function natureLabel(nature?: ItemNature): string {
+  return ITEM_NATURE_OPTIONS.find(o => o.value === nature)?.label || '—';
 }
 
 function exportData() {

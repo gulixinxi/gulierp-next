@@ -1,6 +1,7 @@
 <template>
   <!-- ItemCategoryList — Item Category master data (SECOND MODULE — reuses all MDM components)
-       Hierarchy shown via fullPath + indented name column (no heavy tree framework) -->
+       Hierarchy shown via fullPath + indented name column (no heavy tree framework)
+       Reconciled with MDM_000_MASTER_DATA_CONVENTION_V1 (FROZEN §7): level/fullPath are UI-derived, NOT persisted backend fields -->
   <div class="mdm-list">
     <!-- Toolbar (reused) -->
     <MdmListToolbar
@@ -132,7 +133,7 @@
     >
       <template #header>
         <div class="mdm-detail-title">
-          <MdmStatusBadge :status="detailData?.status || 'draft'" />
+          <MdmStatusBadge :status="detailData?.status || 'active'" />
           <span class="mdm-detail-name">{{ detailData?.name }}</span>
         </div>
       </template>
@@ -164,7 +165,7 @@ import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
 
 import { mockItemCategories } from '../../mock/mdm';
 import { STATUS_OPTIONS } from '../../types/mdm';
-import type { ItemCategory, ItemCategoryForm, MasterDataStatus } from '../../types/mdm';
+import type { ItemCategoryListItem, ItemCategoryForm, MasterDataStatus } from '../../types/mdm';
 
 // ===== List state =====
 const searchKeyword = ref('');
@@ -223,7 +224,7 @@ function openCreate() {
   formDrawerVisible.value = true;
 }
 
-function openEdit(row: ItemCategory) {
+function openEdit(row: ItemCategoryListItem) {
   editingId.value = row.id;
   Object.assign(formData, {
     code: row.code, name: row.name,
@@ -239,9 +240,9 @@ function handleSubmit() {
 
 // ===== Detail state =====
 const detailDrawerVisible = ref(false);
-const detailData = ref<ItemCategory | null>(null);
+const detailData = ref<ItemCategoryListItem | null>(null);
 
-function openDetail(row: ItemCategory) {
+function openDetail(row: ItemCategoryListItem) {
   detailData.value = row;
   detailDrawerVisible.value = true;
 }
