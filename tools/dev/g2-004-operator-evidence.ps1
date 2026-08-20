@@ -492,18 +492,20 @@ Pass "Identity migration applied (or already up to date)"
 Step-Header 4 'Integration + unit tests (per-suite TRX counters)'
 
 # Baseline: G2-004V1R4 + arithmetic correction documents the
-# real-PostgreSQL baseline as 173 tests (13 + 26 + 44 + 59 + 31;
+# real-PostgreSQL baseline as 174 tests (14 + 26 + 44 + 59 + 31;
 # the Bootstrap suite gained 2 new ProcessIoDeadlockFacts
-# tests in V1R4; it was 11 in V1R3). The V1R4 commit
-# originally wrote 174 by arithmetic mistake; corrected to
-# 173 (13+26+44+59+31 = 173). On a stale environment
-# (e.g. the Mavis loud-fail baseline of 164 = 13+26+44+55+26)
+# tests in V1R4; it was 11 in V1R3; V1R6 added 1 more
+# PowerShellAutomaticVariableCollisionFacts test for 14 total).
+# The V1R4 commit originally wrote 174 by arithmetic mistake;
+# V1R5 corrected to 173; V1R6 bumped to 174 (legitimately this
+# time, because V1R6 added 1 new test). On a stale environment
+# (e.g. the Mavis loud-fail baseline of 165 = 14+26+44+55+26)
 # the Operator MUST regenerate the DB / reapply migrations
 # before promoting to G2_004_AUTHENTICATION_KERNEL_VERIFIED.
 # The baseline is asserted as a minimum gate, NOT a hard
 # equality (so the harness does not break if new tests are
 # added later in this same gate).
-$script:BaselineAtG2_004 = 173
+$script:BaselineAtG2_004 = 174
 
 $suites = @(
     @{ Name = 'GuliERP.Identity.Bootstrap.Tests';        Project = 'tests/GuliERP.Identity.Bootstrap.Tests/GuliERP.Identity.Bootstrap.Tests.csproj' },
@@ -611,14 +613,13 @@ if ($suiteHasFailure -or $grandFailed -gt 0 -or $grandNotExecuted -gt 0) {
     Fail-Fatal "Test suites FAILED (failed=$grandFailed, notExecuted=$grandNotExecuted). Harness aborts." 1
 }
 
-# Baseline gate: G2-004V1R4 + arithmetic correction
-# documents the real-PostgreSQL baseline as
-# $script:BaselineAtG2_004 = 173. We assert the grand
-# total is AT LEAST the baseline (not exact equality:
-# future tests added within the same gate must not
-# silently break the harness). If a future G2-004+ gate
-# changes the expected total, bump the constant AND the
-# report.
+# Baseline gate: G2-004V1R6 documents the real-PostgreSQL
+# baseline as $script:BaselineAtG2_004 = 174. We assert
+# the grand total is AT LEAST the baseline (not exact
+# equality: future tests added within the same gate must
+# not silently break the harness). If a future G2-004+
+# gate changes the expected total, bump the constant AND
+# the report.
 #
 # A baseline-mismatch is a TEST INVENTORY mismatch, NOT a
 # DB-reachability claim. The integration suites
@@ -651,37 +652,52 @@ $script:OwnedHostPids = New-Object 'System.Collections.Generic.List[int]'
 
 function Register-OwnedHostPid {
     [CmdletBinding()]
-    param([int]$Pid)
-    if ($Pid -gt 0 -and -not $script:OwnedHostPids.Contains($Pid)) {
-        $script:OwnedHostPids.Add($Pid)
+    # G2-004V1R5 fix: do NOT use `$Pid` as a parameter name.
+    # PowerShell `$PID` (case-insensitive: $pid, $Pid, $PID)
+    # is an automatic variable holding the current
+    # PowerShell process's PID. PowerShell 7 treats it as
+    # a constant / read-only in parameter binding contexts,
+    # and the parameter binding raises:
+    #   "Cannot overwrite variable Pid because it is
+    #    read-only or constant."
+    # The previous V1R3 fix (which renamed `$host` to
+    # `$hostProcess`) missed this case because the
+    # function-scope parameter name `$Pid` is a separate
+    # AST node from the call-site variable. Rename to
+    # `$ProcessId` (semantically clear; no automatic-
+    # variable collision).
+    param([int]$ProcessId)
+    if ($ProcessId -gt 0 -and -not $script:OwnedHostPids.Contains($ProcessId)) {
+        $script:OwnedHostPids.Add($ProcessId)
     }
 }
 
 function Stop-OwnedHost {
     [CmdletBinding()]
-    param([int]$Pid)
-    if ($Pid -le 0) { return }
-    if (-not $script:OwnedHostPids.Contains($Pid)) {
+    # G2-004V1R5 fix: same as Register-OwnedHostPid above.
+    param([int]$ProcessId)
+    if ($ProcessId -le 0) { return }
+    if (-not $script:OwnedHostPids.Contains($ProcessId)) {
         # Defensive: only stop PIDs we started.
         return
     }
     try {
-        $proc = Get-Process -Id $Pid -ErrorAction SilentlyContinue
+        $proc = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
         if ($null -ne $proc -and -not $proc.HasExited) {
-            Stop-Process -Id $Pid -Force -ErrorAction SilentlyContinue
+            Stop-Process -Id $ProcessId -Force -ErrorAction SilentlyContinue
             $proc.WaitForExit(10000) | Out-Null
             if (-not $proc.HasExited) {
-                Stop-Process -Id $Pid -Force -ErrorAction SilentlyContinue
+                Stop-Process -Id $ProcessId -Force -ErrorAction SilentlyContinue
                 Start-Sleep -Milliseconds 500
             }
         }
     } catch {}
-    $script:OwnedHostPids.Remove($Pid) | Out-Null
+    $script:OwnedHostPids.Remove($ProcessId) | Out-Null
 }
 
 function Stop-AllOwnedHosts {
     foreach ($p in @($script:OwnedHostPids)) {
-        Stop-OwnedHost -Pid $p
+        Stop-OwnedHost -ProcessId $p
     }
 }
 
@@ -709,7 +725,7 @@ function Invoke-Round1-HappyPath {
     # user-scope variable) instead.
     $hostProcess = Start-HostProcess -Url $BaseUrl -LogPrefix "g2-004-$Label"
     $hostPid = 0
-    if ($hostProcess -and $hostProcess.Id) { $hostPid = [int]$hostProcess.Id; Register-OwnedHostPid -Pid $hostPid }
+    if ($hostProcess -and $hostProcess.Id) { $hostPid = [int]$hostProcess.Id; Register-OwnedHostPid -ProcessId $hostPid }
     try {
         if (-not (Wait-HostReady -BaseUrl $BaseUrl -TimeoutSec 30)) {
             Fail-Fatal "$Label host (PID $hostPid) did not become ready at $BaseUrl" 1
@@ -824,7 +840,7 @@ function Invoke-Round1-HappyPath {
     finally {
         # Stop ONLY this script-owned PID. Never any other
         # process on the workstation.
-        Stop-OwnedHost -Pid $hostPid
+        Stop-OwnedHost -ProcessId $hostPid
     }
 }
 
@@ -883,7 +899,7 @@ try {
     $baddbHost = Start-HostProcess -Url 'http://127.0.0.1:5098' -LogPrefix 'g2-004-baddb'
     if ($baddbHost -and $baddbHost.Id) {
         $script:BadDbHostPid = [int]$baddbHost.Id
-        Register-OwnedHostPid -Pid $script:BadDbHostPid
+        Register-OwnedHostPid -ProcessId $script:BadDbHostPid
     }
     try {
         if (-not (Wait-HostReady -BaseUrl 'http://127.0.0.1:5098' -TimeoutSec 30)) {
@@ -965,7 +981,7 @@ try {
     finally {
         # Stop ONLY this script-owned PID. Never any other
         # process on the workstation.
-        Stop-OwnedHost -Pid $script:BadDbHostPid
+        Stop-OwnedHost -ProcessId $script:BadDbHostPid
     }
 }
 finally {
@@ -983,7 +999,7 @@ try {
     $prodHost = Start-HostProcess -Url 'http://127.0.0.1:5097' -Environment 'Production' -LogPrefix 'g2-004-prod'
     if ($prodHost -and $prodHost.Id) {
         $script:ProdHostPid = [int]$prodHost.Id
-        Register-OwnedHostPid -Pid $script:ProdHostPid
+        Register-OwnedHostPid -ProcessId $script:ProdHostPid
     }
     if (-not (Wait-HostReady -BaseUrl 'http://127.0.0.1:5097' -TimeoutSec 30)) {
         Fail-Fatal "Production host (PID $script:ProdHostPid) did not become ready" 1
@@ -1100,7 +1116,7 @@ try {
 finally {
     # Stop ONLY this script-owned PID. Never any other
     # process on the workstation.
-    Stop-OwnedHost -Pid $script:ProdHostPid
+    Stop-OwnedHost -ProcessId $script:ProdHostPid
 }
 
 # ===============================================================
