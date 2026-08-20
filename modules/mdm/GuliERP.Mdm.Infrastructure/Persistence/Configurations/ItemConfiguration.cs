@@ -18,7 +18,7 @@ public sealed class ItemConfiguration : IEntityTypeConfiguration<Item>
     public void Configure(EntityTypeBuilder<Item> b)
     {
         b.HasKey(i => i.Id);
-        b.Property(i => i.Id).UseHiLo(MdmDbContext.HiLoSequenceName, MdmDbContext.DefaultSchema);
+        b.Property(i => i.Id).UseHiLo(MdmDbContext.HiLoSequenceName, MdmDbContext.HiLoSequenceSchema);
 
         b.Property(i => i.TenantId).IsRequired();
         b.Property(i => i.CategoryId).IsRequired(false);

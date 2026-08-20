@@ -14,7 +14,7 @@ public sealed class UomConfiguration : IEntityTypeConfiguration<Uom>
     public void Configure(EntityTypeBuilder<Uom> b)
     {
         b.HasKey(u => u.Id);
-        b.Property(u => u.Id).UseHiLo(MdmDbContext.HiLoSequenceName, MdmDbContext.DefaultSchema);
+        b.Property(u => u.Id).UseHiLo(MdmDbContext.HiLoSequenceName, MdmDbContext.HiLoSequenceSchema);
 
         b.Property(u => u.Code)
             .IsRequired()

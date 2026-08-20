@@ -8,9 +8,21 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
     /// MDM-001 initial schema migration. Creates the <c>mdm</c>
     /// schema + 3 V1 master-data tables (<c>gulierp_uom</c>,
     /// <c>gulierp_item_category</c>, <c>gulierp_item</c>) +
-    /// unique indexes + FKs. The migration is purely additive
-    /// on the <c>identity.gulierp_hilo_sequence</c> HiLo sequence
-    /// (created by the Identity IDGEN001 migration).
+    /// unique indexes + FKs.
+    ///
+    /// <para>
+    /// Technical ID generation is delegated to EF Core / Npgsql
+    /// HiLo via the canonical <c>identity.gulierp_hilo_sequence</c>
+    /// (created by the Identity IDGEN001 migration). Per ID
+    /// Strategy V1, ALL first-party technical IDs share a single
+    /// bigint space; the MDM migration does NOT add a
+    /// <c>DEFAULT nextval(...)</c> on the Id column because EF
+    /// HiLo is client-side value generation — adding a Postgres
+    /// DEFAULT would conflate two ID generation paths. The
+    /// BuildTargetModel in the .Designer.cs file declares the
+    /// HiLo sequence so the EF runtime can compute the next
+    /// block of 10 IDs without round-tripping the DB per insert.
+    /// </para>
     /// </summary>
     public partial class MDM001_InitializeMdmSchema : Migration
     {
@@ -49,9 +61,6 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
                 {
                     table.PrimaryKey("pk_gulierp_uom", x => x.Id);
                 });
-
-            migrationBuilder.Sql(
-                "ALTER TABLE mdm.gulierp_uom ALTER COLUMN \"Id\" SET DEFAULT nextval('identity.gulierp_hilo_sequence');");
 
             migrationBuilder.CreateIndex(
                 name: "ux_gulierp_uom_code",
@@ -92,9 +101,6 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
-
-            migrationBuilder.Sql(
-                "ALTER TABLE mdm.gulierp_item_category ALTER COLUMN \"Id\" SET DEFAULT nextval('identity.gulierp_hilo_sequence');");
 
             migrationBuilder.CreateIndex(
                 name: "ix_gulierp_item_category_parentid",
@@ -151,9 +157,6 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
-
-            migrationBuilder.Sql(
-                "ALTER TABLE mdm.gulierp_item ALTER COLUMN \"Id\" SET DEFAULT nextval('identity.gulierp_hilo_sequence');");
 
             migrationBuilder.CreateIndex(
                 name: "ix_gulierp_item_categoryid",

@@ -72,12 +72,18 @@ public sealed class MdmMigrationFacts : IClassFixture<WebApplicationFactory<Prog
         // the canonical __ef_migrations_history check first to
         // confirm the migration is recorded; the schema is verified
         // by querying information_schema.tables.
+        //
+        // The history table is mdm.__ef_migrations_history (per
+        // MdmDbContext.DefaultSchema + Identity DI history table
+        // registration). The standard EF Core history table has
+        // columns: MigrationId (string, NOT MigrationName) and
+        // ProductVersion (string).
         var historyRows = await db.Database
-            .SqlQueryRaw<int>(
-                "SELECT COUNT(*) AS \"Value\" FROM mdm.\"__ef_migrations_history\" " +
-                "WHERE \"MigrationName\" = '20260820190000_MDM001_InitializeMdmSchema'")
+            .SqlQueryRaw<string>(
+                "SELECT \"MigrationId\" AS \"Value\" FROM mdm.\"__ef_migrations_history\" " +
+                "WHERE \"MigrationId\" = '20260820190000_MDM001_InitializeMdmSchema'")
             .ToListAsync();
-        Assert.True(historyRows.Count > 0, "MDM001 migration must be recorded in mdm.__ef_migrations_history.");
+        Assert.NotEmpty(historyRows);
 
         var tables = await db.Database
             .SqlQueryRaw<string>(

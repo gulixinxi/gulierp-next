@@ -48,6 +48,15 @@ public sealed class MdmDbContext : DbContext
     public const string DefaultSchema = "mdm";
 
     /// <summary>
+    /// Schema of the canonical HiLo sequence. The sequence is
+    /// OWNED by the Identity IDGEN001 migration and lives in the
+    /// <c>identity</c> schema — NOT the MDM <c>mdm</c> schema.
+    /// Per ID Strategy V1, all first-party technical IDs share a
+    /// single bigint space; no module owns a separate sequence.
+    /// </summary>
+    public const string HiLoSequenceSchema = "identity";
+
+    /// <summary>
     /// Canonical HiLo sequence name. Reused from the Identity
     /// IDGEN001 migration; the sequence already exists when the
     /// MDM migration runs. Reuse avoids a separate "MDM sequence"
