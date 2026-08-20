@@ -4,17 +4,31 @@
 
 | Field | Value |
 |---|---|
+| Goal | **MDM-001 — Real Master Data Vertical Slice (UOM + ItemCategory + Item)** |
+| Gate | **`MDM_001_CODE_READY_OPERATOR_EVIDENCE_PENDING`** |
+| Status | **CODE_READY** — 3-project MDM module scaffolded (Domain / Application / Infrastructure) and wired into the API host. 12 HTTP endpoints under `/api/v1/mdm/{uoms,item-categories,items}` mapped. Code canonicalization (trim + uppercase) + unique constraints applied at DB layer. ItemCategory self-FK cycle detection in service layer. Cross-tenant returns 404 (not 403) to avoid leaking resource existence. Foundation `ICurrentTenant` / `ICurrentUser` reused. PostgreSQL HiLo reuses `identity.gulierp_hilo_sequence` (ID-GEN-001). Migration `20260820190000_MDM001_InitializeMdmSchema` creates `mdm` schema + 3 tables + indexes + FKs. `MdmSeed` loads 13 DEV `SAFE_TO_SEED_SYSTEM` UOM rows from `data/bootstrap/reference/system/uom.json` (idempotent). Operator-side PG evidence NOT YET collected in this session (PGPASSWORD not in agent session); Operator must run `tools/dev/mdm-001-operator-evidence.ps1` to upgrade gate to `MDM_001_REAL_MASTER_DATA_VERIFIED`. |
+| Entry Gate | `MDM_000_MASTER_DATA_CONVENTION_FROZEN` (frozen) |
+| Architecture / Decision | `docs/architecture/MDM_000_MASTER_DATA_CONVENTION_V1.md` (frozen); TRAE prototype reconciliation recorded in `docs/architecture/TRAE_MDM_001_API_HANDOFF.md` |
+| Verification | Unit tests `tests/GuliERP.Mdm.Tests/` 19 / 19 PASS; Integration tests `tests/GuliERP.Mdm.IntegrationTests/` 8 tests discovered, 0 run in agent session (Operator-required). Solution Release build: 14 projects, 0 warnings, 0 errors. No regression: Foundation 44/44, Identity 21/21. |
+| Scope (V1) | UOM (system scope, no TenantId), ItemCategory (tenant scope, optional self-FK hierarchy), Item (tenant scope, optional Category + required UOM). ItemNature ∈ {MATERIAL / SEMI_FINISHED / FINISHED_GOOD / SERVICE}. 6 ASP.NET Core authorization policies (read + manage per entity). |
+| Out-of-Scope (V1) | BusinessPartner / Warehouse / Location / WorkCenter (deferred per MDM-000). Coding Engine (deferred to SUP-001 future). Precision / Rounding engine (deferred; trigger = first Qty/Price/Amount/TaxRate entity). Inventory / Sales / Purchase business API. Document Numbering. |
+| Reuse proof | Foundation `IMultiTenant / ICurrentTenant / ICurrentUser / RequestContext / ProblemDetails / ErrorCodes / ErrorBoundary` — all imported, none re-implemented. Identity `PermissionRequirement / AuthorizationMiddleware` — reused, not duplicated. 0 new Foundation code. |
+| Local Evidence | `dotnet build GuliERP.slnx -c Release` → 0 warnings / 0 errors. `dotnet test tests/GuliERP.Mdm.Tests` → 19/19 PASS. `dotnet test tests/GuliERP.Identity.Tests` → 21/21 PASS (no regression). `dotnet test tests/GuliERP.Foundation.Tests` → 44/44 PASS (no regression). Operator harness `tools/dev/mdm-001-operator-evidence.ps1` present. |
+| TRAE UX Reconciliation | Documented in `docs/architecture/TRAE_MDM_001_API_HANDOFF.md` §9. (a) `Uom.decimalPlaces` REMOVED; (b) `Item.itemType` → `Item.itemNature`; (c) `Item.inventoryMethod` REMOVED; (d) `ItemCategory.Level` / `ItemCategory.FullPath` NOT persisted (derived UI); (e) PACKAGE ItemNature DEFERRED. apps/web/** NOT modified in this Goal (TRAE owns). |
+| Next Mainline | **MDM-001 Operator Evidence** (real PG runs `tools/dev/mdm-001-operator-evidence.ps1` to upgrade gate to `MDM_001_REAL_MASTER_DATA_VERIFIED`). After Operator evidence, NEXT MAINLINE is `MDM-002 — BusinessPartner / Warehouse / Location` (BusinessPartner 3 confirmed roles, 4th role DEFERRED; Warehouse has OPTIONAL PlantId; Location belongs to Warehouse). |
+| Forbidden follow-up without user authorization | BusinessPartner / Warehouse / Location / WorkCenter implementation, Coding Engine implementation, Precision / Rounding implementation, Document Numbering implementation, Inventory / Sales / Purchase business API implementation, MDM-000 re-freeze. |
+
+## Previous Active Goal (superseded)
+
+| Field | Value |
+|---|---|
 | Goal | **MDM-000 — Master Data Convention Freeze** |
 | Gate | **`MDM_000_MASTER_DATA_CONVENTION_FROZEN`** |
 | Status | **FROZEN** — V1 Master Data Convention locked at 2026-08-20. Frozen entities: Uom / ItemCategory / Item / BusinessPartner / Warehouse / Location. WorkCenter DEFERRED to Manufacturing MDM extension. Common entity fields frozen (Id/Code/Name/Status/TenantId/Description/Audit). Status = ACTIVE/INACTIVE only in V1. Code is MANUAL (no auto-coding engine). ItemNature = MATERIAL/SEMI_FINISHED/FINISHED_GOOD/SERVICE; InventoryMethod EXCLUDED from V1 Item (Inventory Accounting owns it). PACKAGE ItemNature DEFERRED. BusinessPartner = new aggregate (NOT DEV copy); normalized BusinessPartnerRole (3 confirmed: BPT_CUSTOMER/SUPPLIER/SUBCONTRACTOR, 4th role DEFERRED). Warehouse has OPTIONAL PlantId. TRAE UX handoff recorded (decimalPlaces removed; itemType→itemNature; inventoryMethod removed). Precision DEFERRED (ROUNDING_MODE_NOT_FOUND; UNIT_PRICE conflict; trigger = first Qty/Price/Amount/TaxRate entity). |
-| Entry Gate | `ID_GENERATION_POSTGRES_HILO_VERIFIED · CLOSED` (per ID-GEN-001 closure, gate flip recorded below in Previous Active section) |
+| Entry Gate | `ID_GENERATION_POSTGRES_HILO_VERIFIED · CLOSED` |
 | Architecture / Decision | `docs/architecture/MDM_000_MASTER_DATA_CONVENTION_V1.md` |
 | Verification | `tools/discovery/mdm-000/frozen-convention.json` (machine-readable mirror); 25 sections, 18 open decisions, 10 deferred items (D-001..D-010) |
-| Local Evidence | Markdown internal consistency PASS; JSON parse PASS; PENDING_CODEX_ID_STRATEGY_R1 fully replaced by POSTGRESQL_HILO_BIGINT; no InventoryMethod in V1 Item; no mandatory PlantId in Warehouse; no Uom.DecimalPlaces in V1; no Both boolean in BP; Technical ID != Business Code != Document Number; DB target = gulierp_g2_003_test. No PostgreSQL migration in this Goal (CONVENTION FREEZE only). |
-| TRAE UX Reconciliation | commit `06056b1` will need a follow-up commit to: (a) remove Uom.decimalPlaces; (b) rename Item.itemType to Item.itemNature; (c) remove Item.inventoryMethod; (d) add BusinessPartner / Warehouse / Location types. This Goal does NOT modify apps/web. |
-| Stale governance housekeeping | `tools/dev/g2-005-operator-evidence.ps1` L931 replaced with version-independent wording (no hardcoded Gate; refer to GOAL_REGISTRY.md). |
-| Next Mainline | **MDM-001 Real Master Data Vertical Slice** (separate future Goal). MDM-001 must (a) use `gulierp_g2_003_test` only (assert via `tools/dev/assert-gulierp-db-target.ps1`); (b) auto-seed only SAFE_TO_SEED_SYSTEM / SAFE_TO_SEED_TENANT_TEMPLATE; (c) implement WorkCenter is DEFERRED. |
-| Forbidden follow-up without user authorization | MDM-001 implementation, Coding Engine, Precision / Rounding implementation, Document Numbering implementation, Master Data Coding implementation, Inventory / Sales / Purchase business API implementation, MDM-000 re-freeze (V1 is final; V2 only via new Goal). |
+| Next Goal | **MDM-001 — Real Master Data Vertical Slice** (now ACTIVE above) |
 
 ## Previous Active Goal (superseded)
 

@@ -1,10 +1,12 @@
 using GuliERP.Api;
 using GuliERP.Api.Authentication;
 using GuliERP.Api.Kernel;
+using GuliERP.Api.Mdm;
 using GuliERP.Foundation;
 using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Infrastructure;
 using GuliERP.Identity.Infrastructure.Authentication;
+using GuliERP.Mdm.Infrastructure;
 using TestValidationRequest = GuliERP.Api.Kernel.TestEndpoints.TestValidationRequest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -109,6 +111,13 @@ builder.Services.AddGuliErpFoundation(connectionString);
 //     legacy X-Tenant-Id / X-User-Id / X-Company-Id headers are now
 //     honored ONLY in ASPNETCORE_ENVIRONMENT=Testing (D-003 closure).
 builder.Services.AddGuliErpIdentity(connectionString);
+
+// --- 4c. MDM-001 services (Master Data: UOM + ItemCategory + Item) ---
+//     Per the MDM-000 frozen convention: UOM is system-scoped
+//     (no TenantId), ItemCategory + Item are tenant-scoped via
+//     IMultiTenant. The 6 authorization policies (read + manage
+//     per entity) are wired here; the endpoint mapping is below.
+builder.Services.AddGuliErpMdm(connectionString);
 
 // --- 5. ProblemDetails + Exception Handler (G2-002 §8) ---
 //     Native ASP.NET Core 10 IExceptionHandler chain. The Foundation
@@ -247,6 +256,15 @@ app.MapFoundationSystemEndpoints();
 //     Secure + SameSite=Lax (see AddGuliErpIdentity).
 app.MapGuliErpAuthEndpoints();
 
+// --- 11d. MDM-001 endpoints (UOM + ItemCategory + Item) ---
+//     /api/v1/mdm/uoms, /api/v1/mdm/item-categories,
+//     /api/v1/mdm/items. See MdmEndpoints.cs for the full
+//     contract. Every endpoint is gated by a MdmPolicies policy
+//     (read or manage). State-changing endpoints (POST / PUT)
+//     follow the same antiforgery contract as the G2-004R1
+//     authentication endpoints (X-CSRF-TOKEN header + cookie).
+app.MapMdmEndpoints();
+
 // --- 11b. G2-002R2 test-only endpoints (Environment-gated) ---
 //     These two endpoints exist ONLY to let the Foundation Kernel
 //     integration tests trigger the real ASP.NET Core validation + 500
@@ -340,7 +358,7 @@ app.UseMiddleware<RouteNotFoundMiddleware>();
 
 // --- 13. Root / banner ---
 app.MapGet("/", () => Results.Text(
-    "GuliERP Api (G2-001 + G2-002 + G2-003 + G2-004)\n" +
+    "GuliERP Api (G2-001 + G2-002 + G2-003 + G2-004 + MDM-001)\n" +
     "Endpoints:\n" +
     "  GET  /health/live               Host process liveness\n" +
     "  GET  /health/ready              PostgreSQL readiness\n" +
@@ -349,6 +367,9 @@ app.MapGet("/", () => Results.Text(
     "  POST /api/v1/auth/logout        Sign out (204)\n" +
     "  GET  /api/v1/auth/me            Current user DTO (authenticated)\n" +
     "  POST /api/v1/auth/company/switch Re-mint cookie with new company_id\n" +
+    "  GET/POST/PUT /api/v1/mdm/uoms            UOM master data\n" +
+    "  GET/POST/PUT /api/v1/mdm/item-categories ItemCategory master data\n" +
+    "  GET/POST/PUT /api/v1/mdm/items           Item master data\n" +
     (app.Environment.IsDevelopment() ? "  GET  /openapi/v1.json            OpenAPI spec (dev only)\n" : ""),
     "text/plain"));
 

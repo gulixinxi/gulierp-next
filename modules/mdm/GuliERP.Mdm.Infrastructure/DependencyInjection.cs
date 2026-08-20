@@ -1,0 +1,110 @@
+using GuliERP.Identity.Application.Authorization;
+using GuliERP.Identity.Infrastructure.Authorization;
+using GuliERP.Mdm.Application;
+using GuliERP.Mdm.Infrastructure.Mdm;
+using GuliERP.Mdm.Infrastructure.Persistence;
+using GuliERP.Mdm.Infrastructure.Seed;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace GuliERP.Mdm.Infrastructure;
+
+/// <summary>
+/// MDM-001 DI extension. Wires:
+/// <list type="number">
+///   <item>EF Core <see cref="MdmDbContext"/> (scoped) with Npgsql +
+///         the <c>mdm</c> schema.</item>
+///   <item>The canonical PostgreSQL HiLo sequence reuse
+///         (<c>gulierp_hilo_sequence</c>, owned by the Identity
+///         IDGEN001 migration; MDM is purely additive on the
+///         sequence).</item>
+///   <item><see cref="IMdmService"/> as a Scoped service that
+///         orchestrates the 3 V1 master data entities.</item>
+///   <item>6 ASP.NET Core Authorization policies (one pair per
+///         master data entity: read + manage).</item>
+///   <item>Operator-seed entry point: <c>SeedMdmAsync()</c>.</item>
+/// </list>
+/// </summary>
+public static class DependencyInjection
+{
+    public static IServiceCollection AddGuliErpMdm(
+        this IServiceCollection services,
+        string connectionString)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+
+        // ----- EF Core DbContext (MDM) -----
+        services.AddDbContext<MdmDbContext>(options =>
+        {
+            options.UseNpgsql(
+                connectionString,
+                npg => npg.MigrationsHistoryTable(
+                    "__ef_migrations_history",
+                    MdmDbContext.DefaultSchema));
+        });
+
+        // ----- Application service -----
+        services.AddScoped<IMdmService, MdmService>();
+
+        // ----- Authorization policies (mirrors G2-005 pattern) -----
+        services.AddAuthorization(options =>
+        {
+            // UOM
+            options.AddPolicy(
+                MdmPolicies.UomRead,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.UomRead)));
+            options.AddPolicy(
+                MdmPolicies.UomManage,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.UomManage)));
+
+            // ItemCategory
+            options.AddPolicy(
+                MdmPolicies.ItemCategoryRead,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.ItemCategoryRead)));
+            options.AddPolicy(
+                MdmPolicies.ItemCategoryManage,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.ItemCategoryManage)));
+
+            // Item
+            options.AddPolicy(
+                MdmPolicies.ItemRead,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.ItemRead)));
+            options.AddPolicy(
+                MdmPolicies.ItemManage,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.ItemManage)));
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Run the MDM-001 dev/test seed. Per MDM-000 §15 this seed
+    /// only runs in Development + Testing environments.
+    /// Production must NOT auto-seed master data.
+    /// </summary>
+    public static async Task SeedMdmAsync(
+        this IServiceProvider services,
+        string seedFilePath = MdmSeed.UomSeedFilePath,
+        CancellationToken ct = default)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MdmDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("GuliERP.Mdm.Seed");
+        await MdmSeed.SeedAsync(db, logger, seedFilePath, ct);
+    }
+}

@@ -8,6 +8,8 @@
     <ProjectReference Include="..\..\..\modules\identity\GuliERP.Identity.Domain\GuliERP.Identity.Domain.csproj" />
     <ProjectReference Include="..\..\..\modules\identity\GuliERP.Identity.Application\GuliERP.Identity.Application.csproj" />
     <ProjectReference Include="..\..\..\modules\identity\GuliERP.Identity.Infrastructure\GuliERP.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\modules\mdm\GuliERP.Mdm.Application\GuliERP.Mdm.Application.csproj" />
+    <ProjectReference Include="..\..\..\modules\mdm\GuliERP.Mdm.Infrastructure\GuliERP.Mdm.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
