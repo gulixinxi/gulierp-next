@@ -394,21 +394,12 @@ Set-OperatorConnectionEnvironment -ConnectionString $conn
 
 try {
     Step-Header 1 'Release build'
-    & $Dotnet build GuliERP.slnx -c Release --no-restore --nologo -maxcpucount:1 /p:BuildInParallel=false /p:UseSharedCompilation=false /nodeReuse:false 2>&1 | Tee-Object -Variable buildOut | Out-Null
+    & $Dotnet build GuliERP.slnx -c Release --no-restore --nologo -warnaserror -maxcpucount:1 /p:BuildInParallel=false /p:UseSharedCompilation=false /nodeReuse:false 2>&1 | Tee-Object -Variable buildOut | Out-Null
     if ($LASTEXITCODE -ne 0) {
         Write-RedactedCommandDiagnostics -Label 'Release build' -Output $buildOut
         Fail-Fatal "Release build failed (exit=$LASTEXITCODE)." 1
     }
-    $buildText = ($buildOut | Out-String)
-    if ($buildText -notmatch '0 Warning\(s\)' -and $buildText -notmatch '0 个警告') {
-        Write-RedactedCommandDiagnostics -Label 'Release build' -Output $buildOut
-        Fail-Fatal "Release build did not report 0 warnings." 1
-    }
-    if ($buildText -notmatch '0 Error\(s\)' -and $buildText -notmatch '0 个错误') {
-        Write-RedactedCommandDiagnostics -Label 'Release build' -Output $buildOut
-        Fail-Fatal "Release build did not report 0 errors." 1
-    }
-    Pass "Release build completed with 0 warnings and 0 errors"
+    Pass "Release build clean (warnings treated as errors)"
 
     Step-Header 2 'Foundation migration'
     & $Dotnet ef database update --project modules/foundation/GuliERP.Foundation/GuliERP.Foundation.csproj --no-build 2>&1 | Tee-Object -Variable migOut | Out-Null

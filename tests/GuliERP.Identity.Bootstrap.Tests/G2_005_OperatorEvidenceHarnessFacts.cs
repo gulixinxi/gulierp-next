@@ -62,6 +62,25 @@ public sealed class G2_005_OperatorEvidenceHarnessFacts
     }
 
     [Fact]
+    public void Harness_BuildGate_IsLocaleIndependent_AndUsesWarningsAsErrors()
+    {
+        var script = NormalizeNewlines(ReadHarness());
+
+        Assert.Contains("& $Dotnet build GuliERP.slnx", script);
+        Assert.Contains("-warnaserror", script);
+        Assert.Contains("if ($LASTEXITCODE -ne 0) {", script);
+        Assert.Contains("Fail-Fatal \"Release build failed (exit=$LASTEXITCODE).\" 1", script);
+        Assert.Contains("Release build clean (warnings treated as errors)", script);
+
+        Assert.DoesNotContain("Release build did not report 0 warnings", script);
+        Assert.DoesNotContain("Release build did not report 0 errors", script);
+        Assert.DoesNotContain("0 Warning\\(s\\)", script);
+        Assert.DoesNotContain("0 个警告", script);
+        Assert.DoesNotContain("0 个错误", script);
+        Assert.DoesNotContain("$buildText", script);
+    }
+
+    [Fact]
     public void Harness_StopsOnlyScriptOwnedHostPids()
     {
         var script = NormalizeNewlines(ReadHarness());

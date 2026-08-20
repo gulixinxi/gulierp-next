@@ -127,6 +127,21 @@ The harness prompts locally for the PostgreSQL password for:
 
 It must not print or persist the password.
 
+### 6.1 Localized Build Output False-Failure Fix
+
+Operator evidence on 2026-08-20 showed the Release build itself was clean
+(`0 个警告`, `0 个错误`), but PowerShell captured the localized summary as
+mojibake and the harness false-failed while searching for a literal
+zero-warning string.
+
+The harness build gate is now locale-independent:
+
+- `dotnet build` runs with `-warnaserror`;
+- any warning makes the build exit non-zero;
+- the harness uses the process exit code as the build gate;
+- the harness no longer parses `0 Warning(s)`, `0 warnings`, `0 个警告`, or
+  any other localized success text.
+
 ## 7. PostgreSQL Evidence
 
 Real PostgreSQL operator evidence is still pending. Because no schema change
