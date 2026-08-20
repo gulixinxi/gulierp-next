@@ -105,7 +105,7 @@ public sealed class G2_005_OperatorEvidenceHarnessFacts
         Assert.Contains("$productionBaseUrl = 'http://127.0.0.1:5106'", script);
         Assert.Contains("Testing unauthenticated protected probe", script);
         Assert.Contains("Testing authenticated without g2.probe.read", script);
-        Assert.Contains("Testing permission header wiring", script);
+        Assert.Contains("Testing real PostgreSQL permission wiring", script);
         Assert.Contains("Testing cross-company data scope", script);
         Assert.Contains("Testing cross-tenant data scope", script);
         Assert.Contains("Testing PlatformAdmin without permission", script);
@@ -131,6 +131,47 @@ public sealed class G2_005_OperatorEvidenceHarnessFacts
         Assert.Contains("Start-HostProcess -Url $testingBaseUrl -Environment 'Testing'", script);
         Assert.Contains("Start-HostProcess -Url $productionBaseUrl -Environment 'Production'", script);
         Assert.DoesNotContain("@('--environment', $Environment)", script);
+    }
+
+    [Fact]
+    public void Harness_AuthenticatedRuntimeProbes_UseRealLoginAndSameCookieSession()
+    {
+        var script = NormalizeNewlines(ReadHarness());
+
+        Assert.Contains("function Assert-AntiforgeryCookieCaptured", script);
+        Assert.Contains("function Initialize-AuthenticatedRuntimeSession", script);
+        Assert.Contains("New-Object Microsoft.PowerShell.Commands.WebRequestSession", script);
+        Assert.Contains("GET /api/v1/auth/csrf", script);
+        Assert.Contains("POST /api/v1/auth/login", script);
+        Assert.Contains("GET /api/v1/auth/me authenticated cookie roundtrip", script);
+        Assert.Contains("Assert-Status -Probe $loginResp -ExpectedStatus 200", script);
+
+        Assert.Contains("$denyActor = Initialize-AuthenticatedRuntimeSession", script);
+        Assert.Contains("-WebSession $denyActor.WebSession", script);
+        Assert.Contains("Assert-Status -Probe $deny -ExpectedStatus 403", script);
+        Assert.Contains("Testing authenticated without g2.probe.read", script);
+
+        Assert.Contains("$allowActor = Initialize-AuthenticatedRuntimeSession", script);
+        Assert.Contains("-WebSession $allowActor.WebSession", script);
+        Assert.Contains("Ensure-OperatorProbeReadGrant -ConnectionString $conn", script);
+        Assert.Contains("Revoke-OperatorProbeReadGrant -ConnectionString $conn", script);
+
+        Assert.DoesNotContain("$baseHeaders = @{ 'X-Test-Authenticated' = 'true'; 'X-User-Id'", script);
+        Assert.DoesNotContain("$allowHeaders = @{ 'X-Test-Authenticated' = 'true'; 'X-User-Id'", script);
+    }
+
+    [Fact]
+    public void Harness_DoesNotTreatTestingContextHeaders_AsAuthenticationTicket()
+    {
+        var script = NormalizeNewlines(ReadHarness());
+
+        Assert.Contains("'X-Tenant-Id' = \"$tenantId\"", script);
+        Assert.Contains("'X-Company-Id' = \"$companyId\"", script);
+        Assert.DoesNotContain("$baseHeaders = @{ 'X-Test-Authenticated' = 'true'", script);
+        Assert.DoesNotContain("$baseHeaders = @{ 'X-User-Id'", script);
+        Assert.DoesNotContain("$allowHeaders = @{ 'X-Test-Authenticated' = 'true'", script);
+        Assert.DoesNotContain("$allowHeaders = @{ 'X-User-Id'", script);
+        Assert.DoesNotContain("$allowHeaders = @{ 'X-Test-Permission' = 'g2.probe.read'", script);
     }
 
     private static string NormalizeNewlines(string value)

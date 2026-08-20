@@ -341,6 +341,29 @@ function Assert-Status {
     Pass "$Label -> $ExpectedStatus"
 }
 
+function Assert-AntiforgeryCookieCaptured {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [Microsoft.PowerShell.Commands.WebRequestSession]$WebSession,
+        [Parameter(Mandatory = $true)] [string]$BaseUrl,
+        [Parameter(Mandatory = $true)] [string]$Label
+    )
+
+    $cookies = $WebSession.Cookies.GetCookies([Uri]$BaseUrl)
+    $hasAntiforgeryCookie = $false
+    foreach ($cookie in $cookies) {
+        if ($cookie.Name -eq '.GuliERP.Antiforgery') {
+            $hasAntiforgeryCookie = $true
+            break
+        }
+    }
+
+    if (-not $hasAntiforgeryCookie) {
+        Fail-Fatal "$Label /csrf did not store .GuliERP.Antiforgery in the WebRequestSession cookie jar" 1
+    }
+    Pass "$Label /csrf stored .GuliERP.Antiforgery in the same WebRequestSession"
+}
+
 function Use-OperatorPlainPassword {
     [CmdletBinding()]
     param(
@@ -365,10 +388,311 @@ function Use-OperatorPlainPassword {
     }
 }
 
+function Use-OperatorUserPlainPassword {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [scriptblock]$ScriptBlock
+    )
+
+    $plain = $null
+    try {
+        $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($script:OperatorUserSecurePassword)
+        try {
+            $plain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+            & $ScriptBlock $plain
+        }
+        finally {
+            if ($bstr -ne [IntPtr]::Zero) {
+                [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+            }
+        }
+    }
+    finally {
+        if ($null -ne $plain) { $plain = $null }
+    }
+}
+
+function Invoke-NpgsqlScalar {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [string]$ConnectionString,
+        [Parameter(Mandatory = $true)] [string]$Sql,
+        [hashtable]$Parameters
+    )
+
+    $runtimeDir = Join-Path $RepoRoot 'apps/api/GuliERP.Api/bin/Release/net10.0'
+    $npgsqlPath = Join-Path $runtimeDir 'Npgsql.dll'
+    if (-not (Test-Path -LiteralPath $npgsqlPath -PathType Leaf)) {
+        Fail-Fatal "Npgsql runtime assembly missing at $npgsqlPath. Run the Release build before DB grant setup." 1
+    }
+    $nugetRoot = Join-Path $env:USERPROFILE '.nuget/packages'
+    foreach ($dependency in @(
+            'microsoft.extensions.logging.abstractions',
+            'system.diagnostics.diagnosticsource',
+            'system.threading.channels',
+            'system.text.json'
+        )) {
+        $dependencyRoot = Join-Path $nugetRoot $dependency
+        $dependencyDll = Get-ChildItem -LiteralPath $dependencyRoot -Recurse -Filter '*.dll' -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '\\lib\\net10\.0\\' } |
+            Sort-Object @{ Expression = { [version]$_.FullName.Split('\')[-4] }; Descending = $true } |
+            Select-Object -First 1
+        if (-not $dependencyDll) {
+            $dependencyDll = Get-ChildItem -LiteralPath $dependencyRoot -Recurse -Filter '*.dll' -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -match '\\lib\\net8\.0\\' } |
+                Sort-Object @{ Expression = { [version]$_.FullName.Split('\')[-4] }; Descending = $true } |
+                Select-Object -First 1
+        }
+        if ($dependencyDll) {
+            try { Add-Type -Path $dependencyDll.FullName -ErrorAction Stop } catch {}
+        }
+    }
+    foreach ($assembly in (Get-ChildItem -LiteralPath $runtimeDir -Filter '*.dll' -File)) {
+        try { Add-Type -Path $assembly.FullName -ErrorAction Stop } catch {}
+    }
+
+    $connection = [Npgsql.NpgsqlConnection]::new($ConnectionString)
+    try {
+        $connection.Open()
+        $command = $connection.CreateCommand()
+        try {
+            $command.CommandText = $Sql
+            $command.CommandTimeout = 30
+            if ($Parameters) {
+                foreach ($name in $Parameters.Keys) {
+                    [void]$command.Parameters.AddWithValue($name, $Parameters[$name])
+                }
+            }
+            return $command.ExecuteScalar()
+        }
+        finally {
+            if ($command) { $command.Dispose() }
+        }
+    }
+    finally {
+        $connection.Dispose()
+    }
+}
+
+function Ensure-OperatorProbeReadGrant {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)] [string]$ConnectionString)
+
+    $grantSql = @'
+with operator_user as (
+    select u."Id" as user_id, u."TenantId" as tenant_id, m."CompanyId" as company_id
+    from identity."AspNetUsers" u
+    join identity.gulierp_user_company_membership m
+      on m."UserId" = u."Id"
+     and m."TenantId" = u."TenantId"
+     and m."IsDefault" = true
+     and m."Status" = 1
+    where u."UserName" = @userName
+      and u."TenantId" <> 0
+      and u."Status" = 1
+    order by m."CompanyId"
+    limit 1
+),
+existing_role as (
+    select r."Id" as role_id
+    from identity."AspNetRoles" r
+    join operator_user ou on ou.tenant_id = r."TenantId"
+    where r."Code" = @roleCode
+    limit 1
+),
+insert_role as (
+    insert into identity."AspNetRoles" (
+        "Id", "TenantId", "Code", "IsSystem", "Description", "Status",
+        "CreatedAt", "ModifiedAt", "ConcurrencyVersion",
+        "Name", "NormalizedName", "ConcurrencyStamp"
+    )
+    select
+        ((extract(epoch from clock_timestamp()) * 1000000)::bigint + floor(random() * 1000)::bigint),
+        ou.tenant_id,
+        @roleCode,
+        false,
+        'G2-005 operator runtime allow marker role.',
+        1,
+        now(),
+        now(),
+        1,
+        @roleName,
+        @normalizedRoleName,
+        ('g2-005-' || md5(random()::text || clock_timestamp()::text))
+    from operator_user ou
+    where not exists (select 1 from existing_role)
+    returning "Id" as role_id
+),
+chosen_role as (
+    select role_id from existing_role
+    union all
+    select role_id from insert_role
+    limit 1
+),
+insert_claim as (
+    insert into identity."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue")
+    select cr.role_id, 'gulierp.permission', 'g2.probe.read'
+    from chosen_role cr
+    where not exists (
+        select 1
+        from identity."AspNetRoleClaims" c
+        where c."RoleId" = cr.role_id
+          and c."ClaimType" = 'gulierp.permission'
+          and c."ClaimValue" = 'g2.probe.read'
+    )
+    returning 1
+),
+insert_assignment as (
+    insert into identity.gulierp_user_role_assignment (
+        "Id", "TenantId", "UserId", "RoleId", "CompanyId",
+        "ValidFrom", "ValidTo", "Status",
+        "CreatedAt", "ModifiedAt", "ConcurrencyVersion"
+    )
+    select
+        ((extract(epoch from clock_timestamp()) * 1000000)::bigint + floor(random() * 1000)::bigint),
+        ou.tenant_id,
+        ou.user_id,
+        cr.role_id,
+        ou.company_id,
+        null,
+        null,
+        1,
+        now(),
+        now(),
+        1
+    from operator_user ou
+    cross join chosen_role cr
+    where not exists (
+        select 1
+        from identity.gulierp_user_role_assignment a
+        where a."TenantId" = ou.tenant_id
+          and a."UserId" = ou.user_id
+          and a."RoleId" = cr.role_id
+          and a."CompanyId" = ou.company_id
+          and a."Status" = 1
+    )
+    returning 1
+)
+select
+    case
+        when not exists (select 1 from operator_user) then 'missing_operator_user_or_default_company'
+        when not exists (select 1 from chosen_role) then 'missing_role'
+        else 'ok'
+    end;
+'@
+
+    $result = Invoke-NpgsqlScalar -ConnectionString $ConnectionString -Sql $grantSql -Parameters @{
+        userName = $OperatorUser
+        roleCode = 'G2_005_OPERATOR_PROBE_READ'
+        roleName = ($OperatorUser + '_g2_005_probe_read')
+        normalizedRoleName = (($OperatorUser + '_g2_005_probe_read').ToUpperInvariant())
+    }
+
+    if ([string]$result -ne 'ok') {
+        Fail-Fatal "G2-005 operator probe-read grant setup failed: $result" 1
+    }
+    Pass "Operator marker user has g2.probe.read grant for runtime allow probe"
+}
+
+function Revoke-OperatorProbeReadGrant {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)] [string]$ConnectionString)
+
+    $revokeSql = @'
+with operator_user as (
+    select u."Id" as user_id, u."TenantId" as tenant_id
+    from identity."AspNetUsers" u
+    where u."UserName" = @userName
+    limit 1
+),
+target_role as (
+    select r."Id" as role_id
+    from identity."AspNetRoles" r
+    join operator_user ou on ou.tenant_id = r."TenantId"
+    where r."Code" = @roleCode
+    limit 1
+),
+delete_assignments as (
+    delete from identity.gulierp_user_role_assignment a
+    using operator_user ou, target_role tr
+    where a."TenantId" = ou.tenant_id
+      and a."UserId" = ou.user_id
+      and a."RoleId" = tr.role_id
+    returning 1
+)
+select count(*)::int from delete_assignments;
+'@
+
+    [void](Invoke-NpgsqlScalar -ConnectionString $ConnectionString -Sql $revokeSql -Parameters @{
+        userName = $OperatorUser
+        roleCode = 'G2_005_OPERATOR_PROBE_READ'
+    })
+    Pass "Operator marker g2.probe.read runtime grant cleared before deny probe"
+}
+
+function Initialize-AuthenticatedRuntimeSession {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [string]$BaseUrl,
+        [Parameter(Mandatory = $true)] [string]$Label
+    )
+
+    $session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+    $csrfResp = Invoke-HttpProbe -Method Get -Uri "$BaseUrl/api/v1/auth/csrf" -WebSession $session
+    Assert-Status -Probe $csrfResp -ExpectedStatus 200 -Label "$Label GET /api/v1/auth/csrf"
+
+    try {
+        $csrfToken = ($csrfResp.Content | ConvertFrom-Json).requestToken
+    }
+    catch {
+        Fail-Fatal "$Label /csrf response was not valid JSON. Body: $($csrfResp.Content)" 1
+    }
+    if ([string]::IsNullOrEmpty($csrfToken)) {
+        Fail-Fatal "$Label /csrf response missing requestToken" 1
+    }
+    Assert-AntiforgeryCookieCaptured -WebSession $session -BaseUrl $BaseUrl -Label $Label
+
+    Use-OperatorUserPlainPassword {
+        param($plainPwd)
+        $loginBody = (ConvertTo-Json -InputObject @{
+            userName = $OperatorUser
+            password = $plainPwd
+            tenantCode = $OperatorTenant
+        } -Compress)
+        $loginResp = Invoke-HttpProbe -Method Post -Uri "$BaseUrl/api/v1/auth/login" `
+            -ContentType 'application/json' -Body $loginBody `
+            -Headers @{ 'X-CSRF-TOKEN' = $csrfToken } `
+            -WebSession $session
+        Assert-Status -Probe $loginResp -ExpectedStatus 200 -Label "$Label POST /api/v1/auth/login"
+    }
+
+    $me = Invoke-HttpProbe -Method Get -Uri "$BaseUrl/api/v1/auth/me" -WebSession $session
+    Assert-Status -Probe $me -ExpectedStatus 200 -Label "$Label GET /api/v1/auth/me authenticated cookie roundtrip"
+    try {
+        $meBody = $me.Content | ConvertFrom-Json
+    }
+    catch {
+        Fail-Fatal "$Label /auth/me response was not valid JSON. Body: $($me.Content)" 1
+    }
+    if ($null -eq $meBody.tenantId -or $null -eq $meBody.companyId) {
+        Fail-Fatal "$Label /auth/me response missing tenantId/companyId. Body: $($me.Content)" 1
+    }
+    Pass "$Label authenticated cookie established in the same WebRequestSession"
+    return @{
+        WebSession = $session
+        TenantId = [long]$meBody.tenantId
+        CompanyId = [long]$meBody.companyId
+    }
+}
+
 function Complete-Cleanup {
     if ($script:OperatorPgSecurePassword) {
         $script:OperatorPgSecurePassword.Dispose()
         $script:OperatorPgSecurePassword = $null
+    }
+    if ($script:OperatorUserSecurePassword) {
+        $script:OperatorUserSecurePassword.Dispose()
+        $script:OperatorUserSecurePassword = $null
     }
 }
 
@@ -412,6 +736,34 @@ else {
 
 Write-Host "[G2-005] Connection: $((Redact-SecretText $conn).Trim())"
 Set-OperatorConnectionEnvironment -ConnectionString $conn
+
+$MarkerPrefix = 'test_operator_'
+$OperatorUser = $env:GULIERP_OPERATOR_USER
+if (-not $OperatorUser) { $OperatorUser = 'test_operator_g2_004' }
+$OperatorTenant = $env:GULIERP_OPERATOR_TENANT
+if (-not $OperatorTenant) { $OperatorTenant = 'test_operator_g2_004_t' }
+
+foreach ($pair in @(
+        @('OperatorUser', $OperatorUser),
+        @('OperatorTenant', $OperatorTenant)
+    )) {
+    $name = $pair[0]
+    $val = $pair[1]
+    if (-not $val.StartsWith($MarkerPrefix, [System.StringComparison]::Ordinal)) {
+        Fail-Fatal "SAFETY: $name='$val' must start with '$MarkerPrefix'." 2
+    }
+}
+Write-Host "[G2-005] Operator test user = $OperatorUser"
+
+$script:OperatorUserSecurePassword = $null
+if ($SkipPrompt) {
+    Fail-Fatal "Operator test user password is required for authenticated runtime probes; SkipPrompt was specified." 3
+}
+Write-Host "[G2-005] Operator test user password will be read via Read-Host -AsSecureString (NOT echoed)."
+$script:OperatorUserSecurePassword = Read-Host -Prompt 'Operator test user password' -AsSecureString
+if ($null -eq $script:OperatorUserSecurePassword -or $script:OperatorUserSecurePassword.Length -lt 1) {
+    Fail-Fatal "Empty Operator test user password. Aborting." 2
+}
 
 try {
     Step-Header 1 'Release build'
@@ -517,22 +869,31 @@ try {
         $unauth = Invoke-HttpProbe -Method Get -Uri "$testingBaseUrl/__test/g2-005/company-resource/10?tenantId=1"
         Assert-Status -Probe $unauth -ExpectedStatus 401 -Label 'Testing unauthenticated protected probe' -BodyContains 'authentication_required'
 
-        $baseHeaders = @{ 'X-Test-Authenticated' = 'true'; 'X-User-Id' = '100'; 'X-Tenant-Id' = '1'; 'X-Company-Id' = '10' }
-        $deny = Invoke-HttpProbe -Method Get -Uri "$testingBaseUrl/__test/g2-005/company-resource/10?tenantId=1" -Headers $baseHeaders
+        Revoke-OperatorProbeReadGrant -ConnectionString $conn
+        $denyActor = Initialize-AuthenticatedRuntimeSession -BaseUrl $testingBaseUrl -Label 'Testing deny actor'
+        $tenantId = [long]$denyActor.TenantId
+        $companyId = [long]$denyActor.CompanyId
+        $baseHeaders = @{ 'X-Tenant-Id' = "$tenantId"; 'X-Company-Id' = "$companyId" }
+        $deny = Invoke-HttpProbe -Method Get -Uri "$testingBaseUrl/__test/g2-005/company-resource/$companyId`?tenantId=$tenantId" -Headers $baseHeaders -WebSession $denyActor.WebSession
         Assert-Status -Probe $deny -ExpectedStatus 403 -Label 'Testing authenticated without g2.probe.read' -BodyContains 'authorization_forbidden'
 
-        $allowHeaders = @{ 'X-Test-Authenticated' = 'true'; 'X-User-Id' = '100'; 'X-Tenant-Id' = '1'; 'X-Company-Id' = '10'; 'X-Test-Permission' = 'g2.probe.read' }
-        $allow = Invoke-HttpProbe -Method Get -Uri "$testingBaseUrl/__test/g2-005/company-resource/10?tenantId=1" -Headers $allowHeaders
-        Assert-Status -Probe $allow -ExpectedStatus 200 -Label 'Testing permission header wiring'
+        $platformAdminActor = Initialize-AuthenticatedRuntimeSession -BaseUrl $testingBaseUrl -Label 'Testing PlatformAdmin actor'
+        $platformAdminNoPermission = Invoke-HttpProbe -Method Get -Uri "$testingBaseUrl/__test/g2-005/company-resource/$companyId`?tenantId=$tenantId" -Headers (@{ 'X-Tenant-Id' = "$tenantId"; 'X-Company-Id' = "$companyId"; 'X-Platform-Admin' = 'true' }) -WebSession $platformAdminActor.WebSession
+        Assert-Status -Probe $platformAdminNoPermission -ExpectedStatus 403 -Label 'Testing PlatformAdmin without permission' -BodyContains 'authorization_forbidden'
 
-        $crossCompany = Invoke-HttpProbe -Method Get -Uri "$testingBaseUrl/__test/g2-005/company-resource/20?tenantId=1" -Headers $allowHeaders
+        Ensure-OperatorProbeReadGrant -ConnectionString $conn
+        $allowActor = Initialize-AuthenticatedRuntimeSession -BaseUrl $testingBaseUrl -Label 'Testing allow actor'
+        $allowHeaders = @{ 'X-Tenant-Id' = "$tenantId"; 'X-Company-Id' = "$companyId" }
+        $allow = Invoke-HttpProbe -Method Get -Uri "$testingBaseUrl/__test/g2-005/company-resource/$companyId`?tenantId=$tenantId" -Headers $allowHeaders -WebSession $allowActor.WebSession
+        Assert-Status -Probe $allow -ExpectedStatus 200 -Label 'Testing real PostgreSQL permission wiring'
+
+        $crossCompanyId = $companyId + 1
+        $crossCompany = Invoke-HttpProbe -Method Get -Uri "$testingBaseUrl/__test/g2-005/company-resource/$crossCompanyId`?tenantId=$tenantId" -Headers $allowHeaders -WebSession $allowActor.WebSession
         Assert-Status -Probe $crossCompany -ExpectedStatus 404 -Label 'Testing cross-company data scope'
 
-        $crossTenant = Invoke-HttpProbe -Method Get -Uri "$testingBaseUrl/__test/g2-005/company-resource/10?tenantId=2" -Headers $allowHeaders
+        $crossTenantId = $tenantId + 1
+        $crossTenant = Invoke-HttpProbe -Method Get -Uri "$testingBaseUrl/__test/g2-005/company-resource/$companyId`?tenantId=$crossTenantId" -Headers $allowHeaders -WebSession $allowActor.WebSession
         Assert-Status -Probe $crossTenant -ExpectedStatus 404 -Label 'Testing cross-tenant data scope'
-
-        $platformAdminNoPermission = Invoke-HttpProbe -Method Get -Uri "$testingBaseUrl/__test/g2-005/company-resource/10?tenantId=1" -Headers (@{ 'X-Test-Authenticated' = 'true'; 'X-User-Id' = '100'; 'X-Tenant-Id' = '1'; 'X-Company-Id' = '10'; 'X-Platform-Admin' = 'true' })
-        Assert-Status -Probe $platformAdminNoPermission -ExpectedStatus 403 -Label 'Testing PlatformAdmin without permission' -BodyContains 'authorization_forbidden'
     }
     finally {
         Stop-OwnedHost -ProcessId $testingHostPid
