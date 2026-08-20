@@ -230,14 +230,35 @@ function Start-HostProcess {
         'run', '--project', 'apps/api/GuliERP.Api/GuliERP.Api.csproj',
         '-c', 'Release', '--no-build', '--urls', $Url
     )
-    if ($Environment) { $dotnetArgs += @('--environment', $Environment) }
     $stdout = "$env:TEMP\$LogPrefix-host.log"
     $stderr = "$env:TEMP\$LogPrefix-host.err.log"
-    return Start-Process -FilePath $Dotnet -ArgumentList $dotnetArgs `
-        -PassThru `
-        -RedirectStandardOutput $stdout `
-        -RedirectStandardError $stderr `
-        -WindowStyle Hidden
+    $savedAspNetCoreEnvironment = $env:ASPNETCORE_ENVIRONMENT
+    $savedDotNetEnvironment = $env:DOTNET_ENVIRONMENT
+    try {
+        if ($Environment) {
+            $env:ASPNETCORE_ENVIRONMENT = $Environment
+            $env:DOTNET_ENVIRONMENT = $Environment
+        }
+        return Start-Process -FilePath $Dotnet -ArgumentList $dotnetArgs `
+            -PassThru `
+            -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr `
+            -WindowStyle Hidden
+    }
+    finally {
+        if ($null -eq $savedAspNetCoreEnvironment) {
+            Remove-Item -Path Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue
+        }
+        else {
+            Set-Item -Path Env:ASPNETCORE_ENVIRONMENT -Value $savedAspNetCoreEnvironment
+        }
+        if ($null -eq $savedDotNetEnvironment) {
+            Remove-Item -Path Env:DOTNET_ENVIRONMENT -ErrorAction SilentlyContinue
+        }
+        else {
+            Set-Item -Path Env:DOTNET_ENVIRONMENT -Value $savedDotNetEnvironment
+        }
+    }
 }
 
 $script:OwnedHostPids = New-Object 'System.Collections.Generic.List[int]'

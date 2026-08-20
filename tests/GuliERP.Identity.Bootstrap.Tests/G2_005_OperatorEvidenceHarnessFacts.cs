@@ -114,6 +114,25 @@ public sealed class G2_005_OperatorEvidenceHarnessFacts
         Assert.Contains("Production trust path: no X-Test-Permission / X-Test-Role / X-Test-DataScope / X-Test-Plant production bypass added", script);
     }
 
+    [Fact]
+    public void Harness_PropagatesTestingAndProductionEnvironment_ToChildHost()
+    {
+        var script = NormalizeNewlines(ReadHarness());
+
+        Assert.Contains("function Start-HostProcess", script);
+        Assert.Contains("$savedAspNetCoreEnvironment = $env:ASPNETCORE_ENVIRONMENT", script);
+        Assert.Contains("$savedDotNetEnvironment = $env:DOTNET_ENVIRONMENT", script);
+        Assert.Contains("$env:ASPNETCORE_ENVIRONMENT = $Environment", script);
+        Assert.Contains("$env:DOTNET_ENVIRONMENT = $Environment", script);
+        Assert.Contains("Remove-Item -Path Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue", script);
+        Assert.Contains("Remove-Item -Path Env:DOTNET_ENVIRONMENT -ErrorAction SilentlyContinue", script);
+        Assert.Contains("Set-Item -Path Env:ASPNETCORE_ENVIRONMENT -Value $savedAspNetCoreEnvironment", script);
+        Assert.Contains("Set-Item -Path Env:DOTNET_ENVIRONMENT -Value $savedDotNetEnvironment", script);
+        Assert.Contains("Start-HostProcess -Url $testingBaseUrl -Environment 'Testing'", script);
+        Assert.Contains("Start-HostProcess -Url $productionBaseUrl -Environment 'Production'", script);
+        Assert.DoesNotContain("@('--environment', $Environment)", script);
+    }
+
     private static string NormalizeNewlines(string value)
     {
         return value.Replace("\r\n", "\n");

@@ -142,6 +142,31 @@ The harness build gate is now locale-independent:
 - the harness no longer parses `0 Warning(s)`, `0 warnings`, `0 个警告`, or
   any other localized success text.
 
+### 6.2 Testing Probe Route 404 Fix
+
+Operator evidence then reached Step 5 with the Testing host live on
+`http://127.0.0.1:5105`, but `GET /__test/g2-005/company-resource/10?tenantId=1`
+returned 404 `route_not_found`.
+
+Source inspection showed:
+
+- actual test route:
+  `GET /__test/g2-005/company-resource/{companyId:long}?tenantId={tenantId}`;
+- Program registration: present, under `app.Environment.IsEnvironment("Testing")`;
+- harness path: matches the actual route.
+
+Local reproduction showed the child host still logged
+`Hosting environment: Production` when launched with the previous
+`dotnet run ... --environment Testing` argument. The route was absent because
+the child process did not receive the real ASP.NET Core environment.
+
+The harness now sets both environment variables for script-owned child hosts:
+
+- Testing host: `ASPNETCORE_ENVIRONMENT=Testing` and `DOTNET_ENVIRONMENT=Testing`;
+- Production host: `ASPNETCORE_ENVIRONMENT=Production` and
+  `DOTNET_ENVIRONMENT=Production`;
+- caller environment values are restored immediately after `Start-Process`.
+
 ## 7. PostgreSQL Evidence
 
 Real PostgreSQL operator evidence is still pending. Because no schema change
