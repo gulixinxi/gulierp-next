@@ -122,3 +122,24 @@ To upgrade the gate, Operator must run against the canonical PostgreSQL target:
 Only after those steps pass may the gate become:
 
 `ID_GENERATION_POSTGRES_HILO_VERIFIED`
+
+## ID-GEN-001R1 Follow-up
+
+Operator evidence later showed 4 Identity integration failures with PostgreSQL
+`42P01`:
+
+`relation "identity.gulierp_hilo_sequence" does not exist`
+
+R1 diagnosis found that the migration and model both use the correct sequence
+name/schema, but the G2-005 Operator harness ran `dotnet ef database update`
+with `--no-build` and without `--configuration Release`. EF therefore read the
+stale Debug migration assembly and did not discover/apply
+`20260820100503_IDGEN001_PostgresHiLo`.
+
+The harness was corrected to use:
+
+`--configuration Release --no-build`
+
+for Foundation and Identity database update steps. See:
+
+`docs/verification/ID_GEN_001R1_MISSING_HILO_SEQUENCE_REPORT.md`

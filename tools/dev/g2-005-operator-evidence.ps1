@@ -775,7 +775,7 @@ try {
     Pass "Release build clean (warnings treated as errors)"
 
     Step-Header 2 'Foundation migration'
-    & $Dotnet ef database update --project modules/foundation/GuliERP.Foundation/GuliERP.Foundation.csproj --no-build 2>&1 | Tee-Object -Variable migOut | Out-Null
+    & $Dotnet ef database update --project modules/foundation/GuliERP.Foundation/GuliERP.Foundation.csproj --configuration Release --no-build 2>&1 | Tee-Object -Variable migOut | Out-Null
     if ($LASTEXITCODE -ne 0) {
         Write-RedactedCommandDiagnostics -Label 'Foundation migration' -Output $migOut
         Fail-Fatal "Foundation migration failed (exit=$LASTEXITCODE)." 1
@@ -783,7 +783,7 @@ try {
     Pass "Foundation migration applied (or already up to date)"
 
     Step-Header 3 'Identity migration'
-    & $Dotnet ef database update --project modules/identity/GuliERP.Identity.Infrastructure/GuliERP.Identity.Infrastructure.csproj --startup-project apps/api/GuliERP.Api/GuliERP.Api.csproj --no-build 2>&1 | Tee-Object -Variable idMigOut | Out-Null
+    & $Dotnet ef database update --project modules/identity/GuliERP.Identity.Infrastructure/GuliERP.Identity.Infrastructure.csproj --startup-project apps/api/GuliERP.Api/GuliERP.Api.csproj --configuration Release --no-build 2>&1 | Tee-Object -Variable idMigOut | Out-Null
     if ($LASTEXITCODE -ne 0) {
         Write-RedactedCommandDiagnostics -Label 'Identity migration' -Output $idMigOut
         Fail-Fatal "Identity migration failed (exit=$LASTEXITCODE)." 1
