@@ -491,17 +491,19 @@ Pass "Identity migration applied (or already up to date)"
 # has failed > 0, the harness fails fast.
 Step-Header 4 'Integration + unit tests (per-suite TRX counters)'
 
-# Baseline: G2-004V1R4 documents the real-PostgreSQL baseline as
-# 174 tests (13 + 26 + 44 + 59 + 31; the Bootstrap suite gained
-# 2 new ProcessIoDeadlockFacts tests in V1R4; it was 11 in V1R3).
-# On a stale environment (e.g. the Mavis loud-fail baseline of
-# 165 = 13+26+44+55+26) the Operator MUST regenerate the DB /
-# reapply migrations before promoting to
-# G2_004_AUTHENTICATION_KERNEL_VERIFIED. The baseline is
-# asserted as a minimum gate, NOT a hard equality (so the
-# harness does not break if new tests are added later in this
-# same gate).
-$script:BaselineAtG2_004 = 174
+# Baseline: G2-004V1R4 + arithmetic correction documents the
+# real-PostgreSQL baseline as 173 tests (13 + 26 + 44 + 59 + 31;
+# the Bootstrap suite gained 2 new ProcessIoDeadlockFacts
+# tests in V1R4; it was 11 in V1R3). The V1R4 commit
+# originally wrote 174 by arithmetic mistake; corrected to
+# 173 (13+26+44+59+31 = 173). On a stale environment
+# (e.g. the Mavis loud-fail baseline of 164 = 13+26+44+55+26)
+# the Operator MUST regenerate the DB / reapply migrations
+# before promoting to G2_004_AUTHENTICATION_KERNEL_VERIFIED.
+# The baseline is asserted as a minimum gate, NOT a hard
+# equality (so the harness does not break if new tests are
+# added later in this same gate).
+$script:BaselineAtG2_004 = 173
 
 $suites = @(
     @{ Name = 'GuliERP.Identity.Bootstrap.Tests';        Project = 'tests/GuliERP.Identity.Bootstrap.Tests/GuliERP.Identity.Bootstrap.Tests.csproj' },
@@ -609,14 +611,25 @@ if ($suiteHasFailure -or $grandFailed -gt 0 -or $grandNotExecuted -gt 0) {
     Fail-Fatal "Test suites FAILED (failed=$grandFailed, notExecuted=$grandNotExecuted). Harness aborts." 1
 }
 
-# Baseline gate: G2-004V1R4 documents the real-PostgreSQL
-# baseline as $script:BaselineAtG2_004 = 174. We assert the
-# grand total is AT LEAST the baseline (not exact equality:
-# future tests added within the same gate must not silently
-# break the harness). If a future G2-004+ gate changes the
-# expected total, bump the constant AND the report.
+# Baseline gate: G2-004V1R4 + arithmetic correction
+# documents the real-PostgreSQL baseline as
+# $script:BaselineAtG2_004 = 173. We assert the grand
+# total is AT LEAST the baseline (not exact equality:
+# future tests added within the same gate must not
+# silently break the harness). If a future G2-004+ gate
+# changes the expected total, bump the constant AND the
+# report.
+#
+# A baseline-mismatch is a TEST INVENTORY mismatch, NOT a
+# DB-reachability claim. The integration suites
+# (Identity.IntegrationTests 59/59, Foundation.IntegrationTests
+# 31/31 on real PG) and the runtime Round 1 / 2 health
+# probes (live 200 + ready 200) are the DB-reachability
+# evidence. The baseline assertion is purely a sanity
+# check that the test inventory is consistent with the
+# frozen G2-004 inventory.
 if ($grandTotal -lt $script:BaselineAtG2_004) {
-    Fail-Fatal "Test total $grandTotal is BELOW the G2-004V1R4 baseline of $script:BaselineAtG2_004. Real PostgreSQL is likely unreachable; the G2-001 env-dep / G2-003 / G2-003V2 loud-fails would not have flipped. Re-check DB connection and migrations." 1
+    Fail-Fatal "Test inventory total $grandTotal is BELOW the frozen G2-004 baseline of $script:BaselineAtG2_004. Check test discovery / suite inventory consistency (NOT a DB-reachability claim; the integration suites + runtime Round 1/2 health probes prove DB reachability separately)." 1
 }
 
 Pass "All 5 suites PASS ($grandPassed/$grandTotal, baseline $script:BaselineAtG2_004 met)"

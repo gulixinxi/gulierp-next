@@ -200,7 +200,7 @@ Internal code comments still reference `G2-004V1R1` / `G2-004V1R2` / `G2-004V1R3
 
 ---
 
-## 9. Test Baseline Bump (171 → 174)
+## 9. Test Baseline Bump (171 → 173) + Arithmetic Correction
 
 G2-004V1R4 adds 2 new unit tests in the Bootstrap suite (no integration tests added). The new per-suite baseline is:
 
@@ -211,9 +211,22 @@ G2-004V1R4 adds 2 new unit tests in the Bootstrap suite (no integration tests ad
 | `GuliERP.Foundation.Tests` | 44 | 44 | 0 |
 | `GuliERP.Identity.IntegrationTests` | 59 | 59 | 0 |
 | `GuliERP.Foundation.IntegrationTests` | 31 | 31 | 0 |
-| **Total** | **171** | **174** | **+2** |
+| **Total** | **171** | **173** | **+2** |
 
-`$script:BaselineAtG2_004` is bumped from 171 to 174. The baseline is still asserted as a **minimum** (not exact equality).
+`$script:BaselineAtG2_004` is bumped from 171 to 173. The baseline is still asserted as a **minimum** (not exact equality).
+
+> **Arithmetic correction note (this section is the source of truth):**
+> The G2-004V1R4 commit `10d7162` originally wrote the
+> baseline as 174 (an off-by-one arithmetic mistake:
+> 13+26+44+59+31 = 173, not 174). The V1R5 arithmetic
+> correction commit (this section's reference) fixes the
+> constant to 173, the Fail-Fatal message to a neutral
+> "test inventory mismatch" wording (NOT a DB-reachability
+> claim), and all references in the V1R4 report + the
+> GOAL_REGISTRY. The Mavis loud-fail baseline is similarly
+> corrected from 165 to 164 (13+26+44+55+26 = 164, not 165).
+> The corrected test counts in this V1R4 report match the
+> corrected harness constant.
 
 ---
 
@@ -238,7 +251,7 @@ The harness NEVER prints `[PASS]` for an assertion that was not actually checked
 | `GuliERP.Foundation.Tests` | 44/44 PASS | 44/44 PASS | 0 |
 | `GuliERP.Foundation.IntegrationTests` | 26/31 (5 loud-fail) | 26/31 (5 loud-fail) | 0 |
 | `GuliERP.Identity.IntegrationTests` | 55/59 (4 loud-fail) | 55/59 (4 loud-fail) | 0 |
-| **Mavis total** | **162/171 / 9 LOUD-FAIL** | **165/174 / 9 LOUD-FAIL** | **+2 unit** |
+| **Mavis total** | **162/171 / 9 LOUD-FAIL** | **164/173 / 9 LOUD-FAIL** | **+2 unit** |
 
 | Check | Result |
 |---|---|
@@ -264,11 +277,12 @@ The harness NEVER prints `[PASS]` for an assertion that was not actually checked
 | HD-G2-004V1R4-2 | The `BOOTSTRAP_PROCESS_TIMEOUT` kill uses `Stop-Process -Id $proc.Id` (PID only, no `Get-Process -Name`). On the Operator's workstation with other .NET dev processes running, this kill is bounded to the bootstrap child only. No collateral damage. |
 | HD-G2-004V1R4-3 | The 2 new `ProcessIoDeadlockFacts` tests spawn `pwsh.exe` (PowerShell 7) and require the project standard. The G2-004V1R1 disclosure HD-2 documents PowerShell 7.0+ as the project standard. If `pwsh.exe` is missing on a future test environment, the tests will fail loudly with a clear `Assert.NotNull` message (NOT silently skip). |
 | HD-G2-004V1R4-4 | The `TimeoutKillsOwnedChild` test uses `proc.Kill(entireProcessTree: true)` to ensure any child pwsh subprocesses are also killed. The `entireProcessTree: true` parameter is .NET Core 3.0+ only; we are on .NET 10. |
-| HD-G2-004V1R4-5 | The Mavis-side test run is **165/174 PASS / 9 LOUD-FAIL** (vs V1R3 162/171). The 9 loud-fails are unchanged (G2-001 env-dep + G2-003 + G2-003V2 families that need a real PostgreSQL). The +2 delta is the 2 new ProcessIoDeadlockFacts unit tests. |
+| HD-G2-004V1R4-5 | The Mavis-side test run is **164/173 PASS / 9 LOUD-FAIL** (vs V1R3 162/171). The 9 loud-fails are unchanged (G2-001 env-dep + G2-003 + G2-003V2 families that need a real PostgreSQL). The +2 delta is the 2 new ProcessIoDeadlockFacts unit tests. (V1R4 commit originally wrote 165/174; arithmetic correction in V1R5 commit fixed to 164/173.) |
 | HD-G2-004V1R4-6 | The `WaitForExit(timeoutMs)` is the .NET `Process.WaitForExit(Int32)` overload. It returns `false` on timeout, `true` on natural exit. The 60s budget covers DB latency + EF Core / Identity writes; the 2s budget in the test is intentionally tight to exercise the timeout path. |
-| HD-G2-004V1R4-7 | The 174 baseline is asserted as a **minimum** (not exact equality). The next R5+ commit that adds more tests in the same gate will not silently break the harness; the constant should be bumped in the same commit as the new tests. |
+| HD-G2-004V1R4-7 | The 173 baseline is asserted as a **minimum** (not exact equality). The next R5+ commit that adds more tests in the same gate will not silently break the harness; the constant should be bumped in the same commit as the new tests. (V1R4 commit originally wrote 174; arithmetic correction in V1R5 commit fixed to 173.) |
 | HD-G2-004V1R4-8 | The deadlock fix is structurally identical to the canonical MSDN / .NET runtime recommendation: "always drain the streams of a redirected Process concurrently." This pattern is required on Windows because the OS pipe buffer is small (~4 KB) and the child's writes are synchronous. The 2 new tests assert this pattern holds. |
 | HD-G2-004V1R4-9 | The user-visible banner unification (`G2-004V1R1` → `G2-004`) is a LOW housekeeping change. Internal code comments still reference `G2-004V1R1` / `G2-004V1R2` / `G2-004V1R3` because those are real git commits; those are documentation, not user-facing. |
+| HD-G2-004V1R4-10 | (Arithmetic correction note.) The G2-004V1R4 commit `10d7162` originally wrote the baseline as 174 and the Mavis loud-fail summary as 165/174. Both are off-by-one (13+26+44+59+31=173 and 13+26+44+55+26=164). The V1R5 arithmetic correction commit fixes the constant, the Fail-Fatal message, the V1R4 report, and the GOAL_REGISTRY. The Fail-Fatal message wording was also changed from "Real PostgreSQL is likely unreachable" to a neutral "Test inventory mismatch; check test discovery" — the baseline assertion is a TEST INVENTORY check, NOT a DB-reachability claim; DB reachability is proven separately by the integration suites (59/59, 31/31 on real PG) and the runtime Round 1/2 health probes. |
 
 ---
 
