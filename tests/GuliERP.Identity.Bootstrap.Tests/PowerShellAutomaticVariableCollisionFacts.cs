@@ -111,6 +111,7 @@ public class PowerShellAutomaticVariableCollisionFacts
     {
         "tools/dev/g2-004-operator-evidence.ps1",
         "tools/dev/g2-004-bootstrap-operator-user.ps1",
+        "tools/dev/g2-005-operator-evidence.ps1",
     };
 
     [Fact]
