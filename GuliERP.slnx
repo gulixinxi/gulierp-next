@@ -15,7 +15,11 @@
   <Folder Name="/tests/">
     <Project Path="tests/GuliERP.Foundation.IntegrationTests/GuliERP.Foundation.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.Foundation.Tests/GuliERP.Foundation.Tests.csproj" />
+    <Project Path="tests/GuliERP.Identity.Bootstrap.Tests/GuliERP.Identity.Bootstrap.Tests.csproj" />
     <Project Path="tests/GuliERP.Identity.IntegrationTests/GuliERP.Identity.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.Identity.Tests/GuliERP.Identity.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/GuliERP.Identity.Bootstrap/GuliERP.Identity.Bootstrap.csproj" />
   </Folder>
 </Solution>
