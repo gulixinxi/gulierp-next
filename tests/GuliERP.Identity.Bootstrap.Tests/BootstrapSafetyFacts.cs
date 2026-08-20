@@ -22,7 +22,17 @@ namespace GuliERP.Identity.Bootstrap.Tests;
 /// guard rejects the request BEFORE any DB call. The tests
 /// run in &lt; 1 second total.
 /// </para>
+///
+/// <para>
+/// xUnit collection "BootstrapConsole": all tests in this
+/// collection serialize against each other because the
+/// bootstrap tool writes SAFETY messages to the process-global
+/// <c>Console.Error</c> / <c>Console.In</c>. Running them in
+/// parallel would interleave output. The collection keeps all
+/// bootstrap tests on a single thread.
+/// </para>
 /// </summary>
+[Collection("BootstrapConsole")]
 public class BootstrapSafetyFacts
 {
     [Fact]

@@ -22,9 +22,12 @@ namespace GuliERP.Identity.Bootstrap;
 /// <para>
 /// <b>Security contract:</b>
 /// <list type="bullet">
-///   <item>The userName MUST carry the <c>test_operator_</c> marker
-///         prefix. The tool REFUSES to touch any user without the
-///         prefix (defense against accidental prod-user reset).</item>
+///   <item>The userName / tenantCode / companyCode MUST carry the
+///         configured marker prefix (default <c>test_operator_</c>;
+///         the optional 5th CLI arg overrides the prefix to a
+///         different value such as <c>web_preview_</c>). The tool
+///         REFUSES to touch any user without the prefix (defense
+///         against accidental prod-user reset).</item>
 ///   <item>The password is read from STDIN (one line) so the
 ///         PowerShell wrapper can pipe a <c>Read-Host -AsSecureString</c>
 ///         value without it being echoed to history / console.</item>
@@ -40,24 +43,36 @@ namespace GuliERP.Identity.Bootstrap;
 ///   <item>Tenant + Company + membership are created if missing.
 ///         All entities are tagged with the same marker prefix so
 ///         the cleanup tool can find them.</item>
+///   <item>Optional system-role grants: the 6th CLI arg is a
+///         comma-separated list of <c>GuliErpRole.Code</c> values
+///         (e.g. <c>PLATFORM_ADMIN,TENANT_ADMIN,COMPANY_ADMIN,NORMAL_USER</c>).
+///         When present, the bootstrap creates
+///         <c>UserRoleAssignment</c> rows for each role at
+///         Tenant-wide scope (CompanyId = null), idempotent.
+///         Used by the Web Preview user so it can hit the MDM
+///         endpoints. The default empty arg means NO role grants
+///         — the G2-004 G2-005 contract is preserved.</item>
 ///   <item>Output is a single JSON object on stdout (so PowerShell
 ///         can parse it). The password is NEVER echoed.</item>
 /// </list>
 /// </para>
 ///
 /// <para>
-/// <b>CLI:</b>
+/// <b>CLI (4 args — G2-004 default):</b>
 /// <c>dotnet run --project tools/GuliERP.Identity.Bootstrap -- &lt;connectionString&gt; &lt;userNameWithMarker&gt; &lt;tenantCode&gt; &lt;companyCode&gt;</c>
+///
+/// <b>CLI (5/6 args — WEB-PREVIEW-001A):</b>
+/// <c>dotnet run --project tools/GuliERP.Identity.Bootstrap -- &lt;connectionString&gt; &lt;userNameWithMarker&gt; &lt;tenantCode&gt; &lt;companyCode&gt; &lt;markerPrefix&gt; [systemRolesCsv]</c>
 /// — the password is read from STDIN.
 /// </para>
 /// </summary>
 public static class Program
 {
     /// <summary>
-    /// The mandatory marker prefix for any user / tenant / company
-    /// created by this tool. The bootstrap refuses to touch
-    /// anything without this prefix. Cleanup scripts can use
-    /// this to find bootstrap-created artifacts.
+    /// The default marker prefix for the G2-004 / G2-005 chain. The
+    /// bootstrap refuses to touch anything without a marker prefix
+    /// (either this default or the optional 5th CLI arg). Cleanup
+    /// scripts can use this default to find G2-004-era artifacts.
     /// </summary>
     public const string MarkerPrefix = "test_operator_";
 
@@ -71,34 +86,62 @@ public static class Program
 
     public static async Task<int> Main(string[] args)
     {
+        // -------------------------------------------------------------
+        // --diagnose mode (WEB-PREVIEW-001A): read-only diagnostic.
+        //   Args: --diagnose <connectionString> <userName>
+        //   STDIN: optional candidate password (for PASSWORD_VERIFICATION)
+        //   Output: a single JSON object with the 5+1 non-secret
+        //           fields (EXISTS, ACTIVE, LOCKED, TENANT_BINDING,
+        //           COMPANY_BINDING, PASSWORD_VERIFICATION).
+        //   The password (and PasswordHash / SecurityStamp) are
+        //   NEVER echoed.
+        // -------------------------------------------------------------
+        if (args.Length >= 1 && args[0] == "--diagnose")
+        {
+            return await RunDiagnoseAsync(args);
+        }
+
         if (args.Length < 4)
         {
             await Console.Error.WriteLineAsync(
-                "Usage: gulierp-identity-bootstrap <connectionString> <userName> <tenantCode> <companyCode>  (password from STDIN)");
+                "Usage: gulierp-identity-bootstrap <connectionString> <userName> <tenantCode> <companyCode> [markerPrefix] [systemRolesCsv]  (password from STDIN)");
             return ExitConnectionMissing;
         }
         var connectionString = args[0];
         var userName = args[1];
         var tenantCode = args[2];
         var companyCode = args[3];
+        // Optional 5th arg: marker prefix override (default =
+        // MarkerPrefix). Used by the WEB-PREVIEW-001A path with
+        // "web_preview_". When supplied, all 3 marker checks
+        // (userName / tenantCode / companyCode) use this override
+        // instead of the default.
+        var markerPrefix = args.Length >= 5 && !string.IsNullOrEmpty(args[4])
+            ? args[4]
+            : MarkerPrefix;
+        // Optional 6th arg: comma-separated GuliErpRole.Code list.
+        // Default = "" (no role grants). Used by the WEB-PREVIEW
+        // path to grant system roles so the user can hit the MDM
+        // endpoints. Format: "PLATFORM_ADMIN,TENANT_ADMIN,...".
+        var systemRolesCsv = args.Length >= 6 ? args[5] : string.Empty;
 
-        if (!userName.StartsWith(MarkerPrefix, StringComparison.Ordinal))
+        if (!userName.StartsWith(markerPrefix, StringComparison.Ordinal))
         {
             await Console.Error.WriteLineAsync(
-                $"SAFETY: userName must start with '{MarkerPrefix}' (got '{userName}'). " +
+                $"SAFETY: userName must start with '{markerPrefix}' (got '{userName}'). " +
                 "Bootstrap refuses to touch any user without the marker prefix.");
             return ExitSafetyGuard;
         }
-        if (!tenantCode.StartsWith(MarkerPrefix, StringComparison.Ordinal))
+        if (!tenantCode.StartsWith(markerPrefix, StringComparison.Ordinal))
         {
             await Console.Error.WriteLineAsync(
-                $"SAFETY: tenantCode must start with '{MarkerPrefix}'.");
+                $"SAFETY: tenantCode must start with '{markerPrefix}'.");
             return ExitSafetyGuard;
         }
-        if (!companyCode.StartsWith(MarkerPrefix, StringComparison.Ordinal))
+        if (!companyCode.StartsWith(markerPrefix, StringComparison.Ordinal))
         {
             await Console.Error.WriteLineAsync(
-                $"SAFETY: companyCode must start with '{MarkerPrefix}'.");
+                $"SAFETY: companyCode must start with '{markerPrefix}'.");
             return ExitSafetyGuard;
         }
 
@@ -236,10 +279,12 @@ public static class Program
             if (existing is not null)
             {
                 // Defensive check: never reset a user whose
-                // userName does NOT start with the marker. The
-                // Main() guard already does this; we re-check
-                // here in case a future caller bypasses Main().
-                if (!existing.UserName!.StartsWith(MarkerPrefix, StringComparison.Ordinal))
+                // userName does NOT start with the configured
+                // marker (the override arg, falling back to
+                // MarkerPrefix). The Main() guard already does
+                // this; we re-check here in case a future caller
+                // bypasses Main().
+                if (!existing.UserName!.StartsWith(markerPrefix, StringComparison.Ordinal))
                 {
                     await Console.Error.WriteLineAsync(
                         $"SAFETY: existing user '{existing.UserName}' does not carry the marker. " +
@@ -330,6 +375,65 @@ public static class Program
                     existing.Id, company.Id);
             }
 
+            // -------------------------------------------------------------
+            // 3b. Optional system role grants (WEB-PREVIEW-001A path).
+            //     The 6th CLI arg is a comma-separated list of
+            //     GuliErpRole.Code values. For each role code, we
+            //     ensure a UserRoleAssignment row exists at
+            //     Tenant-wide scope (CompanyId = null). Idempotent.
+            //     The default empty arg = no role grants (G2-004
+            //     G2-005 behavior preserved).
+            // -------------------------------------------------------------
+            var grantedRoles = new List<string>();
+            if (!string.IsNullOrWhiteSpace(systemRolesCsv))
+            {
+                var requestedCodes = systemRolesCsv
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToList();
+                foreach (var code in requestedCodes)
+                {
+                    var role = await db.Roles.AsNoTracking()
+                        .FirstOrDefaultAsync(r => r.TenantId == tenant.Id
+                                              && r.Code == code
+                                              && r.Status == RoleStatus.Active);
+                    if (role is null)
+                    {
+                        logger.LogWarning(
+                            "Role {Code} not found / not Active in tenant {TenantId}; skipping grant for user {UserId}.",
+                            code, tenant.Id, existing.Id);
+                        continue;
+                    }
+                    var alreadyGranted = await db.UserRoleAssignments.AsNoTracking()
+                        .AnyAsync(a => a.UserId == existing.Id
+                                    && a.RoleId == role.Id
+                                    && a.CompanyId == null
+                                    && a.Status == AssignmentStatus.Active);
+                    if (!alreadyGranted)
+                    {
+                        db.UserRoleAssignments.Add(new UserRoleAssignment
+                        {
+                            TenantId = tenant.Id,
+                            UserId = existing.Id,
+                            RoleId = role.Id,
+                            CompanyId = null,
+                            ValidFrom = null,
+                            ValidTo = null,
+                            Status = AssignmentStatus.Active,
+                            CreatedAt = DateTimeOffset.UtcNow,
+                            CreatedBy = null,
+                            ModifiedAt = DateTimeOffset.UtcNow,
+                            ModifiedBy = null,
+                            ConcurrencyVersion = 1,
+                        });
+                        await db.SaveChangesAsync();
+                        logger.LogInformation("Granted UserRoleAssignment {RoleCode} (Tenant-wide) for user {UserId}.",
+                            code, existing.Id);
+                    }
+                    grantedRoles.Add(code);
+                }
+            }
+
             // Wipe the password from the local variable as
             // soon as we can. The SecureString wrapper in
             // PowerShell zeroes its buffer on Dispose.
@@ -349,10 +453,210 @@ public static class Program
                 tenantCode = tenant.Code,
                 companyId = company.Id,
                 companyCode = company.Code,
-                markerPrefix = MarkerPrefix,
+                markerPrefix = markerPrefix,
+                grantedRoles = grantedRoles,
                 note = "Password is hashed by ASP.NET Core Identity PBKDF2. Not echoed in this output.",
             };
             await Console.Out.WriteLineAsync(System.Text.Json.JsonSerializer.Serialize(output));
+            return ExitOk;
+        }
+        catch (Exception ex) when (
+            ex is Microsoft.EntityFrameworkCore.DbUpdateException
+                or Npgsql.NpgsqlException
+                or System.Net.Sockets.SocketException
+                or TimeoutException)
+        {
+            await Console.Error.WriteLineAsync($"DB ERROR: {ex.GetType().Name}: {ex.Message}");
+            return ExitDatabaseUnavailable;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"EXCEPTION: {ex.GetType().Name}: {ex.Message}");
+            return ExitOtherException;
+        }
+    }
+
+    /// <summary>
+    /// WEB-PREVIEW-001A — read-only diagnostic. Returns the
+    /// 5+1 non-secret fields for a marker-prefixed user.
+    /// Password verification is optional (STDIN line 1).
+    /// The userName must start with one of the accepted
+    /// marker prefixes (G2-004 default or WEB-PREVIEW
+    /// override). The tool NEVER echoes PasswordHash,
+    /// SecurityStamp, or any other secret field.
+    /// </summary>
+    private static async Task<int> RunDiagnoseAsync(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            await Console.Error.WriteLineAsync(
+                "Usage: gulierp-identity-bootstrap --diagnose <connectionString> <userName>  (password from STDIN for PASSWORD_VERIFICATION)");
+            return ExitConnectionMissing;
+        }
+        var connectionString = args[1];
+        var userName = args[2];
+
+        // Marker guard. We accept BOTH prefixes so the script
+        // can diagnose either a G2-004-era user or a
+        // WEB-PREVIEW user.
+        var accepted = new[] { MarkerPrefix, "web_preview_" };
+        var markerOk = false;
+        foreach (var m in accepted)
+        {
+            if (userName.StartsWith(m, StringComparison.Ordinal))
+            {
+                markerOk = true;
+                break;
+            }
+        }
+        if (!markerOk)
+        {
+            await Console.Error.WriteLineAsync(
+                $"SAFETY: userName must start with one of: {string.Join(", ", accepted)}. Got '{userName}'.");
+            return ExitSafetyGuard;
+        }
+
+        // Read optional password from STDIN.
+        string? candidatePassword = null;
+        try
+        {
+            var stdin = await Console.In.ReadToEndAsync();
+            candidatePassword = stdin?.Trim();
+        }
+        catch { /* empty STDIN is fine for the no-verify path */ }
+
+        // Build DI.
+        var services = new ServiceCollection();
+        services.AddLogging(b =>
+        {
+            b.SetMinimumLevel(LogLevel.Information);
+            b.AddProvider(new StderrLoggerProvider());
+        });
+        services.AddDbContext<IdentityDbContext>(options =>
+        {
+            options.UseNpgsql(
+                connectionString,
+                npg => npg.MigrationsHistoryTable("__ef_migrations_history", IdentityDbContext.DefaultSchema));
+        });
+        services.AddIdentity<GuliErpUser, GuliErpRole>(options =>
+        {
+            // No password policy validation in the diagnose path;
+            // we just want UserManager + CheckPasswordAsync.
+            options.Password.RequiredLength = 1;
+            options.Password.RequireDigit = false;
+            options.Password.RequireLowercase = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequiredUniqueChars = 0;
+            options.User.RequireUniqueEmail = false;
+            options.SignIn.RequireConfirmedEmail = false;
+            options.Lockout.AllowedForNewUsers = false;
+        })
+        .AddEntityFrameworkStores<IdentityDbContext>()
+        .AddDefaultTokenProviders();
+
+        await using var sp = services.BuildServiceProvider();
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var userManager = sp.GetRequiredService<UserManager<GuliErpUser>>();
+
+        try
+        {
+            var user = await userManager.FindByNameAsync(userName);
+            if (user is null)
+            {
+                var diagnoseOutput = new
+                {
+                    diagnostic = true,
+                    userName = userName,
+                    exists = "NO",
+                    active = "NO",
+                    locked = "NO",
+                    lockoutEnd = (string?)null,
+                    tenantBinding = "INVALID",
+                    tenantCode = (string?)null,
+                    companyBinding = "INVALID",
+                    companyCode = (string?)null,
+                    passwordVerification = "SKIPPED",
+                    accessFailedCount = 0,
+                    userId = (long?)null,
+                };
+                await Console.Out.WriteLineAsync(System.Text.Json.JsonSerializer.Serialize(diagnoseOutput));
+                return ExitOk;
+            }
+
+            // ACTIVE / LOCKED.
+            var active = user.Status == UserStatus.Active ? "YES" : "NO";
+            var locked = user.LockoutEnabled
+                          && user.LockoutEnd.HasValue
+                          && user.LockoutEnd.Value > DateTimeOffset.UtcNow
+                ? "YES" : "NO";
+
+            // TENANT_BINDING.
+            var tenant = await db.Tenants.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == user.TenantId);
+            var tenantBinding = tenant is null ? "INVALID" : "VALID";
+            var tenantCode = tenant?.Code;
+
+            // COMPANY_BINDING: at least one ACTIVE UserCompanyMembership.
+            var membership = await db.UserCompanyMemberships.AsNoTracking()
+                .FirstOrDefaultAsync(m => m.UserId == user.Id
+                                       && m.Status == MembershipStatus.Active);
+            string companyBinding;
+            string? companyCode;
+            if (membership is null)
+            {
+                companyBinding = "INVALID";
+                companyCode = null;
+            }
+            else
+            {
+                companyBinding = "VALID";
+                var company = await db.Companies.AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == membership.CompanyId);
+                companyCode = company?.Code;
+            }
+
+            // PASSWORD_VERIFICATION (optional).
+            string passwordVerification;
+            if (string.IsNullOrEmpty(candidatePassword))
+            {
+                passwordVerification = "SKIPPED";
+            }
+            else
+            {
+                // CheckPasswordAsync returns true if the
+                // PasswordHasher validates the candidate against
+                // the stored hash. It also touches
+                // AccessFailedCount when configured; we disable
+                // lockout for new users in the diagnose DI
+                // (above) to avoid side effects.
+                var ok = await userManager.CheckPasswordAsync(user, candidatePassword);
+                passwordVerification = ok ? "MATCH" : "NO_MATCH";
+            }
+
+            var output = new
+            {
+                diagnostic = true,
+                userName = user.UserName,
+                exists = "YES",
+                active = active,
+                locked = locked,
+                lockoutEnd = user.LockoutEnd?.ToString("o"),
+                tenantBinding = tenantBinding,
+                tenantCode = tenantCode,
+                companyBinding = companyBinding,
+                companyCode = companyCode,
+                passwordVerification = passwordVerification,
+                accessFailedCount = user.AccessFailedCount,
+                userId = (long?)user.Id,
+            };
+            await Console.Out.WriteLineAsync(System.Text.Json.JsonSerializer.Serialize(output));
+            // Wipe the candidate password.
+            if (candidatePassword is not null)
+            {
+                candidatePassword = null;
+                System.Security.Cryptography.RandomNumberGenerator.Fill(new byte[16]);
+            }
             return ExitOk;
         }
         catch (Exception ex) when (
