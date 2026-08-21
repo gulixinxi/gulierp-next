@@ -286,9 +286,15 @@ function Invoke-Checked {
     )
     $argLine = $Arguments -join ' '
     Write-Host ("  {0} {1}" -f $FilePath, $argLine) -ForegroundColor DarkGray
-    $process = Start-Process -FilePath $FilePath -ArgumentList $Arguments -WorkingDirectory $WorkingDirectory -NoNewWindow -Wait -PassThru
-    if ($process.ExitCode -ne 0) {
-        throw ("Command failed with exit code {0}: {1}" -f $process.ExitCode, $FilePath)
+    Push-Location -LiteralPath $WorkingDirectory
+    try {
+        & $FilePath @Arguments
+        $exitCode = $LASTEXITCODE
+    } finally {
+        Pop-Location
+    }
+    if ($exitCode -ne 0) {
+        throw ("Command failed with exit code {0}: {1}" -f $exitCode, $FilePath)
     }
 }
 

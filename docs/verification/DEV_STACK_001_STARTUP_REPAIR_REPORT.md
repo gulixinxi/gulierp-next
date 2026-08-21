@@ -19,6 +19,29 @@ PowerShell parses `$PidFile:` as a scoped variable reference. The safe form is `
 
 No additional parser errors were found after the repair.
 
+## Follow-Up Runtime Fix
+
+Operator feedback showed the launcher could still stop after backend build:
+
+- Backend build printed `已成功生成`.
+- The script did not print `Starting backend...`.
+- Ports `5000` and `5173` were not listening.
+
+The follow-up root cause was `Invoke-Checked` using:
+
+```powershell
+Start-Process -NoNewWindow -Wait -PassThru
+```
+
+for foreground preflight commands such as `dotnet build`. Under the current PowerShell 7.6 / .NET 10 console behavior, the launcher process could remain blocked after the build output completed. `Invoke-Checked` now uses native PowerShell invocation:
+
+```powershell
+& $FilePath @Arguments
+$exitCode = $LASTEXITCODE
+```
+
+This returns control to the launcher reliably, so it proceeds to `Starting backend...`, `Starting frontend...`, and the HTTP checks.
+
 ## Modified Files
 
 | File | Reason |
@@ -66,6 +89,7 @@ No additional parser errors were found after the repair.
 | Foreign PID file | PASS, refused to stop unrelated process |
 | Repeated stop | PASS |
 | Full local startup smoke | PASS with placeholder canonical connection string: backend live 200, frontend root 200, frontend proxy CSRF 200 |
+| Follow-up smoke after build-hang fix | PASS: build returned to launcher, backend/frontend started, all three HTTP checks passed |
 | Real PostgreSQL credential runtime | OPERATOR PENDING; Codex did not have the real PostgreSQL password |
 
 ## Runtime Result
@@ -95,6 +119,7 @@ Because Codex used a placeholder PostgreSQL password and did not possess the ope
 
 1. `a68b007 fix(dev): repair local stack startup lifecycle`
 2. `docs(verification): record local stack startup repair` (this report and registry entry)
+3. `fix(dev): avoid blocking after stack preflight build`
 
 ## User Command
 
