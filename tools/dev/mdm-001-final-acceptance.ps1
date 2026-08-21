@@ -297,13 +297,25 @@ function Test-OperatorTranscriptTrx {
 }
 
 # Verify that the prior run's evidence files all exist AND
-# record PASS for the unit suites. Returns $true on full
-# success; $false (with a reason) otherwise.
+# record PASS for the unit suites. R9 supports TWO modes:
+#
+#   Mode A: Machine TRX — real TRX files exist in EvidenceRoot.
+#           R7 did not produce these; R9 keeps the contract for
+#           future runs that do.
+#   Mode B: Operator Transcript Backfill — the canonical
+#           `MDM_001_R7_OPERATOR_TRANSCRIPT_EVIDENCE.md` file
+#           records the Operator's transcript, declares TRX as
+#           NOT_AVAILABLE, and SHA256s the API host log.
+#
+# Returns pscustomobject {Ok, Mode, Missing, HaveXxx, ...}.
+# `Mode` is the source of truth for downstream consumers.
 function Test-PriorOperatorEvidence {
     [CmdletBinding()]
     [OutputType([pscustomobject])]
     param(
-        [Parameter(Mandatory = $true)][string]$EvidenceRoot
+        [Parameter(Mandatory = $true)][string]$EvidenceRoot,
+        [Parameter(Mandatory = $false)][string]$TranscriptEvidencePath = $script:DefaultTranscriptEvidencePath,
+        [string]$ExpectedR7Head = '15d46c4'
     )
     $missing = @()
     $trxFails = @()
@@ -312,58 +324,105 @@ function Test-PriorOperatorEvidence {
     $fdTrx   = Join-Path $EvidenceRoot 'GuliERP.Foundation.Tests.trx'
     $intTrxList = 1..5 | ForEach-Object { Join-Path $EvidenceRoot "POC001_Run$($_).trx" }
 
-    # Per the brief section 5: "if old script did not generate
-    # full TRX for Unit/Integration, the resume can mark Step 1-9
-    # as OPERATOR_TRANSCRIPT_VERIFIED but must clearly state the
-    # evidence source." We do not require TRX; we accept the
-    # transcript log + the operator's count summary. The minimum
-    # evidence we need is:
-    #   1. Unit/Identity/Foundation log: "Passed!  - Failed: 0, Passed: N, ..."
-    #   2. 5 Integration log: same per round.
-    # The Operator's prior run printed "57/57 PASS" etc. inline;
-    # we do not have an automated transcript. For resume we
-    # therefore REQUIRE the evidence files to exist (the script
-    # writes them when run), and we check the integration log
-    # for "5 rounds 50/50" pattern + the unit log for "57/57".
-
-    # We accept either TRX OR log files. Build a list.
+    # ----- Mode A: Machine TRX evidence -----
     $intLogs = 1..5 | ForEach-Object { Join-Path $EvidenceRoot "POC001_Run$($_).log" }
     $unitLog = Join-Path $EvidenceRoot 'GuliERP.Mdm.Tests.log'
     $idLog   = Join-Path $EvidenceRoot 'GuliERP.Identity.Tests.log'
     $fdLog   = Join-Path $EvidenceRoot 'GuliERP.Foundation.Tests.log'
-    $apiLog  = Get-ChildItem -Path $EvidenceRoot -Filter 'api_host_round1_*.log' -ErrorAction SilentlyContinue | Select-Object -First 1
+    $apiLog  = Get-ChildItem -Path $EvidenceRoot -Filter 'api_host_round1_*.log' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
 
     $haveUnit = (Test-Path $unitTrx) -or (Test-Path $unitLog)
     $haveId   = (Test-Path $idTrx)   -or (Test-Path $idLog)
     $haveFd   = (Test-Path $fdTrx)   -or (Test-Path $fdLog)
-    $haveInt  = ($intTrxList | Where-Object { Test-Path $_ } | Measure-Object).Count -ge 1
-    $haveInt  = $haveInt -or (($intLogs | Where-Object { Test-Path $_ } | Measure-Object).Count -ge 1)
+    $haveInt  = ($intTrxList | Where-Object { Test-Path $_ } | Measure-Object).Count -ge 5
     $haveApi  = $null -ne $apiLog
 
-    if (-not $haveUnit) { $missing += 'MDM unit TRX/log missing' }
-    if (-not $haveId)   { $missing += 'Identity unit TRX/log missing' }
-    if (-not $haveFd)   { $missing += 'Foundation unit TRX/log missing' }
-    if (-not $haveInt)  { $missing += '5 integration round logs missing' }
-    if (-not $haveApi)  { $missing += 'API Runtime Round 1 log missing' }
+    $machineOk = $haveUnit -and $haveId -and $haveFd -and $haveInt -and $haveApi
+
+    if (-not $haveUnit) { $missing += 'Mode A: MDM unit TRX/log missing' }
+    if (-not $haveId)   { $missing += 'Mode A: Identity unit TRX/log missing' }
+    if (-not $haveFd)   { $missing += 'Mode A: Foundation unit TRX/log missing' }
+    if (-not $haveInt)  { $missing += 'Mode A: 5 integration round TRX/log missing' }
+    if (-not $haveApi)  { $missing += 'Mode A: API Runtime Round 1 log missing' }
 
     # Per-TRX validation only if a TRX exists.
     foreach ($p in @($unitTrx, $idTrx, $fdTrx)) {
         if (Test-Path $p) {
             $content = Get-Content -Raw $p -Encoding UTF8
             $m = [regex]::Match($content, 'outcome="Failed"')
-            if ($m.Success) { $trxFails += "$p contains failed test" }
+            if ($m.Success) { $trxFails += "Mode A: $p contains failed test" }
         }
     }
     foreach ($p in $intTrxList) {
         if (Test-Path $p) {
             if (-not (Test-OperatorTranscriptTrx -TrxPath $p)) {
-                $trxFails += "$p does not show 10/10 PASS"
+                $trxFails += "Mode A: $p does not show 10/10 PASS"
             }
         }
     }
 
+    if ($machineOk -and $trxFails.Count -eq 0) {
+        return [pscustomobject]@{
+            Ok = $true
+            Mode = 'MACHINE_TRX'
+            Missing = @()
+            TrxFails = @()
+            HaveUnit = $haveUnit
+            HaveId = $haveId
+            HaveFd = $haveFd
+            HaveInt = $haveInt
+            HaveApi = $haveApi
+            Backfill = $null
+        }
+    }
+
+    # ----- Mode B: Operator Transcript Backfill -----
+    $backfill = Test-OperatorTranscriptBackfill `
+        -TranscriptPath $TranscriptEvidencePath `
+        -RepoRoot $RepoRoot `
+        -ExpectedR7Head $ExpectedR7Head
+    if ($backfill.Ok) {
+        # Backfill also requires that the R7->HEAD diff did NOT
+        # touch business code (otherwise the transcript numbers
+        # may not apply to the current source).
+        $noBusinessCodeChange = Test-NoBusinessCodeChangeSinceR7 `
+            -RepoRoot $RepoRoot `
+            -R7Head $ExpectedR7Head
+        if (-not $noBusinessCodeChange.Ok) {
+            return [pscustomobject]@{
+                Ok = $false
+                Mode = 'OPERATOR_TRANSCRIPT_BACKFILL_INVALID'
+                Missing = @("Mode B: business code / migration / integration test was modified between R7 and HEAD; transcript numbers may not apply. Changed: $($noBusinessCodeChange.ChangedCsFiles -join ', ')")
+                TrxFails = $trxFails
+                HaveUnit = $haveUnit
+                HaveId = $haveId
+                HaveFd = $haveFd
+                HaveInt = $haveInt
+                HaveApi = $haveApi
+                Backfill = $backfill
+            }
+        }
+        return [pscustomobject]@{
+            Ok = $true
+            Mode = 'OPERATOR_TRANSCRIPT_BACKFILL_VERIFIED'
+            Missing = @()
+            TrxFails = @()
+            HaveUnit = $haveUnit
+            HaveId = $haveId
+            HaveFd = $haveFd
+            HaveInt = $haveInt
+            HaveApi = $haveApi
+            Backfill = $backfill
+        }
+    }
+
+    # ----- Both modes failed: combine reasons -----
+    foreach ($m in $backfill.Missing) {
+        $missing += "Mode B: $m"
+    }
     return [pscustomobject]@{
-        Ok = ($missing.Count -eq 0 -and $trxFails.Count -eq 0)
+        Ok = $false
+        Mode = 'NEITHER_MODE_VERIFIED'
         Missing = $missing
         TrxFails = $trxFails
         HaveUnit = $haveUnit
@@ -371,6 +430,7 @@ function Test-PriorOperatorEvidence {
         HaveFd = $haveFd
         HaveInt = $haveInt
         HaveApi = $haveApi
+        Backfill = $backfill
     }
 }
 
@@ -385,22 +445,35 @@ try {
     # as OPERATOR_TRANSCRIPT_VERIFIED based on prior evidence.
     # ----------------------------------------------------------------
     if ($ResumeApiRuntime) {
-        Step 11 'MDM-001R8 RESUME: only API Runtime Round 1 + 2; prior evidence verified'
+        Step 11 'MDM-001R9 RESUME: only API Runtime Round 1 + 2; prior evidence verified (Mode A: MACHINE_TRX or Mode B: OPERATOR_TRANSCRIPT_BACKFILL)'
         $evidence = Test-PriorOperatorEvidence -EvidenceRoot $EvidenceRoot
         if (-not $evidence.Ok) {
-            Fail "Prior evidence incomplete. Missing: $($evidence.Missing -join '; '). TrxFails: $($evidence.TrxFails -join '; ')"
+            $reason = if ($evidence.Mode -eq 'NEITHER_MODE_VERIFIED') {
+                "Both Mode A (Machine TRX) and Mode B (Operator Transcript Backfill) failed.`n  Mode A Missing: $($evidence.Missing -join '; ')`n  Mode B Missing: $(if ($evidence.Backfill) { $evidence.Backfill.Missing -join '; ' } else { '(no backfill result)' })"
+            } else {
+                "Mode $($evidence.Mode): $($evidence.Missing -join '; '). TrxFails: $($evidence.TrxFails -join '; ')"
+            }
+            Fail $reason
             Write-Host ""
             Write-Host "  MDM_001_FINAL_ACCEPTANCE_FAILED" -ForegroundColor Red
             Write-Host "  (Cannot resume without prior evidence.)" -ForegroundColor Red
+            Write-Host ""
+            Write-Host "  HINT: Either (a) drop real TRX files into $EvidenceRoot/," -ForegroundColor Yellow
+            Write-Host "         or (b) ensure docs/verification/MDM_001_R7_OPERATOR_TRANSCRIPT_EVIDENCE.md" -ForegroundColor Yellow
+            Write-Host "         exists with the correct EVIDENCE_TYPE=OPERATOR_TRANSCRIPT_REPORTED marker." -ForegroundColor Yellow
             return
         }
-        Write-Host "  [INFO] Prior evidence verified:" -ForegroundColor Yellow
+        Write-Host "  [INFO] Prior evidence verified (Mode: $($evidence.Mode)):" -ForegroundColor Yellow
         Write-Host "    Unit  TRX/log  : $evidence.HaveUnit" -ForegroundColor Yellow
         Write-Host "    Identity TRX/log : $evidence.HaveId" -ForegroundColor Yellow
         Write-Host "    Foundation TRX/log: $evidence.HaveFd" -ForegroundColor Yellow
         Write-Host "    Integration rounds: $evidence.HaveInt" -ForegroundColor Yellow
         Write-Host "    API Round 1 log: $evidence.HaveApi" -ForegroundColor Yellow
-        Write-Host "  [INFO] Marking Step 1-9 as OPERATOR_TRANSCRIPT_VERIFIED." -ForegroundColor Yellow
+        if ($evidence.Mode -eq 'OPERATOR_TRANSCRIPT_BACKFILL_VERIFIED' -and $null -ne $evidence.Backfill) {
+            Write-Host "    Backfill R7 HEAD : $($evidence.Backfill.RecordedR7Head)" -ForegroundColor Yellow
+            Write-Host "    API log SHA256   : $($evidence.Backfill.ApiLogSha256)" -ForegroundColor Yellow
+        }
+        Write-Host "  [INFO] Marking Step 1-9 as $($evidence.Mode)." -ForegroundColor Yellow
         foreach ($k in @(
             'Step1_DBTarget','Step2_Credential','Step3_Build',
             'Step4a_Discovery','Step4b_Apply','Step5_DiscoveryCounts',

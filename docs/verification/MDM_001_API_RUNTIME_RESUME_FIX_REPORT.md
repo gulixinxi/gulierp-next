@@ -148,56 +148,66 @@ cd D:\guli\projects\gulierp-next
 .\tools\dev\mdm-001-final-acceptance.ps1 -ResumeApiRuntime
 ```
 
-输入密码 1 次 → 验证 5 轮 Integration + 3 个 Unit 套件 + API Round 1 的 prior 证据文件 → 跑 Round 1 API Runtime → 停止 → Round 2 API Runtime → 停止 → 决定 gate。
+输入密码 1 次 → 验证 Operator 真实 Step 1-9 transcript + API Round 1 host log → 跑 Round 1 API Runtime → 停止 → Round 2 API Runtime → 停止 → 决定 gate。
 
 **Resume 模式行为**:
-- ❌ **不**重新执行 Step 1(DB target guard)— `tests/_evidence_trx/` 已存在证明 DB target 正确
+- ❌ **不**重新执行 Step 1(DB target guard)— R7 operator transcript 已记录 PASS
 - ❌ **不**重新执行 Step 2(credential prompt)— 继承 R7 prompt 已存在
 - ❌ **不**重新执行 Step 3(build)— API DLL 已存在于 `apps/api/GuliERP.Api/bin/Release/net10.0/GuliERP.Api.dll`
-- ❌ **不**重新执行 Step 4a/b(migration)— `mdm.__ef_migrations_history` 已有 `20260820190000_MDM001_InitializeMdmSchema`
-- ❌ **不**重新执行 Step 5(discovery counts)— 数量已在 R7 验证
-- ❌ **不**重新执行 Step 6/7/8(MDM/Identity/Foundation unit)— 已在 R7 验证
-- ❌ **不**重新执行 Step 9(5 轮 Integration)— Operator 报告 50/50 PASS
+- ❌ **不**重新执行 Step 4a/b(migration)— R7 transcript 记录 `__ef_migrations_history` 已有 `20260820190000_MDM001_InitializeMdmSchema`
+- ❌ **不**重新执行 Step 5(discovery counts)— R7 transcript 记录 MDM 57, Integration 10, Identity 21, Foundation 44
+- ❌ **不**重新执行 Step 6/7/8(MDM/Identity/Foundation unit)— R7 transcript 记录 57/21/44 PASS
+- ❌ **不**重新执行 Step 9(5 轮 Integration)— R7 transcript 记录 50/50 PASS
 - ✅ Step 10 跑 Round 1 + Round 2(本轮重点)
 - ✅ Step 11 决定 gate(用 `Get-FinalGateDecision` 同 R7)
 
-**Resume 模式证据验证**(`Test-PriorOperatorEvidence`):
-- 必须存在(在 `tests/_evidence_trx/` 或 `-EvidenceRoot` 参数指定):
+**Resume 模式证据验证**(`Test-PriorOperatorEvidence`): R9 引入 **双模式严格验证**。
+- **Mode A — Machine TRX**:在 `tests/_evidence_trx/` 或 `-EvidenceRoot` 必须存在:
   - `GuliERP.Mdm.Tests.trx` 或 `GuliERP.Mdm.Tests.log`
   - `GuliERP.Identity.Tests.trx` 或 `GuliERP.Identity.Tests.log`
   - `GuliERP.Foundation.Tests.trx` 或 `GuliERP.Foundation.Tests.log`
-  - 至少 1 个 `POC001_Run{1..5}.trx` 或对应 .log
+  - 至少 5 个 `POC001_Run{1..5}.trx` 或对应 .log
   - 至少 1 个 `api_host_round1_*.log`
-- 任意 TRX 出现 `outcome="Failed"` → 报告 TrxFails
-- 任意 integration TRX 不显示 `total=10 passed=10 failed=0` → 报告 TrxFails
-- 证据不完整 → 打印 `MDM_001_FINAL_ACCEPTANCE_FAILED`,不伪造
+  - 任意 TRX 出现 `outcome="Failed"` → 报告 TrxFails
+  - 任意 integration TRX 不显示 `total=10 passed=10 failed=0` → 报告 TrxFails
+- **Mode B — Operator Transcript Backfill**(R9 新增):在 `tests/_evidence_trx/` 下无完整 TRX 时启用,需要存在 canonical:
+  - `docs/verification/MDM_001_R7_OPERATOR_TRANSCRIPT_EVIDENCE.md` 含 `EVIDENCE_TYPE=OPERATOR_TRANSCRIPT_REPORTED` 标记
+  - 显式 `TRX_STATUS=NOT_AVAILABLE` 声明
+  - 57/57, 21/21, 44/44, Round 1-5 各 10/10,API Round 1 三个 200
+  - API host log 存在且 SHA256 与 transcript 中登记的一致
+  - R7→HEAD git diff 不得触及 `modules/**/*.cs` / `apps/api/**/*.cs` / `Migrations/` / `tests/GuliERP.*.cs` / `tools/GuliERP.*.cs`
+- 证据既不满足 Mode A 也不满足 Mode B → 打印 `MDM_001_FINAL_ACCEPTANCE_FAILED`,不伪造,不退化
+
+**R8 → R9 关键修正**:R8 报告曾错误地声称 `Test-PriorOperatorEvidence` 可在仅有 .log / transcript 时判 PASS。**R9 诚实披露**:R7 harness 不写 Unit/Integration TRX 或 .log,只写 API host log;Resume 必须经 Mode B(Operator Transcript Backfill)走 R9 引入的严格验证链。详见 `MDM_001_R7_TRANSCRIPT_BACKFILL_RESUME_REPORT.md`。
 
 **Resume 模式不重复 Step 1-9 证明**:
 - R8 主脚本 `if ($ResumeApiRuntime)` 分支只包含 Step 10 + Step 11
 - Step 1-9 的 `StepResults` key 在分支开头被强制赋 `true`(`foreach ($k in @('Step1_DBTarget', ..., 'Step9_Integration')) { $script:StepResults[$k] = $true }`)
 - `Get-FinalGateDecision` 看到全部 `true` + 实际跑过的 Step 10,才能输出 `MDM_001_REAL_MASTER_DATA_VERIFIED`
+- 但 R9 额外在赋 true 之前调用 `Test-PriorOperatorEvidence`,只要 Mode A 或 Mode B 任一通过才赋 true;若都失败,Resume 直接 HARD STOP,不再继续 Step 10
 
 **Resume 模式失败行为**:
+- Prior evidence 不通过(`NEITHER_MODE_VERIFIED`)→ 红色 `MDM_001_FINAL_ACCEPTANCE_FAILED`,不启动 API,不提示密码,列出 Missing
 - Round 1 fail → `Stop-ApiHost` cleanup → `exit 1` + 红色 `MDM_001_FINAL_ACCEPTANCE_FAILED`
 - Round 2 fail → 同上
 - 两轮都 PASS → 绿色 `MDM_001_REAL_MASTER_DATA_VERIFIED`(此时 Operator 可手工把 GOAL_REGISTRY Gate 升级)
-- 证据不完整 → 红色 `MDM_001_FINAL_ACCEPTANCE_FAILED`,报告哪个文件缺失
+- finally 强制最后再 `Stop-ApiHost` + `Test-ApiPortListening -Port $port` 确认端口释放
 
-## 6. 证据 Manifest(per brief §五)
+## 6. 证据 Manifest(per brief §五)— **R9 修正版**
 
-| 文件 | 时间戳 | 状态 | SHA256 | 备注 |
+| 文件 | 时间戳 | 证据类别 | SHA256 | 备注 |
 |---|---|---|---|---|
-| `tests/_evidence_trx/api_host_round1_20260821155926.log` | 2026-08-21 15:59:27 | OPERATOR_TRANSCRIPT_VERIFIED | C855F079C3AB366A8631BE85B8DC27A63FE607993BBBBF51F6C44AEF054FFDDA | Round 1 host log: 连接 PG、/health/live=200、/=200、/health/ready=200 |
-| `tests/_evidence_trx/api_host_round1_20260821155926.log.err` | 2026-08-21 15:59:26 | OPERATOR_TRANSCRIPT_VERIFIED | E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855 | 0 字节,空文件 SHA256 标准值 |
-| **Operator 5 轮 Integration 报告** | 2026-08-21 15:59 | OPERATOR_TRANSCRIPT_VERIFIED | (transcript log; harness 不为每轮生成 TRX) | Round 1-5 各 10/10 PASS,合计 50/50。`Test-OperatorTranscriptTrx` 在无 TRX 时退化为日志匹配 |
-| **Operator Unit/Identity/Foundation 报告** | 2026-08-21 15:59 | OPERATOR_TRANSCRIPT_VERIFIED | (transcript log) | MDM 57/57,Identity 21/21,Foundation 44/44 |
-| 当前 HEAD | `15d46c4` | committed | git rev-parse HEAD | R7 readiness commit |
+| `tests/_evidence_trx/api_host_round1_20260821155926.log` | 2026-08-21 15:59:27 | **MACHINE_LOG_VERIFIED** | `C855F079C3AB366A8631BE85B8DC27A63FE607993BBBBF51F6C44AEF054FFDDA` | Round 1 host log: 连接 PG、/health/live=200、/=200、/health/ready=200 |
+| `tests/_evidence_trx/api_host_round1_20260821155926.log.err` | 2026-08-21 15:59:26 | **MACHINE_LOG_VERIFIED** | `E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855` | 0 字节,空文件 SHA256 标准值 |
+| `docs/verification/MDM_001_R7_OPERATOR_TRANSCRIPT_EVIDENCE.md` | 2026-08-21 (R9 创建) | **OPERATOR_TRANSCRIPT_REPORTED** | (R9 selftest 计算并登记) | canonical R7 Operator transcript backfill;**R9 必须存在该文件**才能让 Resume 走 Mode B |
+| `tests/_evidence_trx/GuliERP.Mdm.Tests.trx` 等 8 个 `.trx` 文件 | 2026-08-20 12:49 | (前轮历史文件) | — | **与 R7 无关**;R9 不会把这些识别为 R7 证据 |
+| **Operator 5 轮 Integration 报告** | 2026-08-21 15:59 | **OPERATOR_TRANSCRIPT_REPORTED** | (transcript; no .trx) | R7 harness **未**为每轮生成 TRX,Round 1-5 各 10/10 PASS 仅在 Operator 控制台 transcript 内 |
+| **Operator Unit/Identity/Foundation 报告** | 2026-08-21 15:59 | **OPERATOR_TRANSCRIPT_REPORTED** | (transcript; no .trx) | 57/21/44 PASS 仅在 Operator 控制台 transcript 内 |
 
-**TRX 缺失的诚实披露**:
-- R7 + R8 harness 默认**不**为 Unit/Integration 写 TRX 文件(只写 host log)
-- 旧 `tests/_evidence_trx/GuliERP.*.Tests.trx` 来自 2026-08-20(前轮),不适用于本轮
-- 证据文件来源完全在 `tests/_evidence_trx/api_host_round*.log` 和 Operator 控制台 transcript
-- Resume 模式接受 .log 替代 .trx(per `Test-PriorOperatorEvidence` 的 `Test-Path $unitTrx -or Test-Path $unitLog` 逻辑)
+**R8 → R9 关键修正 — TRX/log 真实存在性**:
+- R8 报告第 197-200 行曾错误地声称"Resume 模式接受 .log 替代 .trx(per `Test-PriorOperatorEvidence` 的 `Test-Path $unitTrx -or Test-Path $unitLog` 逻辑)"。**这条 R9 撤回**:R7 harness 既没写 `.trx` 也没写 `.log`,只写了 `api_host_round1_*.log`。`tests/_evidence_trx/GuliERP.*.Tests.trx` 8 个文件来自 2026-08-20 的前轮 run,**不是 R7 Operator 跑的**,不能作为 R7 证据。
+- R9 的 `Test-PriorOperatorEvidence` 因此引入 **Mode B — Operator Transcript Backfill** 严格验证,读取 canonical `MDM_001_R7_OPERATOR_TRANSCRIPT_EVIDENCE.md`(R9 创建)来证明 Step 1-9 走过,而不是退化到只检查文件存在性。
+- Resume 模式既不满足 Mode A(5 个 integration TRX)也不满足 Mode B(transcript 标记)→ `NEITHER_MODE_VERIFIED` → `MDM_001_FINAL_ACCEPTANCE_FAILED`,**不**继续 Step 10,不**提示**密码。
 
 ## 7. 边界遵守(per brief §六)
 
@@ -228,7 +238,7 @@ cd D:\guli\projects\gulierp-next
 1. `fix(dev): repair mdm api runtime process lifecycle` — 3 个 .ps1
 2. `docs(verification): record mdm api runtime resume readiness` — 本报告 + GOAL_REGISTRY
 
-## 9. R8 验证数字(per brief §十一)
+## 9. R8 + R9 验证数字(per brief §十一)
 
 | 项 | 数字 | 来源 |
 |---|---|---|
@@ -236,27 +246,29 @@ cd D:\guli\projects\gulierp-next
 | MDM.Tests | 57/57 PASS | `dotnet test tests/GuliERP.Mdm.Tests` |
 | Identity.Tests | 21/21 PASS | `dotnet test tests/GuliERP.Identity.Tests` |
 | Foundation.Tests | 44/44 PASS | `dotnet test tests/GuliERP.Foundation.Tests` |
-| **R8 Harness Self-Test** | **30/30 PASS** | `pwsh -NoProfile -File tools/dev/mdm-001-final-acceptance-selftest.ps1` |
+| **R9 Harness Self-Test** | **45/45 PASS** | `pwsh -NoProfile -File tools/dev/mdm-001-final-acceptance-selftest.ps1`(R8 30 + R9 G1-G15 15) |
 | PowerShell parser (3 files) | 0 errors | `[System.Management.Automation.Language.Parser]::ParseFile` × 3 |
 | R7 bug coverage (E1-E4) | 4/4 PASS | Section E in selftest |
 | Process lifecycle (D1-D10) | 10/10 PASS | Section D in selftest(real long-running process) |
 | Resume evidence (F1-F3) | 3/3 PASS | Section F in selftest(pure logic on extracted helper) |
-| Operator 5 轮 Integration (transcript) | 50/50 PASS | Operator transcript(2026-08-21 15:59) |
-| Operator API Round 1 (log) | PASS | `api_host_round1_20260821155926.log` 6.7KB,/health/live=200, /=200, /health/ready=200 |
+| R9 Transcript Backfill (G1-G15) | 15/15 PASS | Section G in selftest;其中 G12 用 canonical `MDM_001_R7_OPERATOR_TRANSCRIPT_EVIDENCE.md` |
+| Operator 5 轮 Integration (transcript) | 50/50 PASS | Operator transcript(2026-08-21 15:59)→ R9 Mode B |
+| Operator Unit/Identity/Foundation (transcript) | 57+21+44 PASS | Operator transcript → R9 Mode B |
+| Operator API Round 1 (log) | PASS | `api_host_round1_20260821155926.log` 6.7KB,/health/live=200, /=200, /health/ready=200,SHA256 `C855F079C3AB366A8631BE85B8DC27A63FE607993BBBBF51F6C44AEF054FFDDA` |
 
 ## 10. 是否真正达到 Operator 唯一命令条件(per brief §八-16)
 
-**YES**。Operator 的唯一动作是审阅本报告后,审阅代码后,运行:
+**YES**(R9 修正)。Operator 的唯一动作是审阅 R9 报告 + 3 个 .ps1 改动 + canonical transcript file,然后运行:
 
 ```powershell
 cd D:\guli\projects\gulierp-next
 .\tools\dev\mdm-001-final-acceptance.ps1 -ResumeApiRuntime
 ```
 
-输入密码 1 次 → 验证 5 轮 Integration + 3 个 Unit 套件 + API Round 1 prior 证据 → 跑 API Round 1 → 跑 API Round 2 → 全 PASS 时输出绿色 `MDM_001_REAL_MASTER_DATA_VERIFIED`,Operator 可手工把 GOAL_REGISTRY Gate 升级。
+输入密码 1 次 → R9 验证 Operator Transcript Backfill(Mode B)→ 跑 API Round 1 → 跑 API Round 2 → 全 PASS 时输出绿色 `MDM_001_REAL_MASTER_DATA_VERIFIED`,Agent 升级 GOAL_REGISTRY Gate。
 
 **任一步失败**:
-- 证据不完整 → `MDM_001_FINAL_ACCEPTANCE_FAILED` + 报告哪个文件缺失,**不**伪造 PASS
+- Prior evidence Mode A 和 Mode B 都不通过 → `MDM_001_FINAL_ACCEPTANCE_FAILED` + Missing 列表,**不**伪造 PASS
 - Round 1 fail → `Stop-ApiHost` cleanup + exit 1 + 红字 HARD_STOP
 - Round 2 fail → 同上
 - 密码不进入输出(`Redact-SecretText` 强制 + selftest C1/C2 验证)
@@ -267,13 +279,22 @@ cd D:\guli\projects\gulierp-next
 - 重跑完整 11 步(Operator 已跑过 Step 1-9)
 - Operator 输入密码多次
 - Operator 等 5 轮 Integration 重新跑(会浪费 ~5 分钟)
+- Operator 看到 R9 报告前直接跑 Resume(R8 gate 状态下证据不通过)
 
-## 11. 当前 Gate
+## 11. 当前 Gate(R9 状态)
 
-**`MDM_001_API_RUNTIME_RESUME_HARNESS_VERIFIED`**(从 R7 `MDM_001_FINAL_ACCEPTANCE_READINESS_VERIFIED` 升级)
+**`MDM_001_TRANSCRIPT_BACKFILL_VERIFIED`**(R9 升级)
+
+**Gate 升级路径**:
+- R7: `MDM_001_FINAL_ACCEPTANCE_READINESS_VERIFIED`
+- R8: `MDM_001_API_RUNTIME_RESUME_HARNESS_VERIFIED`(Stop-ApiHost 生命周期修复)
+- **R9: `MDM_001_TRANSCRIPT_BACKFILL_VERIFIED`**(Operator Transcript Backfill + R8 修正)
+- 最终(Operator 跑 Resume 后):`MDM_001_REAL_MASTER_DATA_VERIFIED`
+
+**R9 报告路径**:`docs/verification/MDM_001_R7_TRANSCRIPT_BACKFILL_RESUME_REPORT.md`
 
 **下一轮(Operator 端)**:
-- 审阅本报告 + 3 个 .ps1 改动
+- 审阅 R9 报告 + canonical transcript file + 3 个 .ps1 改动
 - 跑 `.\tools\dev\mdm-001-final-acceptance.ps1 -ResumeApiRuntime`
 - 全 PASS → Agent 将 Gate 升级为 `MDM_001_REAL_MASTER_DATA_VERIFIED`,进入 MDM-002 / BusinessPartner / Warehouse / Location
 
