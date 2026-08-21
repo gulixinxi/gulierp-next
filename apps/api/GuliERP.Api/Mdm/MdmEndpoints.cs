@@ -42,6 +42,9 @@ public static class MdmEndpoints
         MapUomEndpoints(group);
         MapItemCategoryEndpoints(group);
         MapItemEndpoints(group);
+        MapBusinessPartnerEndpoints(group);
+        MapWarehouseEndpoints(group);
+        MapLocationEndpoints(group);
 
         return routes;
     }
@@ -300,4 +303,219 @@ public static class MdmEndpoints
             })
             .RequireAuthorization(MdmPolicies.ItemManage);
     }
+
+    // ============================================================
+    // BusinessPartner (tenant-scope, MDM-002)
+    // ============================================================
+
+    private static void MapBusinessPartnerEndpoints(IEndpointRouteBuilder group)
+    {
+        var bps = group.MapGroup("/business-partners").WithTags("Mdm.BusinessPartner");
+
+        bps.MapGet("", async (
+                [FromQuery] string? keyword,
+                [FromQuery] BusinessPartnerRole? role,
+                [FromQuery] MasterDataStatus? status,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                IMdmBusinessPartnerService svc,
+                CancellationToken ct) =>
+            {
+                var query = new BusinessPartnerListQuery(
+                    keyword, role, status, page ?? 1, pageSize ?? 20);
+                return Results.Ok(await svc.ListAsync(query, ct));
+            })
+            .RequireAuthorization(MdmPolicies.BusinessPartnerRead);
+
+        bps.MapGet("/{id:long}", async (
+                long id, IMdmBusinessPartnerService svc, CancellationToken ct) =>
+            {
+                var bp = await svc.GetByIdAsync(id, ct);
+                return bp is null ? Results.NotFound() : Results.Ok(bp);
+            })
+            .RequireAuthorization(MdmPolicies.BusinessPartnerRead);
+
+        bps.MapPost("", async (
+                [FromBody] CreateBusinessPartnerRequest request,
+                IMdmBusinessPartnerService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var created = await svc.CreateAsync(request, ct);
+                    return Results.Created(
+                        $"/api/v1/mdm/business-partners/{created.Id}", created);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.BusinessPartnerManage);
+
+        bps.MapPut("/{id:long}", async (
+                long id,
+                [FromBody] UpdateBusinessPartnerRequest request,
+                IMdmBusinessPartnerService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var updated = await svc.UpdateAsync(id, request, ct);
+                    return updated is null ? Results.NotFound() : Results.Ok(updated);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.BusinessPartnerManage);
+    }
+
+    // ============================================================
+    // Warehouse (tenant + company scope, MDM-002)
+    // ============================================================
+
+    private static void MapWarehouseEndpoints(IEndpointRouteBuilder group)
+    {
+        var whs = group.MapGroup("/warehouses").WithTags("Mdm.Warehouse");
+
+        whs.MapGet("", async (
+                [FromQuery] string? keyword,
+                [FromQuery] WarehouseType? type,
+                [FromQuery] MasterDataStatus? status,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                IMdmWarehouseService svc,
+                CancellationToken ct) =>
+            {
+                var query = new WarehouseListQuery(
+                    keyword, type, status, page ?? 1, pageSize ?? 20);
+                return Results.Ok(await svc.ListAsync(query, ct));
+            })
+            .RequireAuthorization(MdmPolicies.WarehouseRead);
+
+        whs.MapGet("/{id:long}", async (
+                long id, IMdmWarehouseService svc, CancellationToken ct) =>
+            {
+                var w = await svc.GetByIdAsync(id, ct);
+                return w is null ? Results.NotFound() : Results.Ok(w);
+            })
+            .RequireAuthorization(MdmPolicies.WarehouseRead);
+
+        whs.MapPost("", async (
+                [FromBody] CreateWarehouseRequest request,
+                IMdmWarehouseService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var created = await svc.CreateAsync(request, ct);
+                    return Results.Created(
+                        $"/api/v1/mdm/warehouses/{created.Id}", created);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.WarehouseManage);
+
+        whs.MapPut("/{id:long}", async (
+                long id,
+                [FromBody] UpdateWarehouseRequest request,
+                IMdmWarehouseService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var updated = await svc.UpdateAsync(id, request, ct);
+                    return updated is null ? Results.NotFound() : Results.Ok(updated);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.WarehouseManage);
+    }
+
+    // ============================================================
+    // Location (tenant + company scope, MDM-002)
+    // ============================================================
+
+    private static void MapLocationEndpoints(IEndpointRouteBuilder group)
+    {
+        var locs = group.MapGroup("/locations").WithTags("Mdm.Location");
+
+        locs.MapGet("", async (
+                [FromQuery] string? keyword,
+                [FromQuery] long? warehouseId,
+                [FromQuery] LocationType? type,
+                [FromQuery] MasterDataStatus? status,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                IMdmLocationService svc,
+                CancellationToken ct) =>
+            {
+                var query = new LocationListQuery(
+                    keyword, warehouseId, type, status, page ?? 1, pageSize ?? 20);
+                return Results.Ok(await svc.ListAsync(query, ct));
+            })
+            .RequireAuthorization(MdmPolicies.LocationRead);
+
+        locs.MapGet("/{id:long}", async (
+                long id, IMdmLocationService svc, CancellationToken ct) =>
+            {
+                var l = await svc.GetByIdAsync(id, ct);
+                return l is null ? Results.NotFound() : Results.Ok(l);
+            })
+            .RequireAuthorization(MdmPolicies.LocationRead);
+
+        locs.MapPost("", async (
+                [FromBody] CreateLocationRequest request,
+                IMdmLocationService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var created = await svc.CreateAsync(request, ct);
+                    return Results.Created(
+                        $"/api/v1/mdm/locations/{created.Id}", created);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.LocationManage);
+
+        locs.MapPut("/{id:long}", async (
+                long id,
+                [FromBody] UpdateLocationRequest request,
+                IMdmLocationService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var updated = await svc.UpdateAsync(id, request, ct);
+                    return updated is null ? Results.NotFound() : Results.Ok(updated);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.LocationManage);
+    }
+
+    private static IResult ValidationProblem(MdmValidationException ex) =>
+        Results.Problem(
+            statusCode: StatusCodes.Status400BadRequest,
+            title: "MDM validation failed.",
+            detail: ex.Message,
+            extensions: new Dictionary<string, object?>
+            {
+                [ProblemDetailsExtensions.CodeKey] = ex.Code,
+            });
 }

@@ -129,3 +129,175 @@ public sealed record PagedResult<T>(
     int Page,
     int PageSize,
     long TotalCount);
+
+// ============================================================
+// MDM-002 — BusinessPartner / Warehouse / Location DTOs
+// ============================================================
+
+/// <summary>BusinessPartner read DTO. TenantId is NOT exposed.</summary>
+public sealed record BusinessPartnerDto(
+    long Id,
+    string Code,
+    string Name,
+    string? ShortName,
+    BusinessPartnerRole Role,
+    string? ContactPerson,
+    string? Phone,
+    string? Email,
+    string? AddressLine1,
+    string? AddressLine2,
+    string? City,
+    string? Region,
+    string? PostalCode,
+    string? CountryCode,
+    string? TaxNumber,
+    MasterDataStatus Status,
+    string? Description,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset ModifiedAt,
+    int ConcurrencyVersion);
+
+public sealed record CreateBusinessPartnerRequest(
+    string Code,
+    string Name,
+    string? ShortName,
+    BusinessPartnerRole Role,
+    string? ContactPerson,
+    string? Phone,
+    string? Email,
+    string? AddressLine1,
+    string? AddressLine2,
+    string? City,
+    string? Region,
+    string? PostalCode,
+    string? CountryCode,
+    string? TaxNumber,
+    string? Description);
+
+public sealed record UpdateBusinessPartnerRequest(
+    string Name,
+    string? ShortName,
+    BusinessPartnerRole Role,
+    string? ContactPerson,
+    string? Phone,
+    string? Email,
+    string? AddressLine1,
+    string? AddressLine2,
+    string? City,
+    string? Region,
+    string? PostalCode,
+    string? CountryCode,
+    string? TaxNumber,
+    MasterDataStatus Status,
+    string? Description,
+    int ExpectedConcurrencyVersion);
+
+/// <summary>Warehouse read DTO. TenantId/CompanyId NOT exposed.</summary>
+public sealed record WarehouseDto(
+    long Id,
+    long? PlantId,
+    string Code,
+    string Name,
+    WarehouseType Type,
+    string? AddressLine1,
+    string? AddressLine2,
+    string? City,
+    string? Region,
+    string? PostalCode,
+    string? CountryCode,
+    MasterDataStatus Status,
+    string? Description,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset ModifiedAt,
+    int ConcurrencyVersion);
+
+public sealed record CreateWarehouseRequest(
+    long? PlantId,
+    string Code,
+    string Name,
+    WarehouseType Type,
+    string? AddressLine1,
+    string? AddressLine2,
+    string? City,
+    string? Region,
+    string? PostalCode,
+    string? CountryCode,
+    string? Description);
+
+public sealed record UpdateWarehouseRequest(
+    long? PlantId,
+    string Name,
+    WarehouseType Type,
+    string? AddressLine1,
+    string? AddressLine2,
+    string? City,
+    string? Region,
+    string? PostalCode,
+    string? CountryCode,
+    MasterDataStatus Status,
+    string? Description,
+    int ExpectedConcurrencyVersion);
+
+/// <summary>Location read DTO. TenantId/CompanyId NOT exposed.</summary>
+public sealed record LocationDto(
+    long Id,
+    long WarehouseId,
+    string Code,
+    string Name,
+    LocationType Type,
+    string? Aisle,
+    string? Bay,
+    string? Shelf,
+    MasterDataStatus Status,
+    string? Description,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset ModifiedAt,
+    int ConcurrencyVersion);
+
+public sealed record CreateLocationRequest(
+    long WarehouseId,
+    string Code,
+    string Name,
+    LocationType Type,
+    string? Aisle,
+    string? Bay,
+    string? Shelf,
+    string? Description);
+
+public sealed record UpdateLocationRequest(
+    long WarehouseId,
+    string Name,
+    LocationType Type,
+    string? Aisle,
+    string? Bay,
+    string? Shelf,
+    MasterDataStatus Status,
+    string? Description,
+    int ExpectedConcurrencyVersion);
+
+/// <summary>
+/// BusinessPartner list filter. <c>Role</c> is a bit-flag:
+/// pass Customer to match Customer OR Both; pass Supplier to match
+/// Supplier OR Both. Pass <c>null</c> for no role filter.
+/// </summary>
+public sealed record BusinessPartnerListQuery(
+    string? Keyword,
+    BusinessPartnerRole? Role,
+    MasterDataStatus? Status,
+    int Page,
+    int PageSize);
+
+public sealed record WarehouseListQuery(
+    string? Keyword,
+    WarehouseType? Type,
+    MasterDataStatus? Status,
+    int Page,
+    int PageSize);
+
+public sealed record LocationListQuery(
+    string? Keyword,
+    long? WarehouseId,
+    LocationType? Type,
+    MasterDataStatus? Status,
+    int Page,
+    int PageSize);

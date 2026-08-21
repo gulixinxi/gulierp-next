@@ -17,4 +17,11 @@ public static class MdmPolicies
 
     public const string ItemRead = Prefix + MdmPermissions.ItemRead;
     public const string ItemManage = Prefix + MdmPermissions.ItemManage;
+
+    public const string BusinessPartnerRead = Prefix + MdmPermissions.BusinessPartnerRead;
+    public const string BusinessPartnerManage = Prefix + MdmPermissions.BusinessPartnerManage;
+    public const string WarehouseRead = Prefix + MdmPermissions.WarehouseRead;
+    public const string WarehouseManage = Prefix + MdmPermissions.WarehouseManage;
+    public const string LocationRead = Prefix + MdmPermissions.LocationRead;
+    public const string LocationManage = Prefix + MdmPermissions.LocationManage;
 }

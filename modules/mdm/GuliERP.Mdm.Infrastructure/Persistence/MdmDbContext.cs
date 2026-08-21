@@ -72,6 +72,9 @@ public sealed class MdmDbContext : DbContext
     public DbSet<Uom> Uoms => Set<Uom>();
     public DbSet<ItemCategory> ItemCategories => Set<ItemCategory>();
     public DbSet<Item> Items => Set<Item>();
+    public DbSet<BusinessPartner> BusinessPartners => Set<BusinessPartner>();
+    public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+    public DbSet<Location> Locations => Set<Location>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,6 +97,9 @@ public sealed class MdmDbContext : DbContext
         modelBuilder.Entity<Uom>(b => b.ToTable("gulierp_uom"));
         modelBuilder.Entity<ItemCategory>(b => b.ToTable("gulierp_item_category"));
         modelBuilder.Entity<Item>(b => b.ToTable("gulierp_item"));
+        modelBuilder.Entity<BusinessPartner>(b => b.ToTable("gulierp_business_partner"));
+        modelBuilder.Entity<Warehouse>(b => b.ToTable("gulierp_warehouse"));
+        modelBuilder.Entity<Location>(b => b.ToTable("gulierp_location"));
 
         // ------------------------------------------------------------
         // Apply the per-entity IEntityTypeConfiguration<T> classes.

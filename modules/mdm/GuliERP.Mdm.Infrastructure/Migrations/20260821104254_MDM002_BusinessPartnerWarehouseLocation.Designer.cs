@@ -3,6 +3,7 @@ using System;
 using GuliERP.Mdm.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GuliERP.Mdm.Infrastructure.Migrations
 {
     [DbContext(typeof(MdmDbContext))]
-    partial class MdmDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260821104254_MDM002_BusinessPartnerWarehouseLocation")]
+    partial class MDM002_BusinessPartnerWarehouseLocation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

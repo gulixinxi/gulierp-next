@@ -15,4 +15,12 @@ public static class MdmPermissions
 
     public const string ItemRead = "mdm.item.read";
     public const string ItemManage = "mdm.item.manage";
+
+    // MDM-002 — BusinessPartner / Warehouse / Location
+    public const string BusinessPartnerRead = "mdm.business-partner.read";
+    public const string BusinessPartnerManage = "mdm.business-partner.manage";
+    public const string WarehouseRead = "mdm.warehouse.read";
+    public const string WarehouseManage = "mdm.warehouse.manage";
+    public const string LocationRead = "mdm.location.read";
+    public const string LocationManage = "mdm.location.manage";
 }

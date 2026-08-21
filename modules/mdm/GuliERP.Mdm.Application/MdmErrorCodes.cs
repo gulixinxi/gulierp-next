@@ -47,4 +47,43 @@ public static class MdmErrorCodes
     /// validation (Code empty, Name empty, BaseUom missing, etc.).
     /// </summary>
     public const string ValidationFailed = "mdm_validation_failed";
+
+    /// <summary>
+    /// A BusinessPartner operation referenced a BusinessPartner that
+    /// does not exist in the current Tenant.
+    /// </summary>
+    public const string BusinessPartnerNotFound = "mdm_business_partner_not_found";
+
+    /// <summary>
+    /// A BusinessPartner operation referenced a BusinessPartner
+    /// belonging to a different Tenant — i.e. cross-Tenant access
+    /// is denied (returns 404 to avoid leaking existence).
+    /// </summary>
+    public const string BusinessPartnerCrossTenant = "mdm_business_partner_cross_tenant";
+
+    /// <summary>
+    /// A Warehouse operation referenced a Warehouse that does not
+    /// exist in the current Tenant + Company scope.
+    /// </summary>
+    public const string WarehouseNotFound = "mdm_warehouse_not_found";
+
+    /// <summary>
+    /// A Warehouse operation referenced a Warehouse belonging to a
+    /// different Tenant or Company — i.e. cross-scope access is
+    /// denied.
+    /// </summary>
+    public const string WarehouseCrossScope = "mdm_warehouse_cross_scope";
+
+    /// <summary>
+    /// A Location operation referenced a Location that does not
+    /// exist in the current Tenant + Company scope.
+    /// </summary>
+    public const string LocationNotFound = "mdm_location_not_found";
+
+    /// <summary>
+    /// A Location operation referenced a Warehouse belonging to a
+    /// different Tenant or Company — i.e. the Location's parent
+    /// Warehouse is not visible to the caller.
+    /// </summary>
+    public const string LocationParentWarehouseCrossScope = "mdm_location_parent_warehouse_cross_scope";
 }

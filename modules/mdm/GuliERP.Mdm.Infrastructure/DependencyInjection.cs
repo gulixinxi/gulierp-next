@@ -47,6 +47,9 @@ public static class DependencyInjection
 
         // ----- Application service -----
         services.AddScoped<IMdmService, MdmService>();
+        services.AddScoped<IMdmBusinessPartnerService, MdmBusinessPartnerService>();
+        services.AddScoped<IMdmWarehouseService, MdmWarehouseService>();
+        services.AddScoped<IMdmLocationService, MdmLocationService>();
 
         // ----- Authorization policies (mirrors G2-005 pattern) -----
         services.AddAuthorization(options =>
@@ -86,6 +89,38 @@ public static class DependencyInjection
                 policy => policy
                     .RequireAuthenticatedUser()
                     .AddRequirements(new PermissionRequirement(MdmPermissions.ItemManage)));
+
+            // MDM-002 — BusinessPartner / Warehouse / Location
+            options.AddPolicy(
+                MdmPolicies.BusinessPartnerRead,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.BusinessPartnerRead)));
+            options.AddPolicy(
+                MdmPolicies.BusinessPartnerManage,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.BusinessPartnerManage)));
+            options.AddPolicy(
+                MdmPolicies.WarehouseRead,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.WarehouseRead)));
+            options.AddPolicy(
+                MdmPolicies.WarehouseManage,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.WarehouseManage)));
+            options.AddPolicy(
+                MdmPolicies.LocationRead,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.LocationRead)));
+            options.AddPolicy(
+                MdmPolicies.LocationManage,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.LocationManage)));
         });
 
         return services;
