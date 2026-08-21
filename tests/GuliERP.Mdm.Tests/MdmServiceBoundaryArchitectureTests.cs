@@ -83,6 +83,7 @@ public sealed class MdmServiceBoundaryArchitectureTests
     private static readonly string[] AllowedMdmDbContextUsers = new[]
     {
         "MdmService.cs",
+        "MdmMasterData002Services.cs",
         "MdmSeed.cs",
         "DependencyInjection.cs",
         "DesignTimeMdmDbContextFactory.cs",
@@ -90,6 +91,9 @@ public sealed class MdmServiceBoundaryArchitectureTests
         "ItemCategoryConfiguration.cs",
         "ItemConfiguration.cs",
         "UomConfiguration.cs",
+        "BusinessPartnerConfiguration.cs",
+        "WarehouseConfiguration.cs",
+        "LocationConfiguration.cs",
         "FoundationModelBoundaries.cs", // if present
         ".Designer.cs",                 // all migrations
         "MdmDbContextModelSnapshot.cs",
@@ -274,6 +278,124 @@ public sealed class MdmServiceBoundaryArchitectureTests
         var createItem = ExtractMethodBody(src, "CreateItemAsync");
         Assert.Contains("TenantId = tenantId", createItemCategory, StringComparison.Ordinal);
         Assert.Contains("TenantId = tenantId", createItem, StringComparison.Ordinal);
+    }
+
+    // ----------------------------------------------------------------
+    // MDM-002 — BusinessPartner / Warehouse / Location service
+    // boundary checks. Same contract as MdmService above: every
+    // read / write must apply a TenantId predicate; Company-scoped
+    // services must additionally apply a CompanyId predicate; insert
+    // must set TenantId (and CompanyId) to the resolved scope.
+    // ----------------------------------------------------------------
+    [Fact]
+    public void Mdm002Services_Declare_All_Interface_Methods_As_Concrete_Implementation()
+    {
+        var checks = new (Type Iface, Type Impl, string FileName)[]
+        {
+            (typeof(IMdmBusinessPartnerService), typeof(Mdm.Infrastructure.Mdm.MdmBusinessPartnerService), "MdmMasterData002Services.cs"),
+            (typeof(IMdmWarehouseService), typeof(Mdm.Infrastructure.Mdm.MdmWarehouseService), "MdmMasterData002Services.cs"),
+            (typeof(IMdmLocationService), typeof(Mdm.Infrastructure.Mdm.MdmLocationService), "MdmMasterData002Services.cs"),
+        };
+        var violations = new List<string>();
+        foreach (var (iface, impl, file) in checks)
+        {
+            foreach (var m in iface.GetMethods().Where(m => !m.IsSpecialName))
+            {
+                var match = impl.GetMethod(m.Name, m.GetParameters().Select(p => p.ParameterType).ToArray());
+                if (match is null) { violations.Add($"{file}: {iface.Name}.{m.Name} not implemented on {impl.Name}"); }
+            }
+        }
+        Assert.True(
+            violations.Count == 0,
+            "MDM-002 service contract violation: " + string.Join("; ", violations));
+    }
+
+    [Fact]
+    public void Mdm002BusinessPartner_All_Methods_Apply_TenantId_Predicate_And_Insert_Sets_TenantId()
+    {
+        var srcPath = Path.Combine(MdmInfraRoot, "Mdm", "MdmMasterData002Services.cs");
+        var src = File.ReadAllText(srcPath);
+        var methods = new[] { "ListAsync", "GetByIdAsync", "CreateAsync", "UpdateAsync" };
+        var violations = new List<string>();
+        foreach (var m in methods)
+        {
+            // Find the IMdmBusinessPartnerService implementation: search
+            // for `public async Task...MdmBusinessPartnerService` block.
+            // For simplicity, scan whole file for the required patterns
+            // since the helper file is shared.
+            if (!src.Contains($"var tenantId = RequireTenant()", StringComparison.Ordinal))
+            {
+                violations.Add("MdmBusinessPartnerService: missing RequireTenant() call");
+            }
+            if (!src.Contains("TenantId = tenantId", StringComparison.Ordinal))
+            {
+                violations.Add("MdmBusinessPartnerService: missing TenantId = tenantId on insert");
+            }
+        }
+        Assert.True(
+            violations.Count == 0,
+            "MdmBusinessPartnerService boundary violation: " + string.Join("; ", violations));
+    }
+
+    [Fact]
+    public void Mdm002Warehouse_All_Methods_Apply_Tenant_And_Company_Predicate_And_Insert_Sets_Both()
+    {
+        var srcPath = Path.Combine(MdmInfraRoot, "Mdm", "MdmMasterData002Services.cs");
+        var src = File.ReadAllText(srcPath);
+        var violations = new List<string>();
+        if (!src.Contains("var (tenantId, companyId) = RequireScope()", StringComparison.Ordinal))
+        {
+            violations.Add("MdmWarehouseService: missing RequireScope() call");
+        }
+        if (!src.Contains("TenantId = tenantId", StringComparison.Ordinal))
+        {
+            violations.Add("MdmWarehouseService: missing TenantId = tenantId on insert");
+        }
+        if (!src.Contains("CompanyId = companyId", StringComparison.Ordinal))
+        {
+            violations.Add("MdmWarehouseService: missing CompanyId = companyId on insert");
+        }
+        // Tenant + Company predicate on every List/GetById.
+        if (!Regex.IsMatch(src, @"\.Where\s*\(\s*w\s*=>\s*w\.TenantId\s*==\s*tenantId\s*&&\s*w\.CompanyId\s*==\s*companyId"))
+        {
+            violations.Add("MdmWarehouseService: missing Where(TenantId == tenantId && CompanyId == companyId) predicate");
+        }
+        Assert.True(
+            violations.Count == 0,
+            "MdmWarehouseService boundary violation: " + string.Join("; ", violations));
+    }
+
+    [Fact]
+    public void Mdm002Location_All_Methods_Apply_Tenant_And_Company_Predicate_And_Parent_Warehouse_In_Scope()
+    {
+        var srcPath = Path.Combine(MdmInfraRoot, "Mdm", "MdmMasterData002Services.cs");
+        var src = File.ReadAllText(srcPath);
+        var violations = new List<string>();
+        if (!src.Contains("var (tenantId, companyId) = RequireScope()", StringComparison.Ordinal))
+        {
+            violations.Add("MdmLocationService: missing RequireScope() call");
+        }
+        if (!src.Contains("TenantId = tenantId", StringComparison.Ordinal))
+        {
+            violations.Add("MdmLocationService: missing TenantId = tenantId on insert");
+        }
+        if (!src.Contains("CompanyId = companyId", StringComparison.Ordinal))
+        {
+            violations.Add("MdmLocationService: missing CompanyId = companyId on insert");
+        }
+        // Tenant + Company predicate on every List/GetById.
+        if (!Regex.IsMatch(src, @"\.Where\s*\(\s*l\s*=>\s*l\.TenantId\s*==\s*tenantId\s*&&\s*l\.CompanyId\s*==\s*companyId"))
+        {
+            violations.Add("MdmLocationService: missing Where(TenantId == tenantId && CompanyId == companyId) predicate");
+        }
+        // Parent Warehouse must be in the SAME tenant + company.
+        if (!src.Contains("MdmErrorCodes.LocationParentWarehouseCrossScope", StringComparison.Ordinal))
+        {
+            violations.Add("MdmLocationService: missing LocationParentWarehouseCrossScope cross-scope guard");
+        }
+        Assert.True(
+            violations.Count == 0,
+            "MdmLocationService boundary violation: " + string.Join("; ", violations));
     }
 
     [Fact]

@@ -64,4 +64,50 @@ public sealed class MdmEnumContractTests
                          || values.Any(v => v.ToString().Equals("Package", StringComparison.OrdinalIgnoreCase));
         Assert.False(hasPackage, "ItemNature.Package is DEFERRED per MDM-000 §9.");
     }
+
+    // ----------------------------------------------------------------
+    // MDM-002 — BusinessPartnerRole / WarehouseType / LocationType
+    // ----------------------------------------------------------------
+    [Fact]
+    public void BusinessPartnerRole_IsBitFlag_AndHasCustomerSupplierBoth()
+    {
+        // [Flags] enum: Customer = 1, Supplier = 2, Both = Customer | Supplier = 3.
+        Assert.Equal(1, (int)BusinessPartnerRole.Customer);
+        Assert.Equal(2, (int)BusinessPartnerRole.Supplier);
+        Assert.Equal(3, (int)BusinessPartnerRole.Both);
+        Assert.Equal(
+            (int)(BusinessPartnerRole.Customer | BusinessPartnerRole.Supplier),
+            (int)BusinessPartnerRole.Both);
+    }
+
+    [Fact]
+    public void WarehouseType_HasThreeV1Values_AndNoTransit()
+    {
+        // Per MDM-002 scope: Physical / Virtual / Return. TRANSIT is
+        // DEFERRED (requires Inventory in-transit logic).
+        var values = Enum.GetValues<WarehouseType>();
+        Assert.Equal(3, values.Length);
+        Assert.Contains(WarehouseType.Physical, values);
+        Assert.Contains(WarehouseType.Virtual, values);
+        Assert.Contains(WarehouseType.Return, values);
+        var hasTransit = Enum.IsDefined(typeof(WarehouseType), "Transit")
+                         || values.Any(v => v.ToString().Equals("Transit", StringComparison.OrdinalIgnoreCase));
+        Assert.False(hasTransit, "WarehouseType.Transit is DEFERRED.");
+    }
+
+    [Fact]
+    public void LocationType_HasFourV1Values_AndNoStage()
+    {
+        // Per MDM-002 scope: Bin / Shelf / Zone / Dock. STAGE is
+        // DEFERRED (requires Inventory picking logic).
+        var values = Enum.GetValues<LocationType>();
+        Assert.Equal(4, values.Length);
+        Assert.Contains(LocationType.Bin, values);
+        Assert.Contains(LocationType.Shelf, values);
+        Assert.Contains(LocationType.Zone, values);
+        Assert.Contains(LocationType.Dock, values);
+        var hasStage = Enum.IsDefined(typeof(LocationType), "Stage")
+                       || values.Any(v => v.ToString().Equals("Stage", StringComparison.OrdinalIgnoreCase));
+        Assert.False(hasStage, "LocationType.Stage is DEFERRED.");
+    }
 }

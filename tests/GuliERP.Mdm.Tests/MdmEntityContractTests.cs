@@ -105,4 +105,115 @@ public sealed class MdmEntityContractTests
             .ToArray();
         Assert.Empty(boolProps);
     }
+
+    // ----------------------------------------------------------------
+    // MDM-002 — BusinessPartner / Warehouse / Location contract
+    // tests. These lock the V1 field set + interface implementations
+    // (IMultiTenant for BusinessPartner; ICompanyScoped for
+    // Warehouse + Location). An accidental removal of the scope
+    // marker breaks the build via these tests.
+    // ----------------------------------------------------------------
+    [Fact]
+    public void BusinessPartner_Properties_Frozen_AndImplementsIMultiTenant()
+    {
+        var bp = new BusinessPartner();
+        Assert.Equal(0L, bp.Id);
+        Assert.Equal(0L, bp.TenantId);
+        Assert.Equal(string.Empty, bp.Code);
+        Assert.Equal(string.Empty, bp.Name);
+        Assert.Null(bp.ShortName);
+        // Role default: Both (3). A counterparty with no role
+        // assignment is meaningless in MDM-002; the entity-level
+        // default is Both so a Create request that omits Role is
+        // interpreted as "this partner serves both sides until
+        // the operator explicitly restricts it".
+        Assert.Equal(3, (int)bp.Role);
+        Assert.Equal(BusinessPartnerRole.Both, bp.Role);
+        Assert.Null(bp.ContactPerson);
+        Assert.Null(bp.Phone);
+        Assert.Null(bp.Email);
+        Assert.Null(bp.AddressLine1);
+        Assert.Null(bp.AddressLine2);
+        Assert.Null(bp.City);
+        Assert.Null(bp.Region);
+        Assert.Null(bp.PostalCode);
+        Assert.Null(bp.CountryCode);
+        Assert.Null(bp.TaxNumber);
+        Assert.Equal(MasterDataStatus.Active, bp.Status);
+        Assert.Null(bp.Description);
+        Assert.Equal(0, bp.ConcurrencyVersion);
+
+        Assert.True(
+            typeof(IMultiTenant).IsAssignableFrom(typeof(BusinessPartner)),
+            "BusinessPartner must implement IMultiTenant.");
+
+        // BusinessPartner V1 does NOT carry CompanyId (the counterparty
+        // can serve multiple companies in V1+; the company relationship
+        // is V2+ scope).
+        Assert.False(
+            typeof(ICompanyScoped).IsAssignableFrom(typeof(BusinessPartner)),
+            "BusinessPartner V1 is NOT company-scoped; the company link is V2+.");
+
+        // No banking / credit / price list fields in V1.
+        Assert.Null(typeof(BusinessPartner).GetProperty("BankAccount"));
+        Assert.Null(typeof(BusinessPartner).GetProperty("CreditLimit"));
+        Assert.Null(typeof(BusinessPartner).GetProperty("PriceListId"));
+    }
+
+    [Fact]
+    public void Warehouse_Properties_Frozen_AndImplementsICompanyScoped()
+    {
+        var w = new Warehouse();
+        Assert.Equal(0L, w.Id);
+        Assert.Equal(0L, w.TenantId);
+        Assert.Equal(0L, w.CompanyId);
+        Assert.Null(w.PlantId);
+        Assert.Equal(string.Empty, w.Code);
+        Assert.Equal(string.Empty, w.Name);
+        Assert.Equal(WarehouseType.Physical, w.Type);
+        Assert.Null(w.AddressLine1);
+        Assert.Null(w.AddressLine2);
+        Assert.Null(w.City);
+        Assert.Null(w.Region);
+        Assert.Null(w.PostalCode);
+        Assert.Null(w.CountryCode);
+        Assert.Equal(MasterDataStatus.Active, w.Status);
+        Assert.Null(w.Description);
+        Assert.Equal(0, w.ConcurrencyVersion);
+
+        Assert.True(
+            typeof(ICompanyScoped).IsAssignableFrom(typeof(Warehouse)),
+            "Warehouse must implement ICompanyScoped (tenant + company).");
+
+        // Warehouse does NOT carry storage capacity (Inventory owns).
+        Assert.Null(typeof(Warehouse).GetProperty("Capacity"));
+        Assert.Null(typeof(Warehouse).GetProperty("CurrentStock"));
+    }
+
+    [Fact]
+    public void Location_Properties_Frozen_AndImplementsICompanyScoped()
+    {
+        var l = new Location();
+        Assert.Equal(0L, l.Id);
+        Assert.Equal(0L, l.TenantId);
+        Assert.Equal(0L, l.CompanyId);
+        Assert.Equal(0L, l.WarehouseId);
+        Assert.Equal(string.Empty, l.Code);
+        Assert.Equal(string.Empty, l.Name);
+        Assert.Equal(LocationType.Bin, l.Type);
+        Assert.Null(l.Aisle);
+        Assert.Null(l.Bay);
+        Assert.Null(l.Shelf);
+        Assert.Equal(MasterDataStatus.Active, l.Status);
+        Assert.Null(l.Description);
+        Assert.Equal(0, l.ConcurrencyVersion);
+
+        Assert.True(
+            typeof(ICompanyScoped).IsAssignableFrom(typeof(Location)),
+            "Location must implement ICompanyScoped (tenant + company).");
+
+        // Location does NOT carry quantity (Inventory owns).
+        Assert.Null(typeof(Location).GetProperty("QuantityOnHand"));
+        Assert.Null(typeof(Location).GetProperty("ReservedQuantity"));
+    }
 }
