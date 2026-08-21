@@ -57,18 +57,66 @@
     prompt. The password is still prompted via
     Read-Host -AsSecureString.
 
+.PARAMETER Reset
+    If set, performs a CONTROLLED HARD RESET of only the
+    web_preview_admin fixture before re-provisioning:
+      - Deletes the AspNet Identity record for
+        web_preview_admin via UserManager.DeleteAsync
+        (never raw SQL).
+      - Before that, deletes the custom FK rows only for
+        that user: UserRoleAssignment,
+        UserOrganizationMembership, UserCompanyMembership
+        (all by explicit UserId equality, so no other user
+        rows are ever touched).
+      - Transactionally commits the delete, then runs the
+        standard idempotent provision on top:
+          * Reuses existing web_preview_t / web_preview_c
+            (NEVER deletes a tenant or company).
+          * Recreates user with a FRESH HILO Id (not
+            MAX(Id)+1, not hardcoded) via
+            UserManager.CreateAsync.
+          * Binds default company membership.
+          * Grants the 4 system roles via
+            gulierp_user_role_assignment.
+          * Password is read via Read-Host -AsSecureString
+            and hashed by Identity PasswordHasher.
+    Without -Reset, the script is purely idempotent:
+      - If user exists, only rotates its password and
+        ensures missing role assignments / memberships /
+        status fields (non-destructive).
+      - If user is missing, creates it.
+
+    Safety guard: user, tenant, company must all carry the
+    "web_preview_" marker prefix. The bootstrap tool
+    refuses to touch anything else.
+
 .EXAMPLE
     PS> .\provision-web-preview-user.ps1
     (interactive: paste connection string + password)
 
 .EXAMPLE
+    PS> .\provision-web-preview-user.ps1 -Reset
+    (read-only pre-diagnose, then hard-reset the preview
+    fixture, then re-provision. Password is prompted anew.)
+
+.EXAMPLE
     PS> $env:ConnectionStrings__GuliERP = "Host=192.168.2.228;...;Password=***"
     PS> .\provision-web-preview-user.ps1 -SkipPrompt
     (reads password via Read-Host -AsSecureString)
+
+.EXAMPLE
+    PS> .\provision-web-preview-user.ps1 -GrantMdmOperator
+    Adds the 12 MDM permission claims (6 read + 6 manage) to the
+    ERP_MDM_OPERATOR role in the user's Tenant and grants that
+    role to the user. Idempotent. Use this AFTER the user can log
+    in but gets 403 on the 6 master-data SPA pages. No password
+    is needed (the operation is non-destructive to the password).
 #>
 [CmdletBinding()]
 param(
-    [switch]$SkipPrompt
+    [switch]$SkipPrompt,
+    [switch]$Reset,
+    [switch]$GrantMdmOperator
 )
 
 $ErrorActionPreference = 'Stop'
@@ -126,6 +174,118 @@ if ($LASTEXITCODE -ne 0) {
 $displayConn = ($ConnectionString -replace 'Password=[^;]+', 'Password=***')
 Write-Host "[WEB-PREVIEW-001A] Using connection: $displayConn" -ForegroundColor Cyan
 
+# --- 2b. (Reset mode only) Pre-reset READ-ONLY diagnose -------------------
+# Captures the 5+1 evidence BEFORE the delete phase so the
+# operator has an audit trail of the pre-reset state. No
+# password is read or echoed.
+if ($Reset) {
+    Write-Host '[WEB-PREVIEW-IDENTITY-HARD-RESET] Step 2b: Pre-reset READ-ONLY diagnose' -ForegroundColor Magenta
+    try {
+        $preDiagArgs = @(
+            'run', '--project', $BOOTSTRAP_PROJECT,
+            '-c', 'Release', '--no-restore',
+            '--',
+            '--diagnose', $ConnectionString, $USERNAME
+        )
+        $pdiagPsi = New-Object System.Diagnostics.ProcessStartInfo
+        $pdiagPsi.FileName = $DOTNET
+        foreach ($a in $preDiagArgs) { $pdiagPsi.ArgumentList.Add($a) }
+        $pdiagPsi.RedirectStandardOutput = $true
+        $pdiagPsi.RedirectStandardError  = $true
+        $pdiagPsi.UseShellExecute         = $false
+        $pdiagPsi.CreateNoWindow          = $true
+
+        $pdiagProc = New-Object System.Diagnostics.Process
+        $pdiagProc.StartInfo = $pdiagPsi
+        $pstarted = $pdiagProc.Start()
+        if (-not $pstarted) { throw 'Failed to start pre-diagnose process.' }
+        $pstdoutTask = $pdiagProc.StandardOutput.ReadToEndAsync()
+        $pstderrTask = $pdiagProc.StandardError.ReadToEndAsync()
+        $pExited = $pdiagProc.WaitForExit(60000)
+        if (-not $pExited) {
+            try { Stop-Process -Id $pdiagProc.Id -Force -ErrorAction SilentlyContinue } catch {}
+            throw 'Pre-diagnose timeout.'
+        }
+        $pstderr = $pstderrTask.GetAwaiter().GetResult()
+        if ($pstderr) { Write-Host $pstderr -ForegroundColor DarkGray }
+        if ($pdiagProc.ExitCode -ne 0) {
+            Write-Warning "Pre-diagnose returned exit code $($pdiagProc.ExitCode). Continuing reset (user may not exist yet)."
+        } else {
+            $pstdout = $pstdoutTask.GetAwaiter().GetResult()
+            try {
+                $diag = $pstdout | ConvertFrom-Json -ErrorAction Stop
+                Write-Host "PRE_RESET_DIAGNOSE:`n$($diag | ConvertTo-Json -Depth 5)" -ForegroundColor Yellow
+            } catch {
+                Write-Host "PRE_RESET_DIAGNOSE(raw): $pstdout" -ForegroundColor Yellow
+            }
+        }
+    } catch {
+        Write-Warning "Pre-reset diagnose skipped due to error: $_"
+    }
+}
+
+# --- 2c. (-GrantMdmOperator mode only) Grant the 12 MDM permissions -------
+# This is a NON-DESTRUCTIVE operation: it does not touch the
+# password, does not delete any data, and is idempotent. It is
+# meant to be run AFTER the user can log in but receives 403 on
+# the 6 master-data SPA pages. The user can be either
+# `web_preview_admin` (default) or `test_operator_g2_004` (G2-004
+# operator) — the marker guard inside the .NET tool accepts both.
+if ($GrantMdmOperator) {
+    Write-Host '[WEB-PREVIEW-002] Step 2c: Grant MDM Operator permissions' -ForegroundColor Cyan
+    $grantArgs = @(
+        'run', '--project', $BOOTSTRAP_PROJECT,
+        '-c', 'Release', '--no-restore',
+        '--', '--grant-mdm-operator', $ConnectionString, $USERNAME
+    )
+    $gPsi = New-Object System.Diagnostics.ProcessStartInfo
+    $gPsi.FileName = $DOTNET
+    foreach ($a in $grantArgs) { $gPsi.ArgumentList.Add($a) }
+    $gPsi.RedirectStandardOutput = $true
+    $gPsi.RedirectStandardError  = $true
+    $gPsi.UseShellExecute         = $false
+    $gPsi.CreateNoWindow          = $true
+
+    $gProc = New-Object System.Diagnostics.Process
+    $gProc.StartInfo = $gPsi
+    $gStarted = $gProc.Start()
+    if (-not $gStarted) { throw 'Failed to start grant-mdm-operator process.' }
+    $gStdoutTask = $gProc.StandardOutput.ReadToEndAsync()
+    $gStderrTask = $gProc.StandardError.ReadToEndAsync()
+    $gExited = $gProc.WaitForExit(60000)
+    if (-not $gExited) {
+        try { Stop-Process -Id $gProc.Id -Force -ErrorAction SilentlyContinue } catch {}
+        throw "GRANT_MDM_PROCESS_TIMEOUT (60 s). Killed PID $($gProc.Id)."
+    }
+    $gStderr = $gStderrTask.GetAwaiter().GetResult()
+    if ($gStderr) { Write-Host $gStderr -ForegroundColor DarkGray }
+    if ($gProc.ExitCode -ne 0) {
+        Write-Host "[WEB-PREVIEW-002] Grant FAILED with exit code $($gProc.ExitCode)." -ForegroundColor Red
+        if ($gStderr) { Write-Host $gStderr -ForegroundColor Red }
+        exit $gProc.ExitCode
+    }
+    $gStdout = $gStdoutTask.GetAwaiter().GetResult()
+    $gParsed = $gStdout | ConvertFrom-Json -ErrorAction SilentlyContinue
+    if ($null -eq $gParsed -or $gParsed.ok -ne $true) {
+        throw "Grant OK exit but stdout is not parseable as JSON. Output: $gStdout"
+    }
+    Write-Host '[WEB-PREVIEW-002] Grant OK.' -ForegroundColor Green
+    Write-Host "  userName       = $($gParsed.userName)"
+    Write-Host "  userId         = $($gParsed.userId)"
+    Write-Host "  tenantCode     = $($gParsed.tenantCode)"
+    Write-Host "  tenantId       = $($gParsed.tenantId)"
+    Write-Host "  roleCode       = $($gParsed.roleCode)"
+    Write-Host "  roleId         = $($gParsed.roleId)"
+    Write-Host "  totalClaims    = $($gParsed.totalClaims)"
+    Write-Host "  grantedClaims  = $(@($gParsed.grantedClaims) -join ',')"
+    Write-Host ''
+    Write-Host 'Next: log out, log back in (Cookie / Claims / permissions refresh), then open the 6 master-data pages.'
+    Write-Host 'No password was read or echoed.'
+    $grantFinalJson = $gParsed | ConvertTo-Json -Compress
+    Write-Output $grantFinalJson
+    exit 0
+}
+
 # --- 3. Read password (SecureString) ---------------------------------------
 $securePwd = $null
 try {
@@ -149,15 +309,23 @@ try {
         [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
     }
 
-    # 6-arg CLI: <conn> <userName> <tenantCode> <companyCode>
-    #            <markerPrefix> <systemRolesCsv>
-    $dotnetArgs = @(
-        'run', '--project', $BOOTSTRAP_PROJECT,
-        '-c', 'Release', '--no-restore',
-        '--',
+    # Build the bootstrap tool's argument list.
+    #   - Without -Reset: the idempotent 6-arg form:
+    #       <conn> <user> <tenant> <company> <marker> <roles>
+    #   - With    -Reset: first sub-command is --reset-fixture,
+    #       followed by the same 6 positional args (user etc.).
+    #       --reset-fixture also re-asserts marker guards inside
+    #       the .NET tool (defense in depth).
+    $positional = @(
         $ConnectionString, $USERNAME, $TENANT_CODE, $COMPANY_CODE,
         $MARKER_PREFIX, $SYSTEM_ROLES_CSV
     )
+    $subCmd = if ($Reset) { @('--reset-fixture') } else { @() }
+    $dotnetArgs = @(
+        'run', '--project', $BOOTSTRAP_PROJECT,
+        '-c', 'Release', '--no-restore',
+        '--'
+    ) + $subCmd + $positional
 
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $DOTNET

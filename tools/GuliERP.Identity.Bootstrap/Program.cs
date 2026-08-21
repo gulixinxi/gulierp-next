@@ -1,11 +1,13 @@
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
+using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Infrastructure.Persistence;
 using GuliERP.Identity.Infrastructure.Seed;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace GuliERP.Identity.Bootstrap;
 
@@ -96,9 +98,46 @@ public static class Program
         //   The password (and PasswordHash / SecurityStamp) are
         //   NEVER echoed.
         // -------------------------------------------------------------
+        // -------------------------------------------------------------
+        // --reset-fixture mode (WEB-PREVIEW-IDENTITY-HARD-RESET):
+        //   Deletes ONLY the target preview fixture user (and its
+        //   custom FK-linked rows: UserCompanyMembership,
+        //   UserOrganizationMembership, UserRoleAssignment, plus
+        //   the Identity rows that UserManager.DeleteAsync covers)
+        //   WITHOUT touching other users, tenants, companies.
+        //   Then performs the standard idempotent provision flow:
+        //   ensure tenant/company exist (reuse if present), create
+        //   user with a fresh HILO Id, bind company, grant roles,
+        //   set password from STDIN via Identity PasswordHasher.
+        //
+        //   Args: --reset-fixture <connectionString> <userName>
+        //              <tenantCode> <companyCode> [markerPrefix]
+        //              [systemRolesCsv]
+        //   STDIN: new clear text password (read once, never echoed
+        //          back, cleared from memory after use where possible).
+        //
+        //   Safety hard-coded:
+        //     * userName MUST start with markerPrefix (default
+        //       "web_preview_") otherwise the tool aborts.
+        //     * tenantCode / companyCode MUST start with
+        //       markerPrefix.
+        //     * DB target guard (canonical DB) is NOT inside this
+        //       tool — the caller is expected to run
+        //       assert-gulierp-db-target.ps1 first.
+        // -------------------------------------------------------------
+        if (args.Length >= 1 && args[0] == "--reset-fixture")
+        {
+            return await RunHardResetFixtureAsync(args);
+        }
+
         if (args.Length >= 1 && args[0] == "--diagnose")
         {
             return await RunDiagnoseAsync(args);
+        }
+
+        if (args.Length >= 1 && args[0] == "--grant-mdm-operator")
+        {
+            return await RunGrantMdmOperatorAsync(args);
         }
 
         if (args.Length < 4)
@@ -220,6 +259,315 @@ public static class Program
         var db = sp.GetRequiredService<IdentityDbContext>();
         var userManager = sp.GetRequiredService<UserManager<GuliErpUser>>();
 
+        // --- Run the shared idempotent provision core helper. ---
+        // Extracted so --reset-fixture can delete the fixture user
+        // first and then reuse the EXACT same provision body (tenant
+        // / company ensure + Identity user + password hashing +
+        // company membership + role assignments + security stamp
+        // reset). Preserves verbatim behavior of the original
+        // inlined try/catch that was previously here.
+        return await RunProvisionCoreAsync(
+            userName,
+            tenantCode,
+            companyCode,
+            markerPrefix,
+            systemRolesCsv,
+            password,
+            db,
+            userManager,
+            logger);
+    }
+
+    /// <summary>
+    /// WEB-PREVIEW-IDENTITY-HARD-RESET — controlled hard reset of a
+    /// single preview fixture user.
+    ///
+    /// Steps:
+    ///   1. Parse args and read password from STDIN.
+    ///   2. SAFETY GUARDS: userName / tenantCode / companyCode MUST
+    ///      all start with the marker prefix ("web_preview_" by
+    ///      default). Any other user aborts immediately — we never
+    ///      touch non-preview users, tenants or companies.
+    ///   3. Build DI container (identity options, DB context, user
+    ///      manager, logging to stderr).
+    ///   4. START TRANSACTION.
+    ///   5. Look up the existing user by normalized name.
+    ///   6. If it exists:
+    ///        - delete custom FK rows ONLY for this user:
+    ///            UserRoleAssignment
+    ///            UserOrganizationMembership
+    ///            UserCompanyMembership
+    ///        - call UserManager.DeleteAsync(user) which cleans up
+    ///          AspNetUserRoles / AspNetUserClaims /
+    ///          AspNetUserLogins / AspNetUserTokens / AspNetUsers
+    ///          via the Identity store.
+    ///   7. COMMIT the transaction.
+    ///   8. Run the STANDARD idempotent provision flow on top of the
+    ///      same connection: ensure tenant + company (reuse existing;
+    ///      this tool NEVER deletes a tenant/company), create user
+    ///      via UserManager.CreateAsync with a fresh HILO Id (EF
+    ///      HiLo — NOT MAX(Id)+1, NOT hand-picked), bind default
+    ///      company membership, grant role assignments, set password
+    ///      via Identity PasswordHasher.
+    /// </summary>
+    private static async Task<int> RunHardResetFixtureAsync(string[] args)
+    {
+        // --reset-fixture <cs> <user> <tenant> <company> [markerPrefix] [systemRolesCsv]
+        if (args.Length < 5)
+        {
+            await Console.Error.WriteLineAsync(
+                "Usage: gulierp-identity-bootstrap --reset-fixture <connectionString> <userName> <tenantCode> <companyCode> [markerPrefix] [systemRolesCsv]  (password from STDIN)");
+            return ExitConnectionMissing;
+        }
+        var connectionString = args[1];
+        var userName = args[2];
+        var tenantCode = args[3];
+        var companyCode = args[4];
+        var markerPrefix = args.Length >= 6 && !string.IsNullOrEmpty(args[5])
+            ? args[5]
+            : MarkerPrefix;
+        var systemRolesCsv = args.Length >= 7 ? args[6] : string.Empty;
+
+        if (!userName.StartsWith(markerPrefix, StringComparison.Ordinal))
+        {
+            await Console.Error.WriteLineAsync(
+                $"SAFETY(--reset): userName must start with '{markerPrefix}' (got '{userName}'). Hard reset refuses to touch any user without the marker prefix.");
+            return ExitSafetyGuard;
+        }
+        if (!tenantCode.StartsWith(markerPrefix, StringComparison.Ordinal))
+        {
+            await Console.Error.WriteLineAsync(
+                $"SAFETY(--reset): tenantCode must start with '{markerPrefix}'.");
+            return ExitSafetyGuard;
+        }
+        if (!companyCode.StartsWith(markerPrefix, StringComparison.Ordinal))
+        {
+            await Console.Error.WriteLineAsync(
+                $"SAFETY(--reset): companyCode must start with '{markerPrefix}'.");
+            return ExitSafetyGuard;
+        }
+
+        // Read password from STDIN (never echo).
+        string? passwordLine;
+        try
+        {
+            passwordLine = await Console.In.ReadToEndAsync();
+        }
+        catch
+        {
+            await Console.Error.WriteLineAsync(
+                "ERROR(--reset): failed to read password from STDIN.");
+            return ExitOtherException;
+        }
+        if (string.IsNullOrEmpty(passwordLine))
+        {
+            await Console.Error.WriteLineAsync(
+                "ERROR(--reset): empty password from STDIN. Aborting.");
+            return ExitSafetyGuard;
+        }
+        var password = passwordLine.Trim();
+
+        // --- Build DI (mirrors the normal provision flow) ---
+        var services = new ServiceCollection();
+        services.AddLogging(b =>
+        {
+            b.SetMinimumLevel(LogLevel.Information);
+            b.AddProvider(new StderrLoggerProvider());
+        });
+        services.AddDbContext<IdentityDbContext>(options =>
+        {
+            options.UseNpgsql(
+                connectionString,
+                npg => npg.MigrationsHistoryTable(
+                    "__ef_migrations_history",
+                    IdentityDbContext.DefaultSchema));
+        });
+        services.AddIdentity<GuliErpUser, GuliErpRole>(options =>
+        {
+            options.Password.RequiredLength = 12;
+            options.Password.RequireDigit = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireNonAlphanumeric = true;
+            options.Password.RequiredUniqueChars = 4;
+            options.User.RequireUniqueEmail = false;
+            options.SignIn.RequireConfirmedEmail = false;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.AllowedForNewUsers = true;
+        })
+        .AddEntityFrameworkStores<IdentityDbContext>()
+        .AddDefaultTokenProviders();
+
+        await using var sp = services.BuildServiceProvider();
+        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("BootstrapReset");
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var userManager = sp.GetRequiredService<UserManager<GuliErpUser>>();
+
+        try
+        {
+            // ---- PHASE 1: Hard-delete only the preview fixture user ----
+            // NOTE: We deliberately keep Tenants.Companies intact
+            // (reuse existing web_preview_t / web_preview_c) and only
+            // delete the user + its direct FK rows.
+            var normalizedName = userManager.NormalizeName(userName);
+            var existing = await db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.NormalizedUserName == normalizedName);
+
+            if (existing is not null)
+            {
+                logger.LogInformation(
+                    "--reset-fixture: found existing fixture user {Name} (Id={Id}). Deleting FK rows + Identity record (transactionally)...",
+                    userName, existing.Id);
+
+                using var tx = await db.Database.BeginTransactionAsync();
+                try
+                {
+                    // Custom FK tables — GuliERP proprietary link tables.
+                    // DELETE with server-side filters OFF (we delete
+                    // explicitly by UserId equality so no other rows are
+                    // affected, regardless of filter state).
+                    var rowsAss = await db.UserRoleAssignments
+                        .Where(r => r.UserId == existing.Id)
+                        .ExecuteDeleteAsync();
+                    var rowsOrg = await db.UserOrganizationMemberships
+                        .Where(r => r.UserId == existing.Id)
+                        .ExecuteDeleteAsync();
+                    var rowsCmp = await db.UserCompanyMemberships
+                        .Where(r => r.UserId == existing.Id)
+                        .ExecuteDeleteAsync();
+                    logger.LogInformation(
+                        "--reset-fixture: removed FK rows (RoleAssignment={Ass}, OrgMembership={Org}, CompanyMembership={Cmp}).",
+                        rowsAss, rowsOrg, rowsCmp);
+
+                    // AspNet identity rows (AspNetUserClaims, Logins,
+                    // Tokens, Roles, Users) are cleaned by Identity's
+                    // UserManager.DeleteAsync — NOT a manual SQL delete.
+                    // Re-query WITH tracking for the DeleteAsync call.
+                    var trackedUser = await userManager.FindByIdAsync(existing.Id.ToString());
+                    if (trackedUser is null)
+                    {
+                        // Race / state skew — the AsNoTracking query
+                        // found it, but the manager no longer does.
+                        // Treat as already-deleted and continue to
+                        // provision phase.
+                        logger.LogWarning(
+                            "--reset-fixture: tracked user disappeared between FindByName + FindById; skipping DeleteAsync.");
+                    }
+                    else
+                    {
+                        var idDel = await userManager.DeleteAsync(trackedUser);
+                        if (!idDel.Succeeded)
+                        {
+                            var errs = string.Join("; ", idDel.Errors.Select(e => $"{e.Code}:{e.Description}"));
+                            throw new InvalidOperationException(
+                                $"UserManager.DeleteAsync failed for {trackedUser.UserName}: {errs}");
+                        }
+                        logger.LogInformation(
+                            "--reset-fixture: UserManager.DeleteAsync succeeded (removed AspNet* rows for {Name}).",
+                            trackedUser.UserName);
+                    }
+
+                    await tx.CommitAsync();
+                    logger.LogInformation("--reset-fixture: delete phase COMMITTED.");
+                }
+                catch
+                {
+                    try { await tx.RollbackAsync(); } catch { /* ignore rollback issues */ }
+                    throw;
+                }
+            }
+            else
+            {
+                logger.LogInformation(
+                    "--reset-fixture: no existing user '{Name}' — nothing to delete. Proceeding to create-only provision.",
+                    userName);
+            }
+
+            // ---- PHASE 2: Run the standard idempotent provision flow ----
+            // The existing idempotent logic inside Main() already does
+            // exactly what we need here:
+            //   1. Ensure tenant / company exist (reuse existing),
+            //   2. Create user via UserManager.CreateAsync (HiLo Id),
+            //   3. Ensure default company membership,
+            //   4. Grant role assignments (G2-005: UserRoleAssignment),
+            //   5. Set password via Identity PasswordHasher (inside
+            //      CreateAsync),
+            //   6. Unlock / reset access failed count,
+            //   7. Reset SecurityStamp so prior cookies are invalidated.
+            //
+            // Rather than copy ~300 lines, route through the same code
+            // by calling a shared helper. The helper is extracted so
+            // the existing --help output and idempotent behavior are
+            // preserved verbatim.
+            return await RunProvisionCoreAsync(
+                userName,
+                tenantCode,
+                companyCode,
+                markerPrefix,
+                systemRolesCsv,
+                password,
+                db,
+                userManager,
+                logger);
+        }
+        catch (Exception ex) when (ex is NpgsqlException
+                or System.Net.Sockets.SocketException
+                or TimeoutException)
+        {
+            await Console.Error.WriteLineAsync($"DB ERROR(--reset): {ex.GetType().Name}: {ex.Message}");
+            return ExitDatabaseUnavailable;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"EXCEPTION(--reset): {ex.GetType().Name}: {ex.Message}");
+            return ExitOtherException;
+        }
+    }
+
+    /// <summary>
+    /// Core idempotent provisioning logic shared between (A) the
+    /// existing main path (gulierp-identity-bootstrap &lt;cs&gt; &lt;user&gt; ...)
+    /// and (B) the new --reset-fixture path after the user is
+    /// deleted.
+    ///
+    /// Guarantees:
+    ///   - Tenant / Company are idempotently ensured (no delete —
+    ///     reuse an existing one if present).
+    ///   - User is created via UserManager.CreateAsync so the
+    ///     password is hashed by Identity's PasswordHasher
+    ///     (NEVER a hand-rolled hash, NEVER a SQL UPDATE).
+    ///   - A default CompanyMembership (IsDefault = true, Active)
+    ///     is guaranteed.
+    ///   - Roles listed in systemRolesCsv are granted via the
+    ///     G2-005 UserRoleAssignment table (the table actually
+    ///     consumed by PermissionAuthorizationHandler at runtime).
+    ///   - AspNet lockout state is cleared / reset on completion.
+    /// </summary>
+    private static async Task<int> RunProvisionCoreAsync(
+        string userName,
+        string tenantCode,
+        string companyCode,
+        string markerPrefix,
+        string systemRolesCsv,
+        string password,
+        IdentityDbContext db,
+        UserManager<GuliErpUser> userManager,
+        ILogger logger)
+    {
+        // Re-run safety guards (defense-in-depth — the caller should
+        // have already done them, but this prevents accidental misuse
+        // if the helper is ever invoked from elsewhere).
+        if (!userName.StartsWith(markerPrefix, StringComparison.Ordinal)
+            || !tenantCode.StartsWith(markerPrefix, StringComparison.Ordinal)
+            || !companyCode.StartsWith(markerPrefix, StringComparison.Ordinal))
+        {
+            await Console.Error.WriteLineAsync(
+                $"SAFETY(core): userName/tenantCode/companyCode must start with '{markerPrefix}'.");
+            return ExitSafetyGuard;
+        }
+
         try
         {
             // -------------------------------------------------------------
@@ -315,6 +663,12 @@ public static class Program
                     existing.ConcurrencyVersion += 1;
                     await userManager.UpdateAsync(existing);
                 }
+                // Reset security stamp so any previously-issued cookie
+                // is immediately invalidated (useful after hard-reset
+                // or after the -Reset PowerShell switch).
+                await userManager.UpdateSecurityStampAsync(existing);
+                await userManager.ResetAccessFailedCountAsync(existing);
+                await userManager.SetLockoutEndDateAsync(existing, DateTimeOffset.MinValue);
             }
             else
             {
@@ -327,7 +681,7 @@ public static class Program
                     NormalizedEmail = $"{userName}@gulierp.example.com".ToUpperInvariant(),
                     EmailConfirmed = true,
                     DisplayName = "Operator Evidence Test User",
-                    IsPlatformAdmin = false,   // NOT a platform admin per brief §4
+                    IsPlatformAdmin = false,
                     Status = UserStatus.Active,
                     CreatedAt = DateTimeOffset.UtcNow,
                     CreatedBy = null,
@@ -376,13 +730,8 @@ public static class Program
             }
 
             // -------------------------------------------------------------
-            // 3b. Optional system role grants (WEB-PREVIEW-001A path).
-            //     The 6th CLI arg is a comma-separated list of
-            //     GuliErpRole.Code values. For each role code, we
-            //     ensure a UserRoleAssignment row exists at
+            // 3b. Optional system role grants (WEB-PREVIEW path).
             //     Tenant-wide scope (CompanyId = null). Idempotent.
-            //     The default empty arg = no role grants (G2-004
-            //     G2-005 behavior preserved).
             // -------------------------------------------------------------
             var grantedRoles = new List<string>();
             if (!string.IsNullOrWhiteSpace(systemRolesCsv))
@@ -441,8 +790,7 @@ public static class Program
             System.Security.Cryptography.RandomNumberGenerator.Fill(new byte[16]);
 
             // -------------------------------------------------------------
-            // 4. Output JSON to stdout (so PowerShell can parse).
-            //    The password is NEVER echoed.
+            // 4. Output JSON to stdout. Password is NEVER echoed.
             // -------------------------------------------------------------
             var output = new
             {
@@ -671,6 +1019,380 @@ public static class Program
         catch (Exception ex)
         {
             await Console.Error.WriteLineAsync($"EXCEPTION: {ex.GetType().Name}: {ex.Message}");
+            return ExitOtherException;
+        }
+    }
+
+    /// <summary>
+    /// WEB-PREVIEW-002 — Grant the WEB-PREVIEW-001A / G2-004 operator
+    /// test users the 12 MDM read + manage permissions they need to
+    /// drive the 6 master-data SPA pages.
+    ///
+    /// <para>
+    /// The IdentitySeed creates 4 system roles (PLATFORM_ADMIN,
+    /// TENANT_ADMIN, COMPANY_ADMIN, NORMAL_USER) but NONE of them
+    /// carry MDM permission claims. The PermissionAuthorizationHandler
+    /// joins <c>UserRoleAssignments</c> -> <c>Roles</c> ->
+    /// <c>RoleClaims</c> on <c>ClaimType='gulierp.permission'</c>,
+    /// so a user with only the 4 base roles gets 403 on every MDM
+    /// endpoint. This tool idempotently:
+    /// <list type="number">
+    ///   <item>Looks up the user by marker-prefixed userName.</item>
+    ///   <item>Resolves the user's TenantId from the User row.</item>
+    ///   <item>Ensures a single role <c>ERP_MDM_OPERATOR</c> exists
+    ///         in that Tenant (reuses if present, creates if not).
+    ///         The role is marked <c>IsSystem=true</c> so it is
+    ///         treated as managed by the bootstrap tool, not as
+    ///         a user-created role.</item>
+    ///   <item>Adds 12 <c>IdentityRoleClaim</c> rows (ClaimType =
+    ///         <c>gulierp.permission</c>, ClaimValue = each of the 12
+    ///         MDM permission codes: 6 read + 6 manage). Idempotent
+    ///         (skips if claim already present).</item>
+    ///   <item>Adds a single <c>UserRoleAssignment</c> row
+    ///         (TenantId = user's tenant, CompanyId = NULL = Tenant-wide
+    ///         scope, Status = Active). Idempotent.</item>
+    /// </list>
+    /// </para>
+    ///
+    /// <para>
+    /// The role is granted at Tenant-wide scope (CompanyId = NULL)
+    /// so the operator can navigate between Companies without
+    /// re-provisioning. The currentCompany context is supplied by
+    /// the request layer (the SPA's <c>X-Company-Id</c> header +
+    /// <c>UserCompanyMembership.IsDefault</c> fallback per
+    /// G2-003A DEC-ID-010).
+    /// </para>
+    ///
+    /// <para>
+    /// Marker guard: <c>userName</c> must start with one of the
+    /// accepted markers (<c>test_operator_</c> or
+    /// <c>web_preview_</c>). Anything else aborts with
+    /// <see cref="ExitSafetyGuard"/>.
+    /// </para>
+    ///
+    /// <para>
+    /// <b>CLI:</b>
+    /// <c>dotnet run --project tools/GuliERP.Identity.Bootstrap -- --grant-mdm-operator &lt;connectionString&gt; &lt;userName&gt;</c>
+    /// (no STDIN required; the operation is non-destructive to the
+    /// password and is purely a role/claim grant).
+    /// </para>
+    ///
+    /// <para>
+    /// <b>Output JSON</b> (single line, machine-readable):
+    /// <c>{ ok, userName, userId, tenantId, tenantCode, roleId, roleCode, grantedClaims, totalClaims, note }</c>
+    /// </para>
+    /// </summary>
+    private static async Task<int> RunGrantMdmOperatorAsync(string[] args)
+    {
+        // --grant-mdm-operator <connectionString> <userName>
+        if (args.Length < 3)
+        {
+            await Console.Error.WriteLineAsync(
+                "Usage: gulierp-identity-bootstrap --grant-mdm-operator <connectionString> <userName>");
+            return ExitConnectionMissing;
+        }
+        var connectionString = args[1];
+        var userName = args[2];
+
+        // Marker guard — accept BOTH the G2-004 default and the
+        // WEB-PREVIEW override. The bootstrap tool will NEVER touch
+        // an unmarked userName.
+        var accepted = new[] { MarkerPrefix, "web_preview_" };
+        var markerOk = false;
+        foreach (var m in accepted)
+        {
+            if (userName.StartsWith(m, StringComparison.Ordinal))
+            {
+                markerOk = true;
+                break;
+            }
+        }
+        if (!markerOk)
+        {
+            await Console.Error.WriteLineAsync(
+                $"SAFETY(--grant-mdm-operator): userName must start with one of: " +
+                string.Join(", ", accepted) + $". Got '{userName}'.");
+            return ExitSafetyGuard;
+        }
+
+        // Build the same DI container as the diagnose path (no
+        // password policy — we are not creating / resetting a user).
+        var services = new ServiceCollection();
+        services.AddLogging(b =>
+        {
+            b.SetMinimumLevel(LogLevel.Information);
+            b.AddProvider(new StderrLoggerProvider());
+        });
+        services.AddDbContext<IdentityDbContext>(options =>
+        {
+            options.UseNpgsql(
+                connectionString,
+                npg => npg.MigrationsHistoryTable(
+                    "__ef_migrations_history",
+                    IdentityDbContext.DefaultSchema));
+        });
+        services.AddIdentity<GuliErpUser, GuliErpRole>(options =>
+        {
+            // No password policy validation in the grant path.
+            options.Password.RequiredLength = 1;
+            options.Password.RequireDigit = false;
+            options.Password.RequireLowercase = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequiredUniqueChars = 0;
+            options.User.RequireUniqueEmail = false;
+            options.SignIn.RequireConfirmedEmail = false;
+            options.Lockout.AllowedForNewUsers = false;
+        })
+        .AddEntityFrameworkStores<IdentityDbContext>()
+        .AddDefaultTokenProviders();
+
+        await using var sp = services.BuildServiceProvider();
+        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("GrantMdm");
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var userManager = sp.GetRequiredService<UserManager<GuliErpUser>>();
+        var roleManager = sp.GetRequiredService<RoleManager<GuliErpRole>>();
+
+        try
+        {
+            // -------------------------------------------------------------
+            // 1. Find the user. We refuse to grant to a missing user
+            //    (the operator must run the standard bootstrap first).
+            // -------------------------------------------------------------
+            var user = await userManager.FindByNameAsync(userName);
+            if (user is null)
+            {
+                await Console.Error.WriteLineAsync(
+                    $"--grant-mdm-operator: user '{userName}' not found. " +
+                    "Run the standard bootstrap first to create the user.");
+                return ExitTenantCompanyFailure;
+            }
+            if (user.Status != UserStatus.Active)
+            {
+                await Console.Error.WriteLineAsync(
+                    $"--grant-mdm-operator: user '{userName}' is not Active (status={user.Status}). " +
+                    "Unlock / re-activate the user before granting MDM roles.");
+                return ExitIdentityRejection;
+            }
+            if (user.TenantId <= 0)
+            {
+                await Console.Error.WriteLineAsync(
+                    $"--grant-mdm-operator: user '{userName}' has no Tenant binding (TenantId={user.TenantId}). " +
+                    "The platform_admin sentinel is intentionally excluded from MDM grants.");
+                return ExitTenantCompanyFailure;
+            }
+
+            // -------------------------------------------------------------
+            // 2. Confirm Tenant exists.
+            // -------------------------------------------------------------
+            var tenant = await db.Tenants.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == user.TenantId);
+            if (tenant is null || tenant.Status != TenantStatus.Active)
+            {
+                await Console.Error.WriteLineAsync(
+                    $"--grant-mdm-operator: tenant (Id={user.TenantId}) not found or inactive.");
+                return ExitTenantCompanyFailure;
+            }
+
+            // -------------------------------------------------------------
+            // 3. Confirm the user has a default Company membership
+            //    (Warehouse + Location endpoints require ICurrentCompany).
+            //    We DO NOT auto-create the membership — the standard
+            //    bootstrap already handles that. We only REPORT.
+            // -------------------------------------------------------------
+            var defaultMembership = await db.UserCompanyMemberships.AsNoTracking()
+                .FirstOrDefaultAsync(m => m.UserId == user.Id
+                                       && m.IsDefault
+                                       && m.Status == MembershipStatus.Active);
+            if (defaultMembership is null)
+            {
+                logger.LogWarning(
+                    "--grant-mdm-operator: user {Name} (Id={Id}) has NO default Company membership. " +
+                    "Warehouse + Location endpoints will return 403 until the operator runs the standard bootstrap.",
+                    userName, user.Id);
+            }
+
+            // -------------------------------------------------------------
+            // 4. Ensure the ERP_MDM_OPERATOR role exists in the Tenant.
+            //    TenantId-scoped: roles are tenant-owned.
+            // -------------------------------------------------------------
+            const string MdmOperatorRoleCode = "ERP_MDM_OPERATOR";
+            const string MdmOperatorRoleName = "ERP MDM Operator";
+            const string MdmOperatorRoleDescription =
+                "Read + manage access to UOM, ItemCategory, Item, BusinessPartner, " +
+                "Warehouse, Location. Tenant-wide scope. Excludes Platform Admin, " +
+                "user / role / tenant / company / audit / system config / " +
+                "sales / purchase / inventory capabilities.";
+
+            var role = await db.Roles.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.TenantId == user.TenantId
+                                      && r.Code == MdmOperatorRoleCode);
+            if (role is null)
+            {
+                role = new GuliErpRole
+                {
+                    TenantId = user.TenantId,
+                    Name = MdmOperatorRoleName,
+                    NormalizedName = MdmOperatorRoleName.ToUpperInvariant(),
+                    Code = MdmOperatorRoleCode,
+                    IsSystem = true,
+                    Description = MdmOperatorRoleDescription,
+                    Status = RoleStatus.Active,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = null,
+                    ModifiedAt = DateTimeOffset.UtcNow,
+                    ModifiedBy = null,
+                    ConcurrencyVersion = 1,
+                };
+                // Use RoleManager so the Identity store handles the
+                // HiLo Id + the normalization + the standard validators.
+                var createRole = await roleManager.CreateAsync(role);
+                if (!createRole.Succeeded)
+                {
+                    await Console.Error.WriteLineAsync(
+                        $"--grant-mdm-operator: failed to create role {MdmOperatorRoleCode}: " +
+                        string.Join("; ", createRole.Errors.Select(e => $"{e.Code}:{e.Description}")));
+                    return ExitIdentityRejection;
+                }
+                logger.LogInformation(
+                    "--grant-mdm-operator: created role {Code} (Id={Id}) in tenant {TenantId}.",
+                    role.Code, role.Id, role.TenantId);
+            }
+            else if (role.Status != RoleStatus.Active)
+            {
+                role.Status = RoleStatus.Active;
+                var updRole = await roleManager.UpdateAsync(role);
+                if (!updRole.Succeeded)
+                {
+                    await Console.Error.WriteLineAsync(
+                        $"--grant-mdm-operator: failed to re-activate role {MdmOperatorRoleCode}: " +
+                        string.Join("; ", updRole.Errors.Select(e => $"{e.Code}:{e.Description}")));
+                    return ExitIdentityRejection;
+                }
+            }
+
+            // -------------------------------------------------------------
+            // 5. Add the 12 MDM permission claims (idempotent).
+            //    Identity stores claims in the standard
+            //    IdentityRoleClaim<long> table — the same one the
+            //    runtime PermissionAuthorizationHandler reads from.
+            // -------------------------------------------------------------
+            var mdmPermissionCodes = new[]
+            {
+                "mdm.uom.read",
+                "mdm.uom.manage",
+                "mdm.item-category.read",
+                "mdm.item-category.manage",
+                "mdm.item.read",
+                "mdm.item.manage",
+                "mdm.business-partner.read",
+                "mdm.business-partner.manage",
+                "mdm.warehouse.read",
+                "mdm.warehouse.manage",
+                "mdm.location.read",
+                "mdm.location.manage",
+            };
+
+            var grantedClaims = new List<string>();
+            foreach (var code in mdmPermissionCodes)
+            {
+                var existingClaims = await roleManager.GetClaimsAsync(role);
+                if (existingClaims.Any(c =>
+                    c.Type == GuliErpPermissionClaimTypes.Permission
+                    && string.Equals(c.Value, code, StringComparison.Ordinal)))
+                {
+                    // Already present — idempotent skip.
+                    continue;
+                }
+                var addClaimResult = await roleManager.AddClaimAsync(
+                    role, new System.Security.Claims.Claim(
+                        GuliErpPermissionClaimTypes.Permission, code));
+                if (!addClaimResult.Succeeded)
+                {
+                    await Console.Error.WriteLineAsync(
+                        $"--grant-mdm-operator: failed to add claim '{code}' to role " +
+                        $"{MdmOperatorRoleCode}: " +
+                        string.Join("; ", addClaimResult.Errors.Select(e => $"{e.Code}:{e.Description}")));
+                    return ExitIdentityRejection;
+                }
+                grantedClaims.Add(code);
+                logger.LogInformation(
+                    "--grant-mdm-operator: added claim {Claim} to role {Role} (Id={RoleId}).",
+                    code, MdmOperatorRoleCode, role.Id);
+            }
+
+            // -------------------------------------------------------------
+            // 6. Ensure the user has a UserRoleAssignment to the role
+            //    (Tenant-wide scope, CompanyId = NULL). Idempotent.
+            // -------------------------------------------------------------
+            var alreadyAssigned = await db.UserRoleAssignments.AsNoTracking()
+                .AnyAsync(a => a.UserId == user.Id
+                            && a.RoleId == role.Id
+                            && a.CompanyId == null
+                            && a.Status == AssignmentStatus.Active);
+            if (!alreadyAssigned)
+            {
+                db.UserRoleAssignments.Add(new UserRoleAssignment
+                {
+                    TenantId = user.TenantId,
+                    UserId = user.Id,
+                    RoleId = role.Id,
+                    CompanyId = null,
+                    ValidFrom = null,
+                    ValidTo = null,
+                    Status = AssignmentStatus.Active,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = null,
+                    ModifiedAt = DateTimeOffset.UtcNow,
+                    ModifiedBy = null,
+                    ConcurrencyVersion = 1,
+                });
+                await db.SaveChangesAsync();
+                logger.LogInformation(
+                    "--grant-mdm-operator: granted UserRoleAssignment (Tenant-wide) " +
+                    "for user {UserId} to role {Role} (Id={RoleId}).",
+                    user.Id, MdmOperatorRoleCode, role.Id);
+            }
+            else
+            {
+                logger.LogInformation(
+                    "--grant-mdm-operator: UserRoleAssignment already present (idempotent).");
+            }
+
+            // Total claims on the role (12 = 6 read + 6 manage).
+            var totalClaims = mdmPermissionCodes.Length;
+
+            // -------------------------------------------------------------
+            // 7. Output JSON. Password is NEVER echoed.
+            // -------------------------------------------------------------
+            var output = new
+            {
+                ok = true,
+                userName = user.UserName,
+                userId = user.Id,
+                tenantId = tenant.Id,
+                tenantCode = tenant.Code,
+                roleId = role.Id,
+                roleCode = MdmOperatorRoleCode,
+                grantedClaims = grantedClaims.ToArray(),
+                totalClaims = totalClaims,
+                note = "Idempotent. Re-runs are safe and add only the missing claims / re-affirm the assignment.",
+            };
+            await Console.Out.WriteLineAsync(System.Text.Json.JsonSerializer.Serialize(output));
+            return ExitOk;
+        }
+        catch (Exception ex) when (
+            ex is Microsoft.EntityFrameworkCore.DbUpdateException
+                or Npgsql.NpgsqlException
+                or System.Net.Sockets.SocketException
+                or TimeoutException)
+        {
+            await Console.Error.WriteLineAsync($"DB ERROR(--grant-mdm-operator): {ex.GetType().Name}: {ex.Message}");
+            return ExitDatabaseUnavailable;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"EXCEPTION(--grant-mdm-operator): {ex.GetType().Name}: {ex.Message}");
             return ExitOtherException;
         }
     }

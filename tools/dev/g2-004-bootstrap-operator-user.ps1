@@ -66,7 +66,8 @@ param(
     [string]$UserName = 'test_operator_g2_004',
     [string]$TenantCode = 'test_operator_g2_004_t',
     [string]$CompanyCode = 'test_operator_g2_004_c',
-    [switch]$SkipPrompt
+    [switch]$SkipPrompt,
+    [switch]$GrantMdmOperator
 )
 
 $ErrorActionPreference = 'Stop'
@@ -95,6 +96,66 @@ if (-not $ConnectionString) {
 
 $displayConn = ($ConnectionString -replace 'Password=[^;]+', 'Password=***')
 Write-Host "[G2-004] Using connection: $displayConn" -ForegroundColor Cyan
+
+# --- 0b. (-GrantMdmOperator mode only) Grant the 12 MDM permissions -------
+# This is a NON-DESTRUCTIVE idempotent operation. It does not
+# touch the password, does not delete anything, and is safe to
+# re-run. Use this AFTER the operator user can log in but
+# receives 403 on the 6 master-data SPA pages.
+if ($GrantMdmOperator) {
+    Write-Host '[G2-004 / WEB-PREVIEW-002] Step 0b: Grant MDM Operator permissions' -ForegroundColor Cyan
+    $grantArgs = @(
+        'run', '--project', $BOOTSTRAP_PROJECT,
+        '-c', 'Release', '--no-restore',
+        '--', '--grant-mdm-operator', $ConnectionString, $UserName
+    )
+    $gPsi = New-Object System.Diagnostics.ProcessStartInfo
+    $gPsi.FileName = $DOTNET
+    foreach ($a in $grantArgs) { $gPsi.ArgumentList.Add($a) }
+    $gPsi.RedirectStandardOutput = $true
+    $gPsi.RedirectStandardError  = $true
+    $gPsi.UseShellExecute         = $false
+    $gPsi.CreateNoWindow          = $true
+
+    $gProc = New-Object System.Diagnostics.Process
+    $gProc.StartInfo = $gPsi
+    $gStarted = $gProc.Start()
+    if (-not $gStarted) { throw 'Failed to start grant-mdm-operator process.' }
+    $gStdoutTask = $gProc.StandardOutput.ReadToEndAsync()
+    $gStderrTask = $gProc.StandardError.ReadToEndAsync()
+    $gExited = $gProc.WaitForExit(60000)
+    if (-not $gExited) {
+        try { Stop-Process -Id $gProc.Id -Force -ErrorAction SilentlyContinue } catch {}
+        throw "GRANT_MDM_PROCESS_TIMEOUT (60 s). Killed PID $($gProc.Id)."
+    }
+    $gStderr = $gStderrTask.GetAwaiter().GetResult()
+    if ($gStderr) { Write-Host $gStderr -ForegroundColor DarkGray }
+    if ($gProc.ExitCode -ne 0) {
+        Write-Host "[G2-004] Grant FAILED with exit code $($gProc.ExitCode)." -ForegroundColor Red
+        if ($gStderr) { Write-Host $gStderr -ForegroundColor Red }
+        exit $gProc.ExitCode
+    }
+    $gStdout = $gStdoutTask.GetAwaiter().GetResult()
+    $gParsed = $gStdout | ConvertFrom-Json -ErrorAction SilentlyContinue
+    if ($null -eq $gParsed -or $gParsed.ok -ne $true) {
+        throw "Grant OK exit but stdout is not parseable as JSON. Output: $gStdout"
+    }
+    Write-Host '[G2-004 / WEB-PREVIEW-002] Grant OK.' -ForegroundColor Green
+    Write-Host "  userName       = $($gParsed.userName)"
+    Write-Host "  userId         = $($gParsed.userId)"
+    Write-Host "  tenantCode     = $($gParsed.tenantCode)"
+    Write-Host "  tenantId       = $($gParsed.tenantId)"
+    Write-Host "  roleCode       = $($gParsed.roleCode)"
+    Write-Host "  roleId         = $($gParsed.roleId)"
+    Write-Host "  totalClaims    = $($gParsed.totalClaims)"
+    Write-Host "  grantedClaims  = $(@($gParsed.grantedClaims) -join ',')"
+    Write-Host ''
+    Write-Host 'Next: log out, log back in (Cookie / Claims / permissions refresh), then open the 6 master-data pages.'
+    Write-Host 'No password was read or echoed.'
+    $grantFinalJson = $gParsed | ConvertTo-Json -Compress
+    Write-Output $grantFinalJson
+    exit 0
+}
 
 # --- 1. Read username / tenant / company (with marker guards) ------------
 # (The .NET tool also enforces the marker; the PS guard is for
