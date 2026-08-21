@@ -24,7 +24,7 @@
 | Start HEAD | `ff8bb8e docs(verification): record mdm api runtime resume readiness` (R8) |
 | End HEAD | `ba24180 docs(verification): backfill mdm r7 operator transcript evidence` (本轮 R9 收尾) |
 | Window | 2026-08-21 16:50 +0800 起 |
-| Gate | `MDM_001_API_RUNTIME_RESUME_HARNESS_VERIFIED` (R8) → **本轮升级为** `MDM_001_TRANSCRIPT_BACKFILL_VERIFIED` |
+| Gate | `MDM_001_API_RUNTIME_RESUME_HARNESS_VERIFIED` (R8) → **R9 升级为** `MDM_001_TRANSCRIPT_BACKFILL_VERIFIED` → **R10 升级为** `MDM_001_REAL_MASTER_DATA_VERIFIED` (人工证据裁定,见 `MDM_001_MANUAL_EVIDENCE_CLOSURE.md`) |
 | Touched files | 3 .ps1 (Harness + main + selftest) + 1 canonical transcript file (R9 新建) + 1 R8 报告修正 + 1 R9 报告 + GOAL_REGISTRY |
 | Agent-side PG | **❌ UNAVAILABLE** — 与 R6/R7/R8 同;Operator-only verification |
 

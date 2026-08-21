@@ -29,7 +29,7 @@
 | Start HEAD | `34e6b908da0ce2e75905a5c6df3f03487f0b9c0e` |
 | End HEAD | `34e6b908da0ce2e75905a5c6df3f03487f0b9c0e` (本轮 docs-only + harness + tests 提交后回填) |
 | Window | 2026-08-21 15:39 +0800 (本轮会话) |
-| Gate | `MDM_001_POSTGRES_INTEGRATION_STABILIZATION_ENVIRONMENT_BLOCKED` (R6 保持) → **本轮升级为** `MDM_001_FINAL_ACCEPTANCE_READINESS_VERIFIED` |
+| Gate | `MDM_001_POSTGRES_INTEGRATION_STABILIZATION_ENVIRONMENT_BLOCKED` (R6 保持) → **R7 升级为** `MDM_001_FINAL_ACCEPTANCE_READINESS_VERIFIED` → **R8 升级为** `MDM_001_API_RUNTIME_RESUME_HARNESS_VERIFIED` → **R9 升级为** `MDM_001_TRANSCRIPT_BACKFILL_VERIFIED` → **R10 升级为** `MDM_001_REAL_MASTER_DATA_VERIFIED` (人工证据裁定,见 `MDM_001_MANUAL_EVIDENCE_CLOSURE.md`) |
 | Touched files | 1 production modified (MdmSeed.WalkUpForFile) + 1 new harness (PowerShell) + 1 new main script (PowerShell) + 1 new self-test (PowerShell) + 1 new architecture test (C#) + 2 new seed tests (C#) + 1 R6 report amended (in-place) + this report + GOAL_REGISTRY update |
 | Agent-side PG | **❌ UNAVAILABLE** — no Docker / Testcontainers / local PG / canonical password |
 
