@@ -301,6 +301,251 @@ function Restore-OperatorConnectionEnvironment {
 }
 
 # ----------------------------------------------------------------
+# API Host process lifecycle (mdm-001R8 fix).
+#
+# The R7 acceptance harness failed at Round 1 with
+# "The term 'Stop-ApiHost' is not recognized" — root cause:
+# the function was defined AFTER the `try-finally` block, and
+# PowerShell does NOT register function declarations that
+# appear after the final `try-finally` in a .ps1 file. The fix
+# is two-fold:
+#
+#   1. Move ALL function definitions to the top of the script
+#      (or to this harness module which is loaded BEFORE the
+#      main script body).
+#   2. Wrap each helper in this harness module with proper
+#      scope semantics so the selftest can dot-source the
+#      module, Get-Command each helper, and prove the helpers
+#      exist BEFORE the script runs.
+#
+# These helpers take a Process object (or a script-scope
+# variable name) so they do not depend on `$script:` globals
+# that might not be set.
+# ----------------------------------------------------------------
+
+# Start-ApiHost: launches a long-running .NET host process.
+# Returns a [pscustomobject] with .Process (System.Diagnostics.Process)
+# and .LogPath so the caller can read the PID + tail the log.
+function Start-ApiHost {
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory = $true)][string]$DotnetExe,
+        [Parameter(Mandatory = $true)][string]$HostDll,
+        [Parameter(Mandatory = $true)][string]$LogPath,
+        [Parameter(Mandatory = $true)][string]$Urls,
+        [int]$StartTimeoutSec = 30
+    )
+    $errPath = "$LogPath.err"
+    $proc = Start-Process -FilePath $DotnetExe `
+        -ArgumentList @($HostDll, '--urls', $Urls) `
+        -PassThru -NoNewWindow `
+        -RedirectStandardOutput $LogPath `
+        -RedirectStandardError $errPath
+    return [pscustomobject]@{
+        Process = $proc
+        LogPath = $LogPath
+        ErrPath = $errPath
+        Pid     = $proc.Id
+        StartedAt = Get-Date
+    }
+}
+
+# Wait-ApiHostReady: polls an HTTP endpoint until it returns
+# the expected status, or until the timeout elapses.
+# Returns $true on success, $false on timeout.
+function Wait-ApiHostReady {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [int]$TimeoutSec = 30,
+        [int]$ExpectedStatus = 200,
+        [int]$PollIntervalMs = 500
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $r = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 2
+            if ($r.StatusCode -eq $ExpectedStatus) { return $true }
+        } catch {
+            # not ready yet
+        }
+        Start-Sleep -Milliseconds $PollIntervalMs
+    }
+    return $false
+}
+
+# Test-ApiEndpoint: a single HTTP GET that returns a structured
+# result. Never throws — exceptions are converted to a result
+# with StatusCode = -1.
+function Test-ApiEndpoint {
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [int]$TimeoutSec = 5
+    )
+    try {
+        $r = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec $TimeoutSec
+        return [pscustomobject]@{
+            Ok = $true
+            StatusCode = $r.StatusCode
+            Error = $null
+        }
+    } catch {
+        # The Exception object may or may not have a `.Response`
+        # property — the property only exists on
+        # HttpRequestException (i.e. a real HTTP failure). For a
+        # "connection refused" or "DNS failure" the property is
+        # absent. Use a defensive Member check to avoid throwing
+        # inside the catch handler.
+        $code = -1
+        $ex = $_.Exception
+        if ($null -ne $ex -and ($ex.PSObject.Properties.Name -contains 'Response')) {
+            $resp = $ex.Response
+            if ($null -ne $resp) {
+                try { $code = [int]$resp.StatusCode } catch { $code = -1 }
+            }
+        }
+        return [pscustomobject]@{
+            Ok = $false
+            StatusCode = $code
+            Error = if ($null -ne $ex) { $ex.Message } else { 'unknown error' }
+        }
+    }
+}
+
+# Stop-ApiHost: gracefully stops a process. The caller passes
+# the .Process object (not a script-scope variable) so this
+# function has no hidden state.
+#
+# Semantics:
+#   1. If $Process is $null or has already exited -> return
+#      a result indicating "already stopped".
+#   2. Try to close the main window. If that does not work
+#      within $GracePeriodSec, fall back to -Force.
+#   3. Wait for the process to exit. If it does not exit
+#      within $HardKillSec, return a result indicating the
+#      process is still alive (caller can decide to retry or
+#      accept the result).
+#   4. Return [pscustomobject] { Stopped = $true/false, Pid,
+#      AlreadyExited, UsedForce, Message }.
+function Stop-ApiHost {
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory = $true)][AllowNull()]$Process,
+        [int]$GracePeriodSec = 5,
+        [int]$HardKillSec = 5
+    )
+    if ($null -eq $Process) {
+        return [pscustomobject]@{
+            Stopped = $true
+            Pid = $null
+            AlreadyExited = $true
+            UsedForce = $false
+            Message = "Process was null; nothing to stop."
+        }
+    }
+    # NB: avoid the name `$pid` (PowerShell automatic read-only
+    # variable). Use `$processId` instead.
+    $processId = $null
+    try { $processId = $Process.Id } catch { $processId = $null }
+
+    if ($Process.HasExited) {
+        return [pscustomobject]@{
+            Stopped = $true
+            Pid = $processId
+            AlreadyExited = $true
+            UsedForce = $false
+            Message = "Process already exited."
+        }
+    }
+
+    $usedForce = $false
+    try {
+        $Process.CloseMainWindow() | Out-Null
+        if (-not $Process.WaitForExit($GracePeriodSec * 1000)) {
+            $usedForce = $true
+            Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+        }
+        if (-not $Process.WaitForExit($HardKillSec * 1000)) {
+            return [pscustomobject]@{
+                Stopped = $false
+                Pid = $processId
+                AlreadyExited = $false
+                UsedForce = $usedForce
+                Message = "Process did not exit within $HardKillSec s after $(if ($usedForce) { 'force kill' } else { 'graceful close' })."
+            }
+        }
+    } catch {
+        return [pscustomobject]@{
+            Stopped = $false
+            Pid = $processId
+            AlreadyExited = $false
+            UsedForce = $usedForce
+            Message = "Exception during stop: $($_.Exception.Message)"
+        }
+    }
+
+    return [pscustomobject]@{
+        Stopped = $true
+        Pid = $processId
+        AlreadyExited = $false
+        UsedForce = $usedForce
+        Message = "Stopped in $(if ($usedForce) { 'force' } else { 'graceful' }) mode."
+    }
+}
+
+# Test-ApiProcessAlive: returns $true if the Process object is
+# still running, $false if it has exited or is null. Useful for
+# port-release verification after Stop-ApiHost.
+function Test-ApiProcessAlive {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory = $true)][AllowNull()]$Process
+    )
+    if ($null -eq $Process) { return $false }
+    try {
+        if ($Process.HasExited) { return $false }
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# Test-ApiPortListening: tests whether a TCP port on a host
+# is listening. Returns $true if a connection can be opened
+# within $TimeoutSec, $false otherwise.
+#
+# NB: avoid `$Host` (PowerShell automatic read-only variable
+# for the console host). Use `$Hostname` (param alias
+# `-TargetHost`).
+function Test-ApiPortListening {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory = $true)][Alias('TargetHost')][string]$Hostname,
+        [Parameter(Mandatory = $true)][int]$Port,
+        [int]$TimeoutSec = 5
+    )
+    try {
+        $client = New-Object System.Net.Sockets.TcpClient
+        $iar = $client.BeginConnect($Hostname, $Port, $null, $null)
+        $ok = $iar.AsyncWaitHandle.WaitOne($TimeoutSec * 1000)
+        if ($ok) {
+            try { $client.EndConnect($iar) | Out-Null } catch { $ok = $false }
+        }
+        try { $client.Close() } catch { }
+        return $ok
+    } catch {
+        return $false
+    }
+}
+
+# ----------------------------------------------------------------
 # Pure decision: should the gate be "VERIFIED" given an outcome
 # set? This is the SINGLE source of truth for the success gate.
 # The self-test verifies the boolean table.
