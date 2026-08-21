@@ -290,6 +290,343 @@ export interface ItemForm {
 }
 
 // ============================================================
+// MDM-002 — BusinessPartner (per TRAE_MDM_002_API_HANDOFF.md §2)
+// ============================================================
+// Wire role: 0=None, 1=Customer, 2=Supplier, 3=Both (bit-flag)
+export type BusinessPartnerRoleInt = 0 | 1 | 2 | 3;
+
+/** UI role value (used in create/update form — the actual row role). */
+export type BusinessPartnerRole = 'CUSTOMER' | 'SUPPLIER' | 'BOTH';
+
+export const BP_ROLE_OPTIONS: { value: BusinessPartnerRole; label: string }[] = [
+  { value: 'CUSTOMER', label: '客户' },
+  { value: 'SUPPLIER', label: '供应商' },
+  { value: 'BOTH', label: '兼任客户与供应商' },
+];
+const ROLE_INT_MAP: Record<BusinessPartnerRoleInt, BusinessPartnerRole> = { 0: 'CUSTOMER', 1: 'CUSTOMER', 2: 'SUPPLIER', 3: 'BOTH' };
+const ROLE_UI_MAP: Record<BusinessPartnerRole, BusinessPartnerRoleInt> = { CUSTOMER: 1, SUPPLIER: 2, BOTH: 3 };
+export function roleIntToUi(v: BusinessPartnerRoleInt): BusinessPartnerRole { return ROLE_INT_MAP[v]; }
+export function roleUiToInt(v: BusinessPartnerRole): BusinessPartnerRoleInt { return ROLE_UI_MAP[v]; }
+
+/**
+ * List filter role. Per Handoff §5 the `role` query param is a bit-flag:
+ * pass 1 to match Customer OR Both; pass 2 to match Supplier OR Both;
+ * omit for no role filter (all).
+ */
+export type BusinessPartnerRoleFilter = 'all' | 'customer' | 'supplier';
+export const BP_ROLE_FILTER_OPTIONS: { value: BusinessPartnerRoleFilter; label: string }[] = [
+  { value: 'all', label: '全部往来单位' },
+  { value: 'customer', label: '客户' },
+  { value: 'supplier', label: '供应商' },
+];
+export function roleFilterToInt(v: BusinessPartnerRoleFilter): BusinessPartnerRoleInt | undefined {
+  if (v === 'customer') return 1;
+  if (v === 'supplier') return 2;
+  return undefined; // all → omit role param
+}
+
+export interface BusinessPartnerDto {
+  id: number;
+  code: string;
+  name: string;
+  shortName: string | null;
+  role: BusinessPartnerRoleInt;
+  contactPerson: string | null;
+  phone: string | null;
+  email: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  countryCode: string | null;
+  taxNumber: string | null;
+  status: MasterDataStatusInt;
+  description: string | null;
+  createdAt: string;
+  modifiedAt: string;
+  concurrencyVersion: number;
+}
+export interface CreateBusinessPartnerRequest {
+  code: string;
+  name: string;
+  shortName: string | null;
+  role: BusinessPartnerRoleInt;
+  contactPerson: string | null;
+  phone: string | null;
+  email: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  countryCode: string | null;
+  taxNumber: string | null;
+  description: string | null;
+}
+export interface UpdateBusinessPartnerRequest {
+  name: string;
+  shortName: string | null;
+  role: BusinessPartnerRoleInt;
+  contactPerson: string | null;
+  phone: string | null;
+  email: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  countryCode: string | null;
+  taxNumber: string | null;
+  status: MasterDataStatusInt;
+  description: string | null;
+  expectedConcurrencyVersion: number;
+}
+export interface BusinessPartnerListParams {
+  keyword?: string;
+  role?: BusinessPartnerRoleInt;
+  status?: MasterDataStatusInt;
+  page?: number;
+  pageSize?: number;
+}
+
+// UI types
+export interface BusinessPartner {
+  id: number;
+  code: string;
+  name: string;
+  shortName?: string;
+  role: BusinessPartnerRole;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  countryCode?: string;
+  taxNumber?: string;
+  status: MasterDataStatus;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  concurrencyVersion: number;
+}
+export interface BusinessPartnerForm {
+  code: string;
+  name: string;
+  shortName: string;
+  role: BusinessPartnerRole;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  region: string;
+  postalCode: string;
+  countryCode: string;
+  taxNumber: string;
+  status: MasterDataStatus;
+  description: string;
+}
+
+// ============================================================
+// MDM-002 — Warehouse (per TRAE_MDM_002_API_HANDOFF.md §3)
+// ============================================================
+// Wire type: 1=Physical, 2=Virtual, 3=Return
+export type WarehouseTypeInt = 1 | 2 | 3;
+export type WarehouseType = 'PHYSICAL' | 'VIRTUAL' | 'RETURN';
+export const WAREHOUSE_TYPE_OPTIONS: { value: WarehouseType; label: string }[] = [
+  { value: 'PHYSICAL', label: '实体仓' },
+  { value: 'VIRTUAL', label: '虚拟仓' },
+  { value: 'RETURN', label: '退货仓' },
+];
+const WH_TYPE_INT_MAP: Record<WarehouseTypeInt, WarehouseType> = { 1: 'PHYSICAL', 2: 'VIRTUAL', 3: 'RETURN' };
+const WH_TYPE_UI_MAP: Record<WarehouseType, WarehouseTypeInt> = { PHYSICAL: 1, VIRTUAL: 2, RETURN: 3 };
+export function whTypeIntToUi(v: WarehouseTypeInt): WarehouseType { return WH_TYPE_INT_MAP[v]; }
+export function whTypeUiToInt(v: WarehouseType): WarehouseTypeInt { return WH_TYPE_UI_MAP[v]; }
+
+export interface WarehouseDto {
+  id: number;
+  plantId: number | null;
+  code: string;
+  name: string;
+  type: WarehouseTypeInt;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  countryCode: string | null;
+  status: MasterDataStatusInt;
+  description: string | null;
+  createdAt: string;
+  modifiedAt: string;
+  concurrencyVersion: number;
+}
+export interface CreateWarehouseRequest {
+  plantId: number | null;
+  code: string;
+  name: string;
+  type: WarehouseTypeInt;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  countryCode: string | null;
+  description: string | null;
+}
+export interface UpdateWarehouseRequest {
+  plantId: number | null;
+  name: string;
+  type: WarehouseTypeInt;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  countryCode: string | null;
+  status: MasterDataStatusInt;
+  description: string | null;
+  expectedConcurrencyVersion: number;
+}
+export interface WarehouseListParams {
+  keyword?: string;
+  type?: WarehouseTypeInt;
+  status?: MasterDataStatusInt;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface Warehouse {
+  id: number;
+  plantId: number | null;
+  code: string;
+  name: string;
+  type: WarehouseType;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  countryCode?: string;
+  status: MasterDataStatus;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  concurrencyVersion: number;
+}
+export interface WarehouseForm {
+  code: string;
+  name: string;
+  type: WarehouseType;
+  plantId: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  region: string;
+  postalCode: string;
+  countryCode: string;
+  status: MasterDataStatus;
+  description: string;
+}
+
+// ============================================================
+// MDM-002 — Location (per TRAE_MDM_002_API_HANDOFF.md §4)
+// ============================================================
+// Wire type: 1=Bin, 2=Shelf, 3=Zone, 4=Dock
+export type LocationTypeInt = 1 | 2 | 3 | 4;
+export type LocationType = 'BIN' | 'SHELF' | 'ZONE' | 'DOCK';
+export const LOCATION_TYPE_OPTIONS: { value: LocationType; label: string }[] = [
+  { value: 'BIN', label: '货位' },
+  { value: 'SHELF', label: '货架' },
+  { value: 'ZONE', label: '区域' },
+  { value: 'DOCK', label: '月台' },
+];
+const LOC_TYPE_INT_MAP: Record<LocationTypeInt, LocationType> = { 1: 'BIN', 2: 'SHELF', 3: 'ZONE', 4: 'DOCK' };
+const LOC_TYPE_UI_MAP: Record<LocationType, LocationTypeInt> = { BIN: 1, SHELF: 2, ZONE: 3, DOCK: 4 };
+export function locTypeIntToUi(v: LocationTypeInt): LocationType { return LOC_TYPE_INT_MAP[v]; }
+export function locTypeUiToInt(v: LocationType): LocationTypeInt { return LOC_TYPE_UI_MAP[v]; }
+
+export interface LocationDto {
+  id: number;
+  warehouseId: number;
+  code: string;
+  name: string;
+  type: LocationTypeInt;
+  aisle: string | null;
+  bay: string | null;
+  shelf: string | null;
+  status: MasterDataStatusInt;
+  description: string | null;
+  createdAt: string;
+  modifiedAt: string;
+  concurrencyVersion: number;
+}
+export interface CreateLocationRequest {
+  warehouseId: number;
+  code: string;
+  name: string;
+  type: LocationTypeInt;
+  aisle: string | null;
+  bay: string | null;
+  shelf: string | null;
+  description: string | null;
+}
+export interface UpdateLocationRequest {
+  warehouseId: number;
+  name: string;
+  type: LocationTypeInt;
+  aisle: string | null;
+  bay: string | null;
+  shelf: string | null;
+  status: MasterDataStatusInt;
+  description: string | null;
+  expectedConcurrencyVersion: number;
+}
+export interface LocationListParams {
+  keyword?: string;
+  warehouseId?: number;
+  type?: LocationTypeInt;
+  status?: MasterDataStatusInt;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface Location {
+  id: number;
+  warehouseId: number;
+  code: string;
+  name: string;
+  type: LocationType;
+  aisle?: string;
+  bay?: string;
+  shelf?: string;
+  status: MasterDataStatus;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  concurrencyVersion: number;
+  // UI-denormalized (resolved from warehouseId reference via Warehouse list API)
+  warehouseName?: string;
+  warehouseCode?: string;
+}
+export interface LocationForm {
+  warehouseId: number | null;
+  code: string;
+  name: string;
+  type: LocationType;
+  aisle: string;
+  bay: string;
+  shelf: string;
+  status: MasterDataStatus;
+  description: string;
+}
+
+// ============================================================
 // Shared helpers — ItemCategory hierarchy derivation (used by ItemCategory + Item pages)
 // ============================================================
 export function deriveCategoryHierarchy(raw: ItemCategory[]): ItemCategoryListItem[] {

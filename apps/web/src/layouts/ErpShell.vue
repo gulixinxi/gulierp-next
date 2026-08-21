@@ -130,10 +130,37 @@
           <template v-else-if="activeModule === 'basic'">
             <div class="gs-menu-group-title">基础数据</div>
             <div class="gs-menu-item"><el-icon><Goods /></el-icon><span>商品档案</span></div>
-            <div class="gs-menu-item"><el-icon><OfficeBuilding /></el-icon><span>客户档案</span></div>
-            <div class="gs-menu-item"><el-icon><Avatar /></el-icon><span>供应商</span></div>
+            <!-- MDM-WEB-002: 客户档案 / 供应商 reuse one BusinessPartnerList page;
+                 route meta.defaultRole sets the initial role filter (Handoff §5). -->
+            <div
+              class="gs-menu-item"
+              :class="{ 'is-active': tabs.activeId === 'list-mdm-customers' }"
+              @click="openCustomers"
+            >
+              <el-icon><OfficeBuilding /></el-icon><span>客户档案</span>
+            </div>
+            <div
+              class="gs-menu-item"
+              :class="{ 'is-active': tabs.activeId === 'list-mdm-suppliers' }"
+              @click="openSuppliers"
+            >
+              <el-icon><Avatar /></el-icon><span>供应商</span>
+            </div>
             <div class="gs-menu-item"><el-icon><UserFilled /></el-icon><span>员工档案</span></div>
-            <div class="gs-menu-item"><el-icon><Box /></el-icon><span>仓库库位</span></div>
+            <div
+              class="gs-menu-item"
+              :class="{ 'is-active': tabs.activeId === 'list-mdm-warehouses' }"
+              @click="openWarehouses"
+            >
+              <el-icon><Box /></el-icon><span>仓库</span>
+            </div>
+            <div
+              class="gs-menu-item"
+              :class="{ 'is-active': tabs.activeId === 'list-mdm-locations' }"
+              @click="openLocations"
+            >
+              <el-icon><Files /></el-icon><span>库位</span>
+            </div>
           </template>
           <template v-else-if="activeModule === 'mdm'">
             <div class="gs-menu-group-title">主数据</div>
@@ -363,8 +390,29 @@ watch(
   () => route.path,
   (p) => {
     if (!p) return;
-    if (p.startsWith('/mdm')) activeModule.value = 'mdm';
-    else if (p.startsWith('/sales-order')) activeModule.value = 'sales';
+    // MDM-001 master data (UOM/ItemCategory/Item) → 主数据 module;
+    // MDM-002 BusinessPartner/Warehouse/Location → 基础数据 module, where
+    // 客户档案 / 供应商 / 仓库 / 库位 menu items live (so the item the user
+    // clicked stays visible + highlighted after navigation).
+    if (
+      p.startsWith('/mdm/uoms') ||
+      p.startsWith('/mdm/item-categories') ||
+      p.startsWith('/mdm/items')
+    ) {
+      activeModule.value = 'mdm';
+    } else if (
+      p.startsWith('/mdm/business-partners') ||
+      p.startsWith('/mdm/customers') ||
+      p.startsWith('/mdm/suppliers') ||
+      p.startsWith('/mdm/warehouses') ||
+      p.startsWith('/mdm/locations')
+    ) {
+      activeModule.value = 'basic';
+    } else if (p.startsWith('/mdm')) {
+      activeModule.value = 'mdm';
+    } else if (p.startsWith('/sales-order')) {
+      activeModule.value = 'sales';
+    }
 
     // Tab sync: if a tab with this route already exists, activate it.
     const existingTab = tabs.tabs.find(t => t.route === p);
@@ -412,6 +460,26 @@ function openMdmItemCategories() {
 function openMdmItems() {
   tabs.ensureList('list-mdm-items', '物料', 'list', '/mdm/items');
   router.push('/mdm/items').catch(() => {});
+}
+
+// ===== MDM-WEB-002 navigation: BusinessPartner / Warehouse / Location =====
+// 客户档案 / 供应商 reuse the same BusinessPartnerList page; route
+// meta.defaultRole sets the initial role filter (Handoff §5 bit-flag).
+function openCustomers() {
+  tabs.ensureList('list-mdm-customers', '客户档案', 'list', '/mdm/customers');
+  router.push('/mdm/customers').catch(() => {});
+}
+function openSuppliers() {
+  tabs.ensureList('list-mdm-suppliers', '供应商', 'list', '/mdm/suppliers');
+  router.push('/mdm/suppliers').catch(() => {});
+}
+function openWarehouses() {
+  tabs.ensureList('list-mdm-warehouses', '仓库', 'list', '/mdm/warehouses');
+  router.push('/mdm/warehouses').catch(() => {});
+}
+function openLocations() {
+  tabs.ensureList('list-mdm-locations', '库位', 'list', '/mdm/locations');
+  router.push('/mdm/locations').catch(() => {});
 }
 
 // ===== Secondary menu width + collapse (persisted via localStorage) =====

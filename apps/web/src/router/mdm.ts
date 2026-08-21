@@ -39,6 +39,29 @@ export function installMdmRoutes(router: Router): void {
         component: () => import('../views/mdm/ItemList.vue'),
         meta: { title: '物料', module: 'mdm' },
       },
+      // ---- MDM-002: BusinessPartner / Warehouse / Location (real API) ----
+      // Single reusable BusinessPartnerList component serves customers /
+      // suppliers / all — route meta.defaultRole sets the INITIAL role filter
+      // (Handoff §5 bit-flag: 1=Customer matches Customer|Both;
+      // 2=Supplier matches Supplier|Both).
+      {
+        path: 'business-partners',
+        name: 'mdm-business-partners',
+        component: () => import('../views/mdm/BusinessPartnerList.vue'),
+        meta: { title: '往来单位', module: 'mdm', defaultRole: 'all' },
+      },
+      {
+        path: 'customers',
+        name: 'mdm-customers',
+        component: () => import('../views/mdm/BusinessPartnerList.vue'),
+        meta: { title: '客户档案', module: 'mdm', defaultRole: 'customer' },
+      },
+      {
+        path: 'suppliers',
+        name: 'mdm-suppliers',
+        component: () => import('../views/mdm/BusinessPartnerList.vue'),
+        meta: { title: '供应商', module: 'mdm', defaultRole: 'supplier' },
+      },
     ],
   });
 }
