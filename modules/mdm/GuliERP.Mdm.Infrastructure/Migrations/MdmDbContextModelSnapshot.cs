@@ -246,7 +246,8 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code", "ux_gulierp_uom_code")
+                    b.HasIndex("Code")
+                        .HasDatabaseName("ux_gulierp_uom_code")
                         .IsUnique();
 
                     b.ToTable("gulierp_uom", "mdm");
