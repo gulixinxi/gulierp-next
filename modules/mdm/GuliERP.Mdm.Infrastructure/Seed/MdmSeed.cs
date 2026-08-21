@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using GuliERP.Mdm.Domain.Entities;
 using GuliERP.Mdm.Domain.Enums;
@@ -24,6 +25,21 @@ namespace GuliERP.Mdm.Infrastructure.Seed;
 /// Production must not auto-seed master data (the operator
 /// controls the UOM catalog in Production).
 /// </para>
+///
+/// <para>
+/// <b>mdm-001R6 (Tenant Stabilization Round):</b> the seed previously
+/// used a fixed relative path
+/// (<c>data/bootstrap/reference/system/uom.json</c>) which silently
+/// returned 0 rows when called from the integration test
+/// <c>AppContext.BaseDirectory</c> (the JSON file lives at the repo
+/// root, not next to the test DLL). The seed now tries a
+/// deterministic candidate list (parameter &gt; env override &gt;
+/// repo-root walk-up from <c>AppContext.BaseDirectory</c> &gt;
+/// current working directory) and records the path it actually
+/// used. This makes the seed equally usable from the operator
+/// harness (CWD = repo root) and from <c>dotnet test</c>
+/// (CWD = test bin folder).
+/// </para>
 /// </summary>
 public static class MdmSeed
 {
@@ -38,6 +54,79 @@ public static class MdmSeed
     /// curated seed file (BENG / 本) — an idempotent sentinel.
     /// </summary>
     public const string SentinelUomCode = "BENG";
+
+    /// <summary>
+    /// mdm-001R6: resolve the seed file path. Resolution order:
+    /// <list type="number">
+    ///   <item>If the operator set <c>GULIERP_MDM_SEED_FILE</c>
+    ///         (env var), that path is the ONLY candidate. If the env
+    ///         var is set but the file does not exist, the resolver
+    ///         returns <c>null</c> — no fall-through. This is the
+    ///         operator's "hard opt-out" lever (e.g. to force a clean
+    ///         failure on a misconfigured CI machine).</item>
+    ///   <item>Otherwise, try the explicit <paramref name="seedFilePath"/>
+    ///         (relative or absolute). If it does not exist, fall
+    ///         through to the walk-up.</item>
+    ///   <item>Otherwise, walk up from <c>AppContext.BaseDirectory</c>
+    ///         looking for a directory that contains the relative
+    ///         seed path. This lets the seed be found from the test
+    ///         process whose CWD is <c>tests/.../bin/Release/net10.0/</c>
+    ///         while the JSON actually lives at the repo root.</item>
+    ///   <item>Otherwise, walk up from <c>Environment.CurrentDirectory</c>
+    ///         using the same logic (catches the operator-harness
+    ///         case where CWD = repo root).</item>
+    /// </list>
+    /// Returns the first existing path, or <c>null</c> if none of
+    /// the candidates resolve.
+    /// </summary>
+    public static string? ResolveSeedFilePath(string? seedFilePath = null)
+    {
+        var envOverride = Environment.GetEnvironmentVariable("GULIERP_MDM_SEED_FILE");
+        if (!string.IsNullOrWhiteSpace(envOverride))
+        {
+            // Hard opt-out: env var is the ONLY candidate. No fall-through.
+            return File.Exists(envOverride) ? envOverride : null;
+        }
+        var candidates = new List<string?>();
+        if (!string.IsNullOrWhiteSpace(seedFilePath)) candidates.Add(seedFilePath);
+        // Walk-up from AppContext.BaseDirectory looking for the
+        // repo root that contains data/bootstrap/reference/system/uom.json
+        candidates.Add(WalkUpForFile(AppContext.BaseDirectory, UomSeedFilePath));
+        candidates.Add(WalkUpForFile(Environment.CurrentDirectory, UomSeedFilePath));
+        foreach (var c in candidates)
+        {
+            if (string.IsNullOrWhiteSpace(c)) continue;
+            try
+            {
+                var full = Path.IsPathRooted(c) ? c : Path.GetFullPath(c);
+                if (File.Exists(full)) return full;
+            }
+            catch
+            {
+                // ignore invalid path
+            }
+        }
+        return null;
+    }
+
+    private static string? WalkUpForFile(string startDir, string relativePath)
+    {
+        try
+        {
+            var dir = new DirectoryInfo(startDir);
+            while (dir != null)
+            {
+                var candidate = Path.Combine(dir.FullName, relativePath);
+                if (File.Exists(candidate)) return candidate;
+                dir = dir.Parent;
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+        return null;
+    }
 
     public static async Task SeedAsync(
         MdmDbContext db,
@@ -60,13 +149,21 @@ public static class MdmSeed
             return;
         }
 
-        if (!File.Exists(seedFilePath))
+        var resolved = ResolveSeedFilePath(seedFilePath);
+        if (resolved == null)
         {
             logger.LogWarning(
-                "MDM UOM seed file not found at '{Path}'. Skipping seed.",
-                seedFilePath);
+                "MDM UOM seed file not found. Tried explicit path='{Explicit}', env GULIERP_MDM_SEED_FILE='{Env}', " +
+                "AppContext.BaseDirectory='{Base}', CurrentDirectory='{Cwd}', relative='{Rel}'.",
+                seedFilePath,
+                Environment.GetEnvironmentVariable("GULIERP_MDM_SEED_FILE") ?? "<unset>",
+                AppContext.BaseDirectory,
+                Environment.CurrentDirectory,
+                UomSeedFilePath);
             return;
         }
+        seedFilePath = resolved;
+        logger.LogInformation("MDM UOM seed reading from {Path}.", seedFilePath);
 
         var rawJson = await File.ReadAllTextAsync(seedFilePath, ct);
         var doc = JsonDocument.Parse(rawJson);
