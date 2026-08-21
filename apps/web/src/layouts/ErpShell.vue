@@ -63,9 +63,9 @@
                   <div v-if="auth.tenantName" class="gs-user-detail-tenant">租户：{{ auth.tenantName }}</div>
                 </div>
               </el-dropdown-item>
-              <el-dropdown-item divided command="logout">
+              <el-dropdown-item divided command="logout" :disabled="logoutLoading">
                 <el-icon><SwitchButton /></el-icon>
-                <span>退出登录</span>
+                <span>{{ logoutLoading ? '退出中…' : '退出登录' }}</span>
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -129,7 +129,13 @@
           </template>
           <template v-else-if="activeModule === 'basic'">
             <div class="gs-menu-group-title">基础数据</div>
-            <div class="gs-menu-item"><el-icon><Goods /></el-icon><span>商品档案</span></div>
+            <div
+              class="gs-menu-item"
+              :class="{ 'is-active': tabs.activeId === 'list-mdm-items' }"
+              @click="openMdmItems"
+            >
+              <el-icon><Goods /></el-icon><span>商品档案</span>
+            </div>
             <!-- MDM-WEB-002: 客户档案 / 供应商 reuse one BusinessPartnerList page;
                  route meta.defaultRole sets the initial role filter (Handoff §5). -->
             <div
@@ -146,7 +152,11 @@
             >
               <el-icon><Avatar /></el-icon><span>供应商</span>
             </div>
-            <div class="gs-menu-item"><el-icon><UserFilled /></el-icon><span>员工档案</span></div>
+            <div class="gs-menu-item is-disabled" title="员工档案功能待开发">
+              <el-icon><UserFilled /></el-icon>
+              <span>员工档案</span>
+              <span class="gs-menu-badge-pending">待开发</span>
+            </div>
             <div
               class="gs-menu-item"
               :class="{ 'is-active': tabs.activeId === 'list-mdm-warehouses' }"
@@ -325,13 +335,14 @@ const auth = useAuthStore();
 
 const dirtyConfirm = reactive({ visible: false, title: '', id: '' });
 const companyLoading = ref(false);
+const logoutLoading = ref(false);
 
 // ===== Top bar actions: Company switch + User menu =====
-async function onChangeCompany(companyId: number): Promise<void> {
+async function onChangeCompany(companyId: string): Promise<void> {
   if (companyLoading.value || companyId === auth.companyId) return;
   companyLoading.value = true;
   try {
-    await auth.changeCompany(Number(companyId));
+    await auth.changeCompany(companyId);
     ElMessage.success({
       message: `已切换到 ${auth.companyName || '公司 ' + companyId}`,
       duration: 2000,
@@ -346,6 +357,7 @@ async function onChangeCompany(companyId: number): Promise<void> {
 
 async function onUserCommand(cmd: 'logout' | string): Promise<void> {
   if (cmd !== 'logout') return;
+  if (logoutLoading.value) return; // prevent double-click
   try {
     await ElMessageBox.confirm('确认要退出当前账号吗？', '退出登录', {
       confirmButtonText: '退出',
@@ -353,9 +365,14 @@ async function onUserCommand(cmd: 'logout' | string): Promise<void> {
       type: 'warning',
     });
   } catch { return; /* cancel */ }
-  // The backend call is inside auth.signOut(). It clears memory state + pushes /login.
-  // The auth cookie (HttpOnly) is cleared server-side on 204.
-  await auth.signOut();
+  logoutLoading.value = true;
+  try {
+    // The backend call is inside auth.signOut(). It clears memory state + pushes /login.
+    // The auth cookie (HttpOnly) is cleared server-side on 204.
+    await auth.signOut();
+  } finally {
+    logoutLoading.value = false;
+  }
 }
 
 // ===== Module Rail definition =====

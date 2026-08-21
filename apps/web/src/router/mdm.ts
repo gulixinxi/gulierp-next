@@ -62,6 +62,18 @@ export function installMdmRoutes(router: Router): void {
         component: () => import('../views/mdm/BusinessPartnerList.vue'),
         meta: { title: '供应商', module: 'mdm', defaultRole: 'supplier' },
       },
+      {
+        path: 'warehouses',
+        name: 'mdm-warehouses',
+        component: () => import('../views/mdm/WarehouseList.vue'),
+        meta: { title: '仓库', module: 'mdm' },
+      },
+      {
+        path: 'locations',
+        name: 'mdm-locations',
+        component: () => import('../views/mdm/LocationList.vue'),
+        meta: { title: '库位', module: 'mdm' },
+      },
     ],
   });
 }

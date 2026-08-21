@@ -162,6 +162,28 @@
   border-left-color: var(--primary-default);
   font-weight: 500;
 }
+/* MDM-WEB-003: disabled master-data entry (e.g. 员工档案 — no backend yet).
+   Visually muted + non-interactive so it cannot be mistaken for a live link. */
+.gs-menu-item.is-disabled {
+  color: var(--text-disabled, #94A3B8);
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.7;
+}
+.gs-menu-item.is-disabled:hover {
+  background: transparent;
+  color: var(--text-disabled, #94A3B8);
+}
+.gs-menu-badge-pending {
+  margin-left: auto;
+  background: var(--color-slate-400, #94A3B8);
+  color: #fff;
+  font-size: 10px;
+  padding: 0 5px;
+  border-radius: 10px;
+  line-height: 16px;
+  font-weight: 600;
+}
 .gs-menu-badge {
   margin-left: auto;
   background: var(--color-amber-500);
