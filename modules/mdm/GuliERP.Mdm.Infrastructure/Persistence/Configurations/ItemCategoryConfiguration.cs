@@ -37,11 +37,23 @@ public sealed class ItemCategoryConfiguration : IEntityTypeConfiguration<ItemCat
             .IsUnique()
             .HasDatabaseName("ux_gulierp_item_category_tenant_code");
 
+        // FK index. EF Core 7+ does NOT auto-create an index on
+        // the FK column when the relationship is declared with the
+        // explicit-navigation form. The Migration Up SQL requires
+        // `ix_gulierp_item_category_parentid`. We declare it
+        // explicitly to match.
+        b.HasIndex(c => c.ParentId)
+            .HasDatabaseName("ix_gulierp_item_category_parentid");
+
         // Self-FK: ItemCategory.ParentId → ItemCategory.Id.
         // Cycles are rejected at the Application service layer; the
         // DB has no recursive check beyond Restrict (no self-row).
-        b.HasOne<ItemCategory>()
-            .WithMany()
+        // The HasOne(navigation) form (NOT the anonymous HasOne<T>()
+        // form) is required: see the matching comment in
+        // ItemConfiguration for the EF Core 7+ convention-detector
+        // behavior that produces shadow FKs (`ParentId1`).
+        b.HasOne(c => c.Parent)
+            .WithMany(c => c.Children)
             .HasForeignKey(c => c.ParentId)
             .OnDelete(DeleteBehavior.Restrict);
 

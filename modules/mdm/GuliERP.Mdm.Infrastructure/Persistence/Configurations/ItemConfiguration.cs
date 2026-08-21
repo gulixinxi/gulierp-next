@@ -44,8 +44,30 @@ public sealed class ItemConfiguration : IEntityTypeConfiguration<Item>
             .IsUnique()
             .HasDatabaseName("ux_gulierp_item_tenant_code");
 
+        // FK indexes. EF Core 7+ does NOT auto-create an index on
+        // the FK column when the relationship is declared with the
+        // explicit-navigation form (HasOne(i => i.Navigation))
+        // used below. The MDM frozen contract (per the Migration
+        // Up SQL in 20260820190000_MDM001_InitializeMdmSchema.cs)
+        // requires all 3 FK columns to be indexed. We declare them
+        // explicitly here so the runtime model matches the
+        // migration.
+        b.HasIndex(i => i.BaseUomId)
+            .HasDatabaseName("ix_gulierp_item_baseuomid");
+        b.HasIndex(i => i.CategoryId)
+            .HasDatabaseName("ix_gulierp_item_categoryid");
+        b.HasIndex(i => i.TenantId)
+            .HasDatabaseName("ix_gulierp_item_tenantid");
+
         // FK: Item.BaseUomId → Uom.Id (system master, no Tenant FK).
-        b.HasOne<Uom>()
+        // The HasOne(navigation) form (NOT the anonymous HasOne<T>()
+        // form) is required: in EF Core 7+, the anonymous form does
+        // NOT bind the `BaseUom` navigation, and the convention
+        // detector then sees the navigation as an UN-CONFIGURED
+        // relationship and creates a shadow FK `BaseUomId1`. The
+        // HasOne(navigation) form locks the navigation onto this
+        // relationship, suppressing the convention-driven duplicate.
+        b.HasOne(i => i.BaseUom)
             .WithMany()
             .HasForeignKey(i => i.BaseUomId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -54,7 +76,8 @@ public sealed class ItemConfiguration : IEntityTypeConfiguration<Item>
         // Restrict (no cascading delete) — categories are deactivated,
         // not deleted. Cross-Tenant safety is enforced in the
         // Application service (ResolveItemCategoryInCurrentTenantAsync).
-        b.HasOne<ItemCategory>()
+        // Same HasOne(navigation) requirement as BaseUom above.
+        b.HasOne(i => i.Category)
             .WithMany()
             .HasForeignKey(i => i.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
