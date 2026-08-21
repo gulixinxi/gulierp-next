@@ -38,13 +38,35 @@ The `manage` permission is required to `POST` / `PUT`; the `read` permission is 
 
 ## 4. Wire DTOs
 
+### 4.0 Wire ID contract (API-CONTRACT-ID-001)
+
+**Every snowflake / HiLo id field on the wire is a JSON STRING, not a number.**
+The backend uses `SnowflakeLongJsonConverter` (apps/api/GuliERP.Api/Kernel/).
+
+| Field | Wire type |
+|---|---|
+| `id`, `parentId`, `categoryId`, `baseUomId`, `warehouseId`, `plantId` | `string` |
+| `userId`, `tenantId`, `companyId` (in `LoginResponse` / `/auth/me`) | `string` |
+| `concurrencyVersion`, `page`, `pageSize`, enum values (`dimension` / `kind` / `status` / `itemNature` / `role` / `type`) | `number` (unchanged) |
+| `totalCount` (in `PagedResult<T>`) | `number` (unchanged) |
+
+Rationale: JavaScript's `Number.MAX_SAFE_INTEGER` is 2^53 - 1 = 9_007_199_254_740_991. The GuliERP HiLo sequence (`identity.gulierp_hilo_sequence`) routinely produces ids above that (the user-reported real UOM id was `83727350616817740`). When a JS client parsed that as a JSON number, the value was silently rounded, the round-trip id no longer matched the database row, and the next `GET /.../{id}` returned 404.
+
+SPA contract:
+- Treat every id as an opaque `string` token. NEVER do `Number(id)`, `parseInt(id)`, or unary `+id`.
+- Nullable ids are `string | null` (or absent).
+- Route params carry the string as-is: `GET /api/v1/mdm/uoms/83727350616817740`. ASP.NET Core's route binder parses the URL segment as `long` via the `TypeConverter`; this is independent of JSON serialization, so any valid `long` (incl. > 2^53) round-trips losslessly.
+- Request bodies accept both string (preferred) and number (backward-compat with already-shipped clients that did `Number(row.id)`).
+- `Select` components and form fields use the string id as the `value` directly.
+- An invalid id string (e.g. `"abc"`, empty `""`) causes the deserializer to throw `JsonException` → backend returns 400 with RFC7807 `validation_failed` (NEVER a 500).
+
 ### 4.1 UOM
 
 **`UomDto`** (response body for GET / GET-by-id / POST / PUT):
 
 ```json
 {
-  "id": 1,
+  "id": "1",
   "code": "KGM",
   "name": "Kilogram",
   "symbol": "kg",
@@ -89,8 +111,8 @@ The `manage` permission is required to `POST` / `PUT`; the `read` permission is 
 
 ```json
 {
-  "id": 5,
-  "parentId": 3,
+  "id": "5",
+  "parentId": "3",
   "code": "RAW-STEEL",
   "name": "Raw Steel",
   "status": 1,
@@ -107,7 +129,7 @@ The `manage` permission is required to `POST` / `PUT`; the `read` permission is 
 {
   "code": "RAW-STEEL",
   "name": "Raw Steel",
-  "parentId": 3,
+  "parentId": "3",
   "description": null
 }
 ```
@@ -117,7 +139,7 @@ The `manage` permission is required to `POST` / `PUT`; the `read` permission is 
 ```json
 {
   "name": "Raw Steel (cold-rolled)",
-  "parentId": 3,
+  "parentId": "3",
   "status": 1,
   "description": null,
   "expectedConcurrencyVersion": 1
@@ -130,12 +152,12 @@ The `manage` permission is required to `POST` / `PUT`; the `read` permission is 
 
 ```json
 {
-  "id": 100,
+  "id": "100",
   "code": "MAT-001",
   "name": "Steel plate",
   "specification": "1m x 2m x 3mm",
-  "categoryId": 5,
-  "baseUomId": 7,
+  "categoryId": "5",
+  "baseUomId": "7",
   "itemNature": 1,        // int: 1=MATERIAL 2=SEMI_FINISHED 3=FINISHED_GOOD 4=SERVICE
   "status": 1,
   "description": null,
@@ -152,8 +174,8 @@ The `manage` permission is required to `POST` / `PUT`; the `read` permission is 
   "code": "MAT-001",
   "name": "Steel plate",
   "specification": "1m x 2m x 3mm",
-  "categoryId": 5,
-  "baseUomId": 7,
+  "categoryId": "5",
+  "baseUomId": "7",
   "itemNature": 1,
   "description": null
 }
@@ -165,8 +187,8 @@ The `manage` permission is required to `POST` / `PUT`; the `read` permission is 
 {
   "name": "Steel plate (heat-treated)",
   "specification": "1m x 2m x 3mm HT",
-  "categoryId": 5,
-  "baseUomId": 7,
+  "categoryId": "5",
+  "baseUomId": "7",
   "itemNature": 1,
   "status": 1,
   "description": null,
@@ -189,8 +211,8 @@ Item / ItemCategory add:
 
 | Parameter    | Type | Description                                |
 |--------------|------|--------------------------------------------|
-| `parentId`   | long | (ItemCategory only) Filter by parent.      |
-| `categoryId` | long | (Item only) Filter by category.            |
+| `parentId`   | long | (ItemCategory only) Filter by parent. May be sent as a JSON string per §4.0. |
+| `categoryId` | long | (Item only) Filter by category. May be sent as a JSON string per §4.0. |
 | `itemNature` | int  | (Item only) 1..4 per the enum.             |
 
 The response is a `PagedResult<T>`:

@@ -34,6 +34,29 @@ All endpoints require:
   request layer; the backend's `ICurrentTenant` / `ICurrentCompany`
   reject requests that lack a scope)
 
+## 1b. Wire ID contract (API-CONTRACT-ID-001)
+
+**Every snowflake / HiLo id field on the wire is a JSON STRING, not a number.**
+The backend uses `SnowflakeLongJsonConverter` (apps/api/GuliERP.Api/Kernel/).
+
+| Field | Wire type |
+|---|---|
+| `id`, `parentId`, `categoryId`, `baseUomId`, `warehouseId`, `plantId` | `string` |
+| `userId`, `tenantId`, `companyId` (in `LoginResponse` / `/auth/me`) | `string` |
+| `targetCompanyId` (in `POST /auth/company/switch`) | `string` |
+| `concurrencyVersion`, `page`, `pageSize`, enum values (`role` / `type` / `status`) | `number` (unchanged) |
+| `totalCount` (in `PagedResult<T>`) | `number` (unchanged) |
+
+Rationale: JavaScript's `Number.MAX_SAFE_INTEGER` is 2^53 - 1 = 9_007_199_254_740_991. The GuliERP HiLo sequence (`identity.gulierp_hilo_sequence`) routinely produces ids above that (the user-reported real UOM id was `83727350616817740`). When a JS client parsed that as a JSON number, the value was silently rounded, the round-trip id no longer matched the database row, and the next `GET /.../{id}` returned 404.
+
+SPA contract:
+- Treat every id as an opaque `string` token. NEVER do `Number(id)`, `parseInt(id)`, or unary `+id`.
+- Nullable ids are `string | null` (or absent).
+- Route params carry the string as-is: `GET /api/v1/mdm/warehouses/83727350616817760`. ASP.NET Core's route binder parses the URL segment as `long` via the `TypeConverter`; this is independent of JSON serialization, so any valid `long` (incl. > 2^53) round-trips losslessly.
+- Request bodies accept both string (preferred) and number (backward-compat with already-shipped clients that did `Number(row.id)`).
+- `Select` components and form fields use the string id as the `value` directly.
+- An invalid id string (e.g. `"abc"`, empty `""`) causes the deserializer to throw `JsonException` → backend returns 400 with RFC7807 `validation_failed` (NEVER a 500).
+
 ## 2. BusinessPartner
 
 ### 2.1 List — `GET /api/v1/mdm/business-partners`
@@ -149,7 +172,8 @@ Request body (`CreateWarehouseRequest`):
 - `plantId` is OPTIONAL (`long?`). V1 does NOT have a Plants table
   in MDM-002 — the Production module owns that in V2+. A
   `plantId` value is stored as a raw `bigint`; the SPA should
-  treat it as an opaque reference.
+  treat it as an opaque reference. On the wire it is a JSON
+  STRING (or `null`) per §1b.
 - `code` is REQUIRED, max 40 chars, unique within `(TenantId, CompanyId, Code)`.
 - `name` is REQUIRED, max 200 chars.
 - `type` is REQUIRED (1/2/3).
@@ -164,7 +188,7 @@ Same shape as create, plus `expectedConcurrencyVersion`.
 
 Query parameters:
 - `keyword` (string, optional) — case-insensitive substring on `code` or `name`.
-- `warehouseId` (long, optional) — restrict to a single warehouse.
+- `warehouseId` (string, optional) — restrict to a single warehouse. May be sent as a JSON string per §1b.
 - `type` (int, optional) — 1=Bin, 2=Shelf, 3=Zone, 4=Dock.
 - `status` (int, optional) — 1=Active, 2=Inactive.
 - `page` / `pageSize`.
@@ -176,7 +200,7 @@ Query parameters:
 Request body (`CreateLocationRequest`):
 ```json
 {
-  "warehouseId": 123,
+  "warehouseId": "123",
   "code": "A-1-1",
   "name": "Aisle A - Bay 1 - Shelf 1",
   "type": 1,
