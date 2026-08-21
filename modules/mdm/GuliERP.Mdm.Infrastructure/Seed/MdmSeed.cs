@@ -111,10 +111,18 @@ public static class MdmSeed
 
     private static string? WalkUpForFile(string startDir, string relativePath)
     {
+        // mdm-001R7 hardening: bound the walk-up. A previous version
+        // walked all the way to the disk root, which is wasted I/O
+        // on most Windows systems (D:\<...> → D:\ → null is ~10
+        // hops) and could theoretically match a file with the same
+        // relative path outside the repo. We now cap at 8 hops,
+        // which is more than enough to reach the repo root from any
+        // build / test output folder under modules/* and tests/*.
+        const int MaxDepth = 8;
         try
         {
             var dir = new DirectoryInfo(startDir);
-            while (dir != null)
+            for (var depth = 0; depth < MaxDepth && dir != null; depth++)
             {
                 var candidate = Path.Combine(dir.FullName, relativePath);
                 if (File.Exists(candidate)) return candidate;

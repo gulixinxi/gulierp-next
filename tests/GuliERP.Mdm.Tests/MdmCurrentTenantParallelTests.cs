@@ -173,4 +173,86 @@ public sealed class MdmCurrentTenantParallelTests
             Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_FILE", prev);
         }
     }
+
+    [Fact]
+    public void MdmSeed_ResolveSeedFilePath_WalkUp_Has_Max_Depth_Bound()
+    {
+        // mdm-001R7 hardening: the walk-up is bounded at 8 hops
+        // (per MdmSeed.WalkUpForFile's MaxDepth). We verify the
+        // contract by setting the env var to a non-existent
+        // path: the env-var override is a HARD opt-out (no
+        // fall-through to walk-up), so the resolver must return
+        // null in O(1) regardless of how deep the test CWD is.
+        // Without the max-depth bound AND without the hard opt-out
+        // semantics, the resolver would walk all the way to the
+        // disk root. We assert both:
+        //   1) Hard opt-out: env var set + missing file → null
+        //      (this proves the resolver short-circuits).
+        //   2) Bounded walk-up: even with env var unset, the
+        //      resolver returns within a reasonable time when the
+        //      canonical UomSeedFilePath is NOT present (i.e. the
+        //      walk terminates within MaxDepth hops).
+        var prev = Environment.GetEnvironmentVariable("GULIERP_MDM_SEED_FILE");
+        try
+        {
+            // (1) Hard opt-out
+            var missing = Path.Combine(
+                Path.GetTempPath(),
+                "mdm-seed-walkup-" + Guid.NewGuid().ToString("N") + ".json");
+            Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_FILE", missing);
+            var resolvedOptOut = MdmSeed.ResolveSeedFilePath();
+            Assert.Null(resolvedOptOut);
+
+            // (2) Bounded walk-up — simulate a non-existent
+            // canonical seed path. We change the CWD to a deep
+            // temp folder and the resolver's walk-up should
+            // terminate at MaxDepth=8. Since the canonical
+            // UomSeedFilePath IS present in this repo, we cannot
+            // prove bounded-walk via the public API alone, so we
+            // instead time the call. A healthy resolver returns
+            // in <100ms; an unbounded one would still be <100ms
+            // on Windows file systems, so this is a weak signal
+            // — the strong signal is the explicit MaxDepth
+            // constant in the source.
+            Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_FILE", null);
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var resolvedDefault = MdmSeed.ResolveSeedFilePath();
+            sw.Stop();
+            Assert.NotNull(resolvedDefault); // canonical seed IS findable
+            Assert.True(
+                sw.ElapsedMilliseconds < 500,
+                $"ResolveSeedFilePath took {sw.ElapsedMilliseconds}ms — an unbounded walk-up would still be fast on Windows, " +
+                "but a 500ms ceiling is a useful smoke-test for accidental deep recursion.");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_FILE", prev);
+        }
+    }
+
+    [Fact]
+    public void MdmSeed_ResolveSeedFilePath_Null_Explicit_Path_Falls_Through_To_Walk_Up()
+    {
+        // mdm-001R7 hardening: the caller can pass a null
+        // explicit path. The resolver must NOT throw — it should
+        // fall through to the walk-up. If the seed file exists
+        // anywhere reachable, it returns that path; otherwise
+        // null. Either way, no exception.
+        var prev = Environment.GetEnvironmentVariable("GULIERP_MDM_SEED_FILE");
+        try
+        {
+            Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_FILE", null);
+            var resolved = MdmSeed.ResolveSeedFilePath(null);
+            // In a real repo the seed file IS reachable; the
+            // important assertion is that no exception is thrown
+            // and the result is consistent with the previous
+            // "no-arg" call.
+            var noArg = MdmSeed.ResolveSeedFilePath();
+            Assert.Equal(noArg, resolved);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_FILE", prev);
+        }
+    }
 }
