@@ -277,9 +277,9 @@ Build 产出包含 6 个 MDM 页面独立 chunk（`UomList`/`ItemCategoryList`/`
 |---|---|---|---|
 | 1 | `fix(web): preserve mdm ids as opaque strings` | `a4d1321` | 6 MDM pages + `warehouse.ts` + `mock/mdm.ts` + `id-contract.regression-guard.ts` |
 | 2 | `fix(web): close shell logout and master data navigation` | `911e287` | `ErpShell.vue` + `router/mdm.ts` + `navigation.css` |
-| 3 | `docs(verification): record mdm web runtime closure handoff` | _（本提交，见 git log）_ | `MDM_WEB_003_RUNTIME_CLOSURE_REPORT.md` |
+| 3 | `docs(verification): record mdm web runtime closure handoff` | `1a79a9b` | `MDM_WEB_003_RUNTIME_CLOSURE_REPORT.md` |
 
-End HEAD（最终）= 提交 3 的 hash（即本报告所在提交）。
+End HEAD（最终）= `1a79a9b`（本报告所在提交）。
 
 每次仅 `git add <本轮文件路径>`，未使用 `git add -A` / `git add .` / `git commit -am`。
 
