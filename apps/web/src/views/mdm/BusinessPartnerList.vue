@@ -326,7 +326,7 @@ function applyFilters() {
 
 // ===== Form state =====
 const formDrawerVisible = ref(false);
-const editingId = ref<number | null>(null);
+const editingId = ref<string | null>(null);
 const editingConcurrency = ref(0);
 const submitting = ref(false);
 const formData = reactive<BusinessPartnerForm>(emptyForm());

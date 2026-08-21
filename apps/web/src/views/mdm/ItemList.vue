@@ -276,13 +276,13 @@ const activeUoms = ref<Uom[]>([]);
 const selectorsLoading = ref(false);
 
 const searchKeyword = ref('');
-const filterCategory = ref<number | ''>('');
+const filterCategory = ref<string | ''>('');
 const filterType = ref<ItemNature | ''>('');
 const filterStatus = ref<MasterDataStatus | ''>('');
 const page = reactive({ current: 1, size: 20 });
 
 /** Look up UOM by id — used in table column + detail drawer. */
-function findUom(id: number | null | undefined): Uom | undefined {
+function findUom(id: string | null | undefined): Uom | undefined {
   if (id == null) return undefined;
   return activeUoms.value.find(u => u.id === id);
 }
@@ -355,7 +355,7 @@ function applyFilters() {
 
 // ===== Form state =====
 const formDrawerVisible = ref(false);
-const editingId = ref<number | null>(null);
+const editingId = ref<string | null>(null);
 const editingConcurrency = ref(0);
 const submitting = ref(false);
 const formData = reactive<ItemForm>({

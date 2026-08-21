@@ -252,7 +252,7 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 
 const searchKeyword = ref('');
-const filterWarehouseId = ref<number | ''>('');
+const filterWarehouseId = ref<string | ''>('');
 const filterType = ref<LocationType | ''>('');
 const filterStatus = ref<MasterDataStatus | ''>('');
 const page = reactive({ current: 1, size: 20 });
@@ -309,11 +309,11 @@ async function fetchList() {
 onMounted(async () => {
   // Load warehouse references first so the first locations fetch can denormalize.
   await fetchWarehouses();
-  // Honor ?warehouseId=N from route (Warehouse page "查看库位").
+  // Honor ?warehouseId=ID from route (Warehouse page "查看库位").
+  // API-CONTRACT-ID-001: warehouseId is an opaque string — NEVER Number() it.
   const qWh = route.query?.warehouseId;
   if (typeof qWh === 'string' && qWh.length > 0) {
-    const n = Number(qWh);
-    if (Number.isFinite(n)) filterWarehouseId.value = Math.trunc(n);
+    filterWarehouseId.value = qWh;
   }
   await fetchList();
 });
@@ -327,7 +327,7 @@ function applyFilters() {
 
 // ===== Form state =====
 const formDrawerVisible = ref(false);
-const editingId = ref<number | null>(null);
+const editingId = ref<string | null>(null);
 const editingConcurrency = ref(0);
 const submitting = ref(false);
 const formData = reactive<LocationForm>(emptyForm());

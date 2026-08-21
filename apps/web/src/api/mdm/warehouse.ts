@@ -56,18 +56,18 @@ function dtoToUi(d: WarehouseDto): Warehouse {
   };
 }
 
-function toLong(v: string): number | null {
+/** API-CONTRACT-ID-001: plantId is an opaque string on the wire — NEVER
+ *  convert via Number() (Snowflake precision loss). Trim → null when empty. */
+function toPlantId(v: string): string | null {
   const s = (v || '').trim();
-  if (s.length === 0) return null;
-  const n = Number(s);
-  return Number.isFinite(n) ? Math.trunc(n) : null;
+  return s.length === 0 ? null : s;
 }
 
 // ---------- UI → Create wire converter ----------
 function formToCreate(f: WarehouseForm): CreateWarehouseRequest {
   const trim = (s: string) => (s && s.trim().length > 0 ? s.trim() : null);
   return {
-    plantId: toLong(f.plantId),
+    plantId: toPlantId(f.plantId),
     code: f.code.trim(),
     name: f.name.trim(),
     type: whTypeUiToInt(f.type),
@@ -129,7 +129,7 @@ export async function updateWarehouse(
 ): Promise<Warehouse> {
   const trim = (s: string) => (s && s.trim().length > 0 ? s.trim() : null);
   const body: UpdateWarehouseRequest = {
-    plantId: toLong(form.plantId),
+    plantId: toPlantId(form.plantId),
     name: form.name.trim(),
     type: whTypeUiToInt(form.type),
     addressLine1: trim(form.addressLine1),
