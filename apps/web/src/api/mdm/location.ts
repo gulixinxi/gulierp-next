@@ -108,7 +108,7 @@ export async function listLocations(
 }
 
 // ---------- Get by id ----------
-export async function getLocation(id: number): Promise<Location> {
+export async function getLocation(id: string): Promise<Location> {
   const d = await apiGet<LocationDto>(`/api/v1/mdm/locations/${id}`);
   return dtoToUi(d);
 }
@@ -121,7 +121,7 @@ export async function createLocation(form: LocationForm): Promise<Location> {
 
 // ---------- Update ----------
 export async function updateLocation(
-  id: number,
+  id: string,
   form: LocationForm,
   expectedConcurrencyVersion: number | undefined,
 ): Promise<Location> {

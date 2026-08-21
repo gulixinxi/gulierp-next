@@ -84,7 +84,7 @@ export async function listAllUomsActiveOnly(): Promise<Uom[]> {
 }
 
 // ---------- Get by id ----------
-export async function getUom(id: number): Promise<Uom> {
+export async function getUom(id: string): Promise<Uom> {
   const d = await apiGet<UomDto>(`/api/v1/mdm/uoms/${id}`);
   return dtoToUi(d);
 }
@@ -97,7 +97,7 @@ export async function createUom(form: UomForm): Promise<Uom> {
 }
 
 // ---------- Update (code immutable per Handoff §4.1) ----------
-export async function updateUom(id: number, form: UomForm, expectedConcurrencyVersion: number | undefined): Promise<Uom> {
+export async function updateUom(id: string, form: UomForm, expectedConcurrencyVersion: number | undefined): Promise<Uom> {
   const body: UpdateUomRequest = {
     name: form.name.trim(),
     symbol: form.symbol ? form.symbol.trim() : null,

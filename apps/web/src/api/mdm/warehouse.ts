@@ -110,7 +110,7 @@ export async function listAllWarehousesActiveOnly(): Promise<Warehouse[]> {
 }
 
 // ---------- Get by id ----------
-export async function getWarehouse(id: number): Promise<Warehouse> {
+export async function getWarehouse(id: string): Promise<Warehouse> {
   const d = await apiGet<WarehouseDto>(`/api/v1/mdm/warehouses/${id}`);
   return dtoToUi(d);
 }
@@ -123,7 +123,7 @@ export async function createWarehouse(form: WarehouseForm): Promise<Warehouse> {
 
 // ---------- Update ----------
 export async function updateWarehouse(
-  id: number,
+  id: string,
   form: WarehouseForm,
   expectedConcurrencyVersion: number | undefined,
 ): Promise<Warehouse> {

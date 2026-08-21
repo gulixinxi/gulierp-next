@@ -101,7 +101,7 @@ export async function listBusinessPartners(
 }
 
 // ---------- Get by id ----------
-export async function getBusinessPartner(id: number): Promise<BusinessPartner> {
+export async function getBusinessPartner(id: string): Promise<BusinessPartner> {
   const d = await apiGet<BusinessPartnerDto>(`/api/v1/mdm/business-partners/${id}`);
   return dtoToUi(d);
 }
@@ -115,7 +115,7 @@ export async function createBusinessPartner(form: BusinessPartnerForm): Promise<
 
 // ---------- Update (code immutable per Handoff §2.4) ----------
 export async function updateBusinessPartner(
-  id: number,
+  id: string,
   form: BusinessPartnerForm,
   expectedConcurrencyVersion: number | undefined,
 ): Promise<BusinessPartner> {

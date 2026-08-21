@@ -94,7 +94,7 @@ export async function listItems(
   };
 }
 
-export async function getItem(id: number): Promise<Item> {
+export async function getItem(id: string): Promise<Item> {
   const d = await apiGet<ItemDto>(`/api/v1/mdm/items/${id}`);
   return dtoToUi(d);
 }
@@ -105,7 +105,7 @@ export async function createItem(form: ItemForm): Promise<Item> {
 }
 
 export async function updateItem(
-  id: number,
+  id: string,
   form: ItemForm,
   expectedConcurrencyVersion: number | undefined,
 ): Promise<Item> {

@@ -202,6 +202,37 @@ if (builder.Environment.IsDevelopment())
     builder.Services.AddOpenApi();
 }
 
+// --- 7b. API-CONTRACT-ID-001 — Snowflake / HiLo ID wire contract ---
+//     All `long` and `long?` properties on the public wire
+//     (DTOs, request bodies, Auth /me) are serialized as JSON
+//     STRINGS, never as numbers, to prevent JavaScript precision
+//     loss. JavaScript's Number.MAX_SAFE_INTEGER is 2^53 - 1; the
+//     GuliERP HiLo sequence (identity.gulierp_hilo_sequence)
+//     routinely produces values above that (the user-reported real
+//     UOM id was 83727350616817740). When a JS client parses the
+//     JSON, the long is silently rounded, the round-trip id no
+//     longer matches the database row, and the next GET /.../{id}
+//     returns 404.
+//
+//     The converter is wired into BOTH the minimal-API pipeline
+//     and the controller / MVC pipeline so every response and
+//     every request body is round-trip-safe.
+//
+//     Scope: only `long` / `long?`. `int`, `decimal`, enums,
+//     `DateTimeOffset` etc. are untouched. PagedResult.TotalCount
+//     is declared as `int` (not `long`) so the count stays a JSON
+//     number — see comments in SnowflakeLongJsonConverters.cs.
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new SnowflakeLongJsonConverter());
+    options.SerializerOptions.Converters.Add(new NullableSnowflakeLongJsonConverter());
+});
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new SnowflakeLongJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new NullableSnowflakeLongJsonConverter());
+});
+
 var app = builder.Build();
 
 // --- 8. Middleware pipeline (order is sacred, G2-002) ---

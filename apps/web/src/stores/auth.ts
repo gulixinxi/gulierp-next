@@ -43,7 +43,7 @@ export const useAuthStore = defineStore('auth', {
       // backend DTO only provides companyCode by default; when name not available, fall back to code
       return s.user?.companyCode || '';
     },
-    companyId(s): number | null {
+    companyId(s): string | null {
       return s.user?.companyId ?? null;
     },
     tenantName(s): string {
@@ -57,7 +57,7 @@ export const useAuthStore = defineStore('auth', {
     hasMultipleCompanies(_s): boolean {
       return false;
     },
-    availableCompanies(s): Array<{ companyId: number; companyCode: string; companyName?: string }> {
+    availableCompanies(s): Array<{ companyId: string; companyCode: string; companyName?: string }> {
       // Return only the current company (from /me) as a single-item list.
       // This is NOT a real "available companies" source — it's a UI fallback
       // so the shell can display the current company label.
@@ -326,7 +326,7 @@ export const useAuthStore = defineStore('auth', {
      * Rollback semantics: If 403/400, restore the PRE-SWITCH snapshot so no UI "ghost switch"
      * has occurred. Operators never see an optimistic fake switch.
      */
-    async changeCompany(targetCompanyId: number): Promise<void> {
+    async changeCompany(targetCompanyId: string): Promise<void> {
       if (!this.user) throw new Error('Not authenticated');
       if (targetCompanyId === this.user.companyId) return;   // no-op
 

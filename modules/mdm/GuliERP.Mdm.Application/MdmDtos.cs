@@ -128,7 +128,14 @@ public sealed record PagedResult<T>(
     IReadOnlyList<T> Items,
     int Page,
     int PageSize,
-    long TotalCount);
+    /// <summary>
+    /// Total matching rows in the underlying table (NOT a snowflake
+    /// id — just a count). Declared as <c>int</c> (not <c>long</c>)
+    /// so the Snowflake long → string converter does NOT match it;
+    /// the wire contract keeps <c>totalCount</c> as a JSON number.
+    /// 2.1 billion rows is far above any realistic V1 MDM page.
+    /// </summary>
+    int TotalCount);
 
 // ============================================================
 // MDM-002 — BusinessPartner / Warehouse / Location DTOs

@@ -11,13 +11,19 @@ export interface CsrfTokenResponse {
 //   DO NOT add fields that the backend doesn't return. availableCompanies was removed
 //   because the backend LoginResponse does NOT include it. If a future backend
 //   endpoint provides the current user's allowed companies, define a separate DTO.
+//
+//   API-CONTRACT-ID-001: userId / tenantId / companyId are snowflake
+//   ids serialized as JSON strings on the wire (long → string converter).
+//   Treat them as opaque `string` tokens; NEVER do `Number(userId)` or
+//   `parseInt(companyId)` — that re-introduces the JS 2^53 precision loss
+//   the converter is designed to prevent.
 export interface AuthUserDto {
-  userId: number;
+  userId: string;
   userName: string;
   displayName: string;
-  tenantId: number;
+  tenantId: string;
   tenantCode: string;
-  companyId: number | null;      // backend: long? (nullable when no company selected yet)
+  companyId: string | null;      // backend: long? (nullable when no company selected yet)
   companyCode: string | null;   // backend: string? (nullable when companyId is null)
   isPlatformAdmin: boolean;
 }
@@ -59,7 +65,7 @@ export type AuthErrorCode =
 
 // ===== 6. /api/v1/auth/company/switch — request (§5) =====
 export interface CompanySwitchRequest {
-  targetCompanyId: number;
+  targetCompanyId: string;
 }
 
 // ===== 7. Runtime-only (UI) Auth State (NOT persisted anywhere) =====

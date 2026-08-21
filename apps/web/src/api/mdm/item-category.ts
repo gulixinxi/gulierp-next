@@ -98,7 +98,7 @@ export async function listItemCategories(params: ItemCategoryListParams): Promis
   };
 }
 
-export async function getItemCategory(id: number): Promise<ItemCategory> {
+export async function getItemCategory(id: string): Promise<ItemCategory> {
   const d = await apiGet<ItemCategoryDto>(`/api/v1/mdm/item-categories/${id}`);
   return dtoToUi(d);
 }
@@ -109,7 +109,7 @@ export async function createItemCategory(form: ItemCategoryForm): Promise<ItemCa
 }
 
 export async function updateItemCategory(
-  id: number,
+  id: string,
   form: ItemCategoryForm,
   expectedConcurrencyVersion: number | undefined,
 ): Promise<ItemCategory> {

@@ -1,12 +1,25 @@
 /**
  * MDM Type Definitions — Reconciled with:
  *   1. MDM_000_MASTER_DATA_CONVENTION_V1 (FROZEN, UI semantic strings)
- *   2. TRAE_MDM_001_API_HANDOFF.md (real backend DTOs, integer enums)
+ *   2. TRAE_MDM_001_API_HANDOFF.md + TRAE_MDM_002_API_HANDOFF.md (real backend DTOs)
+ *   3. API-CONTRACT-ID-001 — Snowflake / HiLo ID wire contract (IDs are JSON strings)
  *
  * Split into two layers:
  *   - API DTOs  → integer enums, concurrencyVersion, PagedResult<T> (wire format)
  *   - UI Types  → string enums, UI-derived fields (level/fullPath/categoryName)
  *   - Converters in each API client map between the two layers.
+ *
+ * API-CONTRACT-ID-001 ID-as-string contract:
+ *   - Every snowflake / HiLo id field on the wire (id, parentId, categoryId,
+ *     baseUomId, warehouseId, plantId) is a JSON STRING, not a number.
+ *   - The backend serializes with `SnowflakeLongJsonConverter` (Kernel).
+ *   - The JS client MUST treat them as `string`; NEVER do `Number(id)`,
+ *     `parseInt(id)`, or unary `+id` on a snowflake — that re-introduces
+ *     the JavaScript 2^53 precision loss this contract is designed to
+ *     prevent.
+ *   - `concurrencyVersion`, `page`, `pageSize`, `totalCount`, the enums
+ *     (status / dimension / kind / role / type / itemNature), and the
+ *     `expectedConcurrencyVersion` integer remain plain `number`.
  */
 
 // ============================================================
@@ -50,7 +63,7 @@ export type UomDimensionInt = 1 | 2 | 3 | 4 | 5 | 6;
 export type UomKindInt = 1 | 2;
 
 export interface UomDto {
-  id: number;
+  id: string;
   code: string;
   name: string;
   symbol: string | null;
@@ -111,7 +124,7 @@ export function kindIntToUi(v: UomKindInt): UomKind { return KIND_INT_MAP[v]; }
 export function kindUiToInt(v: UomKind): UomKindInt { return KIND_UI_MAP[v]; }
 
 export interface Uom {
-  id: number;
+  id: string;
   code: string;
   name: string;
   symbol: string | null;
@@ -140,8 +153,8 @@ export interface UomForm {
 // ItemCategory — API DTOs + UI types
 // ============================================================
 export interface ItemCategoryDto {
-  id: number;
-  parentId: number | null;
+  id: string;
+  parentId: string | null;
   code: string;
   name: string;
   status: MasterDataStatusInt;
@@ -153,12 +166,12 @@ export interface ItemCategoryDto {
 export interface CreateItemCategoryRequest {
   code: string;
   name: string;
-  parentId: number | null;
+  parentId: string | null;
   description: string | null;
 }
 export interface UpdateItemCategoryRequest {
   name: string;
-  parentId: number | null;
+  parentId: string | null;
   status: MasterDataStatusInt;
   description: string | null;
   expectedConcurrencyVersion: number;
@@ -166,17 +179,17 @@ export interface UpdateItemCategoryRequest {
 export interface ItemCategoryListParams {
   keyword?: string;
   status?: MasterDataStatusInt;
-  parentId?: number;
+  parentId?: string;
   page?: number;
   pageSize?: number;
 }
 
 // UI types
 export interface ItemCategory {
-  id: number;
+  id: string;
   code: string;
   name: string;
-  parentId: number | null;
+  parentId: string | null;
   status: MasterDataStatus;
   description?: string;
   createdAt: string;
@@ -187,7 +200,7 @@ export interface ItemCategory {
 export interface ItemCategoryForm {
   code: string;
   name: string;
-  parentId: number | null;
+  parentId: string | null;
   status: MasterDataStatus;
   description?: string;
 }
@@ -206,12 +219,12 @@ export type ItemCategoryListItem = ItemCategory & ItemCategoryUiDerived;
 export type ItemNatureInt = 1 | 2 | 3 | 4;
 
 export interface ItemDto {
-  id: number;
+  id: string;
   code: string;
   name: string;
   specification: string | null;
-  categoryId: number | null;
-  baseUomId: number;
+  categoryId: string | null;
+  baseUomId: string;
   itemNature: ItemNatureInt;
   status: MasterDataStatusInt;
   description: string | null;
@@ -223,16 +236,16 @@ export interface CreateItemRequest {
   code: string;
   name: string;
   specification: string | null;
-  categoryId: number | null;
-  baseUomId: number;
+  categoryId: string | null;
+  baseUomId: string;
   itemNature: ItemNatureInt;
   description: string | null;
 }
 export interface UpdateItemRequest {
   name: string;
   specification: string | null;
-  categoryId: number | null;
-  baseUomId: number;
+  categoryId: string | null;
+  baseUomId: string;
   itemNature: ItemNatureInt;
   status: MasterDataStatusInt;
   description: string | null;
@@ -241,7 +254,7 @@ export interface UpdateItemRequest {
 export interface ItemListParams {
   keyword?: string;
   status?: MasterDataStatusInt;
-  categoryId?: number;
+  categoryId?: string;
   itemNature?: ItemNatureInt;
   page?: number;
   pageSize?: number;
@@ -261,12 +274,12 @@ export function natureIntToUi(v: ItemNatureInt): ItemNature { return NATURE_INT_
 export function natureUiToInt(v: ItemNature): ItemNatureInt { return NATURE_UI_MAP[v]; }
 
 export interface Item {
-  id: number;
+  id: string;
   code: string;
   name: string;
   specification?: string;
-  categoryId: number | null;
-  baseUomId: number;
+  categoryId: string | null;
+  baseUomId: string;
   itemNature: ItemNature;
   status: MasterDataStatus;
   description?: string;
@@ -282,8 +295,8 @@ export interface ItemForm {
   code: string;
   name: string;
   specification?: string;
-  categoryId: number | null;
-  baseUomId: number | null;
+  categoryId: string | null;
+  baseUomId: string | null;
   itemNature: ItemNature;
   status: MasterDataStatus;
   description?: string;
@@ -326,7 +339,7 @@ export function roleFilterToInt(v: BusinessPartnerRoleFilter): BusinessPartnerRo
 }
 
 export interface BusinessPartnerDto {
-  id: number;
+  id: string;
   code: string;
   name: string;
   shortName: string | null;
@@ -392,7 +405,7 @@ export interface BusinessPartnerListParams {
 
 // UI types
 export interface BusinessPartner {
-  id: number;
+  id: string;
   code: string;
   name: string;
   shortName?: string;
@@ -449,8 +462,8 @@ export function whTypeIntToUi(v: WarehouseTypeInt): WarehouseType { return WH_TY
 export function whTypeUiToInt(v: WarehouseType): WarehouseTypeInt { return WH_TYPE_UI_MAP[v]; }
 
 export interface WarehouseDto {
-  id: number;
-  plantId: number | null;
+  id: string;
+  plantId: string | null;
   code: string;
   name: string;
   type: WarehouseTypeInt;
@@ -467,7 +480,7 @@ export interface WarehouseDto {
   concurrencyVersion: number;
 }
 export interface CreateWarehouseRequest {
-  plantId: number | null;
+  plantId: string | null;
   code: string;
   name: string;
   type: WarehouseTypeInt;
@@ -480,7 +493,7 @@ export interface CreateWarehouseRequest {
   description: string | null;
 }
 export interface UpdateWarehouseRequest {
-  plantId: number | null;
+  plantId: string | null;
   name: string;
   type: WarehouseTypeInt;
   addressLine1: string | null;
@@ -502,8 +515,8 @@ export interface WarehouseListParams {
 }
 
 export interface Warehouse {
-  id: number;
-  plantId: number | null;
+  id: string;
+  plantId: string | null;
   code: string;
   name: string;
   type: WarehouseType;
@@ -552,8 +565,8 @@ export function locTypeIntToUi(v: LocationTypeInt): LocationType { return LOC_TY
 export function locTypeUiToInt(v: LocationType): LocationTypeInt { return LOC_TYPE_UI_MAP[v]; }
 
 export interface LocationDto {
-  id: number;
-  warehouseId: number;
+  id: string;
+  warehouseId: string;
   code: string;
   name: string;
   type: LocationTypeInt;
@@ -567,7 +580,7 @@ export interface LocationDto {
   concurrencyVersion: number;
 }
 export interface CreateLocationRequest {
-  warehouseId: number;
+  warehouseId: string;
   code: string;
   name: string;
   type: LocationTypeInt;
@@ -577,7 +590,7 @@ export interface CreateLocationRequest {
   description: string | null;
 }
 export interface UpdateLocationRequest {
-  warehouseId: number;
+  warehouseId: string;
   name: string;
   type: LocationTypeInt;
   aisle: string | null;
@@ -589,7 +602,7 @@ export interface UpdateLocationRequest {
 }
 export interface LocationListParams {
   keyword?: string;
-  warehouseId?: number;
+  warehouseId?: string;
   type?: LocationTypeInt;
   status?: MasterDataStatusInt;
   page?: number;
@@ -597,8 +610,8 @@ export interface LocationListParams {
 }
 
 export interface Location {
-  id: number;
-  warehouseId: number;
+  id: string;
+  warehouseId: string;
   code: string;
   name: string;
   type: LocationType;
@@ -615,7 +628,7 @@ export interface Location {
   warehouseCode?: string;
 }
 export interface LocationForm {
-  warehouseId: number | null;
+  warehouseId: string | null;
   code: string;
   name: string;
   type: LocationType;
@@ -631,12 +644,12 @@ export interface LocationForm {
 // ============================================================
 export function deriveCategoryHierarchy(raw: ItemCategory[]): ItemCategoryListItem[] {
   const map = new Map(raw.map(c => [c.id, c]));
-  function getLevel(id: number | null): number {
+  function getLevel(id: string | null): number {
     if (id == null) return 0;
     const p = map.get(id);
     return p ? getLevel(p.parentId) + 1 : 0;
   }
-  function getPath(id: number | null): string {
+  function getPath(id: string | null): string {
     if (id == null) return '';
     const c = map.get(id);
     if (!c) return '';

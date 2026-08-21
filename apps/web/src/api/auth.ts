@@ -70,6 +70,9 @@ export function me(): Promise<AuthUserDto> {
  */
 export function switchCompany(req: CompanySwitchRequest): Promise<AuthUserDto> {
   return apiPost<AuthUserDto>(`${BASE}/company/switch`, {
-    targetCompanyId: Number(req.targetCompanyId),  // numeric per contract
+    // API-CONTRACT-ID-001: id is a JSON string on the wire. NEVER
+    // do Number(targetCompanyId) — that re-introduces the JS 2^53
+    // precision loss the converter is designed to prevent.
+    targetCompanyId: req.targetCompanyId,
   });
 }

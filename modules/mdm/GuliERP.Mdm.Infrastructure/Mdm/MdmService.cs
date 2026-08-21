@@ -84,7 +84,7 @@ public sealed class MdmService : IMdmService
                 u.Id, u.Code, u.Name, u.Symbol, u.Dimension, u.Kind,
                 u.Status, u.Description, u.CreatedAt, u.ModifiedAt, u.ConcurrencyVersion))
             .ToListAsync(ct);
-        return new PagedResult<UomDto>(items, page, pageSize, total);
+        return new PagedResult<UomDto>(items, page, pageSize, (int)total);
     }
 
     public async Task<UomDto?> GetUomByIdAsync(long id, CancellationToken ct = default)
@@ -195,7 +195,7 @@ public sealed class MdmService : IMdmService
                 c.Id, c.ParentId, c.Code, c.Name, c.Status, c.Description,
                 c.CreatedAt, c.ModifiedAt, c.ConcurrencyVersion))
             .ToListAsync(ct);
-        return new PagedResult<ItemCategoryDto>(items, page, pageSize, total);
+        return new PagedResult<ItemCategoryDto>(items, page, pageSize, (int)total);
     }
 
     public async Task<ItemCategoryDto?> GetItemCategoryByIdAsync(
@@ -346,7 +346,7 @@ public sealed class MdmService : IMdmService
                 i.ItemNature, i.Status, i.Description,
                 i.CreatedAt, i.ModifiedAt, i.ConcurrencyVersion))
             .ToListAsync(ct);
-        return new PagedResult<ItemDto>(items, page, pageSize, total);
+        return new PagedResult<ItemDto>(items, page, pageSize, (int)total);
     }
 
     public async Task<ItemDto?> GetItemByIdAsync(long id, CancellationToken ct = default)

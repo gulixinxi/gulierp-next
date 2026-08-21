@@ -89,7 +89,7 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
             .Take(pageSize)
             .Select(bp => MapToDto(bp))
             .ToListAsync(ct);
-        return new PagedResult<BusinessPartnerDto>(items, page, pageSize, total);
+        return new PagedResult<BusinessPartnerDto>(items, page, pageSize, (int)total);
     }
 
     public async Task<BusinessPartnerDto?> GetByIdAsync(long id, CancellationToken ct = default)
@@ -386,7 +386,7 @@ public sealed class MdmWarehouseService : IMdmWarehouseService
                 w.PostalCode, w.CountryCode,
                 w.Status, w.Description, w.CreatedAt, w.ModifiedAt, w.ConcurrencyVersion))
             .ToListAsync(ct);
-        return new PagedResult<WarehouseDto>(items, page, pageSize, total);
+        return new PagedResult<WarehouseDto>(items, page, pageSize, (int)total);
     }
 
     public async Task<WarehouseDto?> GetByIdAsync(long id, CancellationToken ct = default)
@@ -576,7 +576,7 @@ public sealed class MdmLocationService : IMdmLocationService
                 l.Status, l.Description,
                 l.CreatedAt, l.ModifiedAt, l.ConcurrencyVersion))
             .ToListAsync(ct);
-        return new PagedResult<LocationDto>(items, page, pageSize, total);
+        return new PagedResult<LocationDto>(items, page, pageSize, (int)total);
     }
 
     public async Task<LocationDto?> GetByIdAsync(long id, CancellationToken ct = default)
