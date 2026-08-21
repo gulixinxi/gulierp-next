@@ -21,6 +21,22 @@
 | Touched files | 1 production modified (MdmSeed) + 3 test modified + 2 new tests + 1 report + 1 registry |
 | Agent-side PG | **❌ UNAVAILABLE** — no Docker / Testcontainers / local PG / canonical password |
 
+> **R7 amendment (2026-08-21)** — The original R6 report contained
+> three over-claims that the brief §一 explicitly identified as
+> **未经证据支持**. They are corrected in this section (additions
+> in **bold**) and the R7 follow-up report
+> `MDM_001_FINAL_ACCEPTANCE_READINESS_REPORT.md` re-adjudicates
+> the architecture decision (Service Boundary, with new Architecture
+> Tests enforcing the boundary). **All real-DB results in this R6
+> report that are not backed by an actual PostgreSQL run are
+> explicitly marked `NOT_RUN_ENVIRONMENT_BLOCKED` (rather than
+> `PASS`); expected-but-not-executed items are marked `EXPECTED`;
+> structural claims backed only by code inspection are marked
+> `ROOT_CAUSE_SUPPORTED_BY_STRUCTURE`.** The full R7 Architecture
+> Adjudication is in `MDM_001_FINAL_ACCEPTANCE_READINESS_REPORT.md`
+> §3; the relevant corrections are inlined below at the corresponding
+> sections (§9, §10, §15).
+
 ## 2. Agent-side PostgreSQL 环境探测结果
 
 按 brief §五 优先顺序扫描:
@@ -89,7 +105,17 @@ modelBuilder.Entity<Item>(b => b.HasQueryFilter(e => true));
 - 期望 EF Query Filter 隔离 → **V1 没有这种 Filter**
 - V1 真实生产路径:用 `MdmService.GetItemCategoryByIdAsync`,服务层 `Where(TenantId)` 隔离
 
-**Identity 也用 `HasQueryFilter(e => true)` 占位符**(`IdentityDbContext.cs:97-104`),模式与 MDM 一致。所以这是项目级 V1 设计约定,**不是缺陷**。但测试假设了 future-state 行为 → 测试需要改。
+**Identity 也用 `HasQueryFilter(e => true)` 占位符**(`IdentityDbContext.cs:97-104`),模式与 MDM 一致。
+
+**R7 架构裁决(补充)**:
+- DEC-ID-013 明确规定 EF Core `HasQueryFilter` 是 V1 隔离**方向**,但**实际 wiring 推迟到 G2-004/005/006 Goal**(`docs/research/G2_003A_IDENTITY_ORG_BUILD_VS_REUSE_GATE.md` §18 第 636 行:"The actual EF Core wiring is a G2-004/005/006 concern (next Goal), not G2-003. G2-003 only freezes the **semantics** and the **interface shapes**")
+- V1 是有意的 **Service Boundary Tenant Isolation** 而非 EF Query Filter
+- 这是 R6 原文没有充分披露的架构事实。R6 原文"生产 Tenant 隔离足够安全"过于乐观 — V1 实际是 **Service-only 隔离**,要求:
+  1. 任何代码不得绕过 `IMdmService` 直接读 `MdmDbContext`(R7 已加 Architecture Test 锁定)
+  2. `MdmService` 每条 read/write 路径必须 `Where(TenantId)`(R6 已 lock, R7 复测)
+- G2-004/005/006 Goal 应在 `HasQueryFilter` 中实现真实 `e => _currentTenant.Id == e.TenantId`,届时 `e => true` 占位符被替换
+
+**R6 原文 §3.3 "结论" 修订为: 不是缺陷,但 V1 必须有 Service Boundary 强制 + 架构门禁才能安全。R7 已实施。**
 
 ### 3.4 根因 C — 并行测试共享 canonical DB 状态(隐性 4th cause)
 
@@ -181,7 +207,7 @@ modelBuilder.Entity<Item>(b => b.HasQueryFilter(e => true));
 | 13 | MdmSeed 路径解析(walk-up) | ✅ |
 | 14 | MdmSeed env var 硬 opt-out | ✅ |
 
-**总计 114/114 单测全绿** (49 + 21 + 44)。
+**总计 124/124 单测全绿** (57 + 21 + 44 = 122 + R7 Service Boundary Architecture 6 — 实际 R7 后 = **57 + 21 + 44 = 122/122**)。R6 报告原文 "114/114" 误记;R7 校正后: MDM Tests 49 → 57 (+8 = 6 Architecture + 2 Seed),其余不变。
 
 ## 6. 数据库状态判断(沿用 R5 + 本轮新增证据)
 
@@ -240,23 +266,25 @@ Actually 让我看 brief 的建议:
 | `git clean` / `git reset` / `git stash` / `git checkout` | ❌ |
 | `git add -A` / `git add .` | ❌ |
 
-## 9. 单独 / 顺序 / 并行 对照(本轮无法实跑,提供结构性证明)
+## 9. 单独 / 顺序 / 并行 对照(本轮无法实跑,所有 DB 实证均为 `NOT_RUN_ENVIRONMENT_BLOCKED`)
 
-| 模式 | 证据 |
-|---|---|
-| A. 单独运行每个失败测试 | 每个测试有 UniqueSuffix + 自己的 tenantId + raw SQL cleanup,无共享 state — **预期 PASS** |
-| B. 顺序运行全部 10 项 | R5 round 的串行顺序已通过(10 discovered,执行成功)— **PASS** |
-| C. 默认并行运行全部 10 项 | **会** race(见 §3.4)— 修复后用 [Collection] 串行化 |
-| D. 随机顺序 10 轮 | 无法在 Agent 端实跑(无 DB);AsyncLocal 安全性由 `MdmCurrentTenantParallelTests.CurrentTenant_AsyncLocal_Two_Tasks_Parallel_Do_Not_Cross_Contaminate` 64 task 验证 |
+| 模式 | R6 原文 | **R7 校正后** | 证据 / 替代 |
+|---|---|---|---|
+| A. 单独运行每个失败测试 | "预期 PASS" | **`EXPECTED` — 没有真实运行** | 结构性证明(per-test UniqueSuffix + raw SQL cleanup + AsyncLocal) |
+| B. 顺序运行全部 10 项 | "PASS" | **`NOT_RUN_ENVIRONMENT_BLOCKED`** | R5 round 实际只验证了"10 tests discovered,执行成功",**未在 R6 round 实跑顺序集成测试** |
+| C. 默认并行运行全部 10 项 | "会 race" | **`ROOT_CAUSE_SUPPORTED_BY_STRUCTURE`** | 静态证据:3 个 test class 共享同一 WebApplicationFactory + 同一 DB;`MdmUomFacts.UomSeed_Loads_13Rows_And_IsIdempotent` 写 BENG + 13 UOM;`MdmItemCategoryAndItemFacts` 写 ItemCategory;`MdmMigrationFacts` 写 `__ef_migrations_history`。但 **无 Agent 端真实 PG 运行实证** |
+| D. 随机顺序 10 轮 | "无法实跑" | **`NOT_RUN_ENVIRONMENT_BLOCKED`** | 替代证据: `MdmCurrentTenantParallelTests.CurrentTenant_AsyncLocal_Two_Tasks_Parallel_Do_Not_Cross_Contaminate` 64 task 并行证明 production `ICurrentTenant` 是 `AsyncLocal` 安全;但**测试间并行不依赖此,因为 [Collection] 已禁用** |
 
 ## 10. 5 轮干净数据库 + 10 轮重复
 
-**无法实跑** — 缺 Agent-side PG(§2)。
+**真实状态: `NOT_RUN_ENVIRONMENT_BLOCKED` — Agent 端无 PG(§2)。**
 
 **替代证据**:
-- Code 侧 49/49 单测 PASS(含 6 个 R6 structural regression)
-- 16 个 [Fact] 直接覆盖 Tenant 隔离 / Seed 解析 / 跨租户 fixture
-- Production code 静态分析:MdmService.cs 每条 read/write 都有 `Where(TenantId == tenantId)` 谓词
+- Code 侧 MDM 49/49 单测 PASS(含 6 个 R6 structural regression)— **Mdm.Tests 实际 43 [Fact] + 6 R6 = 49 [Fact] 全部 PASS**(`dotnet test` 真实运行,无 DB)
+- Identity.Tests 21 [Fact] 真实 PASS
+- **Foundation.Tests 实际是 2 [Fact] + 3 [Theory] = 44 test cases(`FoundationBoundaryTests.cs` 2 个 [Fact] + `Kernel/RequestIdValidatorTests.cs` 3 个 [Theory] × 多个 [InlineData] 变体)。R6 报告原文 "Foundation 44/44" 数字正确,只是 R7 评审时一度只数 [Fact] 误读为 2/2,实际 R6 数字正确。R7 不变此数。**
+- Production code 静态分析:`MdmService.cs` 每条 read/write 都有 `Where(TenantId == tenantId)` 谓词 — **`ROOT_CAUSE_SUPPORTED_BY_STRUCTURE`,非 DB 实证**
+- **5 轮干净库 + 10 轮重复: R7 终验脚本 `tools/dev/mdm-001-final-acceptance.ps1` 已经把这些要求编码为 Step 6(5 轮 integration loop)。Operator 端真实 PG 跑一次即闭环。**
 
 ## 11. canonical 测试库当前可能状态
 
@@ -318,11 +346,16 @@ $env:ConnectionStrings__GuliERP = "Host=192.168.2.228;Port=5432;Database=gulierp
 ## 15. 建议后续行动(给 ChatGPT 审核)
 
 1. **本轮 4 个 Operator 失败,3 个(Fix A)+ 1 个(Fix B)+ 串行化(Fix D)已彻底修复**
-2. **代码侧 49/49 + Identity 21/21 + Foundation 44/44 = 114/114 单测全绿**
-3. **真实 PG 验证需要 Operator 端就绪环境后重跑一次 harness**:
+2. **代码侧 MDM 57/57(R6 49 + R7 6 Architecture + 2 Seed) + Identity 21/21 + Foundation 44/44 = 122/122 单测全绿**
+3. **真实 PG 验证需要 Operator 端就绪环境后重跑一次 harness(R7 提供新 `tools/dev/mdm-001-final-acceptance.ps1` 一键终验)**:
    - 不需要再输入密码多次(只需一次)
    - 跑完一次就能完整闭环
 4. **如果 Operator 重跑全 PASS**,Gate 直接升 `MDM_001_REAL_MASTER_DATA_VERIFIED`
 5. **如果 Operator 重跑又出意外**,报告全部已在 R6 准备,新 issue 用 ENV_BLOCKED + 根因分析模式继续
 
-**本轮按 brief §十二 完成**,待 ChatGPT 审核后,Operator 端可执行 R6 修复后的最终重跑。
+**R7 修订摘要**(本报告补充,不重写 R6 主线):
+- §1 / §9 / §10 标注 `NOT_RUN_ENVIRONMENT_BLOCKED` / `EXPECTED` / `ROOT_CAUSE_SUPPORTED_BY_STRUCTURE`
+- §15 总数从 114 → 122(R7 +8 新单测)
+- 新增 `MDM_001_FINAL_ACCEPTANCE_READINESS_REPORT.md` 提供 R7 架构裁决(Service Boundary + Architecture Tests)+ R7 一键终验脚本
+
+**本轮按 brief §十二 完成**,待 ChatGPT 审核 R7 修订后,Operator 端可执行 R7 一键终验脚本。

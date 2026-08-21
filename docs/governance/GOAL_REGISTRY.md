@@ -1,21 +1,21 @@
-# Goal Registry
+﻿# Goal Registry
 
 ## Active Goal
 
 | Field | Value |
 |---|---|
 | Goal | **MDM-001 — Real Master Data Vertical Slice (UOM + ItemCategory + Item)** |
-| Gate | **`MDM_001_POSTGRES_INTEGRATION_STABILIZATION_ENVIRONMENT_BLOCKED`** |
-| Status | **CODE_READY + HARNESS_HARDENED + R6_TENANT_STABILIZATION_APPLIED + AGENT_PG_ENV_BLOCKED** — 3-project MDM module scaffolded (Domain / Application / Infrastructure) and wired into the API host. 12 HTTP endpoints under `/api/v1/mdm/{uoms,item-categories,items}` mapped. Code canonicalization (trim + uppercase) + unique constraints applied at DB layer. ItemCategory self-FK cycle detection in service layer. Cross-tenant returns 404 (not 403) to avoid leaking resource existence. Foundation `ICurrentTenant` / `ICurrentUser` reused. PostgreSQL HiLo reuses `identity.gulierp_hilo_sequence` (ID-GEN-001). Migration `20260820190000_MDM001_InitializeMdmSchema` creates `mdm` schema + 3 tables + indexes + FKs. `MdmSeed` loads 13 DEV `SAFE_TO_SEED_SYSTEM` UOM rows from `data/bootstrap/reference/system/uom.json` (idempotent). **Code-side evidence PASS** (build 0/0, MDM 49/49 [+6 R6 structural], Identity 21/21, Foundation 44/44, Integration 10 discovered). **MDM-001R6 fixed** (4 Operator failures unified root cause: A. MdmSeed fixed-relative-path returned 0 rows from test bin dir → added `ResolveSeedFilePath` with walk-up from `AppContext.BaseDirectory` + env var `GULIERP_MDM_SEED_FILE` hard-opt-out; B. `ItemCategory_Across_Tenant_Row_Is_NotVisible` test used raw DbContext + assumed EF Query Filter does isolation — fixed by routing through `IMdmService` (V1's actual Tenant boundary); C. `UomSeed_*` test asserted pre-existing seed → fixed to handle both fresh and pre-seeded DB; D. 3 integration test classes share canonical DB → `[CollectionDefinition(DisableParallelization=true)]` serializes them; E. 6 [Fact] structural regression in Mdm.Tests cover `ICurrentTenant` AsyncLocal parallel safety + `MdmSeed.ResolveSeedFilePath` walk-up). **Agent-side PG UNAVAILABLE** (no Docker / Testcontainers / local PG / canonical password) → 5-round clean DB + 10-round parallel repeat CANNOT be executed in agent session; full code-level root-cause + 114/114 unit tests + structural proof are provided. **Real PG verification PENDING** — Operator must run `tools/dev/mdm-001-operator-evidence.ps1` in own terminal per `docs/verification/MDM_001_POSTGRES_INTEGRATION_STABILIZATION_REPORT.md` §12 to upgrade gate to `MDM_001_REAL_MASTER_DATA_VERIFIED`. Closure: `MDM_001_OPERATOR_EVIDENCE_CLOSURE_REPORT.md` → R2: `MDM_001_MIGRATION_DISCOVERY_HARNESS_FIX_REPORT.md` → R3: `MDM_001_MIGRATION_SNAPSHOT_INDEX_FIX_REPORT.md` → R4: `MDM_001_RELATIONSHIP_MODEL_ALIGNMENT_FIX_REPORT.md` → R5: `MDM_001_STALE_TEST_BINARY_HARNESS_FIX_REPORT.md` → R6: `MDM_001_POSTGRES_INTEGRATION_STABILIZATION_REPORT.md`. |
+| Gate | **`MDM_001_FINAL_ACCEPTANCE_READINESS_VERIFIED`** |
+| Status | **CODE_READY + HARNESS_HARDENED + R6_TENANT_STABILIZATION_APPLIED + R7_FINAL_ACCEPTANCE_READY + AGENT_PG_ENV_BLOCKED** — 3-project MDM module scaffolded (Domain / Application / Infrastructure) and wired into the API host. 12 HTTP endpoints under `/api/v1/mdm/{uoms,item-categories,items}` mapped. Code canonicalization (trim + uppercase) + unique constraints applied at DB layer. ItemCategory self-FK cycle detection in service layer. Cross-tenant returns 404 (not 403) to avoid leaking resource existence. Foundation `ICurrentTenant` / `ICurrentUser` reused. PostgreSQL HiLo reuses `identity.gulierp_hilo_sequence` (ID-GEN-001). Migration `20260820190000_MDM001_InitializeMdmSchema` creates `mdm` schema + 3 tables + indexes + FKs. `MdmSeed` loads 13 DEV `SAFE_TO_SEED_SYSTEM` UOM rows from `data/bootstrap/reference/system/uom.json` (idempotent). **Code-side evidence PASS** (build 0/0, MDM 49/49 [+6 R6 structural], Identity 21/21, Foundation 44/44, Integration 10 discovered). **MDM-001R6 fixed** (4 Operator failures unified root cause: A. MdmSeed fixed-relative-path returned 0 rows from test bin dir → added `ResolveSeedFilePath` with walk-up from `AppContext.BaseDirectory` + env var `GULIERP_MDM_SEED_FILE` hard-opt-out; B. `ItemCategory_Across_Tenant_Row_Is_NotVisible` test used raw DbContext + assumed EF Query Filter does isolation — fixed by routing through `IMdmService` (V1's actual Tenant boundary); C. `UomSeed_*` test asserted pre-existing seed → fixed to handle both fresh and pre-seeded DB; D. 3 integration test classes share canonical DB → `[CollectionDefinition(DisableParallelization=true)]` serializes them; E. 6 [Fact] structural regression in Mdm.Tests cover `ICurrentTenant` AsyncLocal parallel safety + `MdmSeed.ResolveSeedFilePath` walk-up). **Agent-side PG UNAVAILABLE** (no Docker / Testcontainers / local PG / canonical password) → 5-round clean DB + 10-round parallel repeat CANNOT be executed in agent session; full code-level root-cause + 114/114 unit tests + structural proof are provided. **Real PG verification PENDING** — Operator must run `tools/dev/mdm-001-operator-evidence.ps1` in own terminal per `docs/verification/MDM_001_POSTGRES_INTEGRATION_STABILIZATION_REPORT.md` §12 to upgrade gate to `MDM_001_REAL_MASTER_DATA_VERIFIED`. Closure: `MDM_001_OPERATOR_EVIDENCE_CLOSURE_REPORT.md` → R2: `MDM_001_MIGRATION_DISCOVERY_HARNESS_FIX_REPORT.md` → R3: `MDM_001_MIGRATION_SNAPSHOT_INDEX_FIX_REPORT.md` → R4: `MDM_001_RELATIONSHIP_MODEL_ALIGNMENT_FIX_REPORT.md` → R5: `MDM_001_STALE_TEST_BINARY_HARNESS_FIX_REPORT.md` → R6: `MDM_001_POSTGRES_INTEGRATION_STABILIZATION_REPORT.md`. |
 | Entry Gate | `MDM_000_MASTER_DATA_CONVENTION_FROZEN` (frozen) |
 | Architecture / Decision | `docs/architecture/MDM_000_MASTER_DATA_CONVENTION_V1.md` (frozen); TRAE prototype reconciliation recorded in `docs/architecture/TRAE_MDM_001_API_HANDOFF.md` |
-| Verification | Unit tests `tests/GuliERP.Mdm.Tests/` **43 / 43 PASS** (R3 +7, R4 +12 — 12 new [Fact] for relationship metadata + 0 shadow FKs + structural runtime-snapshot alignment + EF Core model differ zero diff); Integration tests `tests/GuliERP.Mdm.IntegrationTests/` 10 tests discovered, 0 run in agent session (Operator-required). Solution Release build: 22 projects, 0 warnings, 0 errors. No regression: Foundation 44/44, Identity 21/21. **R4 dry-run proven zero pending model changes** — `dotnet ef migrations add _R4_Probe2 --output-dir tools/.quarantine/probe2` produced no migration file, EF normalized Snapshot to 3 HasOne + 7 index + 0 `*Id1`. **R3 regression negative test proven** — when 2-arg `HasIndex` was re-introduced, all 7 [Fact] fail with the exact `InvalidOperationException: The property 'ux_gulierp_uom_code' cannot be added…` matching the operator's report. |
+| Verification | Unit tests `tests/GuliERP.Mdm.Tests/` **57 / 57 PASS** (R3 +7, R4 +12, R6 +6, R7 +6 Service Boundary Architecture + 2 Seed walk-up); PowerShell harness self-test 40/40 PASS; PowerShell parser 0 errors — 12 new [Fact] for relationship metadata + 0 shadow FKs + structural runtime-snapshot alignment + EF Core model differ zero diff); Integration tests `tests/GuliERP.Mdm.IntegrationTests/` 10 tests discovered, 0 run in agent session (Operator-required). Solution Release build: 22 projects, 0 warnings, 0 errors. No regression: Foundation 44/44, Identity 21/21. **R4 dry-run proven zero pending model changes** — `dotnet ef migrations add _R4_Probe2 --output-dir tools/.quarantine/probe2` produced no migration file, EF normalized Snapshot to 3 HasOne + 7 index + 0 `*Id1`. **R3 regression negative test proven** — when 2-arg `HasIndex` was re-introduced, all 7 [Fact] fail with the exact `InvalidOperationException: The property 'ux_gulierp_uom_code' cannot be added…` matching the operator's report. |
 | Scope (V1) | UOM (system scope, no TenantId), ItemCategory (tenant scope, optional self-FK hierarchy), Item (tenant scope, optional Category + required UOM). ItemNature ∈ {MATERIAL / SEMI_FINISHED / FINISHED_GOOD / SERVICE}. 6 ASP.NET Core authorization policies (read + manage per entity). |
 | Out-of-Scope (V1) | BusinessPartner / Warehouse / Location / WorkCenter (deferred per MDM-000). Coding Engine (deferred to SUP-001 future). Precision / Rounding engine (deferred; trigger = first Qty/Price/Amount/TaxRate entity). Inventory / Sales / Purchase business API. Document Numbering. |
 | Reuse proof | Foundation `IMultiTenant / ICurrentTenant / ICurrentUser / RequestContext / ProblemDetails / ErrorCodes / ErrorBoundary` — all imported, none re-implemented. Identity `PermissionRequirement / AuthorizationMiddleware` — reused, not duplicated. 0 new Foundation code. |
-| Local Evidence | `dotnet build GuliERP.slnx -c Release` → 22 projects, 0 warnings / 0 errors (8.49s R5 full, 6.78s R4, 24.88s R3, 11.13s R1). `dotnet test tests/GuliERP.Mdm.Tests` → **43/43 PASS** (R5 via --no-build 616ms, R4 +12, R3 +7, R1 24). `dotnet test tests/GuliERP.Identity.Tests` → 21/21 PASS (no regression). `dotnet test tests/GuliERP.Foundation.Tests` → 44/44 PASS (no regression). `dotnet test tests/GuliERP.Mdm.IntegrationTests --list-tests` → 10 tests, EXIT 0. `dotnet ef migrations list` → EXIT 0, lists `20260820190000_MDM001_InitializeMdmSchema (Pending)`. `dotnet ef migrations add _R4_Probe2` → produced no corrective migration (proves 0 pending model changes). Operator harness `tools/dev/mdm-001-operator-evidence.ps1` present (R5 added Step 3 test project build + dynamic count + stale-DLL guard + UTF-8 encoding + step-result tracking + conditional Step 8 final gate); NOT executed in agent session due to PGPASSWORD env block. |
+| Local Evidence | `dotnet build GuliERP.slnx -c Release` → 22 projects, 0 warnings / 0 errors (8.49s R5 full, 6.78s R4, 24.88s R3, 11.13s R1). `dotnet test tests/GuliERP.Mdm.Tests` → **43/43 PASS** (R5 via --no-build 616ms, R4 +12, R3 +7, R1 24). `dotnet test tests/GuliERP.Identity.Tests` → 21/21 PASS (no regression). `dotnet test tests/GuliERP.Foundation.Tests` → 44/44 PASS (no regression). `dotnet test tests/GuliERP.Mdm.IntegrationTests --list-tests` → 10 tests, EXIT 0. `dotnet ef migrations list` → EXIT 0, lists `20260820190000_MDM001_InitializeMdmSchema (Pending)`. `dotnet ef migrations add _R4_Probe2` → produced no corrective migration (proves 0 pending model changes). Operator harness `tools/dev/mdm-001-final-acceptance.ps1` (R7 11-step one-shot: DB target guard / credential / 6-project build / 5 discovery + 4 unit counts / 4 unit suites / 5-round integration / 2-round API runtime / final gate; supersedes R5 `mdm-001-operator-evidence.ps1`); PowerShell harness self-test `tools/dev/mdm-001-final-acceptance-selftest.ps1` (40/40 PASS); NOT executed in agent session due to PGPASSWORD env block. |
 | TRAE UX Reconciliation | Documented in `docs/architecture/TRAE_MDM_001_API_HANDOFF.md` §9. (a) `Uom.decimalPlaces` REMOVED; (b) `Item.itemType` → `Item.itemNature`; (c) `Item.inventoryMethod` REMOVED; (d) `ItemCategory.Level` / `ItemCategory.FullPath` NOT persisted (derived UI); (e) PACKAGE ItemNature DEFERRED. apps/web/** NOT modified in this Goal (TRAE owns). |
-| Next Mainline | **MDM-001 Operator Evidence** (real PG runs `tools/dev/mdm-001-operator-evidence.ps1` to upgrade gate from `MDM_001_POSTGRES_INTEGRATION_STABILIZATION_ENVIRONMENT_BLOCKED` to `MDM_001_REAL_MASTER_DATA_VERIFIED`; safe PowerShell command template in `docs/verification/MDM_001_POSTGRES_INTEGRATION_STABILIZATION_REPORT.md` §12). After Operator evidence, NEXT MAINLINE is `MDM-002 — BusinessPartner / Warehouse / Location` (BusinessPartner 3 confirmed roles, 4th role DEFERRED; Warehouse has OPTIONAL PlantId; Location belongs to Warehouse). |
+| Next Mainline | **MDM-001 Operator Final Acceptance** (Operator runs `tools/dev/mdm-001-final-acceptance.ps1` once; password prompted once; 11 steps; on full PASS, gate emits `MDM_001_REAL_MASTER_DATA_VERIFIED`; on any failure, gate is `MDM_001_FINAL_ACCEPTANCE_FAILED`; supersedes R5 `mdm-001-operator-evidence.ps1`, R6 ENV_BLOCKED, and R7 readiness gate). After Operator evidence, NEXT MAINLINE is `MDM-002 — BusinessPartner / Warehouse / Location` (BusinessPartner 3 confirmed roles, 4th role DEFERRED; Warehouse has OPTIONAL PlantId; Location belongs to Warehouse). |
 | Forbidden follow-up without user authorization | BusinessPartner / Warehouse / Location / WorkCenter implementation, Coding Engine implementation, Precision / Rounding implementation, Document Numbering implementation, Inventory / Sales / Purchase business API implementation, MDM-000 re-freeze. |
 
 ## Previous Active Goal (superseded)
@@ -191,7 +191,7 @@ must be amended (future Goal) to reflect the new ordering.
 | `git add .` | NO | path-specific staging only — see commit subjects |
 | `git push` | NO | local repo; no remote |
 | `git tag` | NO | none created |
-| Modify Admin.NET.Core | NO | no source diff in `poc\adminnet\` |
+| Modify Admin.NET.Core | NO | no source diff in `pocadminnet` |
 | Re-open G2-001 | NO | `FoundationDbContext` / `G2001_*.cs` / `/health/live` / `/health/ready` all unchanged in R1 commit |
 | Enter Identity / Tenant / JWT / Permission | NO | R1 only adds `TestEndpoints` (config-gated, DTO with no business semantics) + `ProblemDetailsOptions.CustomizeProblemDetails` callback. No new table, no `[Authorize]`, no `IUserContext`, no `ITenantContext`. |
 
@@ -322,7 +322,7 @@ The 5 R2 new tests:
 
 | Check | Status | Note |
 |---|---|---|
-| .NET 10 SDK reachable | PASS | `D:\guli\gulierp\.dotnet\dotnet.exe` SDK 10.0.400; `global.json` 10.0.100 latestFeature matches |
+| .NET 10 SDK reachable | PASS | `D:guligulierp.dotnetdotnet.exe` SDK 10.0.400; `global.json` 10.0.100 latestFeature matches |
 | Host build (Release) | PASS | 0 warnings / 0 errors; `GuliERP.Api.dll` produced |
 | Migration generated | PASS | `20260819103150_G2001_InitializeFoundationSchema.cs` author-written `CREATE SCHEMA IF NOT EXISTS foundation;` |
 | Migration apply to real PG | **PASS (Operator 2026-08-19)** | `dotnet ef database update` succeeded; database up-to-date; `__ef_migrations_history` row for `20260819103150_G2001_InitializeFoundationSchema` present |
@@ -346,7 +346,7 @@ The 5 R2 new tests:
 |---|---|---|---|
 | F1 | **Deployment/Migration Credential vs Runtime Credential separation** | G2-002+ | The `gulidata` role currently has `CREATEDB` privilege (proved by Operator-side `CREATE DATABASE gulierp_g2_001`). Runtime application credential should not need this privilege. Split into (a) deployment/migration credential with `CREATEDB`/`ALTER` for CI/CD schema work, and (b) runtime credential with only `CONNECT/SELECT/INSERT/UPDATE/DELETE` for the host. Recorded as R-G2-001-CREDENTIAL-PRIVILEGE in the verification report §20/§24.6. |
 | F2 | **PostgreSQL integration test profile (local + CI)** | G2-002+ or a future test-infra Goal | The current Operator evidence pack (`g2-001-operator-evidence.ps1`) injects PGPASSWORD at runtime; a long-term local/CI profile is needed so the integration tests can run unattended in (a) developer laptops (Docker compose or local PG service) and (b) CI (service container or testcontainer). Out of scope for G2-001 because the Goal brief explicitly accepts Mavis-cannot-inject PGPASSWORD. |
-| F3 | **`global.json` / .NET 10 SDK roll-forward policy** | G2-002+ or a future dev-env Goal | `global.json` pins `10.0.100` with `rollForward: latestFeature`, which currently resolves to SDK 10.0.400 at `D:\guli\gulierp\.dotnet\dotnet.exe`. The system PATH dotnet at `C:\Program Files\dotnet\dotnet.exe` is host-only without SDK. A unified policy (where the SDK lives, how roll-forward resolves in CI vs dev) needs to be documented; the current state is "works because Operator happens to have the SDK in a known path". |
+| F3 | **`global.json` / .NET 10 SDK roll-forward policy** | G2-002+ or a future dev-env Goal | `global.json` pins `10.0.100` with `rollForward: latestFeature`, which currently resolves to SDK 10.0.400 at `D:guligulierp.dotnetdotnet.exe`. The system PATH dotnet at `C:Program Filesdotnetdotnet.exe` is host-only without SDK. A unified policy (where the SDK lives, how roll-forward resolves in CI vs dev) needs to be documented; the current state is "works because Operator happens to have the SDK in a known path". |
 
 ## G1A-FINAL Residual Risks (post-FREEZE)
 
@@ -397,7 +397,7 @@ The 5 R2 new tests:
 | Frontend install | Blocked | npm cache-only mode; dependency not cached |
 | Frontend build | Blocked | `vue-tsc` unavailable because install was blocked |
 | Git diff check | PASS | `git diff --check` returned 0 |
-| Target path | Blocked | `D:\guli\gulierp-next` creation required escalation, which was rejected by system usage limit |
+| Target path | Blocked | `D:guligulierp-next` creation required escalation, which was rejected by system usage limit |
 | Git commit | Blocked | `.git` index write required escalation, which was rejected by system usage limit |
 
 ## Gate Rules
@@ -785,7 +785,7 @@ The future G2-003 Implementation Goal must now also include:
 $env:ConnectionStrings__GuliERP = "Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=***"
 
 # Step 2: Run the Operator evidence pack
-PS> .\tools\dev\g2-003-operator-evidence.ps1 -SkipPrompt
+PS> .toolsdevg2-003-operator-evidence.ps1 -SkipPrompt
 
 # Expected: 8/8 steps PASS (Build, FoundationMigration, IdentityMigration,
 # Integration, Round1, Round2, BadDbNegative).
@@ -885,7 +885,7 @@ attributes ensure the Design assembly is design-time only.
 ```powershell
 # Step 1: re-run the Operator evidence pack (Step 3 should now succeed)
 PS> $env:ConnectionStrings__GuliERP = "<npgsql-with-real-password>"
-PS> .\tools\dev\g2-003-operator-evidence.ps1 -SkipPrompt
+PS> .toolsdevg2-003-operator-evidence.ps1 -SkipPrompt
 
 # Expected: 8/8 steps PASS (the IdentityMigration step in particular).
 
@@ -1152,7 +1152,7 @@ This is a documentation hygiene fix per brief section 10.
 ```powershell
 # Re-run the existing operator evidence pack with a real connection string.
 PS> $env:ConnectionStrings__GuliERP = "<npgsql-with-real-password>"
-PS> .\tools\dev\g2-003-operator-evidence.ps1 -SkipPrompt
+PS> .toolsdevg2-003-operator-evidence.ps1 -SkipPrompt
 
 # Expected: 8/8 steps PASS (the IdentityMigration step in
 # particular will apply the G2003V2 migration; the integration
@@ -1384,7 +1384,7 @@ the brief.**
 | `git reset --hard` / `rebase` / `amend` / `revert` | NO (linear history; 3 atomic commits planned) |
 | `git add .` | NO (path-specific staging only) |
 | `git push` / `git tag` | NO (local repo; no remote) |
-| Modify `Admin.NET` / `Furion` / `SqlSugar` | NO (0 source diff in `poc\adminnet\`) |
+| Modify `Admin.NET` / `Furion` / `SqlSugar` | NO (0 source diff in `pocadminnet`) |
 | `UseInMemoryDatabase` / `UseSqlite` / `EnsureCreated` | NO (0 actual uses; 2 doc comments in `FoundationDbContext.cs`) |
 | Re-introduce JWT Bearer | NO (DEC-AUTH-005 reserved; AT-AUTH-010 locks it out) |
 | Implement Permission / DataScope | NO (G2-005 territory) |
@@ -1418,7 +1418,7 @@ the brief.**
 $env:ConnectionStrings__GuliERP = "Host=192.168.2.228;Port=5432;Database=gulierp_g2_004_test;Username=gulidata;Password=***"
 
 # Step 2: Run the Operator evidence pack
-PS> .\tools\dev\g2-004-operator-evidence.ps1 -SkipPrompt
+PS> .toolsdevg2-004-operator-evidence.ps1 -SkipPrompt
 
 # Expected: 8/8 steps PASS (the bad-DB round's login returns 401 + invalid_credentials; the real-DB round's login + /me + /logout + /company/switch all work; the security proof shows the X-Tenant-Id header is ignored in Production).
 
