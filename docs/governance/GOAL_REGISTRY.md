@@ -1468,6 +1468,23 @@ Operator's responsibility.
 
 ---
 
+## DEV-STACK-001 — Local Stack One-Command Startup Repair
+
+| Field | Value |
+|---|---|
+| Status | CODE READY; real PostgreSQL operator runtime pending |
+| Gate | `GULIERP_DEV_STACK_CODE_READY_OPERATOR_RUNTIME_PENDING` |
+| Start HEAD | `85e361a` |
+| Code repair commit | `a68b007 fix(dev): repair local stack startup lifecycle` |
+| Report | `docs/verification/DEV_STACK_001_STARTUP_REPAIR_REPORT.md` |
+| User command | `cd D:\guli\projects\gulierp-next`; `.\tools\dev\start-stack.ps1` |
+
+DEV-STACK-001 repairs the local startup lifecycle only. It does not
+advance G2-005, does not modify business code, and does not change the
+existing G2-004 operator unlock requirement.
+
+---
+
 ## STOP
 
 G2-004 Mavis-side is closed. Gate is
