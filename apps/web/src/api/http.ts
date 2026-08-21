@@ -89,6 +89,8 @@ function isUnsafe(method: string): boolean {
 export interface RequestOptions extends RequestInit {
   /** If true, do NOT auto-emit authentication_required event / do NOT retry CSRF. For internal bootstrap. */
   _raw?: boolean;
+  /** URL query parameters. Appended to `url` before fetch(); values auto-encoded. */
+  params?: Record<string, string | number | boolean | undefined | null>;
 }
 
 /**
@@ -107,6 +109,18 @@ export async function request<T = unknown>(
 ): Promise<T> {
   const method = (options.method || 'GET').toUpperCase();
   const csrf = useCsrfStore();
+
+  // ---- Append `params` as URL query string (before any CSRF logic) ----
+  let finalUrl = url;
+  if (options.params) {
+    const qs = Object.entries(options.params)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v as any))}`)
+      .join('&');
+    if (qs.length > 0) {
+      finalUrl += (finalUrl.includes('?') ? '&' : '?') + qs;
+    }
+  }
 
   // Ensure CSRF token has been loaded at least once before any state-changing request.
   // For GET we don't strictly need it (§2.2), but there's no harm in a no-op.
@@ -132,7 +146,7 @@ export async function request<T = unknown>(
   let resp: Response;
   let network = false;
   try {
-    resp = await fetch(url, init);
+    resp = await fetch(finalUrl, init);
   } catch {
     network = true;
     // Network failure — synthesize a Problem
@@ -185,7 +199,7 @@ export async function request<T = unknown>(
     const retryInit: RequestInit = { ...init, headers: retryHeaders };
     let retryResp: Response;
     try {
-      retryResp = await fetch(url, retryInit);
+      retryResp = await fetch(finalUrl, retryInit);
     } catch {
       emitAuth('csrf_validation_failed');
       throw new ApiError(problem);
@@ -231,6 +245,33 @@ export function apiPost<T = unknown>(url: string, body?: unknown, init?: Request
   return request<T>(url, {
     ...init,
     method: 'POST',
+    headers,
+    body: (body !== undefined && body !== null) ? JSON.stringify(body) : init?.body,
+  });
+}
+export function apiPut<T = unknown>(url: string, body?: unknown, init?: RequestOptions): Promise<T> {
+  const headers = new Headers(init?.headers || {});
+  if (body !== undefined && body !== null && !headers.has('Content-Type')) {
+    headers.set('Content-Type', JSON_CT);
+  }
+  return request<T>(url, {
+    ...init,
+    method: 'PUT',
+    headers,
+    body: (body !== undefined && body !== null) ? JSON.stringify(body) : init?.body,
+  });
+}
+export function apiDelete<T = unknown>(url: string, init?: RequestOptions): Promise<T> {
+  return request<T>(url, { ...init, method: 'DELETE' });
+}
+export function apiPatch<T = unknown>(url: string, body?: unknown, init?: RequestOptions): Promise<T> {
+  const headers = new Headers(init?.headers || {});
+  if (body !== undefined && body !== null && !headers.has('Content-Type')) {
+    headers.set('Content-Type', JSON_CT);
+  }
+  return request<T>(url, {
+    ...init,
+    method: 'PATCH',
     headers,
     body: (body !== undefined && body !== null) ? JSON.stringify(body) : init?.body,
   });

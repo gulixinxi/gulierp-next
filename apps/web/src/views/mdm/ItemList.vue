@@ -20,7 +20,7 @@
       <template #filters>
         <el-select v-model="filterCategory" placeholder="分类" clearable filterable style="width: 150px" @change="applyFilters">
           <el-option
-            v-for="c in mockItemCategories"
+            v-for="c in itemCategories"
             :key="c.id"
             :label="c.fullPath"
             :value="c.id"
@@ -109,8 +109,12 @@
     <MdmPagination
       v-model:current-page="page.current"
       v-model:page-size="page.size"
-      :total="filteredData.length"
+      :total="total"
     />
+    <div v-if="error && !loading" class="mdm-error-banner">
+      <el-alert :title="error" type="error" show-icon :closable="false" />
+      <el-button type="primary" link style="margin-left:12px" @click="fetchItems">重新加载</el-button>
+    </div>
 
     <!-- Create/Edit Form Drawer (reused) -->
     <MdmFormDrawer
@@ -133,7 +137,7 @@
       <el-form-item label="物料分类" prop="categoryId">
         <el-select v-model="formData.categoryId" placeholder="选择分类" clearable filterable style="width: 100%">
           <el-option
-            v-for="c in mockItemCategories"
+            v-for="c in itemCategories"
             :key="c.id"
             :label="c.fullPath"
             :value="c.id"
@@ -143,7 +147,7 @@
       <el-form-item label="基本单位" prop="baseUomId">
         <el-select v-model="formData.baseUomId" placeholder="选择计量单位" clearable filterable style="width: 100%">
           <el-option
-            v-for="u in mockUoms"
+            v-for="u in activeUoms"
             :key="u.id"
             :label="`${u.name} (${u.code})`"
             :value="u.id"
@@ -236,7 +240,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { Download, Box, ShoppingCart, Goods, Collection } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormRules } from 'element-plus';
@@ -249,51 +253,111 @@ import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
 import MdmTableRowActions from '../../components/mdm/MdmTableRowActions.vue';
 
-import { mockItems, mockItemCategories, mockUoms, findUom } from '../../mock/mdm';
-import { STATUS_OPTIONS, ITEM_NATURE_OPTIONS } from '../../types/mdm';
-import type { Item, ItemForm, ItemNature, MasterDataStatus } from '../../types/mdm';
+import { ApiError } from '../../api/http';
+import * as itemApi from '../../api/mdm/item';
+import * as icApi from '../../api/mdm/item-category';
+import * as uomApi from '../../api/mdm/uom';
+import {
+  STATUS_OPTIONS, ITEM_NATURE_OPTIONS,
+  statusUiToInt,
+} from '../../types/mdm';
+import type {
+  Item, ItemForm, ItemNature, MasterDataStatus,
+  ItemCategoryListItem, Uom,
+} from '../../types/mdm';
 
-// ===== List state =====
+// ===== Real API state =====
+const items = ref<Item[]>([]);
+const total = ref(0);
+const loading = ref(false);
+const error = ref<string | null>(null);
+const itemCategories = ref<ItemCategoryListItem[]>([]);
+const activeUoms = ref<Uom[]>([]);
+const selectorsLoading = ref(false);
+
 const searchKeyword = ref('');
 const filterCategory = ref<number | ''>('');
 const filterType = ref<ItemNature | ''>('');
 const filterStatus = ref<MasterDataStatus | ''>('');
 const page = reactive({ current: 1, size: 20 });
 
-const filteredData = computed(() => {
-  let list = mockItems;
-  const kw = searchKeyword.value.trim().toLowerCase();
-  if (kw) {
-    list = list.filter(i =>
-      i.code.toLowerCase().includes(kw) ||
-      i.name.toLowerCase().includes(kw) ||
-      (i.specification || '').toLowerCase().includes(kw)
-    );
+/** Look up UOM by id — used in table column + detail drawer. */
+function findUom(id: number | null | undefined): Uom | undefined {
+  if (id == null) return undefined;
+  return activeUoms.value.find(u => u.id === id);
+}
+
+async function fetchItems() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const natureWire = filterType.value
+      ? (filterType.value === 'MATERIAL' ? 1
+        : filterType.value === 'SEMI_FINISHED' ? 2
+        : filterType.value === 'FINISHED_GOOD' ? 3 : 4) as 1 | 2 | 3 | 4
+      : undefined;
+    const result = await itemApi.listItems({
+      keyword: searchKeyword.value.trim() || undefined,
+      status: filterStatus.value ? statusUiToInt(filterStatus.value) : undefined,
+      categoryId: filterCategory.value || undefined,
+      itemNature: natureWire,
+      page: page.current,
+      pageSize: page.size,
+    });
+    // Denormalize categoryName / baseUomName display fields
+    items.value = itemApi.joinItemReferences(result.items, itemCategories.value, activeUoms.value);
+    total.value = result.totalCount;
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.code === 'authentication_required') throw e;
+      const parts = [e.title];
+      if (e.detail) parts.push(e.detail);
+      if (e.requestId) parts.push(`(RequestId: ${e.requestId})`);
+      error.value = parts.join(' — ');
+    } else {
+      error.value = '加载物料数据失败，请刷新重试';
+    }
+    items.value = [];
+    total.value = 0;
+  } finally {
+    loading.value = false;
   }
-  if (filterCategory.value) {
-    list = list.filter(i => i.categoryId === filterCategory.value);
+}
+
+async function fetchSelectors() {
+  selectorsLoading.value = true;
+  try {
+    const [cats, uoms] = await Promise.all([
+      icApi.listAllCategories(),
+      uomApi.listAllUomsActiveOnly(),
+    ]);
+    itemCategories.value = cats;
+    activeUoms.value = uoms;
+  } catch (e) {
+    if (e instanceof ApiError && e.code === 'authentication_required') throw e;
+  } finally {
+    selectorsLoading.value = false;
   }
-  if (filterType.value) {
-    list = list.filter(i => i.itemNature === filterType.value);
-  }
-  if (filterStatus.value) {
-    list = list.filter(i => i.status === filterStatus.value);
-  }
-  return list;
+}
+
+onMounted(async () => {
+  // Load selectors first, so the first items fetch can denormalize display names.
+  await fetchSelectors();
+  await fetchItems();
 });
 
-const pagedData = computed(() => {
-  const start = (page.current - 1) * page.size;
-  return filteredData.value.slice(start, start + page.size);
-});
+const pagedData = computed(() => items.value);
 
 function applyFilters() {
   page.current = 1;
+  fetchItems();
 }
 
 // ===== Form state =====
 const formDrawerVisible = ref(false);
 const editingId = ref<number | null>(null);
+const editingConcurrency = ref(0);
+const submitting = ref(false);
 const formData = reactive<ItemForm>({
   code: '', name: '', specification: '', categoryId: null,
   baseUomId: null, itemNature: 'MATERIAL', status: 'active',
@@ -317,24 +381,68 @@ function resetForm() {
 
 function openCreate() {
   editingId.value = null;
+  editingConcurrency.value = 0;
   resetForm();
   formDrawerVisible.value = true;
 }
 
-function openEdit(row: Item) {
+async function openEdit(row: Item) {
   editingId.value = row.id;
-  Object.assign(formData, {
-    code: row.code, name: row.name, specification: row.specification || '',
-    categoryId: row.categoryId, baseUomId: row.baseUomId,
-    itemNature: row.itemNature, status: row.status,
-    description: row.description || '',
-  });
+  editingConcurrency.value = row.concurrencyVersion ?? 0;
+  try {
+    const fresh = await itemApi.getItem(row.id);
+    Object.assign(formData, {
+      code: fresh.code, name: fresh.name, specification: fresh.specification || '',
+      categoryId: fresh.categoryId, baseUomId: fresh.baseUomId,
+      itemNature: fresh.itemNature, status: fresh.status,
+      description: fresh.description || '',
+    });
+    editingConcurrency.value = fresh.concurrencyVersion ?? 0;
+  } catch (e) {
+    Object.assign(formData, {
+      code: row.code, name: row.name, specification: row.specification || '',
+      categoryId: row.categoryId, baseUomId: row.baseUomId,
+      itemNature: row.itemNature, status: row.status,
+      description: row.description || '',
+    });
+  }
   formDrawerVisible.value = true;
 }
 
-function handleSubmit() {
-  ElMessage.success(editingId.value ? '保存成功（Mock）' : '创建成功（Mock）');
-  formDrawerVisible.value = false;
+function isConcurrencyConflict(err: unknown): boolean {
+  return err instanceof ApiError && (
+    err.code === 'mdm_validation_failed' && /concurrency|version|并发/i.test(err.detail || '')
+  );
+}
+
+async function handleSubmit() {
+  submitting.value = true;
+  try {
+    if (editingId.value == null) {
+      await itemApi.createItem(formData);
+      ElMessage.success('创建物料成功');
+    } else {
+      await itemApi.updateItem(editingId.value, formData, editingConcurrency.value);
+      ElMessage.success('保存修改成功');
+    }
+    formDrawerVisible.value = false;
+    await fetchItems();
+  } catch (e) {
+    if (isConcurrencyConflict(e)) {
+      ElMessage.warning('并发冲突：数据已被其他用户修改，请刷新后重试');
+    } else if (e instanceof ApiError) {
+      const parts = [e.title];
+      if (e.detail) parts.push(e.detail);
+      if (e.requestId) parts.push(`(${e.requestId})`);
+      ElMessage.error(parts.join(' — '));
+    } else if (e instanceof Error && e.message) {
+      ElMessage.error(e.message);
+    } else {
+      ElMessage.error('保存失败，请重试');
+    }
+  } finally {
+    submitting.value = false;
+  }
 }
 
 // ===== Detail state =====
@@ -342,8 +450,14 @@ const detailDrawerVisible = ref(false);
 const detailData = ref<Item | null>(null);
 const detailTab = ref('basic');
 
-function openDetail(row: Item) {
-  detailData.value = row;
+async function openDetail(row: Item) {
+  try {
+    const raw = await itemApi.getItem(row.id);
+    const [withRefs] = itemApi.joinItemReferences([raw], itemCategories.value, activeUoms.value);
+    detailData.value = withRefs;
+  } catch (e) {
+    detailData.value = row;
+  }
   detailTab.value = 'basic';
   detailDrawerVisible.value = true;
 }
@@ -355,22 +469,20 @@ function openEditFromDetail() {
   }
 }
 
-// ===== Helpers (reused from pattern) =====
+// ===== Helpers =====
 function formatDate(iso?: string): string {
   if (!iso) return '—';
   const d = new Date(iso);
   return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
-
 function getStatusLabel(status?: MasterDataStatus): string {
   return STATUS_OPTIONS.find(o => o.value === status)?.label || '—';
 }
-
 function natureLabel(nature?: ItemNature): string {
   return ITEM_NATURE_OPTIONS.find(o => o.value === nature)?.label || '—';
 }
 
-// ===== Status change (active/inactive, NO delete) =====
+// ===== Status change =====
 async function confirmDeactivate(row: Item) {
   try {
     await ElMessageBox.confirm(
@@ -379,20 +491,31 @@ async function confirmDeactivate(row: Item) {
       { confirmButtonText: '停用', cancelButtonText: '取消', type: 'warning' },
     );
   } catch { return; }
-  row.status = 'inactive';
-  ElMessage.success('已停用（Mock）');
+  try {
+    await itemApi.setItemStatus(row, 'inactive');
+    ElMessage.success('已停用');
+    await fetchItems();
+  } catch (e) {
+    if (isConcurrencyConflict(e)) ElMessage.warning('并发冲突：数据已被其他用户修改，请刷新后重试');
+    else if (e instanceof ApiError) ElMessage.error(`${e.title}${e.detail ? ' — ' + e.detail : ''}`);
+    else ElMessage.error('停用失败');
+  }
 }
 
 async function confirmActivate(row: Item) {
   try {
-    await ElMessageBox.confirm(
-      `确定启用"${row.name}"吗？`,
-      '启用确认',
-      { confirmButtonText: '启用', cancelButtonText: '取消', type: 'info' },
-    );
+    await ElMessageBox.confirm(`确定启用"${row.name}"吗？`, '启用确认',
+      { confirmButtonText: '启用', cancelButtonText: '取消', type: 'info' });
   } catch { return; }
-  row.status = 'active';
-  ElMessage.success('已启用（Mock）');
+  try {
+    await itemApi.setItemStatus(row, 'active');
+    ElMessage.success('已启用');
+    await fetchItems();
+  } catch (e) {
+    if (isConcurrencyConflict(e)) ElMessage.warning('并发冲突：数据已被其他用户修改，请刷新后重试');
+    else if (e instanceof ApiError) ElMessage.error(`${e.title}${e.detail ? ' — ' + e.detail : ''}`);
+    else ElMessage.error('启用失败');
+  }
 }
 
 function exportData() {
@@ -439,5 +562,12 @@ function exportData() {
 }
 .mdm-tab-placeholder p {
   font-size: 13px;
+}
+.mdm-error-banner {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-surface, #FFF);
+  border-top: 1px solid var(--border-subtle, #E2E8F0);
 }
 </style>

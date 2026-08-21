@@ -91,8 +91,12 @@
     <MdmPagination
       v-model:current-page="page.current"
       v-model:page-size="page.size"
-      :total="filteredData.length"
+      :total="total"
     />
+    <div v-if="error && !loading" class="mdm-error-banner">
+      <el-alert :title="error" type="error" show-icon :closable="false" />
+      <el-button type="primary" link style="margin-left:12px" @click="fetchCategories">重新加载</el-button>
+    </div>
 
     <!-- Create/Edit Form Drawer (reused) -->
     <MdmFormDrawer
@@ -155,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { Download, DArrowRight } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormRules } from 'element-plus';
@@ -168,48 +172,87 @@ import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
 import MdmTableRowActions from '../../components/mdm/MdmTableRowActions.vue';
 
-import { mockItemCategories } from '../../mock/mdm';
-import { STATUS_OPTIONS } from '../../types/mdm';
-import type { ItemCategoryListItem, ItemCategoryForm, MasterDataStatus } from '../../types/mdm';
+import { ApiError } from '../../api/http';
+import * as icApi from '../../api/mdm/item-category';
+import { STATUS_OPTIONS, statusUiToInt } from '../../types/mdm';
+import type { ItemCategoryListItem, ItemCategoryForm, MasterDataStatus, ItemCategory } from '../../types/mdm';
 
-// ===== List state =====
+// ===== Real API state =====
+const categories = ref<ItemCategoryListItem[]>([]);
+const total = ref(0);
+const loading = ref(false);
+const error = ref<string | null>(null);
+
 const searchKeyword = ref('');
 const filterStatus = ref<MasterDataStatus | ''>('');
 const page = reactive({ current: 1, size: 20 });
 
-const filteredData = computed(() => {
-  let list = mockItemCategories;
-  const kw = searchKeyword.value.trim().toLowerCase();
-  if (kw) {
-    list = list.filter(c =>
-      c.code.toLowerCase().includes(kw) ||
-      c.name.toLowerCase().includes(kw)
-    );
+async function fetchCategories() {
+  loading.value = true;
+  error.value = null;
+  try {
+    // Use paged list endpoint; hierarchy derivation + sorting done inside API client.
+    const result = await icApi.listItemCategories({
+      keyword: searchKeyword.value.trim() || undefined,
+      status: filterStatus.value ? statusUiToInt(filterStatus.value) : undefined,
+      page: page.current,
+      pageSize: page.size,
+    });
+    categories.value = result.items;
+    total.value = result.totalCount;
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.code === 'authentication_required') throw e;
+      const parts = [e.title];
+      if (e.detail) parts.push(e.detail);
+      if (e.requestId) parts.push(`(RequestId: ${e.requestId})`);
+      error.value = parts.join(' — ');
+    } else {
+      error.value = '加载物料分类失败，请刷新重试';
+    }
+    categories.value = [];
+    total.value = 0;
+  } finally {
+    loading.value = false;
   }
-  if (filterStatus.value) {
-    list = list.filter(c => c.status === filterStatus.value);
+}
+// Also fetch the FULL category tree (for parent-category options in the form).
+const allCategories = ref<ItemCategoryListItem[]>([]);
+const parentOptionsLoading = ref(false);
+async function fetchAllForSelectors() {
+  parentOptionsLoading.value = true;
+  try {
+    allCategories.value = await icApi.listAllCategories();
+  } catch (e) {
+    if (e instanceof ApiError && e.code === 'authentication_required') throw e;
+    allCategories.value = [];
+  } finally {
+    parentOptionsLoading.value = false;
   }
-  // Sort by fullPath to maintain hierarchy order
-  return list.sort((a, b) => a.fullPath.localeCompare(b.fullPath));
+}
+onMounted(() => {
+  fetchCategories();
+  fetchAllForSelectors();
 });
 
-const pagedData = computed(() => {
-  const start = (page.current - 1) * page.size;
-  return filteredData.value.slice(start, start + page.size);
-});
+const pagedData = computed(() => categories.value);
 
-// Parent category options for form select (exclude self when editing)
+// Parent category options (exclude self when editing)
 const parentCategoryOptions = computed(() => {
-  return mockItemCategories.filter(c => c.id !== editingId.value);
+  if (editingId.value == null) return allCategories.value;
+  return allCategories.value.filter(c => c.id !== editingId.value);
 });
 
 function applyFilters() {
   page.current = 1;
+  fetchCategories();
 }
 
 // ===== Form state =====
 const formDrawerVisible = ref(false);
 const editingId = ref<number | null>(null);
+const editingConcurrency = ref(0);
+const submitting = ref(false);
 const formData = reactive<ItemCategoryForm>({
   code: '', name: '', parentId: null, status: 'active', description: '',
 });
@@ -225,30 +268,87 @@ function resetForm() {
 
 function openCreate() {
   editingId.value = null;
+  editingConcurrency.value = 0;
   resetForm();
   formDrawerVisible.value = true;
 }
 
-function openEdit(row: ItemCategoryListItem) {
+async function openEdit(row: ItemCategory) {
   editingId.value = row.id;
-  Object.assign(formData, {
-    code: row.code, name: row.name,
-    parentId: row.parentId, status: row.status, description: row.description || '',
-  });
+  editingConcurrency.value = row.concurrencyVersion ?? 0;
+  try {
+    const fresh = await icApi.getItemCategory(row.id);
+    Object.assign(formData, {
+      code: fresh.code, name: fresh.name,
+      parentId: fresh.parentId, status: fresh.status, description: fresh.description || '',
+    });
+    editingConcurrency.value = fresh.concurrencyVersion ?? 0;
+  } catch (e) {
+    Object.assign(formData, {
+      code: row.code, name: row.name,
+      parentId: row.parentId, status: row.status, description: row.description || '',
+    });
+  }
   formDrawerVisible.value = true;
 }
 
-function handleSubmit() {
-  ElMessage.success(editingId.value ? '保存成功（Mock）' : '创建成功（Mock）');
-  formDrawerVisible.value = false;
+function isCycleError(err: unknown): boolean {
+  return err instanceof ApiError && err.code === 'mdm_item_category_cycle';
+}
+function isConcurrencyConflict(err: unknown): boolean {
+  return err instanceof ApiError && (
+    err.code === 'mdm_validation_failed' && /concurrency|version|并发/i.test(err.detail || '')
+  );
+}
+
+async function handleSubmit() {
+  submitting.value = true;
+  try {
+    if (editingId.value == null) {
+      await icApi.createItemCategory(formData);
+      ElMessage.success('创建物料分类成功');
+    } else {
+      await icApi.updateItemCategory(editingId.value, formData, editingConcurrency.value);
+      ElMessage.success('保存修改成功');
+    }
+    formDrawerVisible.value = false;
+    await Promise.all([fetchCategories(), fetchAllForSelectors()]);
+  } catch (e) {
+    if (isCycleError(e)) {
+      ElMessage.error('父级分类设置无效：会造成循环引用，请重新选择上级分类');
+    } else if (isConcurrencyConflict(e)) {
+      ElMessage.warning('并发冲突：数据已被其他用户修改，请刷新后重试');
+    } else if (e instanceof ApiError) {
+      const parts = [e.title];
+      if (e.detail) parts.push(e.detail);
+      if (e.requestId) parts.push(`(${e.requestId})`);
+      ElMessage.error(parts.join(' — '));
+    } else {
+      ElMessage.error('保存失败，请重试');
+    }
+  } finally {
+    submitting.value = false;
+  }
 }
 
 // ===== Detail state =====
 const detailDrawerVisible = ref(false);
 const detailData = ref<ItemCategoryListItem | null>(null);
 
-function openDetail(row: ItemCategoryListItem) {
-  detailData.value = row;
+async function openDetail(row: ItemCategoryListItem) {
+  try {
+    const raw = await icApi.getItemCategory(row.id);
+    // Merge full hierarchy onto it (re-derive with latest allCategories snapshot so fullPath is fresh)
+    const enriched = (await icApi.listAllCategories()).find(c => c.id === row.id);
+    detailData.value = enriched ?? {
+      ...raw,
+      level: row.level,
+      fullPath: row.fullPath,
+      parentName: row.parentName,
+    };
+  } catch (e) {
+    detailData.value = row;
+  }
   detailDrawerVisible.value = true;
 }
 
@@ -259,18 +359,17 @@ function openEditFromDetail() {
   }
 }
 
-// ===== Helpers (reused from UOM pattern) =====
+// ===== Helpers =====
 function formatDate(iso?: string): string {
   if (!iso) return '—';
   const d = new Date(iso);
   return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
-
 function getStatusLabel(status?: MasterDataStatus): string {
   return STATUS_OPTIONS.find(o => o.value === status)?.label || '—';
 }
 
-// ===== Status change (active/inactive, NO delete) =====
+// ===== Status change =====
 async function confirmDeactivate(row: ItemCategoryListItem) {
   try {
     await ElMessageBox.confirm(
@@ -279,20 +378,31 @@ async function confirmDeactivate(row: ItemCategoryListItem) {
       { confirmButtonText: '停用', cancelButtonText: '取消', type: 'warning' },
     );
   } catch { return; }
-  row.status = 'inactive';
-  ElMessage.success('已停用（Mock）');
+  try {
+    await icApi.setItemCategoryStatus(row, 'inactive');
+    ElMessage.success('已停用');
+    await Promise.all([fetchCategories(), fetchAllForSelectors()]);
+  } catch (e) {
+    if (isConcurrencyConflict(e)) ElMessage.warning('并发冲突：数据已被其他用户修改，请刷新后重试');
+    else if (e instanceof ApiError) ElMessage.error(`${e.title}${e.detail ? ' — ' + e.detail : ''}`);
+    else ElMessage.error('停用失败');
+  }
 }
 
 async function confirmActivate(row: ItemCategoryListItem) {
   try {
-    await ElMessageBox.confirm(
-      `确定启用"${row.name}"吗？`,
-      '启用确认',
-      { confirmButtonText: '启用', cancelButtonText: '取消', type: 'info' },
-    );
+    await ElMessageBox.confirm(`确定启用"${row.name}"吗？`, '启用确认',
+      { confirmButtonText: '启用', cancelButtonText: '取消', type: 'info' });
   } catch { return; }
-  row.status = 'active';
-  ElMessage.success('已启用（Mock）');
+  try {
+    await icApi.setItemCategoryStatus(row, 'active');
+    ElMessage.success('已启用');
+    await Promise.all([fetchCategories(), fetchAllForSelectors()]);
+  } catch (e) {
+    if (isConcurrencyConflict(e)) ElMessage.warning('并发冲突：数据已被其他用户修改，请刷新后重试');
+    else if (e instanceof ApiError) ElMessage.error(`${e.title}${e.detail ? ' — ' + e.detail : ''}`);
+    else ElMessage.error('启用失败');
+  }
 }
 
 function exportData() {
@@ -333,5 +443,12 @@ function exportData() {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary, #0F172A);
+}
+.mdm-error-banner {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-surface, #FFF);
+  border-top: 1px solid var(--border-subtle, #E2E8F0);
 }
 </style>

@@ -100,8 +100,13 @@
     <MdmPagination
       v-model:current-page="page.current"
       v-model:page-size="page.size"
-      :total="filteredData.length"
+      :total="total"
     />
+    <!-- API failure banner (do NOT confuse with empty data) -->
+    <div v-if="error && !loading" class="mdm-error-banner">
+      <el-alert :title="error" type="error" show-icon :closable="false" />
+      <el-button type="primary" link style="margin-left:12px" @click="fetchUoms">重新加载</el-button>
+    </div>
 
     <!-- Create/Edit Form Drawer (reused component) -->
     <MdmFormDrawer
@@ -168,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { Download } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormRules } from 'element-plus';
@@ -181,47 +186,68 @@ import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
 import MdmTableRowActions from '../../components/mdm/MdmTableRowActions.vue';
 
-import { mockUoms } from '../../mock/mdm';
-import { STATUS_OPTIONS, DIMENSION_OPTIONS, KIND_OPTIONS } from '../../types/mdm';
+import { ApiError } from '../../api/http';
+import * as uomApi from '../../api/mdm/uom';
+import {
+  STATUS_OPTIONS, DIMENSION_OPTIONS, KIND_OPTIONS,
+  dimUiToInt, statusUiToInt,
+} from '../../types/mdm';
 import type { Uom, UomForm, UomDimension, UomKind, MasterDataStatus } from '../../types/mdm';
 
-// ===== List state =====
+// ===== Real API list state =====
+const uoms = ref<Uom[]>([]);
+const total = ref(0);
+const loading = ref(false);
+const error = ref<string | null>(null);
+
 const searchKeyword = ref('');
 const filterStatus = ref<MasterDataStatus | ''>('');
 const filterDimension = ref<UomDimension | ''>('');
 const page = reactive({ current: 1, size: 20 });
 
-const filteredData = computed(() => {
-  let list = mockUoms;
-  const kw = searchKeyword.value.trim().toLowerCase();
-  if (kw) {
-    list = list.filter(u =>
-      u.code.toLowerCase().includes(kw) ||
-      u.name.toLowerCase().includes(kw) ||
-      (u.symbol || '').toLowerCase().includes(kw)
-    );
+async function fetchUoms() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const result = await uomApi.listUoms({
+      keyword: searchKeyword.value.trim() || undefined,
+      status: filterStatus.value ? statusUiToInt(filterStatus.value) : undefined,
+      dimension: filterDimension.value ? dimUiToInt(filterDimension.value) : undefined,
+      page: page.current,
+      pageSize: page.size,
+    });
+    uoms.value = result.items;
+    total.value = result.totalCount;
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.code === 'authentication_required') throw e; // let global guard redirect
+      const parts = [e.title];
+      if (e.detail) parts.push(e.detail);
+      if (e.requestId) parts.push(`(RequestId: ${e.requestId})`);
+      error.value = parts.join(' — ');
+    } else {
+      error.value = '加载计量单位失败，请刷新重试';
+    }
+    uoms.value = [];
+    total.value = 0;
+  } finally {
+    loading.value = false;
   }
-  if (filterStatus.value) {
-    list = list.filter(u => u.status === filterStatus.value);
-  }
-  if (filterDimension.value) {
-    list = list.filter(u => u.dimension === filterDimension.value);
-  }
-  return list;
-});
+}
+onMounted(fetchUoms);
 
-const pagedData = computed(() => {
-  const start = (page.current - 1) * page.size;
-  return filteredData.value.slice(start, start + page.size);
-});
+const pagedData = computed(() => uoms.value);
 
 function applyFilters() {
   page.current = 1;
+  fetchUoms();
 }
 
 // ===== Form state =====
 const formDrawerVisible = ref(false);
 const editingId = ref<number | null>(null);
+const editingConcurrency = ref(0);
+const submitting = ref(false);
 const formData = reactive<UomForm>({
   code: '', name: '', symbol: null, dimension: 'COUNT', kind: 'DISCRETE', status: 'active', description: '',
 });
@@ -239,32 +265,82 @@ function resetForm() {
 
 function openCreate() {
   editingId.value = null;
+  editingConcurrency.value = 0;
   resetForm();
   formDrawerVisible.value = true;
 }
 
-function openEdit(row: Uom) {
+async function openEdit(row: Uom) {
   editingId.value = row.id;
-  Object.assign(formData, {
-    code: row.code, name: row.name, symbol: row.symbol,
-    dimension: row.dimension, kind: row.kind,
-    status: row.status, description: row.description || '',
-  });
+  editingConcurrency.value = row.concurrencyVersion ?? 0;
+  // Re-read via API for the authoritative DTO (fresh concurrencyVersion + fields).
+  try {
+    const fresh = await uomApi.getUom(row.id);
+    Object.assign(formData, {
+      code: fresh.code, name: fresh.name, symbol: fresh.symbol,
+      dimension: fresh.dimension, kind: fresh.kind,
+      status: fresh.status, description: fresh.description || '',
+    });
+    editingConcurrency.value = fresh.concurrencyVersion ?? 0;
+  } catch (e) {
+    // Fall back to row values so the user can still attempt work;
+    // concurrency mismatch will be caught at save time.
+    Object.assign(formData, {
+      code: row.code, name: row.name, symbol: row.symbol,
+      dimension: row.dimension, kind: row.kind,
+      status: row.status, description: row.description || '',
+    });
+  }
   formDrawerVisible.value = true;
 }
 
-function handleSubmit() {
-  // MOCK: no real API call. Just show success message.
-  ElMessage.success(editingId.value ? '保存成功（Mock）' : '创建成功（Mock）');
-  formDrawerVisible.value = false;
+function isConcurrencyConflict(err: unknown): boolean {
+  return err instanceof ApiError && (
+    err.code === 'mdm_validation_failed' && /concurrency|version|并发/i.test(err.detail || '')
+  );
+}
+
+async function handleSubmit() {
+  submitting.value = true;
+  try {
+    if (editingId.value == null) {
+      await uomApi.createUom(formData);
+      ElMessage.success('创建计量单位成功');
+    } else {
+      await uomApi.updateUom(editingId.value, formData, editingConcurrency.value);
+      ElMessage.success('保存修改成功');
+    }
+    formDrawerVisible.value = false;
+    await fetchUoms();
+  } catch (e) {
+    if (isConcurrencyConflict(e)) {
+      ElMessage.warning('并发冲突：数据已被其他用户修改，请刷新后重试');
+    } else if (e instanceof ApiError) {
+      const parts = [e.title];
+      if (e.detail) parts.push(e.detail);
+      if (e.requestId) parts.push(`(${e.requestId})`);
+      ElMessage.error(parts.join(' — '));
+    } else {
+      ElMessage.error('保存失败，请重试');
+    }
+  } finally {
+    submitting.value = false;
+  }
 }
 
 // ===== Detail state =====
 const detailDrawerVisible = ref(false);
 const detailData = ref<Uom | null>(null);
 
-function openDetail(row: Uom) {
-  detailData.value = row;
+async function openDetail(row: Uom) {
+  try {
+    detailData.value = await uomApi.getUom(row.id);
+  } catch (e) {
+    detailData.value = row;
+    if (e instanceof ApiError && e.code !== 'authentication_required') {
+      ElMessage.warning('读取最新详情失败，显示列表快照');
+    }
+  }
   detailDrawerVisible.value = true;
 }
 
@@ -281,15 +357,12 @@ function formatDate(iso?: string): string {
   const d = new Date(iso);
   return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
-
 function getStatusLabel(status?: MasterDataStatus): string {
   return STATUS_OPTIONS.find(o => o.value === status)?.label || '—';
 }
-
 function dimensionLabel(dim?: UomDimension): string {
   return DIMENSION_OPTIONS.find(o => o.value === dim)?.label || '—';
 }
-
 function kindLabel(k?: UomKind): string {
   return KIND_OPTIONS.find(o => o.value === k)?.label || '—';
 }
@@ -303,21 +376,39 @@ async function confirmDeactivate(row: Uom) {
       { confirmButtonText: '停用', cancelButtonText: '取消', type: 'warning' },
     );
   } catch { return; }
-  // MOCK: no real API. Update local status.
-  row.status = 'inactive';
-  ElMessage.success('已停用（Mock）');
+  try {
+    await uomApi.setUomStatus(row, 'inactive');
+    ElMessage.success('已停用');
+    await fetchUoms();
+  } catch (e) {
+    if (isConcurrencyConflict(e)) {
+      ElMessage.warning('并发冲突：数据已被其他用户修改，请刷新后重试');
+    } else if (e instanceof ApiError) {
+      ElMessage.error(`${e.title}${e.detail ? ' — ' + e.detail : ''}`);
+    } else {
+      ElMessage.error('停用失败');
+    }
+  }
 }
 
 async function confirmActivate(row: Uom) {
   try {
-    await ElMessageBox.confirm(
-      `确定启用"${row.name}"吗？`,
-      '启用确认',
-      { confirmButtonText: '启用', cancelButtonText: '取消', type: 'info' },
-    );
+    await ElMessageBox.confirm(`确定启用"${row.name}"吗？`, '启用确认',
+      { confirmButtonText: '启用', cancelButtonText: '取消', type: 'info' });
   } catch { return; }
-  row.status = 'active';
-  ElMessage.success('已启用（Mock）');
+  try {
+    await uomApi.setUomStatus(row, 'active');
+    ElMessage.success('已启用');
+    await fetchUoms();
+  } catch (e) {
+    if (isConcurrencyConflict(e)) {
+      ElMessage.warning('并发冲突：数据已被其他用户修改，请刷新后重试');
+    } else if (e instanceof ApiError) {
+      ElMessage.error(`${e.title}${e.detail ? ' — ' + e.detail : ''}`);
+    } else {
+      ElMessage.error('启用失败');
+    }
+  }
 }
 
 function exportData() {
@@ -350,5 +441,12 @@ function exportData() {
 .mdm-detail-symbol {
   color: var(--text-muted, #64748B);
   font-size: 13px;
+}
+.mdm-error-banner {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-surface, #FFF);
+  border-top: 1px solid var(--border-subtle, #E2E8F0);
 }
 </style>
