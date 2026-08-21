@@ -23,7 +23,7 @@
 | Project root | `D:\guli\projects\gulierp-next` |
 | Branch | `master` |
 | Start HEAD | `15d46c4 docs(verification): record mdm-001 final acceptance readiness` (R7) |
-| End HEAD | `15d46c4` → end commit (本轮提交后回填) |
+| End HEAD | `ba24180 docs(verification): backfill mdm r7 operator transcript evidence` (R9 收尾,R8 报告 R9 阶段修正) |
 | Window | 2026-08-21 16:00 +0800 (本轮会话) |
 | Gate | `MDM_001_FINAL_ACCEPTANCE_READINESS_VERIFIED` (R7 保持) → **本轮升级为** `MDM_001_API_RUNTIME_RESUME_HARNESS_VERIFIED` |
 | Touched files | 3 .ps1 (Harness, main script, selftest) + 1 verification report + GOAL_REGISTRY |

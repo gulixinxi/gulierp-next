@@ -136,7 +136,7 @@ Root cause: `function Stop-ApiHost { ... }` was declared **after** the final `tr
 |---|---|---|---|
 | `tests/_evidence_trx/api_host_round1_20260821155926.log` | `C855F079C3AB366A8631BE85B8DC27A63FE607993BBBBF51F6C44AEF054FFDDA` | `MACHINE_LOG_VERIFIED` | API Round 1 host log, 6,788 bytes. Contains `/health/live 200`, `Root 200`, `/health/ready 200` lines. |
 | `tests/_evidence_trx/api_host_round1_20260821155926.log.err` | `E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855` | `MACHINE_LOG_VERIFIED` | Empty file (standard SHA256 of zero bytes). |
-| `docs/verification/MDM_001_R7_OPERATOR_TRANSCRIPT_EVIDENCE.md` | (computed by the R9 self-test at run time) | `MACHINE_LOG_VERIFIED` (this file) | The canonical Transcript Backfill file. |
+| `docs/verification/MDM_001_R7_OPERATOR_TRANSCRIPT_EVIDENCE.md` | (computed by the R9 self-test at run time) | `MACHINE_LOG_VERIFIED` (this file) | The canonical Transcript Backfill file. SHA256 in R9 selftest output, registered in `MDM_001_R7_TRANSCRIPT_BACKFILL_RESUME_REPORT.md` §7. |
 
 ## E. TRX status — explicit NOT_AVAILABLE
 
