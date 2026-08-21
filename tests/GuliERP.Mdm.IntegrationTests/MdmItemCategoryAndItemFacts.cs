@@ -15,6 +15,7 @@ namespace GuliERP.Mdm.IntegrationTests;
 /// PostgreSQL tests. Each test creates per-run-unique data and
 /// cleans up via a fresh DbContext.
 /// </summary>
+[Collection(MdmPostgresIntegrationCollection.Name)]
 public sealed class MdmItemCategoryAndItemFacts : IClassFixture<WebApplicationFactory<Program>>
 {
     private const string BadConnectionString =
@@ -49,11 +50,21 @@ public sealed class MdmItemCategoryAndItemFacts : IClassFixture<WebApplicationFa
     [Fact]
     public async Task ItemCategory_Across_Tenant_Row_Is_NotVisible()
     {
-        // Lock the cross-tenant safety: a row with TenantId=1 must
-        // not be visible when the current tenant is 2.
-        // We bypass the Application service (which enforces the
-        // scope) and query the raw DbContext to verify the
-        // underlying scope guard rejects the row.
+        // Lock the cross-tenant safety: a row written under tenantA
+        // must not be visible to a read under tenantB.
+        //
+        // mdm-001R6 fix: the previous version of this test bypassed
+        // the Application service (used raw `db.ItemCategories.`
+        // queries) and expected an EF Core `HasQueryFilter` to
+        // reject the row. That assumption is wrong for V1 — the
+        // MDM-001 production code intentionally uses a
+        // `HasQueryFilter(e => true)` placeholder, and the
+        // tenant-scope enforcement lives in `MdmService`
+        // (every read path applies
+        // `Where(e => e.TenantId == currentTenant.Id)`). The
+        // correct V1 contract to test is: a read via
+        // `MdmService.GetItemCategoryByIdAsync` under tenantB
+        // must return null for an ItemCategory owned by tenantA.
         using var factory = BuildHost();
         using var scope = factory.Services.CreateScope();
         var sp = scope.ServiceProvider;
@@ -66,47 +77,48 @@ public sealed class MdmItemCategoryAndItemFacts : IClassFixture<WebApplicationFa
         var tenantB = 9_000_000L + Math.Abs(UniqueSuffix().GetHashCode() % 100_000);
         var code = $"XT-{UniqueSuffix()}";
 
-        // Insert a Category under tenantA.
-        var cat = new GuliERP.Mdm.Domain.Entities.ItemCategory
+        // Create a Category under tenantA via the Application
+        // service. MdmService canonicalizes Code + applies the
+        // tenantId on insert.
+        var aScope = factory.Services.CreateScope();
+        var aSp = aScope.ServiceProvider;
+        var aSvc = aSp.GetRequiredService<GuliERP.Mdm.Application.IMdmService>();
+        var aCurrentTenant = aSp.GetRequiredService<GuliERP.Foundation.Kernel.ICurrentTenant>();
+        GuliERP.Mdm.Application.ItemCategoryDto created;
+        using (aCurrentTenant.Change(tenantA))
         {
-            TenantId = tenantA,
-            ParentId = null,
-            Code = code,
-            Name = "Cross-Tenant Test Category",
-            Status = MasterDataStatus.Active,
-            CreatedAt = DateTimeOffset.UtcNow,
-            ModifiedAt = DateTimeOffset.UtcNow,
-            ConcurrencyVersion = 1,
-        };
-        db.ItemCategories.Add(cat);
-        await db.SaveChangesAsync();
-        var catId = cat.Id;
+            created = await aSvc.CreateItemCategoryAsync(
+                new GuliERP.Mdm.Application.CreateItemCategoryRequest(code, "Cross-Tenant Test Category", null, null));
+        }
+        var catId = created.Id;
 
-        // A fresh DbContext under tenantB scope must NOT see the row.
+        // Under tenantA, MdmService.GetItemCategoryByIdAsync returns the row.
+        long fromAId;
+        using (aCurrentTenant.Change(tenantA))
+        {
+            var fromA = await aSvc.GetItemCategoryByIdAsync(catId);
+            Assert.NotNull(fromA);
+            fromAId = fromA!.Id;
+        }
+
+        // Under tenantB, MdmService.GetItemCategoryByIdAsync returns null
+        // (the service applies Where(TenantId == tenantB), which excludes
+        //  the tenantA row).
         using var bScope = factory.Services.CreateScope();
         var bSp = bScope.ServiceProvider;
-        var bDb = bSp.GetRequiredService<MdmDbContext>();
+        var bSvc = bSp.GetRequiredService<GuliERP.Mdm.Application.IMdmService>();
         var bCurrentTenant = bSp.GetRequiredService<GuliERP.Foundation.Kernel.ICurrentTenant>();
         using (bCurrentTenant.Change(tenantB))
         {
-            var fromB = await bDb.ItemCategories.AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == catId);
-            Assert.Null(fromB);   // row exists, but B cannot see it
+            var fromB = await bSvc.GetItemCategoryByIdAsync(catId);
+            Assert.Null(fromB);
         }
 
-        // Under tenantA scope, the row IS visible.
-        using var aScope = factory.Services.CreateScope();
-        var aSp = aScope.ServiceProvider;
-        var aDb = aSp.GetRequiredService<MdmDbContext>();
-        var aCurrentTenant = aSp.GetRequiredService<GuliERP.Foundation.Kernel.ICurrentTenant>();
-        using (aCurrentTenant.Change(tenantA))
-        {
-            var fromA = await aDb.ItemCategories.AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == catId);
-            Assert.NotNull(fromA);
-        }
-
-        // Cleanup.
+        // Cleanup. We use a raw SQL DELETE because the V1
+        // IMdmService does not yet expose DeleteItemCategory (the
+        // CRUD is Create + Update + Read; Delete is a future
+        // Goal). The cleanup is best-effort and tolerates the
+        // row not existing.
         try
         {
             using var cleanupScope = factory.Services.CreateScope();

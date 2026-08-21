@@ -20,6 +20,7 @@ namespace GuliERP.Mdm.IntegrationTests;
 /// (per G2-001R1 / G2-003 discipline).
 /// </para>
 /// </summary>
+[Collection(MdmPostgresIntegrationCollection.Name)]
 public sealed class MdmMigrationFacts : IClassFixture<WebApplicationFactory<Program>>
 {
     private const string BadConnectionString =

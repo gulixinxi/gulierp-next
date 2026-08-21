@@ -16,6 +16,7 @@ namespace GuliERP.Mdm.IntegrationTests;
 /// tests. Each test creates its own per-run-unique data so tests
 /// are order-independent and idempotent across runs.
 /// </summary>
+[Collection(MdmPostgresIntegrationCollection.Name)]
 public sealed class MdmUomFacts : IClassFixture<WebApplicationFactory<Program>>
 {
     private const string BadConnectionString =
@@ -52,7 +53,14 @@ public sealed class MdmUomFacts : IClassFixture<WebApplicationFactory<Program>>
     public async Task UomSeed_Loads_13Rows_And_IsIdempotent()
     {
         // Per MDM-000 §15: 13 DEV UOM rows are SAFE_TO_SEED_SYSTEM
-        // and auto-load. The seed must be idempotent.
+        // and auto-load. The seed must be idempotent on the
+        // BENG sentinel. mdm-001R6 fix: this test now handles
+        // BOTH the "fresh DB (no UOMs yet)" and "already-seeded
+        // DB" cases. The previous version assumed
+        // `Assert.Equal(before, after1)` which fails on a fresh
+        // DB because the seed inserts 13 rows from zero. The new
+        // pattern is: ensure >= 13 rows after the first call,
+        // then verify re-seed is idempotent.
         using var factory = BuildHost();
         using var scope = factory.Services.CreateScope();
         var sp = scope.ServiceProvider;
@@ -61,15 +69,16 @@ public sealed class MdmUomFacts : IClassFixture<WebApplicationFactory<Program>>
         var db = sp.GetRequiredService<MdmDbContext>();
         await db.Database.MigrateAsync();
 
-        // First call seeds.
-        var before = await db.Uoms.AsNoTracking().CountAsync();
+        // First call: ensure 13 SAFE rows are present. The seed
+        // is idempotent on the BENG sentinel — if present, it
+        // skips; if missing, it inserts 13.
         await Mdm.Infrastructure.Seed.MdmSeed.SeedAsync(
             db, sp.GetRequiredService<ILoggerFactory>().CreateLogger("MDM.Seed.Test"));
         var after1 = await db.Uoms.AsNoTracking().CountAsync();
-        Assert.Equal(before, after1);   // sentinel already present → no-op
-        Assert.True(after1 >= 13, $"Expected at least 13 UOM rows (DEV SAFE_TO_SEED_SYSTEM), got {after1}.");
+        Assert.True(after1 >= 13,
+            $"Expected at least 13 UOM rows (DEV SAFE_TO_SEED_SYSTEM) after seed, got {after1}.");
 
-        // The 13 codes are the curated DEV SAFE rows.
+        // The 13 curated codes are present.
         var codes = await db.Uoms.AsNoTracking().Select(u => u.Code).ToListAsync();
         Assert.Contains("BENG", codes);
         Assert.Contains("TAO", codes);
