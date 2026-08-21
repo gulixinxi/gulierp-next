@@ -1,78 +1,6 @@
 <#
 .SYNOPSIS
-    GuliERP Next stack launcher — one script, two windows.
-
-    Opens two separate PowerShell windows:
-      1. Backend (GuliERP.Api) on http://127.0.0.1:5000
-      2. Frontend (Vue + Vite) on http://127.0.0.1:5173 (default)
-
-    Each window can be closed independently (Ctrl+C or X).
-    This script does NOT block; it just spawns + verifies + exits.
-
-.DESCRIPTION
-    Password is read ONCE via Read-Host -AsSecureString, then propagated
-    to the backend process via the standard
-    $env:ConnectionStrings__GuliERP variable. The password is NEVER
-    written to a file, log, or git. The launching process scrubs the
-    plain password from its own memory after the env var is set.
-
-    Pre-flight:
-      * Asserts the DB target (via assert-gulierp-db-target.ps1) — aborts
-        if the connection string points at a non-canonical database.
-      * Polls /health/live until 200 before launching the frontend, so
-        the SPA's first /me call does not race the backend boot.
-
-    Re-running this script:
-      * Stops any previous instances whose PIDs are recorded in
-        <RepoRoot>/.stack-pids.json before launching fresh ones, so
-        port 5000 / 5173 are released cleanly.
-
-.PARAMETER DbUser
-    PostgreSQL user name. Default: gulidata (G2-004 convention).
-
-.PARAMETER BackendPort
-    Port for the GuliERP.Api host. Default: 5000.
-
-.PARAMETER FrontendPort
-    Port for the Vite dev server. Default: 5173.
-
-.PARAMETER ExpectedDb
-    Canonical database name (assertion target). Default: gulierp_g2_003_test.
-
-.PARAMETER SkipFrontend
-    Start only the backend (e.g. when you only need to test the API).
-
-.PARAMETER SkipBackend
-    Start only the frontend (use this when the backend is already
-    running on :5000 from a previous session).
-
-.PARAMETER Dotnet
-    Path to the dotnet executable. Default: D:\guli\gulierp\.dotnet\dotnet.exe.
-
-.PARAMETER Npm
-    Path to the npm executable. Default: whatever is on PATH (npm).
-
-.EXAMPLE
-    PS> .\tools\dev\start-stack.ps1
-    # Reads PG password once, opens two windows, returns immediately.
-
-.EXAMPLE
-    PS> .\tools\dev\start-stack.ps1 -SkipFrontend
-    # Backend only.
-
-.EXAMPLE
-    PS> .\tools\dev\start-stack.ps1 -SkipBackend -FrontendPort 5174
-    # Frontend on 5174 (backend already running on 5000).
-
-.NOTES
-    Hard rules (per session policy):
-      * Password is NEVER echoed, NEVER logged, NEVER written to disk
-        (only to the in-process $env:ConnectionStrings__GuliERP).
-      * No telemetries to remote hosts.
-      * The script does NOT touch git, docs, or business code.
-      * Closing THIS launcher does NOT close the child windows; close
-        them individually (or use the -StopOnExit switch in a future
-        revision).
+    Starts the local GuliERP backend and frontend stack with health checks.
 #>
 [CmdletBinding()]
 param(
@@ -88,244 +16,427 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# --- Resolve repository root (parent of tools/dev) ----------------
 $RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $BackendCsproj = Join-Path $RepoRoot 'apps\api\GuliERP.Api\GuliERP.Api.csproj'
 $WebDir = Join-Path $RepoRoot 'apps\web'
 $PidFile = Join-Path $RepoRoot '.stack-pids.json'
+$LogDir = Join-Path $RepoRoot '.stack-logs'
+$Runner = Join-Path $PSScriptRoot 'start-stack-child.ps1'
+$BackendUrl = "http://127.0.0.1:$BackendPort"
+$FrontendUrl = "http://127.0.0.1:$FrontendPort"
+$ApiProxyUrl = "$FrontendUrl/api/v1/auth/csrf"
+$OriginalConnectionString = $env:ConnectionStrings__GuliERP
+$OriginalGuliErpConnectionString = $env:GULIERP_ConnectionStrings__GuliERP
 
-Write-Host ''
-Write-Host '=== GuliERP Next stack launcher ===' -ForegroundColor Cyan
-Write-Host "Repo root : $RepoRoot"
-Write-Host "Backend   : http://127.0.0.1:$BackendPort"
-if (-not $SkipFrontend) {
-    Write-Host "Frontend  : http://127.0.0.1:$FrontendPort"
-}
-Write-Host "DB target : $ExpectedDb @ 192.168.2.228  (user: $DbUser)"
-Write-Host ''
-
-# --- 0. Sanity checks ------------------------------------------------
-if (-not (Test-Path $BackendCsproj)) {
-    throw "Backend csproj not found: $BackendCsproj"
-}
-if (-not (Test-Path $WebDir)) {
-    throw "Web dir not found: $WebDir"
-}
-if (-not (Test-Path $Dotnet)) {
-    throw "dotnet not found: $Dotnet (use -Dotnet to override)"
+function Write-Info {
+    param([string]$Message)
+    Write-Host $Message -ForegroundColor Cyan
 }
 
-# --- 1. Stop any prior instances recorded in .stack-pids.json --------
-function Stop-PriorStack {
-    if (-not (Test-Path $PidFile)) { return }
+function Write-Warn {
+    param([string]$Message)
+    Write-Host $Message -ForegroundColor Yellow
+}
+
+function Resolve-ToolPath {
+    param([Parameter(Mandatory = $true)][string]$Name)
+    if (Test-Path -LiteralPath $Name) {
+        return (Resolve-Path -LiteralPath $Name).Path
+    }
+    if ([System.IO.Path]::GetExtension($Name) -eq '') {
+        foreach ($suffix in @('.cmd', '.exe', '.ps1')) {
+            $candidate = Get-Command ($Name + $suffix) -ErrorAction SilentlyContinue
+            if ($candidate) { return $candidate.Source }
+        }
+    }
+    $command = Get-Command $Name -ErrorAction SilentlyContinue
+    if ($command) {
+        return $command.Source
+    }
+    throw "Required tool not found: $Name"
+}
+
+function Get-ProcessCommandLineSafe {
+    param([Parameter(Mandatory = $true)][int]$ProcessId)
     try {
-        $prior = Get-Content -Raw -Path $PidFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+        $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction Stop
+        if ($proc) { return [string]$proc.CommandLine }
     } catch {
-        Write-Host "  (ignoring malformed $PidFile: $_)" -ForegroundColor DarkGray
-        Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
-        return
+        return ''
     }
-    if ($prior.backend.pid) {
-        $p = Get-Process -Id $prior.backend.pid -ErrorAction SilentlyContinue
-        if ($p -and $p.ProcessName -match 'GuliERP') {
-            Write-Host "  Stopping prior backend (pid=$($p.Id))..." -ForegroundColor DarkYellow
-            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-        }
-    }
-    if ($prior.frontend.pid) {
-        $p = Get-Process -Id $prior.frontend.pid -ErrorAction SilentlyContinue
-        if ($p) {
-            Write-Host "  Stopping prior frontend (pid=$($p.Id))..." -ForegroundColor DarkYellow
-            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-        }
-    }
-    Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Milliseconds 500
+    return ''
 }
-Stop-PriorStack
 
-# --- 2. Read PG password ONCE (SecureString, masked) ---------------
-$sec = Read-Host -Prompt "PostgreSQL password for user '$DbUser' (input is masked)" -AsSecureString
-if ($sec.Length -eq 0) { throw 'Empty password — aborting.' }
-$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
-try {
-    $plain = [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-    $conn = "Host=192.168.2.228;Port=5432;Database=$ExpectedDb;Username=$DbUser;Password=$plain;Include Error Detail=true"
-    $env:ConnectionStrings__GuliERP = $conn
-    $env:GULIERP_ConnectionStrings__GuliERP = $conn
-} finally {
-    # Zero the BSTR as soon as the plain string is in the env var.
-    if ($bstr -ne [IntPtr]::Zero) {
-        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+function Get-PortOwner {
+    param([Parameter(Mandatory = $true)][int]$Port)
+    try {
+        $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop | Select-Object -First 1
+        if (-not $conn) { return $null }
+        $process = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
+        return [pscustomobject]@{
+            Port = $Port
+            ProcessId = [int]$conn.OwningProcess
+            ProcessName = if ($process) { $process.ProcessName } else { '<unknown>' }
+            CommandLine = Get-ProcessCommandLineSafe -ProcessId ([int]$conn.OwningProcess)
+        }
+    } catch {
+        return $null
     }
 }
-$plain = $null
 
-# --- 3. Assert DB target (fail-closed wrong-DB guard) --------------
-$assert = Join-Path $PSScriptRoot 'assert-gulierp-db-target.ps1'
-& $assert -ConnectionString $conn -ExpectedDatabase $ExpectedDb
-if ($LASTEXITCODE -ne 0) { throw 'DB guard FAILED — aborting.' }
-
-# --- 4. Helper: wait for an HTTP endpoint to respond ----------------
-function Wait-ForHttp {
+function Test-ProjectProcess {
     param(
-        [string]$Url,
+        [Parameter(Mandatory = $true)][int]$ProcessId,
+        [Parameter(Mandatory = $true)][string]$Role
+    )
+    $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    if (-not $process) { return $false }
+
+    $commandLine = Get-ProcessCommandLineSafe -ProcessId $ProcessId
+    $needleRoot = $RepoRoot.ToLowerInvariant()
+    $needleWeb = $WebDir.ToLowerInvariant()
+    $needleBackend = $BackendCsproj.ToLowerInvariant()
+    $haystack = $commandLine.ToLowerInvariant()
+
+    if ($Role -eq 'backend' -and $haystack.Contains($needleBackend)) { return $true }
+    if ($Role -eq 'backend' -and $haystack.Contains($needleRoot) -and $haystack.Contains('gulierp.api')) { return $true }
+    if ($Role -eq 'frontend' -and $haystack.Contains($needleWeb)) { return $true }
+    if ($haystack.Contains($needleRoot) -and $haystack.Contains('start-stack-child.ps1')) { return $true }
+    return $false
+}
+
+function Stop-ProjectProcess {
+    param(
+        [Parameter(Mandatory = $true)][int]$ProcessId,
+        [Parameter(Mandatory = $true)][string]$Role
+    )
+    $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    if (-not $process) { return 'stale' }
+    if (-not (Test-ProjectProcess -ProcessId $ProcessId -Role $Role)) {
+        Write-Warn ("  refusing to stop {0} pid={1}; process ownership could not be verified" -f $Role, $ProcessId)
+        return 'foreign'
+    }
+    Write-Warn ("  stopping prior {0} pid={1}" -f $Role, $ProcessId)
+    Stop-Process -Id $ProcessId -Force -ErrorAction SilentlyContinue
+    return 'stopped'
+}
+
+function Stop-LaunchedProcess {
+    param(
+        [object]$Process,
+        [string]$Role
+    )
+    if ($Process -and -not $Process.HasExited) {
+        Write-Warn ("  stopping launched {0} pid={1}" -f $Role, $Process.Id)
+        Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Read-PidRecord {
+    if (-not (Test-Path -LiteralPath $PidFile)) { return $null }
+    try {
+        $raw = Get-Content -LiteralPath $PidFile -Raw -ErrorAction Stop
+        if ([string]::IsNullOrWhiteSpace($raw)) { throw 'PID file is empty.' }
+        return ($raw | ConvertFrom-Json -ErrorAction Stop)
+    } catch {
+        Write-Warn ("  ignoring malformed {0}: {1}" -f $PidFile, $($_.Exception.Message))
+        Remove-Item -LiteralPath $PidFile -Force -ErrorAction SilentlyContinue
+        return $null
+    }
+}
+
+function Get-RecordPid {
+    param(
+        [object]$Record,
+        [string]$Role
+    )
+    if (-not $Record) { return $null }
+    $value = $null
+    if ($Role -eq 'backend' -and $Record.backend) { $value = $Record.backend.pid }
+    if ($Role -eq 'frontend' -and $Record.frontend) { $value = $Record.frontend.pid }
+    if ($null -eq $value) { return $null }
+    $text = ([string]$value).Trim()
+    $parsed = 0
+    if ([int]::TryParse($text, [ref]$parsed) -and $parsed -gt 0) {
+        return $parsed
+    }
+    Write-Warn ("  ignoring malformed {0} pid in {1}: {2}" -f $Role, $PidFile, $text)
+    return $null
+}
+
+function Wait-ForHttpStatus {
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [int]$ExpectedStatus = 200,
         [int]$TimeoutSec = 60,
-        [int]$PollMs = 500
+        [int]$PollMs = 750
     )
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
     while ((Get-Date) -lt $deadline) {
         try {
-            $r = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
-            if ($r.StatusCode -ge 200 -and $r.StatusCode -lt 500) { return $true }
+            $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+            if ([int]$response.StatusCode -eq $ExpectedStatus) { return $true }
         } catch {
-            $code = $null
-            if ($_.Exception.Response) { $code = [int]$_.Exception.Response.StatusCode }
-            if ($code -ge 200 -and $code -lt 500) { return $true }
+            $response = $_.Exception.Response
+            if ($response -and [int]$response.StatusCode -eq $ExpectedStatus) { return $true }
         }
         Start-Sleep -Milliseconds $PollMs
     }
     return $false
 }
 
-# --- 5. Helper: spawn a new PowerShell window with a script body ----
-function Open-PowerShellWindow {
+function Show-LogTail {
     param(
-        [Parameter(Mandatory = $true)][string]$Title,
-        [Parameter(Mandatory = $true)][string]$ScriptBody
+        [string]$Path,
+        [int]$Lines = 60
     )
-    $encoded = [Convert]::ToBase64String(
-        [System.Text.Encoding]::Unicode.GetBytes($ScriptBody))
-    $args = @(
-        '-NoProfile'
-        '-NoExit'
-        '-ExecutionPolicy', 'Bypass'
-        '-EncodedCommand', $encoded
-    )
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = 'powershell.exe'
-    foreach ($a in $args) { $psi.ArgumentList.Add($a) }
-    $psi.WorkingDirectory = $RepoRoot
-    $psi.UseShellExecute = $true
-    $psi.WindowStyle = 'Normal'
-    $psi.CreateNoWindow = $false
-    return [System.Diagnostics.Process]::Start($psi)
+    if (Test-Path -LiteralPath $Path) {
+        Write-Host ("--- log tail: {0} ---" -f $Path) -ForegroundColor DarkGray
+        Get-Content -LiteralPath $Path -Tail $Lines -ErrorAction SilentlyContinue
+    }
 }
 
-# --- 6. Start backend (if not skipped) ------------------------------
-$backendPid = $null
-$backendUrl = "http://127.0.0.1:$BackendPort"
-
-if (-not $SkipBackend) {
-    Write-Host "Starting backend in a new window..." -ForegroundColor Cyan
-
-    $backendBody = @"
-Set-Location '$RepoRoot'
-`$env:ConnectionStrings__GuliERP = '$($env:ConnectionStrings__GuliERP -replace "'", "''")'
-`$env:GULIERP_ConnectionStrings__GuliERP = `$env:ConnectionStrings__GuliERP
-Write-Host '=== GuliERP.Api ===' -ForegroundColor Cyan
-Write-Host 'URL     : http://127.0.0.1:$BackendPort'
-Write-Host 'Env     : ConnectionStrings__GuliERP=redacted (set by launcher)'
-Write-Host 'DB target: $ExpectedDb @ 192.168.2.228 (user: $DbUser)'
-Write-Host 'Stop    : Ctrl+C in THIS window, or close the window.'
-Write-Host ''
-
-& '$Dotnet' run --project '$BackendCsproj' -c Release --no-build --no-launch-profile --urls "http://127.0.0.1:$BackendPort"
-"@
-
-    $proc = Open-PowerShellWindow -Title 'GuliERP.Api' -ScriptBody $backendBody
-    if (-not $proc) { throw 'Failed to start backend process.' }
-    $backendPid = $proc.Id
-    Write-Host "  backend window opened, pid=$backendPid" -ForegroundColor DarkGreen
-
-    # Wait for /health/live (cheap probe) then /health/ready
-    Write-Host "  waiting for $backendUrl/health/live ..." -ForegroundColor DarkCyan
-    if (-not (Wait-ForHttp "$backendUrl/health/live" -TimeoutSec 90)) {
-        Write-Host '  WARN: /health/live did not return 200 within 90s.' -ForegroundColor Red
-        Write-Host "        Check the backend window for the actual error." -ForegroundColor Red
-        Write-Host "        Continuing anyway so the frontend window still opens." -ForegroundColor Red
-    } else {
-        Write-Host "  backend /health/live OK" -ForegroundColor Green
+function Assert-PortAvailableOrReusable {
+    param(
+        [Parameter(Mandatory = $true)][int]$Port,
+        [Parameter(Mandatory = $true)][string]$Role
+    )
+    $owner = Get-PortOwner -Port $Port
+    if (-not $owner) { return }
+    if (Test-ProjectProcess -ProcessId $owner.ProcessId -Role $Role) {
+        Write-Warn ("  {0} port {1} is already owned by this project pid={2}; stopping for a clean restart" -f $Role, $Port, $owner.ProcessId)
+        [void](Stop-ProjectProcess -ProcessId $owner.ProcessId -Role $Role)
+        Start-Sleep -Milliseconds 700
+        return
     }
-    Write-Host "  waiting for $backendUrl/health/ready (DB ping)..." -ForegroundColor DarkCyan
-    if (-not (Wait-ForHttp "$backendUrl/health/ready" -TimeoutSec 60)) {
-        Write-Host '  WARN: /health/ready did not return 200 within 60s.' -ForegroundColor Yellow
-        Write-Host "        The backend is up but the DB is not reachable." -ForegroundColor Yellow
-        Write-Host "        Check the password + that 192.168.2.228:5432 is reachable." -ForegroundColor Yellow
-    } else {
-        Write-Host "  backend /health/ready OK" -ForegroundColor Green
-    }
-} else {
-    Write-Host '[skip-backend] -SkipBackend set; expecting an existing backend on ' + $backendUrl -ForegroundColor Yellow
-}
-
-# --- 7. Start frontend (if not skipped) -----------------------------
-$frontendPid = $null
-$frontendUrl = "http://127.0.0.1:$FrontendPort"
-
-if (-not $SkipFrontend) {
     Write-Host ''
-    Write-Host "Starting frontend in a new window..." -ForegroundColor Cyan
-
-    # Check that node_modules exists; if not, run npm ci first.
-    if (-not (Test-Path (Join-Path $WebDir 'node_modules'))) {
-        Write-Host "  node_modules missing — running 'npm ci' first (this can take a few minutes)..." -ForegroundColor Yellow
-        Push-Location $WebDir
-        try { & $Npm ci } finally { Pop-Location }
+    Write-Host ("Port {0} is already in use by an unrelated process." -f $Port) -ForegroundColor Red
+    Write-Host ("  PID     : {0}" -f $owner.ProcessId) -ForegroundColor Red
+    Write-Host ("  Process : {0}" -f $owner.ProcessName) -ForegroundColor Red
+    if ($owner.CommandLine) {
+        Write-Host ("  Command : {0}" -f $owner.CommandLine) -ForegroundColor Red
     }
+    Write-Host 'Close that process or choose another explicit port, then rerun the launcher.' -ForegroundColor Yellow
+    exit 1
+}
 
-    $frontendBody = @"
-Set-Location '$WebDir'
-Write-Host '=== GuliERP Web (Vite dev) ===' -ForegroundColor Cyan
-Write-Host 'URL : http://127.0.0.1:$FrontendPort'
-Write-Host 'API : $backendUrl  (assumed; the SPA hits the relative /api/v1/* paths)'
-Write-Host 'Stop: Ctrl+C in THIS window, or close the window.'
+function Stop-PriorStack {
+    $prior = Read-PidRecord
+    if (-not $prior) { return }
+    $backendRecordPid = Get-RecordPid -Record $prior -Role 'backend'
+    $frontendRecordPid = Get-RecordPid -Record $prior -Role 'frontend'
+    if ($backendRecordPid) { [void](Stop-ProjectProcess -ProcessId $backendRecordPid -Role 'backend') }
+    if ($frontendRecordPid) { [void](Stop-ProjectProcess -ProcessId $frontendRecordPid -Role 'frontend') }
+    Remove-Item -LiteralPath $PidFile -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Milliseconds 700
+}
+
+function Get-ConnectionString {
+    if (-not [string]::IsNullOrWhiteSpace($env:ConnectionStrings__GuliERP)) {
+        return $env:ConnectionStrings__GuliERP
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:GULIERP_ConnectionStrings__GuliERP)) {
+        return $env:GULIERP_ConnectionStrings__GuliERP
+    }
+    $secure = Read-Host -Prompt "PostgreSQL password for user '$DbUser' (input is masked)" -AsSecureString
+    if ($secure.Length -eq 0) { throw 'Empty password; aborting.' }
+    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+    try {
+        $plain = [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+        return "Host=192.168.2.228;Port=5432;Database=$ExpectedDb;Username=$DbUser;Password=$plain;Include Error Detail=true"
+    } finally {
+        if ($bstr -ne [IntPtr]::Zero) {
+            [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+        }
+        $plain = $null
+    }
+}
+
+function Start-StackProcess {
+    param(
+        [Parameter(Mandatory = $true)][string]$Role,
+        [Parameter(Mandatory = $true)][string[]]$RunnerArguments,
+        [Parameter(Mandatory = $true)][string]$LogPath,
+        [hashtable]$Environment = @{}
+    )
+    $hostExe = (Get-Process -Id $PID).Path
+    if (-not $hostExe) { $hostExe = Resolve-ToolPath -Name 'powershell.exe' }
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $hostExe
+    $psi.WorkingDirectory = $RepoRoot
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardOutput = $false
+    $psi.RedirectStandardError = $false
+    $psi.CreateNoWindow = $true
+    $psi.Arguments = ('-NoProfile -ExecutionPolicy Bypass -File "{0}" {1}' -f $Runner, ($RunnerArguments -join ' '))
+    foreach ($key in $Environment.Keys) {
+        $psi.EnvironmentVariables[$key] = [string]$Environment[$key]
+    }
+    $psi.EnvironmentVariables['GULIERP_STACK_LOG'] = $LogPath
+    $process = [System.Diagnostics.Process]::Start($psi)
+    if (-not $process) { throw ("Failed to start {0} process." -f $Role) }
+    return $process
+}
+
+function Invoke-Checked {
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][string]$WorkingDirectory
+    )
+    $argLine = $Arguments -join ' '
+    Write-Host ("  {0} {1}" -f $FilePath, $argLine) -ForegroundColor DarkGray
+    $process = Start-Process -FilePath $FilePath -ArgumentList $Arguments -WorkingDirectory $WorkingDirectory -NoNewWindow -Wait -PassThru
+    if ($process.ExitCode -ne 0) {
+        throw ("Command failed with exit code {0}: {1}" -f $process.ExitCode, $FilePath)
+    }
+}
+
+Write-Host ''
+Write-Host '=== GuliERP Next local stack ===' -ForegroundColor Cyan
+Write-Host ("Repo root : {0}" -f $RepoRoot)
+Write-Host ("Backend   : {0}" -f $BackendUrl)
+if (-not $SkipFrontend) { Write-Host ("Frontend  : {0}" -f $FrontendUrl) }
+Write-Host ("DB target : {0} @ 192.168.2.228 (user: {1})" -f $ExpectedDb, $DbUser)
 Write-Host ''
 
-& '$Npm' run dev -- --port $FrontendPort --strictPort
-"@
+if (-not (Test-Path -LiteralPath $BackendCsproj)) { throw "Backend csproj not found: $BackendCsproj" }
+if (-not (Test-Path -LiteralPath $WebDir)) { throw "Web dir not found: $WebDir" }
+if (-not (Test-Path -LiteralPath $Runner)) { throw "Runner not found: $Runner" }
+if (-not (Test-Path -LiteralPath $LogDir)) { New-Item -ItemType Directory -Path $LogDir | Out-Null }
 
-    $proc = Open-PowerShellWindow -Title 'GuliERP.Web' -ScriptBody $frontendBody
-    if (-not $proc) { throw 'Failed to start frontend process.' }
-    $frontendPid = $proc.Id
-    Write-Host "  frontend window opened, pid=$frontendPid" -ForegroundColor DarkGreen
+$Dotnet = Resolve-ToolPath -Name $Dotnet
+$Npm = Resolve-ToolPath -Name $Npm
 
-    # Wait for the Vite dev server to start listening.
-    Write-Host "  waiting for $frontendUrl ..." -ForegroundColor DarkCyan
-    if (-not (Wait-ForHttp "$frontendUrl" -TimeoutSec 60)) {
-        Write-Host '  WARN: frontend did not respond within 60s.' -ForegroundColor Red
-        Write-Host "        Check the frontend window for the actual error." -ForegroundColor Red
+Stop-PriorStack
+if (-not $SkipBackend) { Assert-PortAvailableOrReusable -Port $BackendPort -Role 'backend' }
+if (-not $SkipFrontend) { Assert-PortAvailableOrReusable -Port $FrontendPort -Role 'frontend' }
+
+$connection = $null
+if (-not $SkipBackend) {
+    $connection = Get-ConnectionString
+    $env:ConnectionStrings__GuliERP = $connection
+    $env:GULIERP_ConnectionStrings__GuliERP = $connection
+    $assert = Join-Path $PSScriptRoot 'assert-gulierp-db-target.ps1'
+    & $assert -ConnectionString $connection -ExpectedDatabase $ExpectedDb
+    if ($LASTEXITCODE -ne 0) { throw 'DB target guard failed; aborting.' }
+}
+
+try {
+    if (-not $SkipBackend) {
+        Write-Info 'Building backend...'
+        Invoke-Checked -FilePath $Dotnet -Arguments @('build', $BackendCsproj, '-c', 'Release') -WorkingDirectory $RepoRoot
+    }
+
+    if (-not $SkipFrontend -and -not (Test-Path -LiteralPath (Join-Path $WebDir 'node_modules'))) {
+        Write-Warn "Frontend dependencies are missing; running npm ci in apps\web."
+        Invoke-Checked -FilePath $Npm -Arguments @('ci') -WorkingDirectory $WebDir
+    }
+
+    $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $backendLog = Join-Path $LogDir "backend-$timestamp.log"
+    $frontendLog = Join-Path $LogDir "frontend-$timestamp.log"
+    $backendProcess = $null
+    $frontendProcess = $null
+    $backendRecordedPid = $null
+    $frontendRecordedPid = $null
+
+    if (-not $SkipBackend) {
+        Write-Info 'Starting backend...'
+        $backendArgs = @(
+            '-Role', 'backend',
+            '-RepoRoot', ('"{0}"' -f $RepoRoot),
+            '-Dotnet', ('"{0}"' -f $Dotnet),
+            '-BackendCsproj', ('"{0}"' -f $BackendCsproj),
+            '-BackendPort', $BackendPort
+        )
+        $backendProcess = Start-StackProcess -Role 'backend' -RunnerArguments $backendArgs -LogPath $backendLog -Environment @{
+            'ConnectionStrings__GuliERP' = $connection
+            'GULIERP_ConnectionStrings__GuliERP' = $connection
+        }
+        Write-Host ("  backend pid={0}" -f $backendProcess.Id) -ForegroundColor Green
+        Write-Info ("Waiting for {0}/health/live ..." -f $BackendUrl)
+        if (-not (Wait-ForHttpStatus -Url "$BackendUrl/health/live" -ExpectedStatus 200 -TimeoutSec 90)) {
+            Show-LogTail -Path $backendLog
+            Stop-LaunchedProcess -Process $backendProcess -Role 'backend'
+            exit 1
+        }
+        $backendOwner = Get-PortOwner -Port $BackendPort
+        if ($backendOwner -and (Test-ProjectProcess -ProcessId $backendOwner.ProcessId -Role 'backend')) {
+            $backendRecordedPid = $backendOwner.ProcessId
+        } else {
+            $backendRecordedPid = $backendProcess.Id
+        }
     } else {
-        Write-Host "  frontend OK" -ForegroundColor Green
+        Write-Warn ("Skipping backend start; expecting an existing backend at {0}" -f $BackendUrl)
     }
-} else {
-    Write-Host '[skip-frontend] -SkipFrontend set; not starting Vite dev server.' -ForegroundColor Yellow
-}
 
-# --- 8. Record PIDs so a future start-stack.ps1 cleans them up -------
-$pids = [pscustomobject]@{
-    launchedAt = (Get-Date).ToString('o')
-    backend    = [pscustomobject]@{ pid = $backendPid; url = $backendUrl }
-    frontend   = [pscustomobject]@{ pid = $frontendPid; url = $frontendUrl }
-}
-Set-Content -Path $PidFile -Value ($pids | ConvertTo-Json -Depth 5) -Encoding UTF8
+    if (-not $SkipFrontend) {
+        Write-Info 'Starting frontend...'
+        $frontendArgs = @(
+            '-Role', 'frontend',
+            '-RepoRoot', ('"{0}"' -f $RepoRoot),
+            '-Npm', ('"{0}"' -f $Npm),
+            '-WebDir', ('"{0}"' -f $WebDir),
+            '-FrontendPort', $FrontendPort,
+            '-BackendUrl', $BackendUrl
+        )
+        $frontendProcess = Start-StackProcess -Role 'frontend' -RunnerArguments $frontendArgs -LogPath $frontendLog -Environment @{
+            'VITE_API_TARGET' = $BackendUrl
+        }
+        Write-Host ("  frontend pid={0}" -f $frontendProcess.Id) -ForegroundColor Green
+        Write-Info ("Waiting for {0} ..." -f $FrontendUrl)
+        if (-not (Wait-ForHttpStatus -Url $FrontendUrl -ExpectedStatus 200 -TimeoutSec 70)) {
+            Show-LogTail -Path $frontendLog
+            Stop-LaunchedProcess -Process $frontendProcess -Role 'frontend'
+            Stop-LaunchedProcess -Process $backendProcess -Role 'backend'
+            exit 1
+        }
+        $frontendOwner = Get-PortOwner -Port $FrontendPort
+        if ($frontendOwner -and (Test-ProjectProcess -ProcessId $frontendOwner.ProcessId -Role 'frontend')) {
+            $frontendRecordedPid = $frontendOwner.ProcessId
+        } else {
+            $frontendRecordedPid = $frontendProcess.Id
+        }
 
-# --- 9. Summary -------------------------------------------------------
-Write-Host ''
-Write-Host '=== Stack launched ===' -ForegroundColor Green
-if ($backendPid) {
-    Write-Host "  backend  pid=$backendPid  $backendUrl" -ForegroundColor White
+        Write-Info ("Checking frontend API proxy {0} ..." -f $ApiProxyUrl)
+        if (-not (Wait-ForHttpStatus -Url $ApiProxyUrl -ExpectedStatus 200 -TimeoutSec 30)) {
+            Show-LogTail -Path $frontendLog
+            Show-LogTail -Path $backendLog
+            Stop-LaunchedProcess -Process $frontendProcess -Role 'frontend'
+            Stop-LaunchedProcess -Process $backendProcess -Role 'backend'
+            exit 1
+        }
+    }
+
+    $pids = [pscustomobject]@{
+        launchedAt = (Get-Date).ToString('o')
+        repoRoot = $RepoRoot
+        backend = [pscustomobject]@{
+            pid = $backendRecordedPid
+            url = $BackendUrl
+            log = if ($backendProcess) { $backendLog } else { $null }
+        }
+        frontend = [pscustomobject]@{
+            pid = $frontendRecordedPid
+            url = $FrontendUrl
+            log = if ($frontendProcess) { $frontendLog } else { $null }
+        }
+    }
+    Set-Content -LiteralPath $PidFile -Value ($pids | ConvertTo-Json -Depth 5) -Encoding UTF8
+
+    Write-Host ''
+    Write-Host '=== Stack ready ===' -ForegroundColor Green
+    Write-Host ("Backend health : {0}/health/live" -f $BackendUrl)
+    if (-not $SkipFrontend) {
+        Write-Host ("Frontend       : {0}" -f $FrontendUrl) -ForegroundColor White
+        Write-Host ("API proxy      : {0}" -f $ApiProxyUrl)
+    }
+    Write-Host ("PID file       : {0}" -f $PidFile) -ForegroundColor DarkGray
+    Write-Host ("Logs           : {0}" -f $LogDir) -ForegroundColor DarkGray
+    exit 0
+} finally {
+    $env:ConnectionStrings__GuliERP = $OriginalConnectionString
+    $env:GULIERP_ConnectionStrings__GuliERP = $OriginalGuliErpConnectionString
+    $connection = $null
 }
-if ($frontendPid) {
-    Write-Host "  frontend pid=$frontendPid  $frontendUrl" -ForegroundColor White
-}
-Write-Host ''
-Write-Host "  PIDs recorded in $PidFile" -ForegroundColor DarkGray
-Write-Host '  To stop: close the two PowerShell windows individually, or' -ForegroundColor DarkGray
-Write-Host '  re-run this script (it will kill the prior PIDs first).' -ForegroundColor DarkGray
-Write-Host ''
-Write-Host 'Next step for MDM/WEB-PREVIEW work:' -ForegroundColor Yellow
-Write-Host '  Open http://localhost:' + $FrontendPort + ' in your browser, log in,' -ForegroundColor White
-Write-Host '  then run MDM-002 / WEB-PREVIEW-002 grant from a THIRD shell:' -ForegroundColor White
-Write-Host '    .\tools\dev\g2-004-bootstrap-operator-user.ps1 -GrantMdmOperator' -ForegroundColor Cyan
-Write-Host ''
