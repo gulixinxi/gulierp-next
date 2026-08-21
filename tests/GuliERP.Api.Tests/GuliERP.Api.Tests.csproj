@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>GuliERP.Api.Tests</RootNamespace>
+    <AssemblyName>GuliERP.Api.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Reference the API host project to access the
+      SnowflakeLongJsonConverters in apps/api/GuliERP.Api/Kernel/.
+      We do NOT spin up WebApplicationFactory here — the contract
+      tests are pure System.Text.Json + the converter.
+    -->
+    <ProjectReference Include="..\..\apps\api\GuliERP.Api\GuliERP.Api.csproj" />
+  </ItemGroup>
+
+</Project>
