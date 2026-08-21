@@ -95,6 +95,63 @@ function Redact-ConnectionString([string]$cs) {
 }
 
 # ----------------------------------------------------------------
+# Step 4a helpers (mdm-001R2 fix: array -notmatch false negative)
+# ----------------------------------------------------------------
+# Convert a captured command output (string, Object[], or single
+# ErrorRecord) into a single, plain-text, CRLF-normalized line.
+# - Joins arrays/collections with LF separators.
+# - Strips ANSI CSI escape sequences (ESC [ ... letter).
+# - Normalizes CR/CRLF to LF (Windows defensive).
+function ConvertTo-PlainText {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        $Value
+    )
+    if ($null -eq $Value) { return '' }
+    $joined = if ($Value -is [string]) {
+        $Value
+    } else {
+        ($Value | ForEach-Object { "$_" }) -join "`n"
+    }
+    # Strip ANSI CSI: ESC [ ... letter. Use [char]27 to be safe on
+    # hosts where `e is not interpreted as ESC.
+    $joined = $joined -replace ([char]27 + "\[[0-9;?]*[a-zA-Z]"), ''
+    # Defensive CRLF / CR -> LF.
+    $joined = $joined -replace "`r`n?", "`n"
+    return $joined
+}
+
+# True when the captured dotnet ef migrations list output contains
+# the full expected migration ID as a bounded token. Accepts:
+#   <id>           (alone, end-of-line)
+#   <id> (Pending) (followed by space + paren)
+#   <id>   <CRLF>  (trailing whitespace)
+# Rejects:
+#   <id>abc        (no boundary; some other ID sharing a prefix)
+# The lookbehind (?<![A-Za-z0-9_]) prevents prefix collisions; the
+# lookahead (?=\s|\(|$) prevents suffix collisions.
+function Test-MigrationDiscovered {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        $CommandOutput,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedMigrationId
+    )
+    $text = ConvertTo-PlainText -Value $CommandOutput
+    if ([string]::IsNullOrEmpty($text)) { return $false }
+    $escaped = [regex]::Escape($ExpectedMigrationId)
+    $pattern = "(?<![A-Za-z0-9_])${escaped}(?=\s|\(|$)"
+    return [regex]::IsMatch($text, $pattern)
+}
+
+# ----------------------------------------------------------------
 # Step 1: DB target guard (fail-closed)
 # ----------------------------------------------------------------
 Step 1 'DB target guard'
@@ -168,7 +225,7 @@ try {
     }
 
     # ----------------------------------------------------------------
-    # Step 4a: verify migration DISCOVERY (mdm-001R1 fix)
+    # Step 4a: verify migration DISCOVERY (mdm-001R1 + mdm-001R2 fix)
     # ----------------------------------------------------------------
     Step 4a 'Verify MDM-001 migration discovery'
     # Per MDM-001R1 root cause: the migration class must carry
@@ -177,6 +234,19 @@ try {
     # ef migrations list` returns "No migrations were found" and
     # the subsequent `database update` is a silent no-op. We now
     # explicitly assert the migration is listed before applying.
+    #
+    # Per MDM-001R2 root cause: a previous version of this check
+    # used `if ($listOut -notmatch '<id>')` directly on the
+    # captured `dotnet ef` output, but `2>&1` returns a PowerShell
+    # Object[]. The `-notmatch` operator on a LHS array returns
+    # the SUBSET of elements that do not match, which is almost
+    # always a non-empty array (Build started, Build succeeded,
+    # connection-warning lines, etc.). A non-empty array is truthy
+    # in `if`, so the check always FAILed even when the migration
+    # ID was clearly present (e.g. `... (Pending)`). The fix
+    # joins the output to plain text, strips ANSI/CRLF noise, and
+    # uses a bounded regex (lookbehind + lookahead) so the match
+    # is a real ID-token match, not a substring heuristic.
     $listOut = & $Dotnet ef migrations list `
         --project "$RepoRoot/modules/mdm/GuliERP.Mdm.Infrastructure/GuliERP.Mdm.Infrastructure.csproj" `
         --startup-project "$RepoRoot/apps/api/GuliERP.Api/GuliERP.Api.csproj" `
@@ -186,12 +256,13 @@ try {
         Write-Host (Redact-SecretText $listOut) -ForegroundColor Red
         exit 1
     }
-    if ($listOut -notmatch '20260820190000_MDM001_InitializeMdmSchema') {
-        Fail 'MDM-001 migration is NOT discoverable. Re-check the [DbContext] / [Migration] attributes on the Designer.cs file.'
+    $expectedMigrationId = '20260820190000_MDM001_InitializeMdmSchema'
+    if (-not (Test-MigrationDiscovered -CommandOutput $listOut -ExpectedMigrationId $expectedMigrationId)) {
+        Fail "MDM-001 migration '$expectedMigrationId' is NOT discoverable. Re-check the [DbContext] / [Migration] attributes on the Designer.cs file."
         Write-Host (Redact-SecretText $listOut) -ForegroundColor Red
         exit 1
     }
-    Pass 'MDM-001 migration discovered (20260820190000_MDM001_InitializeMdmSchema).'
+    Pass "Migration discovered: $expectedMigrationId (pending/apply state checked later)."
 
     # ----------------------------------------------------------------
     # Step 4b: apply migration via dotnet ef
