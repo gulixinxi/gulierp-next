@@ -79,6 +79,7 @@ public static class Program
     /// scripts can use this default to find G2-004-era artifacts.
     /// </summary>
     public const string MarkerPrefix = "test_operator_";
+    public const string ConnectionStringFromEnvironment = "--connection-string-from-env";
 
     public const int ExitOk = 0;
     public const int ExitSafetyGuard = 2;
@@ -841,11 +842,18 @@ public static class Program
         if (args.Length < 8)
         {
             await Console.Error.WriteLineAsync(
-                "Usage: gulierp-identity-bootstrap --formal-enterprise-bootstrap <connectionString> <tenantCode> <tenantName> <companyCode> <companyName> <adminUserName> <adminDisplayName> [adminEmail] [adminPhone]  (password from STDIN)");
+                "Usage: gulierp-identity-bootstrap --formal-enterprise-bootstrap <connectionString|--connection-string-from-env> <tenantCode> <tenantName> <companyCode> <companyName> <adminUserName> <adminDisplayName> [adminEmail] [adminPhone]  (password from STDIN)");
             return ExitConnectionMissing;
         }
 
-        var connectionString = args[1];
+        var connectionString = ResolveFormalBootstrapConnectionString(args[1]);
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            await Console.Error.WriteLineAsync(
+                "ERROR(--formal-enterprise-bootstrap): connection string is missing. " +
+                "Pass a connection string or --connection-string-from-env with ConnectionStrings__GuliERP set.");
+            return ExitConnectionMissing;
+        }
         var tenantCode = args[2];
         var tenantName = args[3];
         var companyCode = args[4];
@@ -962,6 +970,22 @@ public static class Program
             password = null;
             GC.Collect();
         }
+    }
+
+    private static string? ResolveFormalBootstrapConnectionString(string source)
+    {
+        if (!string.Equals(source, ConnectionStringFromEnvironment, StringComparison.Ordinal))
+        {
+            return source;
+        }
+
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__GuliERP");
+        if (!string.IsNullOrWhiteSpace(connectionString))
+        {
+            return connectionString;
+        }
+
+        return Environment.GetEnvironmentVariable("GULIERP_ConnectionStrings__GuliERP");
     }
 
     /// <summary>

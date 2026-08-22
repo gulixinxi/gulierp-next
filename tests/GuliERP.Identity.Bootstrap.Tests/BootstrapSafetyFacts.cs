@@ -58,6 +58,77 @@ public class BootstrapSafetyFacts
     }
 
     [Fact]
+    public async Task FormalBootstrap_ConnectionStringFromEnvironmentMissing_ReturnsConnectionMissing()
+    {
+        var savedPrimary = Environment.GetEnvironmentVariable("ConnectionStrings__GuliERP");
+        var savedFallback = Environment.GetEnvironmentVariable("GULIERP_ConnectionStrings__GuliERP");
+        var savedStdin = Console.In;
+        try
+        {
+            Environment.SetEnvironmentVariable("ConnectionStrings__GuliERP", null);
+            Environment.SetEnvironmentVariable("GULIERP_ConnectionStrings__GuliERP", null);
+            Console.SetIn(new StringReader("ValidPassword1!"));
+
+            var exit = await Program.Main(new[]
+            {
+                "--formal-enterprise-bootstrap",
+                Program.ConnectionStringFromEnvironment,
+                "tenant",
+                "Tenant",
+                "company",
+                "Company",
+                "admin",
+                "Admin",
+            });
+
+            Assert.Equal(Program.ExitConnectionMissing, exit);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ConnectionStrings__GuliERP", savedPrimary);
+            Environment.SetEnvironmentVariable("GULIERP_ConnectionStrings__GuliERP", savedFallback);
+            Console.SetIn(savedStdin);
+        }
+    }
+
+    [Fact]
+    public async Task FormalBootstrap_ConnectionStringFromEnvironment_UsesEnvironmentValue()
+    {
+        var savedPrimary = Environment.GetEnvironmentVariable("ConnectionStrings__GuliERP");
+        var savedFallback = Environment.GetEnvironmentVariable("GULIERP_ConnectionStrings__GuliERP");
+        var savedStdin = Console.In;
+        try
+        {
+            Environment.SetEnvironmentVariable(
+                "ConnectionStrings__GuliERP",
+                "Host=127.0.0.1;Port=1;Database=none;Username=test;Password=test;Timeout=1;Command Timeout=1");
+            Environment.SetEnvironmentVariable("GULIERP_ConnectionStrings__GuliERP", null);
+            Console.SetIn(new StringReader("ValidPassword1!"));
+
+            var exit = await Program.Main(new[]
+            {
+                "--formal-enterprise-bootstrap",
+                Program.ConnectionStringFromEnvironment,
+                "tenant",
+                "Tenant",
+                "company",
+                "Company",
+                "admin",
+                "Admin",
+            });
+
+            Assert.NotEqual(Program.ExitConnectionMissing, exit);
+            Assert.NotEqual(Program.ExitSafetyGuard, exit);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ConnectionStrings__GuliERP", savedPrimary);
+            Environment.SetEnvironmentVariable("GULIERP_ConnectionStrings__GuliERP", savedFallback);
+            Console.SetIn(savedStdin);
+        }
+    }
+
+    [Fact]
     public async Task UserName_WithoutMarker_ReturnsSafetyGuard()
     {
         // A user without the marker MUST be rejected
