@@ -4,8 +4,8 @@
 
 - Goal: implement the first real SalesOrder vertical slice from real MDM Customer/Item/UOM through create, validate, persist, list, detail, draft edit, confirm, and cancel.
 - Start HEAD: `9bbf08fce765762b7870eaaaa30ca70575f4494b`
-- End HEAD: `4150963538bbdf36d2c350e04856fb618dfb2cd8`
-- Commit SHA: `4150963538bbdf36d2c350e04856fb618dfb2cd8`
+- End HEAD: `7890822da38323f540e3ad5873d3fa4cef381f55`
+- Commit SHA: `7890822da38323f540e3ad5873d3fa4cef381f55`
 
 ## Implementation
 
