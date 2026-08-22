@@ -2,11 +2,13 @@
 
 ## Gate
 
-Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_CODE_READY_OPERATOR_BOOTSTRAP_PENDING`
+Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_SCHEMA_DRIFT_HARD_STOP`
 
 Start HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`
 
-End HEAD: report/test-fix commit SHA is reported in the delivery output.
+Latest code-fix HEAD: `acaf03dd747bf85a6f2f49e75d45d4b55698e0e6`
+
+Final report commit SHA is reported in the delivery output.
 
 Gate correction:
 
@@ -23,6 +25,13 @@ Gate update on 2026-08-23:
 - Normal Release output build failure was attributed to a running `GuliERP.Api` process locking the normal Release DLL, not to SDK or C# defects.
 - Automated non-PostgreSQL test suites and focused Enterprise Bootstrap/Organization/Authorization tests pass from a new isolated artifacts directory.
 - PostgreSQL integration tests that require local credentials remain Operator Runtime Pending; no credentials were requested or printed.
+
+Runtime correction on 2026-08-23:
+
+- Formal Bootstrap was attempted with the non-sensitive identifiers recorded below.
+- The attempt failed with PostgreSQL `42703` because canonical DB schema did not expose `identity.gulierp_plant."IsDefault"`.
+- Code now fails fast before formal writes when required Identity migrations/schema objects are missing.
+- Canonical migration application is still pending Operator local DB password input.
 
 ## Audit Summary
 
@@ -264,34 +273,94 @@ During the blocked restore attempt, MSBuild spawned `450` `dotnet.exe` workers w
 
 ## Canonical Runtime
 
-Not executed. Formal enterprise inputs and admin password were not provided during this coding pass. No canonical DB writes were performed. No formal Tenant, Company, Admin, RoleAssignment or company membership was created in canonical PostgreSQL.
+Formal runtime hard-stopped on 2026-08-23 before browser acceptance.
 
-## Operator Bootstrap Command
+Non-sensitive formal input:
 
-From `D:\guli\projects\gulierp-next`, after entering DB password and admin password locally:
+- TenantCode: `GULI`
+- TenantName: `谷粒`
+- CompanyCode: `GULI001`
+- CompanyName: `谷粒科技`
+- AdminUsername: `guli_admin`
+- AdminDisplayName: `王春清`
+
+Observed failure:
+
+- PostgreSQL error: `42703: column g.IsDefault does not exist`
+- Failing object: `identity.gulierp_plant."IsDefault"`
+- CLI exit code: `4`
+- Failure phase: default Plant lookup inside formal enterprise bootstrap.
+- Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_SCHEMA_DRIFT_HARD_STOP`
+
+No password, hash, token, cookie or complete connection string is recorded in this report.
+
+## Schema Drift Finding
+
+Root cause classification: **A. Existing formal migration but canonical DB was not applied to the latest Identity migration chain.**
+
+Evidence from repository inspection:
+
+- `Plant.IsDefault` exists in the Domain entity.
+- `IdentityDbContext` maps `Plant.IsDefault` as required and defines `ux_gulierp_plant_company_default`.
+- `IdentityDbContextModelSnapshot` contains `Plant.IsDefault` and the filtered default-Plant index.
+- Existing formal migration `20260822090000_G2EnterpriseOrganizationFoundation` adds `identity.gulierp_plant.IsDefault`, creates `identity.gulierp_employee`, and creates `ux_gulierp_plant_company_default`.
+- The initial Identity migration does not contain `gulierp_plant.IsDefault`; therefore canonical DBs that have not applied `20260822090000_G2EnterpriseOrganizationFoundation` will fail exactly as observed.
+
+Code hardening added after the runtime failure:
+
+- Formal bootstrap now accepts `--connection-string-from-env` so the DB password is not placed in process argv.
+- Formal bootstrap performs relational schema prechecks before Tenant/Company candidate reads or any write:
+  - pending Identity migrations,
+  - `identity.gulierp_employee`,
+  - `identity.gulierp_plant.IsDefault`,
+  - `identity.ux_gulierp_plant_company_default`.
+- Schema mismatch now emits `SCHEMA ERROR(--formal-enterprise-bootstrap): ...` and exits before any formal insert.
+
+Transaction behavior:
+
+- `EnterpriseBootstrapService` uses an explicit EF transaction around Tenant, Company, Plant, OrganizationUnit, Admin User, Employee, Membership, `ERP_SYSTEM_ADMIN`, RoleClaims and RoleAssignment.
+- The observed `42703` occurred before transaction commit; canonical read-only verification is still required to confirm whether `GULI` / `GULI001` were rolled back or partially persisted.
+
+## Canonical DB Pending Work
+
+Do not re-run formal Bootstrap until canonical Identity migration state is verified and repaired.
+
+Required Operator sequence:
+
+1. Enter the canonical PostgreSQL password locally.
+2. Run DB target guard against `Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=***`.
+3. List applied and pending Identity migrations.
+4. Apply only the existing verified Identity migration `20260822090000_G2EnterpriseOrganizationFoundation` if it is pending.
+5. Verify `identity.gulierp_plant.IsDefault`, `identity.gulierp_employee`, and `identity.ux_gulierp_plant_company_default`.
+6. Verify whether `GULI`, `GULI001`, and `guli_admin` exist, without printing passwords or hashes.
+7. Only then re-run formal Bootstrap with the same business identifiers.
+
+The old command that passed the full connection string as a CLI argument is intentionally superseded. The safe CLI form is:
 
 ```powershell
-$ErrorActionPreference = 'Stop'
-$dbPassword = Read-Host -Prompt 'Enter canonical PostgreSQL password for gulidata@gulierp_g2_003_test' -AsSecureString
-$adminPassword = Read-Host -Prompt 'Enter formal enterprise admin password' -AsSecureString
-$dbBstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($dbPassword)
-$adminBstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($adminPassword)
-try {
-  $dbPlain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($dbBstr)
-  $adminPlain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($adminBstr)
-  $conn = "Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=$dbPlain"
-  $adminPlain | dotnet run --project tools/GuliERP.Identity.Bootstrap -- --formal-enterprise-bootstrap $conn '<TenantCode>' '<TenantName>' '<CompanyCode>' '<CompanyName>' '<AdminUsername>' '<AdminDisplayName>' '<AdminEmailOptional>'
-}
-finally {
-  if ($dbBstr -ne [IntPtr]::Zero) { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($dbBstr) }
-  if ($adminBstr -ne [IntPtr]::Zero) { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($adminBstr) }
-  $dbPlain = $null
-  $adminPlain = $null
-  [GC]::Collect()
-}
+$env:ConnectionStrings__GuliERP = '<set in memory only; do not print>'
+$adminPlain | dotnet run --no-build --project .\tools\GuliERP.Identity.Bootstrap -- --formal-enterprise-bootstrap --connection-string-from-env GULI '谷粒' GULI001 '谷粒科技' guli_admin '王春清'
 ```
 
 Do not paste passwords into chat, logs, reports or command history.
+
+## Schema Repair Verification
+
+- `dotnet --version`: `10.0.400`
+- Isolated solution build: PASS, `0 warnings`, `0 errors`
+  - artifacts: `C:\Users\Administrator\AppData\Local\Temp\gulierp-schema-repair-build-e049b6ae3ade4efe974e7c06def1fa58`
+- `GuliERP.Identity.Tests`: PASS, `22/22`
+- `GuliERP.Identity.Bootstrap.Tests`: PASS, `55/55`
+- Focused `GuliERP.Identity.IntegrationTests`: PASS, `43/43`
+- `GuliERP.Api.Tests`: PASS, `32/32`
+- `GuliERP.Sales.Tests`: PASS, `9/9`
+- `GuliERP.Mdm.Tests`: PASS, `67/67`
+- `GuliERP.DocumentKernel.Tests`: PASS, `44/44`
+- `npm run typecheck`: PASS
+- `npm run build`: PASS with existing Vite/Rollup warnings
+- scoped `git diff --check`: PASS
+
+Restore note: initial restore attempts were blocked by transient `NU1900` vulnerability feed access to `https://api.nuget.org/v3/index.json`. Verification commands were rerun with `NuGetAudit=false` and isolated artifacts to avoid network volatility and running API DLL locks.
 
 ## Modified Files
 
