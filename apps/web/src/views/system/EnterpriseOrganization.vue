@@ -11,15 +11,16 @@
     <el-alert
       v-if="error"
       class="org-alert"
-      type="error"
+      :type="errorType"
       :title="error"
+      :description="errorDetail"
       show-icon
       :closable="false"
     />
 
-    <el-empty v-if="!loading && companies.length === 0" description="暂无企业组织数据" />
+    <el-empty v-if="!loading && !error && companies.length === 0" :description="emptyDescription" />
 
-    <template v-else>
+    <template v-else-if="!error">
       <div class="org-summary">
         <section class="org-panel">
           <div class="panel-label">企业信息</div>
@@ -89,9 +90,12 @@ import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
 import { getOrganizationTree, type OrganizationCompanyNodeDto, type OrganizationEmployeeNodeDto, type OrganizationUnitNodeDto } from '../../api/organization';
+import { ApiError } from '../../api/http';
 
 const loading = ref(false);
 const error = ref('');
+const errorDetail = ref('');
+const errorType = ref<'error' | 'warning'>('error');
 const companies = ref<OrganizationCompanyNodeDto[]>([]);
 
 const activeCompany = computed(() => companies.value[0] ?? null);
@@ -99,15 +103,38 @@ const plants = computed(() => activeCompany.value?.plants ?? []);
 const departmentTree = computed(() => activeCompany.value?.organizationUnits ?? []);
 const departmentCount = computed(() => countDepartments(departmentTree.value));
 const employees = computed(() => flattenEmployees(departmentTree.value));
+const emptyDescription = computed(() => '尚未初始化企业组织');
 
 async function load() {
   loading.value = true;
   error.value = '';
+  errorDetail.value = '';
+  errorType.value = 'error';
   try {
     const data = await getOrganizationTree();
     companies.value = data.companies ?? [];
   } catch (err) {
-    error.value = (err as any)?.title || '企业组织加载失败';
+    companies.value = [];
+    const apiError = err instanceof ApiError ? err : null;
+    const status = apiError?.status ?? (err as any)?.status;
+    if (status === 401) {
+      errorType.value = 'warning';
+      error.value = '登录已失效';
+      errorDetail.value = '请重新登录后再查看企业组织。';
+    } else if (status === 403) {
+      errorType.value = 'warning';
+      error.value = '无权访问企业组织';
+      errorDetail.value = '当前账号没有系统管理权限。';
+    } else if (status === 404) {
+      errorType.value = 'warning';
+      error.value = '尚未初始化企业组织';
+      errorDetail.value = '请由管理员完成企业初始化后再查看。';
+    } else {
+      error.value = apiError?.title || '企业组织加载失败';
+      const requestText = apiError?.requestId ? `RequestId: ${apiError.requestId}` : '';
+      const traceText = apiError?.traceId ? `TraceId: ${apiError.traceId}` : '';
+      errorDetail.value = [apiError?.detail, requestText, traceText].filter(Boolean).join(' ');
+    }
     ElMessage.error(error.value);
   } finally {
     loading.value = false;

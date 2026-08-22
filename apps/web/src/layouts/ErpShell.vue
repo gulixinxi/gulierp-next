@@ -13,6 +13,71 @@
         </div>
       </div>
       <div class="gs-topbar-center">
+        <el-popover
+          v-model:visible="searchVisible"
+          placement="bottom-start"
+          trigger="click"
+          width="360"
+          popper-class="gs-search-popover"
+        >
+          <template #reference>
+            <button class="gs-search-trigger" type="button">
+              <el-icon><Search /></el-icon>
+              <span>搜索菜单</span>
+            </button>
+          </template>
+          <div class="gs-search-panel">
+            <el-input
+              v-model="menuSearch"
+              placeholder="搜索功能入口"
+              clearable
+              :prefix-icon="Search"
+              @keyup.enter="openFirstSearchResult"
+            />
+            <div class="gs-search-results">
+              <button
+                v-for="item in searchedMenuItems"
+                :key="item.id"
+                class="gs-search-result"
+                type="button"
+                :disabled="item.disabled"
+                @click="openNavigationItem(item)"
+              >
+                <el-icon><component :is="resolveIcon(item.icon)" /></el-icon>
+                <span>{{ item.label }}</span>
+                <small v-if="item.disabled">{{ item.placeholder || '待开发' }}</small>
+              </button>
+              <div v-if="searchedMenuItems.length === 0" class="gs-search-empty">没有匹配的入口</div>
+            </div>
+          </div>
+        </el-popover>
+      </div>
+      <div class="gs-topbar-right">
+        <el-popover placement="bottom" trigger="click" width="280">
+          <template #reference>
+            <el-button text size="small" title="AI 助手">
+              <el-icon><MagicStick /></el-icon>
+              AI
+            </el-button>
+          </template>
+          <div class="gs-safe-panel">
+            <strong>AI 助手</strong>
+            <p>待接入，不调用模型或后端接口。</p>
+          </div>
+        </el-popover>
+        <el-popover placement="bottom" trigger="click" width="280">
+          <template #reference>
+            <el-button text size="small" title="消息">
+              <el-icon><Bell /></el-icon>
+              消息
+            </el-button>
+          </template>
+          <div class="gs-safe-panel">
+            <strong>消息</strong>
+            <p>消息中心待开发，当前不展示伪造数量。</p>
+          </div>
+        </el-popover>
+
         <!-- Company switch / display -->
         <el-dropdown
           v-if="auth.hasMultipleCompanies"
@@ -45,8 +110,6 @@
           <span>{{ auth.companyName || '公司' + auth.companyId }}</span>
         </span>
 
-        <span class="gs-org-sep">/</span>
-
         <!-- User menu: display name / username + dropdown with logout -->
         <el-dropdown trigger="click" @command="onUserCommand">
           <span class="gs-user-chip">
@@ -70,14 +133,10 @@
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-      </div>
-      <div class="gs-topbar-right">
+
         <el-button text size="small" @click="tabs.toggleFullscreen()">
           <el-icon><FullScreen /></el-icon>
           进入全屏编辑
-        </el-button>
-        <el-button text size="small">
-          <el-icon><Bell /></el-icon>
         </el-button>
       </div>
     </header>
@@ -92,7 +151,7 @@
           :class="{ 'is-active': activeModule === m.key }"
           @click="onModuleClick(m)"
         >
-          <el-icon class="gs-rail-icon"><component :is="m.icon" /></el-icon>
+          <el-icon class="gs-rail-icon"><component :is="resolveIcon(m.icon)" /></el-icon>
           <span>{{ m.shortLabel }}</span>
           <span class="gs-rail-tooltip">{{ m.label }}</span>
         </div>
@@ -109,113 +168,22 @@
           <span class="gs-secondary-title">{{ currentModuleLabel }}</span>
         </div>
         <div class="gs-menu-list">
-          <template v-if="activeModule === 'sales'">
-            <div class="gs-menu-group-title">销售单据</div>
-            <div
+          <template v-for="group in activeModuleNavigation.groups" :key="group.label">
+            <div class="gs-menu-group-title">{{ group.label }}</div>
+            <button
+              v-for="item in group.items"
+              :key="item.id"
               class="gs-menu-item"
-              :class="{ 'is-active': tabs.activeId === 'list-sales-order' }"
-              @click="openSalesOrderList"
+              type="button"
+              :class="{ 'is-active': isNavigationItemActive(item), 'is-disabled': item.disabled }"
+              :title="item.disabled ? (item.placeholder || '待开发') : item.label"
+              :disabled="item.disabled"
+              @click="openNavigationItem(item)"
             >
-              <el-icon><Tickets /></el-icon>
-              <span>销售订单</span>
-              <span class="gs-menu-badge">5</span>
-            </div>
-            <div class="gs-menu-item"><el-icon><Document /></el-icon><span>报价单</span></div>
-            <div class="gs-menu-item"><el-icon><Van /></el-icon><span>发货单</span></div>
-            <div class="gs-menu-item"><el-icon><Money /></el-icon><span>销售发票</span></div>
-            <div class="gs-menu-group-title">销售报表</div>
-            <div class="gs-menu-item"><el-icon><DataLine /></el-icon><span>销售业绩</span></div>
-            <div class="gs-menu-item"><el-icon><TrendCharts /></el-icon><span>客户账龄</span></div>
-          </template>
-          <template v-else-if="activeModule === 'basic'">
-            <div class="gs-menu-group-title">基础数据</div>
-            <div
-              class="gs-menu-item"
-              :class="{ 'is-active': tabs.activeId === 'list-mdm-items' }"
-              @click="openMdmItems"
-            >
-              <el-icon><Goods /></el-icon><span>商品档案</span>
-            </div>
-            <!-- MDM-WEB-002: 客户档案 / 供应商 reuse one BusinessPartnerList page;
-                 route meta.defaultRole sets the initial role filter (Handoff §5). -->
-            <div
-              class="gs-menu-item"
-              :class="{ 'is-active': tabs.activeId === 'list-mdm-customers' }"
-              @click="openCustomers"
-            >
-              <el-icon><OfficeBuilding /></el-icon><span>客户档案</span>
-            </div>
-            <div
-              class="gs-menu-item"
-              :class="{ 'is-active': tabs.activeId === 'list-mdm-suppliers' }"
-              @click="openSuppliers"
-            >
-              <el-icon><Avatar /></el-icon><span>供应商</span>
-            </div>
-            <div class="gs-menu-item is-disabled" title="员工档案功能待开发">
-              <el-icon><UserFilled /></el-icon>
-              <span>员工档案</span>
-              <span class="gs-menu-badge-pending">待开发</span>
-            </div>
-            <div
-              class="gs-menu-item"
-              :class="{ 'is-active': tabs.activeId === 'list-mdm-warehouses' }"
-              @click="openWarehouses"
-            >
-              <el-icon><Box /></el-icon><span>仓库</span>
-            </div>
-            <div
-              class="gs-menu-item"
-              :class="{ 'is-active': tabs.activeId === 'list-mdm-locations' }"
-              @click="openLocations"
-            >
-              <el-icon><Files /></el-icon><span>库位</span>
-            </div>
-          </template>
-          <template v-else-if="activeModule === 'mdm'">
-            <div class="gs-menu-group-title">主数据</div>
-            <div
-              class="gs-menu-item"
-              :class="{ 'is-active': tabs.activeId === 'list-mdm-uoms' }"
-              @click="openMdmUoms"
-            >
-              <el-icon><ScaleToOriginal /></el-icon>
-              <span>计量单位</span>
-            </div>
-            <div
-              class="gs-menu-item"
-              :class="{ 'is-active': tabs.activeId === 'list-mdm-item-categories' }"
-              @click="openMdmItemCategories"
-            >
-              <el-icon><Files /></el-icon>
-              <span>物料分类</span>
-            </div>
-            <div
-              class="gs-menu-item"
-              :class="{ 'is-active': tabs.activeId === 'list-mdm-items' }"
-              @click="openMdmItems"
-            >
-              <el-icon><Goods /></el-icon>
-              <span>物料</span>
-            </div>
-          </template>
-          <template v-else-if="activeModule === 'system'">
-            <div class="gs-menu-group-title">系统管理</div>
-            <div
-              class="gs-menu-item"
-              :class="{ 'is-active': tabs.activeId === 'list-system-enterprise-organization' }"
-              @click="openEnterpriseOrganization"
-            >
-              <el-icon><OfficeBuilding /></el-icon>
-              <span>企业组织</span>
-            </div>
-          </template>
-          <template v-else>
-            <div class="gs-menu-group-title">{{ currentModuleLabel }}</div>
-            <div class="gs-menu-item" v-for="s in genericSubmenu" :key="s">
-              <el-icon><Files /></el-icon>
-              <span>{{ s }}</span>
-            </div>
+              <el-icon><component :is="resolveIcon(item.icon)" /></el-icon>
+              <span>{{ item.label }}</span>
+              <span v-if="item.disabled" class="gs-menu-badge-pending">待开发</span>
+            </button>
           </template>
         </div>
         <!-- Resize handle -->
@@ -332,8 +300,16 @@ import {
   Document, EditPen, Tickets, Close, FullScreen, Bell,
   UserFilled, ArrowLeft, ArrowRight, Van, Money, DataLine,
   TrendCharts, Goods, OfficeBuilding as _OB, Avatar, Files, RefreshRight,
-  SwitchButton, ArrowDown, Loading, ScaleToOriginal, MoreFilled
+  SwitchButton, ArrowDown, Loading, ScaleToOriginal, MoreFilled,
+  Search, MagicStick
 } from '@element-plus/icons-vue';
+import {
+  findNavigationItemByRoute,
+  findNavigationModuleByRoute,
+  shellNavigation,
+  type ShellNavigationItem,
+  type ShellNavigationModule,
+} from '../layout/navigation';
 
 // Alias: OfficeBuilding icon is used in template as <OfficeBuilding />
 // (we re-export with that exact name since we import it as _OB to avoid collision with the component tag)
@@ -347,6 +323,8 @@ const auth = useAuthStore();
 const dirtyConfirm = reactive({ visible: false, title: '', id: '' });
 const companyLoading = ref(false);
 const logoutLoading = ref(false);
+const searchVisible = ref(false);
+const menuSearch = ref('');
 
 // ===== Top bar actions: Company switch + User menu =====
 async function onChangeCompany(companyId: string): Promise<void> {
@@ -386,135 +364,94 @@ async function onUserCommand(cmd: 'logout' | string): Promise<void> {
   }
 }
 
-// ===== Module Rail definition =====
-interface RailModule {
-  key: 'home' | 'basic' | 'mdm' | 'sales' | 'purchase' | 'inventory' | 'production' | 'quality' | 'system';
-  label: string;
-  shortLabel: string;
-  icon: any;
+const iconMap = {
+  HomeFilled, Sell, ShoppingCart, Box, Coin, Setting, Tools,
+  Document, Tickets, Bell, UserFilled, Van, Money, DataLine,
+  TrendCharts, Goods, OfficeBuilding, Avatar, Files, ScaleToOriginal,
+};
+
+const modules = computed(() => shellNavigation.filter(canAccessModule));
+const activeModule = ref<ShellNavigationModule['key']>('sales');
+const activeModuleNavigation = computed(() =>
+  modules.value.find(m => m.key === activeModule.value) ?? modules.value[0] ?? shellNavigation[0]);
+const currentModuleLabel = computed(() => activeModuleNavigation.value?.label || '');
+const allNavigationItems = computed(() =>
+  modules.value.flatMap(module => module.groups.flatMap(group => group.items.filter(canAccessItem))));
+const searchedMenuItems = computed(() => {
+  const query = menuSearch.value.trim().toLowerCase();
+  if (!query) return allNavigationItems.value.filter(item => item.route).slice(0, 8);
+  return allNavigationItems.value
+    .filter(item => item.label.toLowerCase().includes(query) || item.id.toLowerCase().includes(query))
+    .slice(0, 8);
+});
+
+function resolveIcon(name: string) {
+  return iconMap[name as keyof typeof iconMap] ?? Files;
 }
-const modules: RailModule[] = [
-  { key: 'home',       label: '工作台',   shortLabel: '工作台', icon: HomeFilled },
-  { key: 'basic',      label: '基础数据', shortLabel: '基础',   icon: Tools },
-  { key: 'mdm',        label: '主数据',   shortLabel: '主数据', icon: Files },
-  { key: 'sales',      label: '销售管理', shortLabel: '销售',   icon: Sell },
-  { key: 'purchase',   label: '采购管理', shortLabel: '采购',   icon: ShoppingCart },
-  { key: 'inventory',  label: '库存管理', shortLabel: '库存',   icon: Box },
-  { key: 'production', label: '生产管理', shortLabel: '生产',   icon: Goods },
-  { key: 'quality',    label: '质量管理', shortLabel: '质量',   icon: Coin },
-  { key: 'system',     label: '系统设置', shortLabel: '系统',   icon: Setting }
-];
 
-const activeModule = ref<RailModule['key']>('sales');
-const currentModuleLabel = computed(() => modules.find(m => m.key === activeModule.value)?.label || '');
-const genericSubmenu = computed(() => ['菜单1', '菜单2', '菜单3', '菜单4', '报表1', '报表2']);
+function canAccessModule(module: ShellNavigationModule): boolean {
+  return !module.permissionKey && !module.disabled;
+}
 
-// WEB-PREVIEW-001: keep activeModule in sync with current route so a fresh
-// ErpShell mount (e.g. /mdm/* which is a separate top-level route) shows the
-// correct secondary menu. immediate:true covers the initial mount case.
-// Also syncs/creates tabs on direct URL navigation or browser refresh
-// (WEB-UX-SHELL-001 §26: router变化 → active Tab同步).
+function canAccessItem(item: ShellNavigationItem): boolean {
+  return !item.permissionKey;
+}
+
 watch(
   () => route.path,
   (p) => {
     if (!p) return;
-    // MDM-001 master data (UOM/ItemCategory/Item) → 主数据 module;
-    // MDM-002 BusinessPartner/Warehouse/Location → 基础数据 module, where
-    // 客户档案 / 供应商 / 仓库 / 库位 menu items live (so the item the user
-    // clicked stays visible + highlighted after navigation).
-    if (
-      p.startsWith('/mdm/uoms') ||
-      p.startsWith('/mdm/item-categories') ||
-      p.startsWith('/mdm/items')
-    ) {
-      activeModule.value = 'mdm';
-    } else if (
-      p.startsWith('/mdm/business-partners') ||
-      p.startsWith('/mdm/customers') ||
-      p.startsWith('/mdm/suppliers') ||
-      p.startsWith('/mdm/warehouses') ||
-      p.startsWith('/mdm/locations')
-    ) {
-      activeModule.value = 'basic';
-    } else if (p.startsWith('/mdm')) {
-      activeModule.value = 'mdm';
-    } else if (p.startsWith('/sales-order')) {
-      activeModule.value = 'sales';
-    } else if (p.startsWith('/system')) {
-      activeModule.value = 'system';
+    const currentModule = findNavigationModuleByRoute(p);
+    if (currentModule) {
+      activeModule.value = currentModule.key;
     }
 
-    // Tab sync: if a tab with this route already exists, activate it.
     const existingTab = tabs.tabs.find(t => t.route === p);
     if (existingTab) {
       tabs.setActive(existingTab.id);
       return;
     }
-    // Auto-create a list tab for the current route if it has a title
-    // in route meta (covers direct URL nav + browser refresh).
-    const title = route.meta?.title as string | undefined;
-    const name = route.name as string | undefined;
-    if (title && name && !p.includes('/login')) {
-      tabs.ensureList(`list-${name}`, title, 'list', p);
+
+    const navItem = findNavigationItemByRoute(p);
+    const title = navItem?.tabTitle || navItem?.label || route.meta?.title as string | undefined;
+    const id = navItem?.id || (route.name ? `list-${String(route.name)}` : '');
+    if (title && id && !p.includes('/login')) {
+      tabs.ensureList(id, title, navItem?.tabKind || 'list', p);
     }
   },
   { immediate: true }
 );
 
-function onModuleClick(m: RailModule) {
-  // Rule C/D: switching to a DIFFERENT module auto-expands Secondary;
-  // staying on the SAME module preserves any user-initiated collapsed state.
+function onModuleClick(m: ShellNavigationModule) {
   const moduleChanged = m.key !== activeModule.value;
   if (moduleChanged && secondaryCollapsed.value) {
     secondaryCollapsed.value = false;
     localStorage.setItem(LS_COLLAPSE_KEY, '0');
   }
   activeModule.value = m.key;
-  if (m.key === 'sales') openSalesOrderList();
-  if (m.key === 'mdm') openMdmItems();
-  if (m.key === 'system') openEnterpriseOrganization();
-}
-function openSalesOrderList() {
-  tabs.ensureList('list-sales-order', '销售订单', 'list', '/sales-order');
-  router.push('/sales-order').catch(() => {});
+  const firstRoute = m.groups.flatMap(group => group.items).find(item => item.route && !item.disabled);
+  if (firstRoute) {
+    openNavigationItem(firstRoute);
+  }
 }
 
-// ===== MDM navigation (WEB-PREVIEW-001) =====
-function openMdmUoms() {
-  tabs.ensureList('list-mdm-uoms', '计量单位', 'list', '/mdm/uoms');
-  router.push('/mdm/uoms').catch(() => {});
-}
-function openMdmItemCategories() {
-  tabs.ensureList('list-mdm-item-categories', '物料分类', 'list', '/mdm/item-categories');
-  router.push('/mdm/item-categories').catch(() => {});
-}
-function openMdmItems() {
-  tabs.ensureList('list-mdm-items', '物料', 'list', '/mdm/items');
-  router.push('/mdm/items').catch(() => {});
+function isNavigationItemActive(item: ShellNavigationItem): boolean {
+  return tabs.activeId === item.id || (!!item.route && route.path.startsWith(item.route));
 }
 
-// ===== MDM-WEB-002 navigation: BusinessPartner / Warehouse / Location =====
-// 客户档案 / 供应商 reuse the same BusinessPartnerList page; route
-// meta.defaultRole sets the initial role filter (Handoff §5 bit-flag).
-function openCustomers() {
-  tabs.ensureList('list-mdm-customers', '客户档案', 'list', '/mdm/customers');
-  router.push('/mdm/customers').catch(() => {});
+function openNavigationItem(item: ShellNavigationItem): void {
+  if (item.disabled || !item.route) {
+    ElMessage.info(item.placeholder || '功能待开发');
+    return;
+  }
+  searchVisible.value = false;
+  tabs.ensureList(item.id, item.tabTitle || item.label, item.tabKind || 'list', item.route);
+  router.push(item.route).catch(() => {});
 }
-function openSuppliers() {
-  tabs.ensureList('list-mdm-suppliers', '供应商', 'list', '/mdm/suppliers');
-  router.push('/mdm/suppliers').catch(() => {});
-}
-function openWarehouses() {
-  tabs.ensureList('list-mdm-warehouses', '仓库', 'list', '/mdm/warehouses');
-  router.push('/mdm/warehouses').catch(() => {});
-}
-function openLocations() {
-  tabs.ensureList('list-mdm-locations', '库位', 'list', '/mdm/locations');
-  router.push('/mdm/locations').catch(() => {});
-}
-function openEnterpriseOrganization() {
-  tabs.ensureList('list-system-enterprise-organization', '企业组织', 'list', '/system/enterprise-organization');
-  router.push('/system/enterprise-organization').catch(() => {});
+
+function openFirstSearchResult(): void {
+  const item = searchedMenuItems.value.find(i => !i.disabled && i.route);
+  if (item) openNavigationItem(item);
 }
 
 // ===== Secondary menu width + collapse (persisted via localStorage) =====
@@ -720,6 +657,7 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 .gs-org-chip--interactive {
   cursor: pointer;
@@ -759,6 +697,76 @@ onBeforeUnmount(() => {
 }
 
 .gs-coy-name { margin-right: 10px; }
+.gs-search-trigger {
+  width: min(360px, 32vw);
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1d5db;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  cursor: pointer;
+  text-align: left;
+}
+.gs-search-trigger:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.gs-search-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gs-search-results {
+  max-height: 280px;
+  overflow: auto;
+}
+.gs-search-result {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary, #0f172a);
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+.gs-search-result:hover {
+  background: var(--bg-subtle, #f8fafc);
+}
+.gs-search-result:disabled {
+  color: var(--text-muted, #64748b);
+  cursor: not-allowed;
+}
+.gs-search-result small,
+.gs-search-empty {
+  color: var(--text-muted, #64748b);
+  font-size: 12px;
+}
+.gs-search-empty {
+  padding: 16px 8px;
+  text-align: center;
+}
+.gs-safe-panel {
+  line-height: 1.6;
+}
+.gs-safe-panel p {
+  margin: 6px 0 0;
+  color: var(--text-muted, #64748b);
+  font-size: 13px;
+}
+.gs-menu-item {
+  border: 0;
+  width: 100%;
+  font: inherit;
+}
 .gs-user-detail-head {
   line-height: 1.5;
   cursor: default;

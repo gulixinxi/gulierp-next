@@ -17,7 +17,7 @@ const LIST_TAB: ErpTab = {
   id: 'list-sales-order',
   kind: 'list',
   title: '销售订单',
-  route: '/sales-order',
+  route: '/sales/orders',
   closable: false
 };
 

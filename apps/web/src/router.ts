@@ -15,12 +15,17 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        redirect: '/sales-order'
+        redirect: '/sales/orders'
+      },
+      {
+        path: 'sales/orders',
+        name: 'SalesOrderList',
+        component: SalesOrderList,
+        meta: { title: '销售订单', module: 'sales' }
       },
       {
         path: 'sales-order',
-        name: 'SalesOrderList',
-        component: SalesOrderList
+        redirect: '/sales/orders'
       },
       {
         path: 'sales-order/:id/edit',
