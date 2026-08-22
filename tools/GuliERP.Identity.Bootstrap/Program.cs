@@ -140,6 +140,11 @@ public static class Program
             return await RunGrantMdmOperatorAsync(args);
         }
 
+        if (args.Length >= 1 && args[0] == "--grant-sales-operator")
+        {
+            return await RunGrantSalesOperatorAsync(args);
+        }
+
         if (args.Length < 4)
         {
             await Console.Error.WriteLineAsync(
@@ -1393,6 +1398,245 @@ public static class Program
         catch (Exception ex)
         {
             await Console.Error.WriteLineAsync($"EXCEPTION(--grant-mdm-operator): {ex.GetType().Name}: {ex.Message}");
+            return ExitOtherException;
+        }
+    }
+
+    /// <summary>
+    /// GULIERP-SALES-001R1 — Grant the operator test users the formal
+    /// SalesOrder vertical-slice role. This intentionally does not modify
+    /// ERP_MDM_OPERATOR and grants only sales.order.read + sales.order.manage.
+    /// </summary>
+    private static async Task<int> RunGrantSalesOperatorAsync(string[] args)
+    {
+        // --grant-sales-operator <connectionString> <userName>
+        if (args.Length < 3)
+        {
+            await Console.Error.WriteLineAsync(
+                "Usage: gulierp-identity-bootstrap --grant-sales-operator <connectionString> <userName>");
+            return ExitConnectionMissing;
+        }
+        var connectionString = args[1];
+        var userName = args[2];
+
+        var accepted = new[] { MarkerPrefix, "web_preview_" };
+        if (!accepted.Any(m => userName.StartsWith(m, StringComparison.Ordinal)))
+        {
+            await Console.Error.WriteLineAsync(
+                $"SAFETY(--grant-sales-operator): userName must start with one of: " +
+                string.Join(", ", accepted) + $". Got '{userName}'.");
+            return ExitSafetyGuard;
+        }
+
+        var services = new ServiceCollection();
+        services.AddLogging(b =>
+        {
+            b.SetMinimumLevel(LogLevel.Information);
+            b.AddProvider(new StderrLoggerProvider());
+        });
+        services.AddDbContext<IdentityDbContext>(options =>
+        {
+            options.UseNpgsql(
+                connectionString,
+                npg => npg.MigrationsHistoryTable(
+                    "__ef_migrations_history",
+                    IdentityDbContext.DefaultSchema));
+        });
+        services.AddIdentity<GuliErpUser, GuliErpRole>(options =>
+        {
+            options.Password.RequiredLength = 1;
+            options.Password.RequireDigit = false;
+            options.Password.RequireLowercase = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequiredUniqueChars = 0;
+            options.User.RequireUniqueEmail = false;
+            options.SignIn.RequireConfirmedEmail = false;
+            options.Lockout.AllowedForNewUsers = false;
+        })
+        .AddEntityFrameworkStores<IdentityDbContext>()
+        .AddDefaultTokenProviders();
+
+        await using var sp = services.BuildServiceProvider();
+        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("GrantSales");
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var userManager = sp.GetRequiredService<UserManager<GuliErpUser>>();
+        var roleManager = sp.GetRequiredService<RoleManager<GuliErpRole>>();
+
+        try
+        {
+            var user = await userManager.FindByNameAsync(userName);
+            if (user is null)
+            {
+                await Console.Error.WriteLineAsync(
+                    $"--grant-sales-operator: user '{userName}' not found. Run the standard bootstrap first.");
+                return ExitTenantCompanyFailure;
+            }
+            if (user.Status != UserStatus.Active)
+            {
+                await Console.Error.WriteLineAsync(
+                    $"--grant-sales-operator: user '{userName}' is not Active (status={user.Status}).");
+                return ExitIdentityRejection;
+            }
+            if (user.TenantId <= 0)
+            {
+                await Console.Error.WriteLineAsync(
+                    $"--grant-sales-operator: user '{userName}' has no Tenant binding (TenantId={user.TenantId}).");
+                return ExitTenantCompanyFailure;
+            }
+
+            var tenant = await db.Tenants.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == user.TenantId);
+            if (tenant is null || tenant.Status != TenantStatus.Active)
+            {
+                await Console.Error.WriteLineAsync(
+                    $"--grant-sales-operator: tenant (Id={user.TenantId}) not found or inactive.");
+                return ExitTenantCompanyFailure;
+            }
+
+            var defaultMembership = await db.UserCompanyMemberships.AsNoTracking()
+                .FirstOrDefaultAsync(m => m.UserId == user.Id
+                                       && m.IsDefault
+                                       && m.Status == MembershipStatus.Active);
+            if (defaultMembership is null)
+            {
+                logger.LogWarning(
+                    "--grant-sales-operator: user {Name} (Id={Id}) has no default Company membership. " +
+                    "Sales endpoints will still require a current Company context.",
+                    userName, user.Id);
+            }
+
+            const string SalesOperatorRoleCode = "ERP_SALES_OPERATOR";
+            const string SalesOperatorRoleName = "ERP Sales Operator";
+            const string SalesOperatorRoleDescription =
+                "Read + manage access to the SalesOrder vertical slice only. " +
+                "Tenant-wide scope. Excludes Platform Admin, MDM, purchase, inventory and workflow capabilities.";
+
+            var role = await db.Roles.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.TenantId == user.TenantId
+                                      && r.Code == SalesOperatorRoleCode);
+            if (role is null)
+            {
+                role = new GuliErpRole
+                {
+                    TenantId = user.TenantId,
+                    Name = SalesOperatorRoleName,
+                    NormalizedName = SalesOperatorRoleName.ToUpperInvariant(),
+                    Code = SalesOperatorRoleCode,
+                    IsSystem = true,
+                    Description = SalesOperatorRoleDescription,
+                    Status = RoleStatus.Active,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = null,
+                    ModifiedAt = DateTimeOffset.UtcNow,
+                    ModifiedBy = null,
+                    ConcurrencyVersion = 1,
+                };
+                var createRole = await roleManager.CreateAsync(role);
+                if (!createRole.Succeeded)
+                {
+                    await Console.Error.WriteLineAsync(
+                        $"--grant-sales-operator: failed to create role {SalesOperatorRoleCode}: " +
+                        string.Join("; ", createRole.Errors.Select(e => $"{e.Code}:{e.Description}")));
+                    return ExitIdentityRejection;
+                }
+            }
+            else if (role.Status != RoleStatus.Active)
+            {
+                role.Status = RoleStatus.Active;
+                var updateRole = await roleManager.UpdateAsync(role);
+                if (!updateRole.Succeeded)
+                {
+                    await Console.Error.WriteLineAsync(
+                        $"--grant-sales-operator: failed to re-activate role {SalesOperatorRoleCode}: " +
+                        string.Join("; ", updateRole.Errors.Select(e => $"{e.Code}:{e.Description}")));
+                    return ExitIdentityRejection;
+                }
+            }
+
+            var salesPermissionCodes = new[]
+            {
+                "sales.order.read",
+                "sales.order.manage",
+            };
+
+            var grantedClaims = new List<string>();
+            foreach (var code in salesPermissionCodes)
+            {
+                var existingClaims = await roleManager.GetClaimsAsync(role);
+                if (existingClaims.Any(c =>
+                    c.Type == GuliErpPermissionClaimTypes.Permission
+                    && string.Equals(c.Value, code, StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+                var addClaimResult = await roleManager.AddClaimAsync(
+                    role, new System.Security.Claims.Claim(
+                        GuliErpPermissionClaimTypes.Permission, code));
+                if (!addClaimResult.Succeeded)
+                {
+                    await Console.Error.WriteLineAsync(
+                        $"--grant-sales-operator: failed to add claim '{code}' to role {SalesOperatorRoleCode}: " +
+                        string.Join("; ", addClaimResult.Errors.Select(e => $"{e.Code}:{e.Description}")));
+                    return ExitIdentityRejection;
+                }
+                grantedClaims.Add(code);
+            }
+
+            var alreadyAssigned = await db.UserRoleAssignments.AsNoTracking()
+                .AnyAsync(a => a.UserId == user.Id
+                            && a.RoleId == role.Id
+                            && a.CompanyId == null
+                            && a.Status == AssignmentStatus.Active);
+            if (!alreadyAssigned)
+            {
+                db.UserRoleAssignments.Add(new UserRoleAssignment
+                {
+                    TenantId = user.TenantId,
+                    UserId = user.Id,
+                    RoleId = role.Id,
+                    CompanyId = null,
+                    ValidFrom = null,
+                    ValidTo = null,
+                    Status = AssignmentStatus.Active,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = null,
+                    ModifiedAt = DateTimeOffset.UtcNow,
+                    ModifiedBy = null,
+                    ConcurrencyVersion = 1,
+                });
+                await db.SaveChangesAsync();
+            }
+
+            var output = new
+            {
+                ok = true,
+                userName = user.UserName,
+                userId = user.Id,
+                tenantId = tenant.Id,
+                tenantCode = tenant.Code,
+                roleId = role.Id,
+                roleCode = SalesOperatorRoleCode,
+                grantedClaims = grantedClaims.ToArray(),
+                totalClaims = salesPermissionCodes.Length,
+                note = "Idempotent. Re-runs are safe and add only missing SalesOrder claims / assignment.",
+            };
+            await Console.Out.WriteLineAsync(System.Text.Json.JsonSerializer.Serialize(output));
+            return ExitOk;
+        }
+        catch (Exception ex) when (
+            ex is Microsoft.EntityFrameworkCore.DbUpdateException
+                or Npgsql.NpgsqlException
+                or System.Net.Sockets.SocketException
+                or TimeoutException)
+        {
+            await Console.Error.WriteLineAsync($"DB ERROR(--grant-sales-operator): {ex.GetType().Name}: {ex.Message}");
+            return ExitDatabaseUnavailable;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"EXCEPTION(--grant-sales-operator): {ex.GetType().Name}: {ex.Message}");
             return ExitOtherException;
         }
     }

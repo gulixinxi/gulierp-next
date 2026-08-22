@@ -83,14 +83,15 @@
           v-if="auth.hasMultipleCompanies"
           trigger="click"
           @command="onChangeCompany"
+          :teleported="true"
         >
-          <span class="gs-org-chip gs-org-chip--interactive" :class="{ 'is-loading': companyLoading }">
+          <button class="gs-org-chip gs-org-chip--interactive" :class="{ 'is-loading': companyLoading }" type="button" :title="companyTooltip">
             <el-icon><OfficeBuilding /></el-icon>
-            <span>{{ auth.companyName || '公司' + auth.companyId }}</span>
+            <span>{{ companyPrimaryLabel }}</span>
             <el-icon class="gs-org-chevron" :class="{ 'is-spin': companyLoading }">
               <component :is="companyLoading ? Loading : ArrowDown" />
             </el-icon>
-          </span>
+          </button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item
@@ -105,26 +106,27 @@
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <span v-else class="gs-org-chip">
+        <span v-else class="gs-org-chip" :title="companyTooltip">
           <el-icon><OfficeBuilding /></el-icon>
-          <span>{{ auth.companyName || '公司' + auth.companyId }}</span>
+          <span>{{ companyPrimaryLabel }}</span>
         </span>
 
         <!-- User menu: display name / username + dropdown with logout -->
-        <el-dropdown trigger="click" popper-class="gs-user-menu-popper" @command="onUserCommand">
-          <span class="gs-user-chip">
+        <el-dropdown trigger="click" popper-class="gs-user-menu-popper" :teleported="true" @command="onUserCommand">
+          <button class="gs-user-chip" type="button">
             <el-icon><UserFilled /></el-icon>
             <span class="gs-user-name">{{ auth.displayName || auth.userName || '—' }}</span>
             <span v-if="auth.userName && auth.displayName && auth.userName !== auth.displayName" class="gs-user-handle">@{{ auth.userName }}</span>
             <el-icon class="gs-org-chevron"><ArrowDown /></el-icon>
-          </span>
+          </button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item disabled>
                 <div class="gs-user-detail-head">
                   <div class="gs-user-detail-name">{{ auth.displayName || auth.userName }}</div>
                   <div v-if="auth.userName" class="gs-user-detail-user">@{{ auth.userName }}</div>
-                  <div v-if="auth.companyName" class="gs-user-detail-company">公司：{{ auth.companyName }}</div>
+                  <div v-if="companyPrimaryLabel" class="gs-user-detail-company">公司：{{ companyPrimaryLabel }}</div>
+                  <div v-if="auth.companyCode" class="gs-user-detail-company">编码：{{ auth.companyCode }}</div>
                   <div v-if="auth.tenantName" class="gs-user-detail-tenant">租户：{{ auth.tenantName }}</div>
                 </div>
               </el-dropdown-item>
@@ -327,6 +329,25 @@ const companyLoading = ref(false);
 const logoutLoading = ref(false);
 const searchVisible = ref(false);
 const menuSearch = ref('');
+const companyPrimaryLabel = computed(() =>
+  stripTrailingCompanyCode(auth.companyName, auth.companyCode)
+  || auth.companyCode
+  || '公司');
+const companyTooltip = computed(() =>
+  auth.companyCode && companyPrimaryLabel.value !== auth.companyCode
+    ? `${companyPrimaryLabel.value} (${auth.companyCode})`
+    : companyPrimaryLabel.value);
+
+function stripTrailingCompanyCode(name?: string, code?: string): string {
+  const text = (name || '').trim();
+  const suffix = (code || '').trim();
+  if (!text || !suffix) return text;
+  const ascii = ` (${suffix})`;
+  const full = `（${suffix}）`;
+  if (text.endsWith(ascii)) return text.slice(0, -ascii.length).trim();
+  if (text.endsWith(full)) return text.slice(0, -full.length).trim();
+  return text;
+}
 
 // ===== Top bar actions: Company switch + User menu =====
 async function onChangeCompany(companyId: string): Promise<void> {
@@ -656,10 +677,16 @@ onBeforeUnmount(() => {
    These additions are component-level interaction details. */
 
 .gs-org-chip {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
 }
 .gs-org-chip--interactive {
   cursor: pointer;
@@ -684,9 +711,18 @@ onBeforeUnmount(() => {
 @keyframes shell-spin { to { transform: rotate(360deg); } }
 
 .gs-user-chip {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   cursor: pointer;
   padding: 2px 8px;
   border-radius: 999px;
+  position: relative;
+  z-index: 2;
   transition: background 120ms ease;
 }
 .gs-user-chip:hover { background: rgba(255, 255, 255, 0.08); }

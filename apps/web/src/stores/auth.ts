@@ -42,6 +42,9 @@ export const useAuthStore = defineStore('auth', {
     companyName(s): string {
       return s.user?.companyName || s.user?.companyCode || '';
     },
+    companyCode(s): string {
+      return s.user?.companyCode || '';
+    },
     companyId(s): string | null {
       return s.user?.companyId ?? null;
     },
