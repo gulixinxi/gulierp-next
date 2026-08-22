@@ -168,7 +168,7 @@ public sealed class PlantDirectoryService : IPlantDirectoryService
     }
 
     private static PlantDirectoryEntryDto ToDto(Plant p) =>
-        new(p.Id, p.TenantId, p.CompanyId, p.ParentPlantId, p.Code, p.Name,
+        new(p.Id, p.TenantId, p.CompanyId, p.ParentPlantId, p.Code, p.Name, p.IsDefault,
             p.CountryCode, p.Timezone, p.CalendarCode, p.Status.ToString());
 }
 
@@ -283,4 +283,59 @@ public sealed class UserDirectoryService : IUserDirectoryService
     private static UserDirectoryEntryDto ToDto(GuliErpUser u) =>
         new(u.Id, u.TenantId, u.UserName ?? string.Empty, u.DisplayName,
             u.Email, u.IsPlatformAdmin, u.Status.ToString());
+}
+
+public sealed class EmployeeDirectoryService : IEmployeeDirectoryService
+{
+    private readonly IdentityDbContext _db;
+    private readonly ICurrentTenant _currentTenant;
+
+    public EmployeeDirectoryService(IdentityDbContext db, ICurrentTenant currentTenant)
+    {
+        _db = db;
+        _currentTenant = currentTenant;
+    }
+
+    public async Task<EmployeeDirectoryEntryDto?> GetByIdAsync(long employeeId, CancellationToken ct = default)
+    {
+        var tenantId = _currentTenant.Id
+            ?? throw new InvalidOperationException(
+                "IEmployeeDirectoryService.GetByIdAsync requires ICurrentTenant.IsAvailable.");
+
+        var e = await _db.Employees.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == employeeId && x.TenantId == tenantId, ct);
+        return e is null ? null : ToDto(e);
+    }
+
+    public async Task<IReadOnlyList<EmployeeDirectoryEntryDto>> ListByCompanyAsync(
+        long companyId,
+        long? departmentId = null,
+        int skip = 0,
+        int take = 200,
+        CancellationToken ct = default)
+    {
+        var tenantId = _currentTenant.Id
+            ?? throw new InvalidOperationException(
+                "IEmployeeDirectoryService.ListByCompanyAsync requires ICurrentTenant.IsAvailable.");
+
+        var company = await _db.Companies.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == companyId, ct);
+        if (company is null || company.TenantId != tenantId)
+        {
+            return Array.Empty<EmployeeDirectoryEntryDto>();
+        }
+
+        var query = _db.Employees.AsNoTracking().Where(e => e.CompanyId == companyId);
+        if (departmentId.HasValue)
+        {
+            query = query.Where(e => e.DepartmentId == departmentId.Value);
+        }
+
+        var rows = await query.OrderBy(e => e.EmployeeNo).Skip(skip).Take(take).ToListAsync(ct);
+        return rows.Select(ToDto).ToList();
+    }
+
+    private static EmployeeDirectoryEntryDto ToDto(Employee e) =>
+        new(e.Id, e.TenantId, e.CompanyId, e.DepartmentId, e.UserId,
+            e.EmployeeNo, e.Name, e.Status.ToString());
 }

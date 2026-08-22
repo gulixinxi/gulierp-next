@@ -2,12 +2,14 @@ using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Application.Authorization;
 using GuliERP.Identity.Application.CompanySwitching;
 using GuliERP.Identity.Application.Directory;
+using GuliERP.Identity.Application.EnterpriseOrganization;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Infrastructure.Authentication;
 using GuliERP.Identity.Infrastructure.CompanySwitching;
 using GuliERP.Identity.Infrastructure.Contexts;
 using GuliERP.Identity.Infrastructure.Directory;
+using GuliERP.Identity.Infrastructure.EnterpriseOrganization;
 using GuliERP.Identity.Infrastructure.Persistence;
 using GuliERP.Identity.Infrastructure.Seed;
 using Microsoft.AspNetCore.Authentication;
@@ -190,6 +192,8 @@ public static class DependencyInjection
         services.AddScoped<IPlantDirectoryService, PlantDirectoryService>();
         services.AddScoped<IOrganizationDirectoryService, OrganizationDirectoryService>();
         services.AddScoped<IUserDirectoryService, UserDirectoryService>();
+        services.AddScoped<IEmployeeDirectoryService, EmployeeDirectoryService>();
+        services.AddScoped<IEnterpriseOrganizationInitializer, EnterpriseOrganizationInitializer>();
 
         // ----- Company switching service (G2-003 unchanged) -----
         services.AddScoped<ICompanySwitchingService, CompanySwitchingService>();

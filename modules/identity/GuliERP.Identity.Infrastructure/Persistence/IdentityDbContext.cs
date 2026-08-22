@@ -57,6 +57,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<Plant> Plants => Set<Plant>();
     public DbSet<OrganizationUnit> OrganizationUnits => Set<OrganizationUnit>();
+    public DbSet<Employee> Employees => Set<Employee>();
 
     public DbSet<UserCompanyMembership> UserCompanyMemberships => Set<UserCompanyMembership>();
     public DbSet<UserOrganizationMembership> UserOrganizationMemberships => Set<UserOrganizationMembership>();
@@ -97,6 +98,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
         modelBuilder.Entity<Company>(b => b.HasQueryFilter(e => true));
         modelBuilder.Entity<Plant>(b => b.HasQueryFilter(e => true));
         modelBuilder.Entity<OrganizationUnit>(b => b.HasQueryFilter(e => true));
+        modelBuilder.Entity<Employee>(b => b.HasQueryFilter(e => true));
         modelBuilder.Entity<GuliErpUser>(b => b.HasQueryFilter(e => true));
         modelBuilder.Entity<GuliErpRole>(b => b.HasQueryFilter(e => true));
         modelBuilder.Entity<UserCompanyMembership>(b => b.HasQueryFilter(e => true));
@@ -113,6 +115,7 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
         modelBuilder.Entity<Company>(b => b.ToTable("gulierp_company"));
         modelBuilder.Entity<Plant>(b => b.ToTable("gulierp_plant"));
         modelBuilder.Entity<OrganizationUnit>(b => b.ToTable("gulierp_organization_unit"));
+        modelBuilder.Entity<Employee>(b => b.ToTable("gulierp_employee"));
         modelBuilder.Entity<UserCompanyMembership>(b => b.ToTable("gulierp_user_company_membership"));
         modelBuilder.Entity<UserOrganizationMembership>(b => b.ToTable("gulierp_user_organization_membership"));
         modelBuilder.Entity<UserRoleAssignment>(b => b.ToTable("gulierp_user_role_assignment"));
@@ -171,9 +174,14 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
             b.Property(p => p.CountryCode).IsRequired().HasMaxLength(2).IsFixedLength();
             b.Property(p => p.Timezone).IsRequired().HasMaxLength(64);
             b.Property(p => p.CalendarCode).HasMaxLength(40);
+            b.Property(p => p.IsDefault).IsRequired();
             b.Property(p => p.Status).HasConversion<int>();
             // UNIQUE (CompanyId, Code) — Plant code unique within Company
             b.HasIndex(p => new { p.CompanyId, p.Code }).IsUnique().HasDatabaseName("ux_gulierp_plant_company_code");
+            b.HasIndex(p => p.CompanyId)
+                .IsUnique()
+                .HasFilter("\"IsDefault\" = true")
+                .HasDatabaseName("ux_gulierp_plant_company_default");
             // FK: Plant.TenantId → Tenant.Id (DEC-ID-018; G2-003V2)
             b.HasOne<Tenant>().WithMany().HasForeignKey(p => p.TenantId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -206,6 +214,36 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
             b.HasOne<OrganizationUnit>().WithMany().HasForeignKey(o => o.ParentOrganizationUnitId)
                 .OnDelete(DeleteBehavior.Restrict);
             b.Property(o => o.ConcurrencyVersion).IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<Employee>(b =>
+        {
+            b.HasKey(e => e.Id);
+            b.Property(e => e.Id).UseHiLo(HiLoSequenceName, DefaultSchema);
+            b.Property(e => e.TenantId).IsRequired();
+            b.Property(e => e.CompanyId).IsRequired();
+            b.Property(e => e.DepartmentId).IsRequired(false);
+            b.Property(e => e.UserId).IsRequired(false);
+            b.Property(e => e.EmployeeNo).IsRequired().HasMaxLength(40);
+            b.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            b.Property(e => e.Status).HasConversion<int>();
+            b.HasIndex(e => new { e.CompanyId, e.EmployeeNo })
+                .IsUnique()
+                .HasDatabaseName("ux_gulierp_employee_company_no");
+            b.HasIndex(e => e.DepartmentId).HasDatabaseName("ix_gulierp_employee_department");
+            b.HasIndex(e => e.UserId)
+                .IsUnique()
+                .HasFilter("\"UserId\" IS NOT NULL")
+                .HasDatabaseName("ux_gulierp_employee_user");
+            b.HasOne<Tenant>().WithMany().HasForeignKey(e => e.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Company>().WithMany().HasForeignKey(e => e.CompanyId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<OrganizationUnit>().WithMany().HasForeignKey(e => e.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<GuliErpUser>().WithMany().HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(e => e.ConcurrencyVersion).IsConcurrencyToken();
         });
 
         // GuliErpUser extends IdentityUser<long>. The Identity base

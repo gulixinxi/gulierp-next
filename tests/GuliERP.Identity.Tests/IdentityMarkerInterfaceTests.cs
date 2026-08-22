@@ -49,6 +49,15 @@ public class IdentityMarkerInterfaceTests
     }
 
     [Fact]
+    public void Employee_Implements_ICompanyScoped()
+    {
+        var e = new Employee { Id = 300, TenantId = 1, CompanyId = 10, EmployeeNo = "E001", Name = "Alice" };
+        Assert.True(e is ICompanyScoped);
+        Assert.Equal(1, ((ICompanyScoped)e).TenantId);
+        Assert.Equal(10, ((ICompanyScoped)e).CompanyId);
+    }
+
+    [Fact]
     public void GuliErpUser_Implements_IMultiTenant()
     {
         var u = new GuliErpUser { Id = 1000, TenantId = 1 };

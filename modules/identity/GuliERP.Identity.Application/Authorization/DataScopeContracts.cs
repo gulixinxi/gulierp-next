@@ -6,6 +6,14 @@ public enum DataScopeMode
     AllAllowedCompanies = 2,
 }
 
+public enum DataScopeLevel
+{
+    OwnData = 1,
+    DepartmentData = 2,
+    CompanyData = 3,
+    TenantData = 4,
+}
+
 public interface IDataScopeAuthorizationService
 {
     Task<bool> CanReadCompanyScopedAsync(

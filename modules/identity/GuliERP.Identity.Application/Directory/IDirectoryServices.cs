@@ -108,3 +108,15 @@ public interface IUserDirectoryService
         int take = 200,
         CancellationToken ct = default);
 }
+
+public interface IEmployeeDirectoryService
+{
+    Task<EmployeeDirectoryEntryDto?> GetByIdAsync(long employeeId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<EmployeeDirectoryEntryDto>> ListByCompanyAsync(
+        long companyId,
+        long? departmentId = null,
+        int skip = 0,
+        int take = 200,
+        CancellationToken ct = default);
+}

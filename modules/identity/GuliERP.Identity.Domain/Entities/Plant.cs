@@ -50,6 +50,13 @@ public sealed class Plant : ICompanyScoped
     /// <summary>Reference to the future V1.5+ PlantCalendar.</summary>
     public string? CalendarCode { get; set; }
 
+    /// <summary>
+    /// Default factory/plant for the Company. In the simple single-factory
+    /// scenario this is created automatically and ordinary users never need
+    /// to choose a plant.
+    /// </summary>
+    public bool IsDefault { get; set; }
+
     public PlantStatus Status { get; set; } = PlantStatus.Active;
 
     public DateTimeOffset CreatedAt { get; set; }

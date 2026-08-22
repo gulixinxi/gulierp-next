@@ -99,6 +99,76 @@ namespace GuliERP.Identity.Infrastructure.Migrations
                     b.ToTable("gulierp_company", "identity");
                 });
 
+            modelBuilder.Entity("GuliERP.Identity.Domain.Entities.Employee", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseHiLo(b.Property<long>("Id"), "gulierp_hilo_sequence", "identity");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ConcurrencyVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("DepartmentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("EmployeeNo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTimeOffset>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("ModifiedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("TenantId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("DepartmentId")
+                        .HasDatabaseName("ix_gulierp_employee_department");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("CompanyId", "EmployeeNo")
+                        .IsUnique()
+                        .HasDatabaseName("ux_gulierp_employee_company_no");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("\"UserId\" IS NOT NULL")
+                        .HasDatabaseName("ux_gulierp_employee_user");
+
+                    b.ToTable("gulierp_employee", "identity");
+                });
+
             modelBuilder.Entity("GuliERP.Identity.Domain.Entities.GuliErpRole", b =>
                 {
                     b.Property<long>("Id")
@@ -377,6 +447,9 @@ namespace GuliERP.Identity.Infrastructure.Migrations
                     b.Property<long?>("CreatedBy")
                         .HasColumnType("bigint");
 
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTimeOffset>("ModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -415,6 +488,11 @@ namespace GuliERP.Identity.Infrastructure.Migrations
                     b.HasIndex("CompanyId", "Code")
                         .IsUnique()
                         .HasDatabaseName("ux_gulierp_plant_company_code");
+
+                    b.HasIndex("CompanyId")
+                        .IsUnique()
+                        .HasFilter("\"IsDefault\" = true")
+                        .HasDatabaseName("ux_gulierp_plant_company_default");
 
                     b.ToTable("gulierp_plant", "identity");
                 });
@@ -769,6 +847,31 @@ namespace GuliERP.Identity.Infrastructure.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("GuliERP.Identity.Domain.Entities.Employee", b =>
+                {
+                    b.HasOne("GuliERP.Identity.Domain.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GuliERP.Identity.Domain.Entities.OrganizationUnit", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GuliERP.Identity.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GuliERP.Identity.Domain.Entities.GuliErpUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("GuliERP.Identity.Domain.Entities.GuliErpRole", b =>

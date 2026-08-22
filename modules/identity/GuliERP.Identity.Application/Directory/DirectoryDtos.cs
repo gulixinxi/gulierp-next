@@ -53,6 +53,7 @@ public sealed record PlantDirectoryEntryDto(
     long? ParentPlantId,
     string Code,
     string Name,
+    bool IsDefault,
     string CountryCode,
     string Timezone,
     string? CalendarCode,
@@ -88,3 +89,13 @@ public sealed record UserDirectoryEntryDto(
     string? Email,
     bool IsPlatformAdmin,
     string Status) : DirectoryEntryDto(Id, TenantId, UserName, DisplayName, Status);
+
+public sealed record EmployeeDirectoryEntryDto(
+    long Id,
+    long TenantId,
+    long CompanyId,
+    long? DepartmentId,
+    long? UserId,
+    string EmployeeNo,
+    string Name,
+    string Status) : DirectoryEntryDto(Id, TenantId, EmployeeNo, Name, Status);

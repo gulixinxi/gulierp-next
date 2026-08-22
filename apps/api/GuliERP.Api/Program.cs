@@ -2,6 +2,7 @@ using GuliERP.Api;
 using GuliERP.Api.Authentication;
 using GuliERP.Api.Kernel;
 using GuliERP.Api.Mdm;
+using GuliERP.Api.Organization;
 using GuliERP.DocumentKernel.Infrastructure;
 using GuliERP.Foundation;
 using GuliERP.Foundation.Kernel;
@@ -307,6 +308,7 @@ app.MapGuliErpAuthEndpoints();
 //     follow the same antiforgery contract as the G2-004R1
 //     authentication endpoints (X-CSRF-TOKEN header + cookie).
 app.MapMdmEndpoints();
+app.MapGuliErpOrganizationEndpoints();
 
 // --- 11b. G2-002R2 test-only endpoints (Environment-gated) ---
 //     These two endpoints exist ONLY to let the Foundation Kernel
@@ -413,6 +415,7 @@ app.MapGet("/", () => Results.Text(
     "  GET/POST/PUT /api/v1/mdm/uoms            UOM master data\n" +
     "  GET/POST/PUT /api/v1/mdm/item-categories ItemCategory master data\n" +
     "  GET/POST/PUT /api/v1/mdm/items           Item master data\n" +
+    "  GET  /api/v1/organization/*     Lightweight enterprise organization directory\n" +
     "  (Document Numbering: IDocumentNumberService, consumed by future Sales/PO/Inventory)\n" +
     (app.Environment.IsDevelopment() ? "  GET  /openapi/v1.json            OpenAPI spec (dev only)\n" : ""),
     "text/plain"));

@@ -82,6 +82,17 @@ public enum UserStatus
 }
 
 /// <summary>
+/// Lightweight employee lifecycle. This deliberately excludes HR workflow,
+/// payroll, attendance, contracts, or staffing rules.
+/// </summary>
+public enum EmployeeStatus
+{
+    Active = 1,
+    Inactive = 2,
+    Left = 99,
+}
+
+/// <summary>
 /// Role lifecycle. System Roles (<c>IsSystem = true</c>) cannot be
 /// deleted; they can only be deactivated.
 /// </summary>
