@@ -3,7 +3,7 @@
 ## Summary
 
 - Start HEAD: `68fd598b7255ac639b7251630f9dfae942977b73`
-- End HEAD: pending final commit
+- End HEAD: `2a3fcf9050b2780c585a5ed81f579a63159ed66a`
 - Current gate: `GULIERP_UI_SHELL_001_PHASE_2A_REGRESSION_FIXED_OPERATOR_RETEST_PENDING`
 - Database changes: none
 - Migration changes: none
@@ -95,7 +95,9 @@ Live DB state was not queried because the shell has no PostgreSQL password. No p
 
 ## Commit Status
 
-Commit is authorized for the authentication, authorization, shell identity display, tests, and verification report files listed above. Final commit SHA is recorded in the follow-up docs-only commit and final operator response.
+- Core repair commit: `2a3fcf9050b2780c585a5ed81f579a63159ed66a`
+- Commit scope: authentication, authorization, shell identity display, tests, and this verification report.
+- Follow-up docs-only commit records this final SHA in the report; it does not change runtime code.
 
 ## Operator Final Retest
 
