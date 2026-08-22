@@ -9,6 +9,14 @@ public static class GuliErpAuthorizationPolicies
     public const string Prefix = "GuliERP.Permission:";
 
     public const string G2ProbeRead = Prefix + GuliErpPermissions.G2ProbeRead;
+    public const string IdentityOrganizationRead = Prefix + GuliErpPermissions.IdentityOrganizationRead;
+    public const string IdentityOrganizationManage = Prefix + GuliErpPermissions.IdentityOrganizationManage;
+    public const string IdentityUserRead = Prefix + GuliErpPermissions.IdentityUserRead;
+    public const string IdentityUserManage = Prefix + GuliErpPermissions.IdentityUserManage;
+    public const string IdentityRoleRead = Prefix + GuliErpPermissions.IdentityRoleRead;
+    public const string IdentityRoleAssign = Prefix + GuliErpPermissions.IdentityRoleAssign;
+    public const string IdentityCompanyRead = Prefix + GuliErpPermissions.IdentityCompanyRead;
+    public const string IdentityCompanySwitch = Prefix + GuliErpPermissions.IdentityCompanySwitch;
 
     public static string ForPermission(string permissionCode) => Prefix + permissionCode;
 }

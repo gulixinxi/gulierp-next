@@ -1,8 +1,10 @@
 using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Application.EnterpriseOrganization;
+using GuliERP.Identity.Application.Authorization;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Infrastructure.Contexts;
 using GuliERP.Identity.Infrastructure.EnterpriseOrganization;
+using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -25,9 +27,13 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
 
         var result = await bootstrap.CreateEnterpriseBootstrapAsync(
             new CreateEnterpriseBootstrapRequest(
+                "SDGL",
+                "山东谷粒机械有限公司",
+                "SDGL",
                 "山东谷粒机械有限公司",
                 "admin",
-                "系统管理员"));
+                "系统管理员",
+                "CorrectHorse!2026"));
 
         var db = sp.GetRequiredService<IdentityDbContext>();
         var tenant = await db.Tenants.SingleAsync();
@@ -46,6 +52,7 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         Assert.Equal("山东谷粒机械有限公司", company.Name);
         Assert.True(plant.IsDefault);
         Assert.Equal("主工厂", plant.Name);
+        Assert.Equal("ERP_SYSTEM_ADMIN", result.AdminRoleCode);
     }
 
     [Fact]
@@ -55,15 +62,19 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         using var scope = provider.CreateScope();
         var bootstrap = scope.ServiceProvider.GetRequiredService<IEnterpriseBootstrapService>();
         var request = new CreateEnterpriseBootstrapRequest(
+            "SDGL",
+            "山东谷粒机械有限公司",
+            "SDGL",
             "山东谷粒机械有限公司",
             "admin",
-            "系统管理员");
+            "系统管理员",
+            "CorrectHorse!2026");
 
-        await bootstrap.CreateEnterpriseBootstrapAsync(request);
+        var first = await bootstrap.CreateEnterpriseBootstrapAsync(request);
+        var second = await bootstrap.CreateEnterpriseBootstrapAsync(request);
 
-        await Assert.ThrowsAsync<EnterpriseBootstrapAlreadyExistsException>(async () =>
-            await bootstrap.CreateEnterpriseBootstrapAsync(
-                request with { AdminUserName = "admin2" }));
+        Assert.Equal(first.TenantId, second.TenantId);
+        Assert.False(second.Created);
     }
 
     [Fact]
@@ -75,7 +86,14 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         var bootstrap = sp.GetRequiredService<IEnterpriseBootstrapService>();
 
         var result = await bootstrap.CreateEnterpriseBootstrapAsync(
-            new CreateEnterpriseBootstrapRequest("Guli Machinery", "owner", "Owner Admin"));
+            new CreateEnterpriseBootstrapRequest(
+                "GULI",
+                "Guli Machinery",
+                "GULI",
+                "Guli Machinery",
+                "owner",
+                "Owner Admin",
+                "CorrectHorse!2026"));
 
         var db = sp.GetRequiredService<IdentityDbContext>();
         var employee = await db.Employees.SingleAsync(e => e.Id == result.AdminEmployeeId);
@@ -94,6 +112,40 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
     }
 
     [Fact]
+    public async Task CreateEnterpriseBootstrap_Creates_SystemAdmin_RoleClaims_And_RoleAssignment()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var bootstrap = sp.GetRequiredService<IEnterpriseBootstrapService>();
+
+        var result = await bootstrap.CreateEnterpriseBootstrapAsync(
+            new CreateEnterpriseBootstrapRequest(
+                "GULI",
+                "Guli Machinery",
+                "GULI",
+                "Guli Machinery",
+                "owner",
+                "Owner Admin",
+                "CorrectHorse!2026"));
+
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var role = await db.Roles.SingleAsync(r => r.Code == "ERP_SYSTEM_ADMIN");
+        var permissions = await db.RoleClaims
+            .Where(c => c.RoleId == role.Id && c.ClaimType == GuliErpPermissionClaimTypes.Permission)
+            .Select(c => c.ClaimValue)
+            .ToListAsync();
+        var assignment = await db.UserRoleAssignments.SingleAsync();
+
+        Assert.Contains(GuliErpPermissions.IdentityOrganizationRead, permissions);
+        Assert.Contains(GuliErpPermissions.IdentityOrganizationManage, permissions);
+        Assert.Contains(GuliErpPermissions.IdentityUserManage, permissions);
+        Assert.Equal(result.AdminUserId, assignment.UserId);
+        Assert.Equal(result.CompanyId, assignment.CompanyId);
+        Assert.Equal(role.Id, assignment.RoleId);
+    }
+
+    [Fact]
     public async Task OrganizationTree_Returns_Company_Plant_Department_And_Employee()
     {
         await using var provider = BuildProvider();
@@ -101,7 +153,14 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         var sp = scope.ServiceProvider;
         var bootstrap = sp.GetRequiredService<IEnterpriseBootstrapService>();
         var result = await bootstrap.CreateEnterpriseBootstrapAsync(
-            new CreateEnterpriseBootstrapRequest("Guli Machinery", "owner", "Owner Admin"));
+            new CreateEnterpriseBootstrapRequest(
+                "GULI",
+                "Guli Machinery",
+                "GULI",
+                "Guli Machinery",
+                "owner",
+                "Owner Admin",
+                "CorrectHorse!2026"));
 
         var currentTenant = sp.GetRequiredService<ICurrentTenant>();
         var currentCompany = sp.GetRequiredService<ICurrentCompany>();
@@ -138,6 +197,79 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         Assert.Empty(tree.Companies);
     }
 
+    [Fact]
+    public async Task OrganizationAdmin_Creates_Node_And_Rejects_Cycle()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var bootstrap = sp.GetRequiredService<IEnterpriseBootstrapService>();
+        var result = await bootstrap.CreateEnterpriseBootstrapAsync(
+            new CreateEnterpriseBootstrapRequest(
+                "GULI",
+                "Guli Machinery",
+                "GULI",
+                "Guli Machinery",
+                "owner",
+                "Owner Admin",
+                "CorrectHorse!2026"));
+
+        using var tenantScope = sp.GetRequiredService<ICurrentTenant>().Change(result.TenantId);
+        using var companyScope = sp.GetRequiredService<ICurrentCompany>().Change(result.CompanyId);
+        using var userScope = sp.GetRequiredService<ICurrentUser>().Change(result.AdminUserId);
+        var admin = sp.GetRequiredService<IEnterpriseOrganizationAdminService>();
+
+        var sales = await admin.CreateOrganizationUnitAsync(
+            new CreateOrganizationUnitRequest(
+                result.CompanyId,
+                result.RootOrganizationUnitId,
+                "SALES",
+                "销售部"));
+
+        Assert.Equal(result.CompanyId, sales.CompanyId);
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await admin.UpdateOrganizationUnitAsync(
+                result.RootOrganizationUnitId,
+                new UpdateOrganizationUnitRequest("公司", sales.OrganizationUnitId, 1)));
+    }
+
+    [Fact]
+    public async Task UserAdmin_Creates_BusinessUser_And_DoesNot_Assign_PlatformAdmin()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var bootstrap = sp.GetRequiredService<IEnterpriseBootstrapService>();
+        var result = await bootstrap.CreateEnterpriseBootstrapAsync(
+            new CreateEnterpriseBootstrapRequest(
+                "GULI",
+                "Guli Machinery",
+                "GULI",
+                "Guli Machinery",
+                "owner",
+                "Owner Admin",
+                "CorrectHorse!2026"));
+
+        using var tenantScope = sp.GetRequiredService<ICurrentTenant>().Change(result.TenantId);
+        using var companyScope = sp.GetRequiredService<ICurrentCompany>().Change(result.CompanyId);
+        using var userScope = sp.GetRequiredService<ICurrentUser>().Change(result.AdminUserId);
+        var admin = sp.GetRequiredService<IEnterpriseOrganizationAdminService>();
+
+        var user = await admin.CreateUserAsync(
+            new CreateEnterpriseUserRequest(
+                "sales_user",
+                "销售用户",
+                "CorrectHorse!2026",
+                result.CompanyId,
+                result.RootOrganizationUnitId));
+
+        Assert.Equal("sales_user", user.UserName);
+        Assert.Contains(user.Companies, c => c.CompanyId == result.CompanyId);
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await admin.AssignRoleAsync(
+                new AssignEnterpriseUserRoleRequest(user.UserId, "PLATFORM_ADMIN", null)));
+    }
+
     private static ServiceProvider BuildProvider()
     {
         var services = new ServiceCollection();
@@ -157,6 +289,7 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<IEnterpriseBootstrapService, EnterpriseBootstrapService>();
         services.AddScoped<IOrganizationTreeService, OrganizationTreeService>();
+        services.AddScoped<IEnterpriseOrganizationAdminService, EnterpriseOrganizationAdminService>();
         return services.BuildServiceProvider(validateScopes: true);
     }
 }

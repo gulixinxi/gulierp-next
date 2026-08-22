@@ -51,4 +51,10 @@ public sealed record LoginResponse(
     long? CompanyId,
     string? CompanyCode,
     string? CompanyName,
-    bool IsPlatformAdmin);
+    bool IsPlatformAdmin,
+    IReadOnlyList<AuthCompanyDto> AvailableCompanies);
+
+public sealed record AuthCompanyDto(
+    long CompanyId,
+    string CompanyCode,
+    string CompanyName);

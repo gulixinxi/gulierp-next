@@ -145,6 +145,14 @@ public static class DependencyInjection
                 policy => policy
                     .RequireAuthenticatedUser()
                     .AddRequirements(new PermissionRequirement(GuliErpPermissions.G2ProbeRead)));
+            AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityOrganizationRead, GuliErpPermissions.IdentityOrganizationRead);
+            AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityOrganizationManage, GuliErpPermissions.IdentityOrganizationManage);
+            AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityUserRead, GuliErpPermissions.IdentityUserRead);
+            AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityUserManage, GuliErpPermissions.IdentityUserManage);
+            AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityRoleRead, GuliErpPermissions.IdentityRoleRead);
+            AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityRoleAssign, GuliErpPermissions.IdentityRoleAssign);
+            AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityCompanyRead, GuliErpPermissions.IdentityCompanyRead);
+            AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityCompanySwitch, GuliErpPermissions.IdentityCompanySwitch);
         });
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
         services.AddScoped<IDataScopeAuthorizationService, DataScopeAuthorizationService>();
@@ -196,6 +204,7 @@ public static class DependencyInjection
         services.AddScoped<IEnterpriseOrganizationInitializer, EnterpriseOrganizationInitializer>();
         services.AddScoped<IEnterpriseBootstrapService, EnterpriseBootstrapService>();
         services.AddScoped<IOrganizationTreeService, OrganizationTreeService>();
+        services.AddScoped<IEnterpriseOrganizationAdminService, EnterpriseOrganizationAdminService>();
 
         // ----- Company switching service (G2-003 unchanged) -----
         services.AddScoped<ICompanySwitchingService, CompanySwitchingService>();
@@ -210,6 +219,18 @@ public static class DependencyInjection
         services.AddSingleton<AuthenticationExceptionHandler>();
 
         return services;
+    }
+
+    private static void AddPermissionPolicy(
+        AuthorizationOptions options,
+        string policyName,
+        string permissionCode)
+    {
+        options.AddPolicy(
+            policyName,
+            policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(new PermissionRequirement(permissionCode)));
     }
 
     /// <summary>

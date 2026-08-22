@@ -340,7 +340,14 @@ public class SnowflakeLongJsonConverterFacts
             CompanyId: 83727350616817782L,
             CompanyCode: "test_operator_g2_004_c",
             CompanyName: "Operator Company",
-            IsPlatformAdmin: false);
+            IsPlatformAdmin: false,
+            AvailableCompanies: new[]
+            {
+                new AuthCompanyDto(
+                    83727350616817782L,
+                    "test_operator_g2_004_c",
+                    "Operator Company"),
+            });
 
         var json = JsonSerializer.Serialize(dto, Options);
 
@@ -362,7 +369,8 @@ public class SnowflakeLongJsonConverterFacts
             CompanyId: null,    // <-- host platform admin
             CompanyCode: null,
             CompanyName: null,
-            IsPlatformAdmin: true);
+            IsPlatformAdmin: true,
+            AvailableCompanies: Array.Empty<AuthCompanyDto>());
 
         var json = JsonSerializer.Serialize(dto, Options);
         Assert.Contains("\"companyId\":null", json);

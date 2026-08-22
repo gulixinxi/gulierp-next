@@ -50,7 +50,7 @@ public sealed class CompanySwitchingService : ICompanySwitchingService
         // current Tenant.
         var company = await _db.Companies.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == targetCompanyId, ct);
-        if (company is null || company.TenantId != tenantId)
+        if (company is null || company.TenantId != tenantId || company.Status != CompanyStatus.Active)
         {
             throw new CompanyNotAccessibleException(userId, targetCompanyId);
         }

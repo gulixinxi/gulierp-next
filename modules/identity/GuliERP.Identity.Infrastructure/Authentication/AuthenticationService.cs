@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using IAppAuthenticationService = GuliERP.Identity.Application.Authentication.IAuthenticationService;
 using LoginRequest = GuliERP.Identity.Application.Authentication.LoginRequest;
 using LoginResponse = GuliERP.Identity.Application.Authentication.LoginResponse;
+using AuthCompanyDto = GuliERP.Identity.Application.Authentication.AuthCompanyDto;
 using InvalidCredentialsException = GuliERP.Identity.Application.Authentication.InvalidCredentialsException;
 using AuthenticationRequiredException = GuliERP.Identity.Application.Authentication.AuthenticationRequiredException;
 using CompanyAccessDeniedException = GuliERP.Identity.Application.Authentication.CompanyAccessDeniedException;
@@ -330,6 +331,17 @@ public sealed class AuthenticationService : IAppAuthenticationService
             ? await _db.Companies.AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == companyId.Value, ct)
             : null;
+        IReadOnlyList<AuthCompanyDto> availableCompanies = user.TenantId == 0
+            ? Array.Empty<AuthCompanyDto>()
+            : await (
+                from membership in _db.UserCompanyMemberships.AsNoTracking()
+                join c in _db.Companies.AsNoTracking() on membership.CompanyId equals c.Id
+                where membership.TenantId == user.TenantId
+                      && membership.UserId == user.Id
+                      && membership.Status == MembershipStatus.Active
+                      && c.Status == CompanyStatus.Active
+                orderby membership.IsDefault descending, c.Code
+                select new AuthCompanyDto(c.Id, c.Code, c.Name)).ToListAsync(ct);
 
         return new LoginResponse(
             UserId: user.Id,
@@ -341,7 +353,8 @@ public sealed class AuthenticationService : IAppAuthenticationService
             CompanyId: company?.Id,
             CompanyCode: company?.Code,
             CompanyName: company?.Name,
-            IsPlatformAdmin: await ResolveIsPlatformAdminAsync(user, companyId, ct));
+            IsPlatformAdmin: await ResolveIsPlatformAdminAsync(user, companyId, ct),
+            AvailableCompanies: availableCompanies);
     }
 
     private async Task<bool> ResolveIsPlatformAdminAsync(

@@ -28,6 +28,13 @@ export interface AuthUserDto {
   companyCode: string | null;   // backend: string? (nullable when companyId is null)
   companyName?: string | null;
   isPlatformAdmin: boolean;
+  availableCompanies: AuthCompanyDto[];
+}
+
+export interface AuthCompanyDto {
+  companyId: string;
+  companyCode: string;
+  companyName: string;
 }
 
 // ===== 3. /api/v1/auth/login — request (matches backend LoginRequest exactly) =====

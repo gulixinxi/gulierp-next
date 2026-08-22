@@ -51,18 +51,17 @@ export const useAuthStore = defineStore('auth', {
     tenantName(s): string {
       return s.user?.tenantName || s.user?.tenantCode || '';
     },
-    // BACKEND_COMPANY_LIST_CONTRACT_GAP: The backend LoginResponse does NOT include
-    // availableCompanies. There is no HTTP endpoint exposing
-    // ICompanyDirectoryService.ListForCurrentUserAsync. Until a backend endpoint
-    // is added, the company switcher CANNOT work with real data.
-    // hasMultipleCompanies is always false — this is HONEST, not a bug.
-    hasMultipleCompanies(_s): boolean {
-      return false;
+    hasMultipleCompanies(s): boolean {
+      return (s.user?.availableCompanies?.length ?? 0) > 1;
     },
     availableCompanies(s): Array<{ companyId: string; companyCode: string; companyName?: string }> {
-      // Return only the current company (from /me) as a single-item list.
-      // This is NOT a real "available companies" source — it's a UI fallback
-      // so the shell can display the current company label.
+      if (s.user?.availableCompanies?.length) {
+        return s.user.availableCompanies.map(c => ({
+          companyId: c.companyId,
+          companyCode: c.companyCode,
+          companyName: c.companyName,
+        }));
+      }
       if (s.user && s.user.companyId != null && s.user.companyCode != null) {
         return [{
           companyId: s.user.companyId,

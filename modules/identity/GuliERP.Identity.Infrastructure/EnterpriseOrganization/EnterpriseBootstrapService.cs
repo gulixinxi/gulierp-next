@@ -1,8 +1,10 @@
 using System.Security.Cryptography;
 using System.Text;
+using GuliERP.Identity.Application.Authorization;
 using GuliERP.Identity.Application.EnterpriseOrganization;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
+using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +17,8 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
     private const string DefaultPlantName = "主工厂";
     private const string RootOrgCode = "ROOT";
     private const string RootOrgName = "公司";
+    private const string SystemAdminRoleCode = "ERP_SYSTEM_ADMIN";
+    private const string SystemAdminRoleName = "Enterprise System Admin";
 
     private readonly IdentityDbContext _db;
     private readonly UserManager<GuliErpUser> _userManager;
@@ -32,9 +36,13 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (string.IsNullOrWhiteSpace(request.EnterpriseName))
+        if (string.IsNullOrWhiteSpace(request.TenantName))
         {
-            throw new ArgumentException("EnterpriseName is required.", nameof(request));
+            throw new ArgumentException("TenantName is required.", nameof(request));
+        }
+        if (string.IsNullOrWhiteSpace(request.CompanyName))
+        {
+            throw new ArgumentException("CompanyName is required.", nameof(request));
         }
         if (string.IsNullOrWhiteSpace(request.AdminUserName))
         {
@@ -45,138 +53,240 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
             throw new ArgumentException("AdminDisplayName is required.", nameof(request));
         }
 
-        var enterpriseName = request.EnterpriseName.Trim();
+        var tenantName = request.TenantName.Trim();
+        var companyName = request.CompanyName.Trim();
         var adminUserName = request.AdminUserName.Trim();
         var adminDisplayName = request.AdminDisplayName.Trim();
-        var enterpriseCode = NormalizeCode(enterpriseName);
+        var tenantCode = NormalizeCode(request.TenantCode ?? tenantName);
+        var companyCode = NormalizeCode(request.CompanyCode ?? companyName);
         var now = DateTimeOffset.UtcNow;
 
-        if (await _db.Tenants.AsNoTracking().AnyAsync(t => t.Code == enterpriseCode, ct)
-            || await _db.Companies.AsNoTracking().AnyAsync(c => c.Code == enterpriseCode, ct))
+        var existingTenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Code == tenantCode, ct);
+        var existingCompany = await _db.Companies.FirstOrDefaultAsync(
+            c => c.TenantId == (existingTenant == null ? 0 : existingTenant.Id)
+              && c.Code == companyCode,
+            ct);
+        var existingUser = await _userManager.FindByNameAsync(adminUserName);
+
+        if (existingTenant is null && existingUser is not null)
         {
-            throw new EnterpriseBootstrapAlreadyExistsException(enterpriseCode);
+            throw new EnterpriseBootstrapConflictException(
+                $"Admin username '{adminUserName}' already exists outside the requested enterprise.");
         }
 
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
 
-        var tenant = new Tenant
+        var created = false;
+        var tenant = existingTenant;
+        if (tenant is null)
         {
-            Code = enterpriseCode,
-            Name = enterpriseName,
-            Description = "Enterprise bootstrap.",
-            Status = TenantStatus.Active,
-            CreatedAt = now,
-            ModifiedAt = now,
-            ConcurrencyVersion = 1,
-        };
-        _db.Tenants.Add(tenant);
-        await _db.SaveChangesAsync(ct);
-
-        var company = new Company
+            tenant = new Tenant
+            {
+                Code = tenantCode,
+                Name = tenantName,
+                Description = "Enterprise bootstrap.",
+                Status = TenantStatus.Active,
+                CreatedAt = now,
+                ModifiedAt = now,
+                ConcurrencyVersion = 1,
+            };
+            _db.Tenants.Add(tenant);
+            created = true;
+            await _db.SaveChangesAsync(ct);
+        }
+        else if (!string.Equals(tenant.Name, tenantName, StringComparison.Ordinal))
         {
-            TenantId = tenant.Id,
-            Code = enterpriseCode,
-            Name = enterpriseName,
-            LegalName = enterpriseName,
-            DefaultCurrency = "CNY",
-            Timezone = "Asia/Shanghai",
-            Status = CompanyStatus.Active,
-            CreatedAt = now,
-            ModifiedAt = now,
-            ConcurrencyVersion = 1,
-        };
-        _db.Companies.Add(company);
-        await _db.SaveChangesAsync(ct);
-
-        var plant = new Plant
-        {
-            TenantId = tenant.Id,
-            CompanyId = company.Id,
-            Code = DefaultPlantCode,
-            Name = DefaultPlantName,
-            CountryCode = "CN",
-            Timezone = "Asia/Shanghai",
-            IsDefault = true,
-            Status = PlantStatus.Active,
-            CreatedAt = now,
-            ModifiedAt = now,
-            ConcurrencyVersion = 1,
-        };
-        var rootOrg = new OrganizationUnit
-        {
-            TenantId = tenant.Id,
-            CompanyId = company.Id,
-            Code = RootOrgCode,
-            Name = RootOrgName,
-            Type = OrganizationType.Root,
-            Status = OrganizationStatus.Active,
-            CreatedAt = now,
-            ModifiedAt = now,
-            ConcurrencyVersion = 1,
-        };
-        _db.Plants.Add(plant);
-        _db.OrganizationUnits.Add(rootOrg);
-        await _db.SaveChangesAsync(ct);
-
-        var adminUser = new GuliErpUser
-        {
-            TenantId = tenant.Id,
-            UserName = adminUserName,
-            EmailConfirmed = true,
-            DisplayName = adminDisplayName,
-            IsPlatformAdmin = false,
-            Status = UserStatus.Active,
-            CreatedAt = now,
-            ModifiedAt = now,
-            ConcurrencyVersion = 1,
-        };
-        var userResult = await _userManager.CreateAsync(adminUser);
-        if (!userResult.Succeeded)
-        {
-            throw new InvalidOperationException(
-                "Enterprise bootstrap failed to create admin user: "
-                + string.Join("; ", userResult.Errors.Select(e => $"{e.Code}:{e.Description}")));
+            throw new EnterpriseBootstrapConflictException(
+                $"Tenant code '{tenantCode}' already belongs to '{tenant.Name}'.");
         }
 
-        var employee = new Employee
+        var company = existingCompany;
+        if (company is null)
         {
-            TenantId = tenant.Id,
-            CompanyId = company.Id,
-            DepartmentId = rootOrg.Id,
-            UserId = adminUser.Id,
-            EmployeeNo = BuildEmployeeNo(adminUserName),
-            Name = adminDisplayName,
-            Status = EmployeeStatus.Active,
-            CreatedAt = now,
-            ModifiedAt = now,
-            ConcurrencyVersion = 1,
-        };
-        _db.Employees.Add(employee);
-        _db.UserCompanyMemberships.Add(new UserCompanyMembership
+            company = new Company
+            {
+                TenantId = tenant.Id,
+                Code = companyCode,
+                Name = companyName,
+                LegalName = companyName,
+                DefaultCurrency = "CNY",
+                Timezone = "Asia/Shanghai",
+                Status = CompanyStatus.Active,
+                CreatedAt = now,
+                ModifiedAt = now,
+                ConcurrencyVersion = 1,
+            };
+            _db.Companies.Add(company);
+            created = true;
+            await _db.SaveChangesAsync(ct);
+        }
+        else if (!string.Equals(company.Name, companyName, StringComparison.Ordinal))
         {
-            TenantId = tenant.Id,
-            CompanyId = company.Id,
-            UserId = adminUser.Id,
-            IsDefault = true,
-            JoinedAt = now,
-            Status = MembershipStatus.Active,
-            CreatedAt = now,
-            ModifiedAt = now,
-            ConcurrencyVersion = 1,
-        });
-        _db.UserOrganizationMemberships.Add(new UserOrganizationMembership
+            throw new EnterpriseBootstrapConflictException(
+                $"Company code '{companyCode}' already belongs to '{company.Name}'.");
+        }
+
+        var plant = await _db.Plants.FirstOrDefaultAsync(
+            p => p.TenantId == tenant.Id && p.CompanyId == company.Id && p.IsDefault,
+            ct);
+        if (plant is null)
         {
-            TenantId = tenant.Id,
-            CompanyId = company.Id,
-            UserId = adminUser.Id,
-            OrganizationUnitId = rootOrg.Id,
-            IsPrimary = true,
-            JoinedAt = now,
-            Status = MembershipStatus.Active,
-            CreatedAt = now,
-            ModifiedAt = now,
-            ConcurrencyVersion = 1,
-        });
+            plant = new Plant
+            {
+                TenantId = tenant.Id,
+                CompanyId = company.Id,
+                Code = DefaultPlantCode,
+                Name = DefaultPlantName,
+                CountryCode = "CN",
+                Timezone = "Asia/Shanghai",
+                IsDefault = true,
+                Status = PlantStatus.Active,
+                CreatedAt = now,
+                ModifiedAt = now,
+                ConcurrencyVersion = 1,
+            };
+            _db.Plants.Add(plant);
+            created = true;
+        }
+        var rootOrg = await _db.OrganizationUnits.FirstOrDefaultAsync(
+            o => o.TenantId == tenant.Id
+              && o.CompanyId == company.Id
+              && o.ParentOrganizationUnitId == null,
+            ct);
+        if (rootOrg is null)
+        {
+            rootOrg = new OrganizationUnit
+            {
+                TenantId = tenant.Id,
+                CompanyId = company.Id,
+                Code = RootOrgCode,
+                Name = RootOrgName,
+                Type = OrganizationType.Root,
+                Status = OrganizationStatus.Active,
+                CreatedAt = now,
+                ModifiedAt = now,
+                ConcurrencyVersion = 1,
+            };
+            _db.OrganizationUnits.Add(rootOrg);
+            created = true;
+        }
+        await _db.SaveChangesAsync(ct);
+
+        var adminUser = existingUser;
+        if (adminUser is null)
+        {
+            if (string.IsNullOrWhiteSpace(request.AdminPassword))
+            {
+                throw new ArgumentException("AdminPassword is required for a new admin user.", nameof(request));
+            }
+            adminUser = new GuliErpUser
+            {
+                TenantId = tenant.Id,
+                UserName = adminUserName,
+                Email = NormalizeOptional(request.AdminEmail),
+                PhoneNumber = NormalizeOptional(request.AdminPhoneNumber),
+                EmailConfirmed = true,
+                DisplayName = adminDisplayName,
+                IsPlatformAdmin = false,
+                Status = UserStatus.Active,
+                CreatedAt = now,
+                ModifiedAt = now,
+                ConcurrencyVersion = 1,
+            };
+            var userResult = await _userManager.CreateAsync(adminUser, request.AdminPassword);
+            if (!userResult.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    "Enterprise bootstrap failed to create admin user: "
+                    + string.Join("; ", userResult.Errors.Select(e => $"{e.Code}:{e.Description}")));
+            }
+            created = true;
+        }
+        else if (adminUser.TenantId != tenant.Id)
+        {
+            throw new EnterpriseBootstrapConflictException(
+                $"Admin username '{adminUserName}' belongs to another tenant.");
+        }
+        else
+        {
+            adminUser.DisplayName = adminDisplayName;
+            adminUser.Email = NormalizeOptional(request.AdminEmail) ?? adminUser.Email;
+            adminUser.PhoneNumber = NormalizeOptional(request.AdminPhoneNumber) ?? adminUser.PhoneNumber;
+            adminUser.ModifiedAt = now;
+            await _userManager.UpdateAsync(adminUser);
+        }
+
+        var employee = await _db.Employees.FirstOrDefaultAsync(
+            e => e.TenantId == tenant.Id && e.CompanyId == company.Id && e.UserId == adminUser.Id,
+            ct);
+        if (employee is null)
+        {
+            employee = new Employee
+            {
+                TenantId = tenant.Id,
+                CompanyId = company.Id,
+                DepartmentId = rootOrg.Id,
+                UserId = adminUser.Id,
+                EmployeeNo = BuildEmployeeNo(adminUserName),
+                Name = adminDisplayName,
+                Status = EmployeeStatus.Active,
+                CreatedAt = now,
+                ModifiedAt = now,
+                ConcurrencyVersion = 1,
+            };
+            _db.Employees.Add(employee);
+            created = true;
+        }
+        var companyMembershipCreated = false;
+        if (!await _db.UserCompanyMemberships.AnyAsync(
+            m => m.TenantId == tenant.Id && m.CompanyId == company.Id && m.UserId == adminUser.Id,
+            ct))
+        {
+            _db.UserCompanyMemberships.Add(new UserCompanyMembership
+            {
+                TenantId = tenant.Id,
+                CompanyId = company.Id,
+                UserId = adminUser.Id,
+                IsDefault = true,
+                JoinedAt = now,
+                Status = MembershipStatus.Active,
+                CreatedAt = now,
+                ModifiedAt = now,
+                ConcurrencyVersion = 1,
+            });
+            companyMembershipCreated = true;
+            created = true;
+        }
+        if (!await _db.UserOrganizationMemberships.AnyAsync(
+            m => m.TenantId == tenant.Id
+              && m.CompanyId == company.Id
+              && m.UserId == adminUser.Id
+              && m.OrganizationUnitId == rootOrg.Id,
+            ct))
+        {
+            _db.UserOrganizationMemberships.Add(new UserOrganizationMembership
+            {
+                TenantId = tenant.Id,
+                CompanyId = company.Id,
+                UserId = adminUser.Id,
+                OrganizationUnitId = rootOrg.Id,
+                IsPrimary = true,
+                JoinedAt = now,
+                Status = MembershipStatus.Active,
+                CreatedAt = now,
+                ModifiedAt = now,
+                ConcurrencyVersion = 1,
+            });
+            created = true;
+        }
+        var (adminRole, adminRoleCreated) = await EnsureSystemAdminRoleAsync(tenant.Id, now, ct);
+        var roleAssignmentCreated = await EnsureRoleAssignmentAsync(
+            tenant.Id,
+            company.Id,
+            adminUser.Id,
+            adminRole.Id,
+            now,
+            ct);
         await _db.SaveChangesAsync(ct);
 
         await tx.CommitAsync(ct);
@@ -187,7 +297,93 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
             plant.Id,
             rootOrg.Id,
             adminUser.Id,
-            employee.Id);
+            employee.Id,
+            created,
+            SystemAdminRoleCode,
+            adminRoleCreated,
+            companyMembershipCreated,
+            roleAssignmentCreated);
+    }
+
+    private async Task<(GuliErpRole Role, bool Created)> EnsureSystemAdminRoleAsync(
+        long tenantId,
+        DateTimeOffset now,
+        CancellationToken ct)
+    {
+        var role = await _db.Roles.FirstOrDefaultAsync(
+            r => r.TenantId == tenantId && r.Code == SystemAdminRoleCode,
+            ct);
+        var created = false;
+        if (role is null)
+        {
+            role = new GuliErpRole
+            {
+                TenantId = tenantId,
+                Name = SystemAdminRoleName,
+                NormalizedName = SystemAdminRoleName.ToUpperInvariant(),
+                Code = SystemAdminRoleCode,
+                IsSystem = true,
+                Description = "Tenant/company-scoped enterprise administrator.",
+                Status = RoleStatus.Active,
+                CreatedAt = now,
+                ModifiedAt = now,
+                ConcurrencyVersion = 1,
+            };
+            _db.Roles.Add(role);
+            await _db.SaveChangesAsync(ct);
+            created = true;
+        }
+
+        foreach (var permission in GuliErpPermissions.EnterpriseSystemAdminPermissions)
+        {
+            if (!await _db.RoleClaims.AnyAsync(
+                c => c.RoleId == role.Id
+                  && c.ClaimType == GuliErpPermissionClaimTypes.Permission
+                  && c.ClaimValue == permission,
+                ct))
+            {
+                _db.RoleClaims.Add(new IdentityRoleClaim<long>
+                {
+                    RoleId = role.Id,
+                    ClaimType = GuliErpPermissionClaimTypes.Permission,
+                    ClaimValue = permission,
+                });
+            }
+        }
+
+        return (role, created);
+    }
+
+    private async Task<bool> EnsureRoleAssignmentAsync(
+        long tenantId,
+        long companyId,
+        long userId,
+        long roleId,
+        DateTimeOffset now,
+        CancellationToken ct)
+    {
+        if (await _db.UserRoleAssignments.AnyAsync(
+            a => a.TenantId == tenantId
+              && a.CompanyId == companyId
+              && a.UserId == userId
+              && a.RoleId == roleId,
+            ct))
+        {
+            return false;
+        }
+
+        _db.UserRoleAssignments.Add(new UserRoleAssignment
+        {
+            TenantId = tenantId,
+            CompanyId = companyId,
+            UserId = userId,
+            RoleId = roleId,
+            Status = AssignmentStatus.Active,
+            CreatedAt = now,
+            ModifiedAt = now,
+            ConcurrencyVersion = 1,
+        });
+        return true;
     }
 
     private static string BuildEmployeeNo(string adminUserName)
@@ -213,5 +409,11 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
             code = $"ENT_{hash[..8]}";
         }
         return code[..Math.Min(code.Length, 40)];
+    }
+
+    private static string? NormalizeOptional(string? source)
+    {
+        var value = source?.Trim();
+        return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 }

@@ -1,5 +1,7 @@
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
+using GuliERP.Identity.Application.EnterpriseOrganization;
+using GuliERP.Identity.Infrastructure.EnterpriseOrganization;
 using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Infrastructure.Persistence;
 using GuliERP.Identity.Infrastructure.Seed;
@@ -128,6 +130,11 @@ public static class Program
         if (args.Length >= 1 && args[0] == "--reset-fixture")
         {
             return await RunHardResetFixtureAsync(args);
+        }
+
+        if (args.Length >= 1 && args[0] == "--formal-enterprise-bootstrap")
+        {
+            return await RunFormalEnterpriseBootstrapAsync(args);
         }
 
         if (args.Length >= 1 && args[0] == "--diagnose")
@@ -826,6 +833,134 @@ public static class Program
         {
             await Console.Error.WriteLineAsync($"EXCEPTION: {ex.GetType().Name}: {ex.Message}");
             return ExitOtherException;
+        }
+    }
+
+    private static async Task<int> RunFormalEnterpriseBootstrapAsync(string[] args)
+    {
+        if (args.Length < 8)
+        {
+            await Console.Error.WriteLineAsync(
+                "Usage: gulierp-identity-bootstrap --formal-enterprise-bootstrap <connectionString> <tenantCode> <tenantName> <companyCode> <companyName> <adminUserName> <adminDisplayName> [adminEmail] [adminPhone]  (password from STDIN)");
+            return ExitConnectionMissing;
+        }
+
+        var connectionString = args[1];
+        var tenantCode = args[2];
+        var tenantName = args[3];
+        var companyCode = args[4];
+        var companyName = args[5];
+        var adminUserName = args[6];
+        var adminDisplayName = args[7];
+        var adminEmail = args.Length >= 9 ? args[8] : null;
+        var adminPhone = args.Length >= 10 ? args[9] : null;
+        string? password = null;
+
+        try
+        {
+            password = (await Console.In.ReadToEndAsync()).Trim();
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                await Console.Error.WriteLineAsync(
+                    "ERROR(--formal-enterprise-bootstrap): empty password from STDIN. Aborting.");
+                return ExitSafetyGuard;
+            }
+
+            var services = new ServiceCollection();
+            services.AddLogging(b =>
+            {
+                b.SetMinimumLevel(LogLevel.Information);
+                b.AddProvider(new StderrLoggerProvider());
+            });
+            services.AddDbContext<IdentityDbContext>(options =>
+            {
+                options.UseNpgsql(
+                    connectionString,
+                    npg => npg.MigrationsHistoryTable(
+                        "__ef_migrations_history",
+                        IdentityDbContext.DefaultSchema));
+            });
+            services.AddIdentity<GuliErpUser, GuliErpRole>(options =>
+            {
+                options.Password.RequiredLength = 12;
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequiredUniqueChars = 4;
+                options.User.RequireUniqueEmail = false;
+                options.SignIn.RequireConfirmedEmail = false;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
+            })
+            .AddEntityFrameworkStores<IdentityDbContext>()
+            .AddDefaultTokenProviders();
+
+            await using var sp = services.BuildServiceProvider();
+            var db = sp.GetRequiredService<IdentityDbContext>();
+            var userManager = sp.GetRequiredService<UserManager<GuliErpUser>>();
+            var bootstrap = new EnterpriseBootstrapService(db, userManager);
+
+            var result = await bootstrap.CreateEnterpriseBootstrapAsync(
+                new CreateEnterpriseBootstrapRequest(
+                    tenantCode,
+                    tenantName,
+                    companyCode,
+                    companyName,
+                    adminUserName,
+                    adminDisplayName,
+                    password,
+                    adminEmail,
+                    adminPhone));
+
+            var output = new
+            {
+                ok = true,
+                tenantId = result.TenantId,
+                tenantCode,
+                companyId = result.CompanyId,
+                companyCode,
+                defaultPlantId = result.DefaultPlantId,
+                rootOrganizationUnitId = result.RootOrganizationUnitId,
+                adminUserId = result.AdminUserId,
+                adminEmployeeId = result.AdminEmployeeId,
+                created = result.Created,
+                adminRoleCode = result.AdminRoleCode,
+                adminRoleCreated = result.AdminRoleCreated,
+                companyMembershipCreated = result.CompanyMembershipCreated,
+                roleAssignmentCreated = result.RoleAssignmentCreated,
+                passwordEchoed = false,
+            };
+            await Console.Out.WriteLineAsync(System.Text.Json.JsonSerializer.Serialize(output));
+            return ExitOk;
+        }
+        catch (EnterpriseBootstrapConflictException ex)
+        {
+            await Console.Error.WriteLineAsync(
+                $"CONFLICT(--formal-enterprise-bootstrap): {ex.Message}");
+            return ExitTenantCompanyFailure;
+        }
+        catch (Exception ex) when (
+            ex is Microsoft.EntityFrameworkCore.DbUpdateException
+                or Npgsql.NpgsqlException
+                or System.Net.Sockets.SocketException
+                or TimeoutException)
+        {
+            await Console.Error.WriteLineAsync(
+                $"DB ERROR(--formal-enterprise-bootstrap): {ex.GetType().Name}: {ex.Message}");
+            return ExitDatabaseUnavailable;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync(
+                $"EXCEPTION(--formal-enterprise-bootstrap): {ex.GetType().Name}: {ex.Message}");
+            return ExitOtherException;
+        }
+        finally
+        {
+            password = null;
+            GC.Collect();
         }
     }
 

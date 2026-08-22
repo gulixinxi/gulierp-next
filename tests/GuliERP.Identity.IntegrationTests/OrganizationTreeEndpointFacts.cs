@@ -4,6 +4,8 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
+using GuliERP.Identity.Application.Authorization;
+using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -35,7 +37,12 @@ public sealed class OrganizationTreeEndpointFacts : IClassFixture<WebApplication
         using var factory = BuildFactory(nameof(PlatformAdmin_Reads_Initialized_OrganizationTree));
         await SeedInitializedOrganizationAsync(factory.Services, tenantId: 1001, companyId: 2001);
         using var client = factory.CreateClient();
-        using var request = BuildTreeRequest(tenantId: 1001, companyId: 2001, userId: 3001, platformAdmin: true);
+        using var request = BuildTreeRequest(
+            tenantId: 1001,
+            companyId: 2001,
+            userId: 3001,
+            platformAdmin: true,
+            permission: GuliErpPermissions.IdentityOrganizationRead);
 
         var response = await client.SendAsync(request);
         var body = await response.Content.ReadAsStringAsync();
@@ -51,7 +58,12 @@ public sealed class OrganizationTreeEndpointFacts : IClassFixture<WebApplication
     {
         using var factory = BuildFactory(nameof(PlatformAdmin_UninitializedTenant_Returns_EmptyTree_Not500));
         using var client = factory.CreateClient();
-        using var request = BuildTreeRequest(tenantId: 9101, companyId: null, userId: 3001, platformAdmin: true);
+        using var request = BuildTreeRequest(
+            tenantId: 9101,
+            companyId: null,
+            userId: 3001,
+            platformAdmin: true,
+            permission: GuliErpPermissions.IdentityOrganizationRead);
 
         var response = await client.SendAsync(request);
         var dto = await response.Content.ReadFromJsonAsync<OrganizationTreeResponse>();
@@ -67,7 +79,12 @@ public sealed class OrganizationTreeEndpointFacts : IClassFixture<WebApplication
         using var factory = BuildFactory(nameof(PlatformAdmin_CompanyWithoutPlantOrgEmployee_Returns_EmptyCollections));
         await SeedCompanyOnlyAsync(factory.Services, tenantId: 1002, companyId: 2002);
         using var client = factory.CreateClient();
-        using var request = BuildTreeRequest(tenantId: 1002, companyId: 2002, userId: 3002, platformAdmin: true);
+        using var request = BuildTreeRequest(
+            tenantId: 1002,
+            companyId: 2002,
+            userId: 3002,
+            platformAdmin: true,
+            permission: GuliErpPermissions.IdentityOrganizationRead);
 
         var response = await client.SendAsync(request);
         var dto = await response.Content.ReadFromJsonAsync<OrganizationTreeResponse>();
@@ -102,7 +119,12 @@ public sealed class OrganizationTreeEndpointFacts : IClassFixture<WebApplication
         await SeedInitializedOrganizationAsync(factory.Services, tenantId: 1004, companyId: 2004, companyName: "Tenant A Company");
         await SeedInitializedOrganizationAsync(factory.Services, tenantId: 1005, companyId: 2005, companyName: "Tenant B Company");
         using var client = factory.CreateClient();
-        using var request = BuildTreeRequest(tenantId: 1004, companyId: null, userId: 3004, platformAdmin: true);
+        using var request = BuildTreeRequest(
+            tenantId: 1004,
+            companyId: null,
+            userId: 3004,
+            platformAdmin: true,
+            permission: GuliErpPermissions.IdentityOrganizationRead);
 
         var response = await client.SendAsync(request);
         var body = await response.Content.ReadAsStringAsync();
@@ -122,7 +144,12 @@ public sealed class OrganizationTreeEndpointFacts : IClassFixture<WebApplication
             companyId: 2006,
             includeEmployee: false);
         using var client = factory.CreateClient();
-        using var request = BuildTreeRequest(tenantId: 1006, companyId: 2006, userId: 3006, platformAdmin: true);
+        using var request = BuildTreeRequest(
+            tenantId: 1006,
+            companyId: 2006,
+            userId: 3006,
+            platformAdmin: true,
+            permission: GuliErpPermissions.IdentityOrganizationRead);
 
         var response = await client.SendAsync(request);
         var dto = await response.Content.ReadFromJsonAsync<OrganizationTreeResponse>();
@@ -178,6 +205,14 @@ public sealed class OrganizationTreeEndpointFacts : IClassFixture<WebApplication
         long? companyId,
         long userId,
         bool platformAdmin)
+        => BuildTreeRequest(tenantId, companyId, userId, platformAdmin, permission: null);
+
+    private static HttpRequestMessage BuildTreeRequest(
+        long tenantId,
+        long? companyId,
+        long userId,
+        bool platformAdmin,
+        string? permission)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/organization/tree");
         request.Headers.Add("X-Test-Authenticated", "true");
@@ -187,6 +222,10 @@ public sealed class OrganizationTreeEndpointFacts : IClassFixture<WebApplication
         if (companyId.HasValue)
         {
             request.Headers.Add("X-Company-Id", companyId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+        if (!string.IsNullOrWhiteSpace(permission))
+        {
+            request.Headers.Add("X-Test-Permission", permission);
         }
         return request;
     }
@@ -310,6 +349,10 @@ public sealed class OrganizationTreeEndpointFacts : IClassFixture<WebApplication
             {
                 new(ClaimTypes.NameIdentifier, Request.Headers["X-User-Id"].ToString()),
             };
+            if (Request.Headers.TryGetValue("X-Test-Permission", out var permission))
+            {
+                claims.Add(new Claim(GuliErpPermissionClaimTypes.Permission, permission.ToString()));
+            }
             var identity = new ClaimsIdentity(claims, SchemeName);
             return Task.FromResult(AuthenticateResult.Success(
                 new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));

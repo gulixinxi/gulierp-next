@@ -5,7 +5,11 @@
         <h1>企业组织</h1>
         <p>{{ activeCompany?.name || '当前企业组织结构' }}</p>
       </div>
-      <el-button :icon="Refresh" :loading="loading" @click="load">刷新</el-button>
+      <div class="toolbar-actions">
+        <el-button :icon="Plus" type="primary" @click="openOrgDialog">新增部门</el-button>
+        <el-button :icon="UserFilled" @click="openUserDialog">新增用户</el-button>
+        <el-button :icon="Refresh" :loading="loading" @click="load">刷新</el-button>
+      </div>
     </div>
 
     <el-alert
@@ -67,7 +71,21 @@
             node-key="organizationUnitId"
             default-expand-all
             :props="{ label: 'name', children: 'children' }"
-          />
+          >
+            <template #default="{ data }">
+              <span class="department-node">
+                <span>{{ data.name }}</span>
+                <el-button
+                  link
+                  size="small"
+                  type="warning"
+                  @click.stop="toggleOrgStatus(data)"
+                >
+                  {{ data.status === 'Active' ? '停用' : '启用' }}
+                </el-button>
+              </span>
+            </template>
+          </el-tree>
         </section>
       </div>
 
@@ -81,15 +99,104 @@
           <el-table-column prop="status" label="状态" width="100" />
         </el-table>
       </section>
+
+      <section class="org-section">
+        <div class="section-title">用户列表</div>
+        <el-table :data="users" size="small" stripe height="260">
+          <el-table-column prop="userName" label="用户名" min-width="140" />
+          <el-table-column prop="displayName" label="姓名" min-width="140" />
+          <el-table-column prop="email" label="邮箱" min-width="180" />
+          <el-table-column prop="status" label="状态" width="100" />
+          <el-table-column label="角色" min-width="220">
+            <template #default="{ row }">{{ row.roles.join(', ') || '-' }}</template>
+          </el-table-column>
+        </el-table>
+      </section>
     </template>
+
+    <el-dialog v-model="orgDialog.visible" title="新增部门" width="420px">
+      <el-form label-width="90px">
+        <el-form-item label="上级部门">
+          <el-select v-model="orgDialog.parentId" clearable placeholder="公司根节点">
+            <el-option
+              v-for="node in flatDepartments"
+              :key="node.organizationUnitId"
+              :label="node.name"
+              :value="node.organizationUnitId"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="编码">
+          <el-input v-model="orgDialog.code" maxlength="40" />
+        </el-form-item>
+        <el-form-item label="名称">
+          <el-input v-model="orgDialog.name" maxlength="80" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="orgDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="savingOrg" @click="submitOrg">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="userDialog.visible" title="新增用户" width="520px">
+      <el-form label-width="90px">
+        <el-form-item label="用户名">
+          <el-input v-model="userDialog.userName" maxlength="80" />
+        </el-form-item>
+        <el-form-item label="姓名">
+          <el-input v-model="userDialog.displayName" maxlength="80" />
+        </el-form-item>
+        <el-form-item label="初始密码">
+          <el-input v-model="userDialog.password" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="部门">
+          <el-select v-model="userDialog.organizationUnitId" clearable placeholder="不指定">
+            <el-option
+              v-for="node in flatDepartments"
+              :key="node.organizationUnitId"
+              :label="node.name"
+              :value="node.organizationUnitId"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="userDialog.roleCodes" multiple clearable placeholder="可稍后分配">
+            <el-option
+              v-for="role in roles"
+              :key="role.code"
+              :label="role.code"
+              :value="role.code"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="userDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="savingUser" @click="submitUser">保存</el-button>
+      </template>
+    </el-dialog>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Refresh } from '@element-plus/icons-vue';
-import { getOrganizationTree, type OrganizationCompanyNodeDto, type OrganizationEmployeeNodeDto, type OrganizationUnitNodeDto } from '../../api/organization';
+import { Plus, Refresh, UserFilled } from '@element-plus/icons-vue';
+import {
+  assignEnterpriseRole,
+  createEnterpriseUser,
+  createOrganizationUnit,
+  getOrganizationTree,
+  listEnterpriseRoles,
+  listEnterpriseUsers,
+  setOrganizationUnitStatus,
+  type EnterpriseRoleDto,
+  type EnterpriseUserListItemDto,
+  type OrganizationCompanyNodeDto,
+  type OrganizationEmployeeNodeDto,
+  type OrganizationUnitNodeDto,
+} from '../../api/organization';
 import { ApiError } from '../../api/http';
 
 const loading = ref(false);
@@ -97,10 +204,24 @@ const error = ref('');
 const errorDetail = ref('');
 const errorType = ref<'error' | 'warning'>('error');
 const companies = ref<OrganizationCompanyNodeDto[]>([]);
+const users = ref<EnterpriseUserListItemDto[]>([]);
+const roles = ref<EnterpriseRoleDto[]>([]);
+const savingOrg = ref(false);
+const savingUser = ref(false);
+const orgDialog = reactive({ visible: false, parentId: '', code: '', name: '' });
+const userDialog = reactive({
+  visible: false,
+  userName: '',
+  displayName: '',
+  password: '',
+  organizationUnitId: '',
+  roleCodes: [] as string[],
+});
 
 const activeCompany = computed(() => companies.value[0] ?? null);
 const plants = computed(() => activeCompany.value?.plants ?? []);
 const departmentTree = computed(() => activeCompany.value?.organizationUnits ?? []);
+const flatDepartments = computed(() => flattenDepartments(departmentTree.value));
 const departmentCount = computed(() => countDepartments(departmentTree.value));
 const employees = computed(() => flattenEmployees(departmentTree.value));
 const emptyDescription = computed(() => '尚未初始化企业组织');
@@ -113,6 +234,17 @@ async function load() {
   try {
     const data = await getOrganizationTree();
     companies.value = data.companies ?? [];
+    if (companies.value.length > 0) {
+      const [userRows, roleRows] = await Promise.all([
+        listEnterpriseUsers(),
+        listEnterpriseRoles(),
+      ]);
+      users.value = userRows;
+      roles.value = roleRows;
+    } else {
+      users.value = [];
+      roles.value = [];
+    }
   } catch (err) {
     companies.value = [];
     const apiError = err instanceof ApiError ? err : null;
@@ -141,6 +273,79 @@ async function load() {
   }
 }
 
+function openOrgDialog() {
+  orgDialog.parentId = activeCompany.value?.organizationUnits[0]?.organizationUnitId ?? '';
+  orgDialog.code = '';
+  orgDialog.name = '';
+  orgDialog.visible = true;
+}
+
+async function submitOrg() {
+  if (!activeCompany.value) return;
+  if (!orgDialog.code.trim() || !orgDialog.name.trim()) {
+    ElMessage.warning('请填写部门编码和名称');
+    return;
+  }
+  savingOrg.value = true;
+  try {
+    await createOrganizationUnit({
+      companyId: activeCompany.value.companyId,
+      parentOrganizationUnitId: orgDialog.parentId || null,
+      code: orgDialog.code,
+      name: orgDialog.name,
+      type: 3,
+    });
+    orgDialog.visible = false;
+    ElMessage.success('部门已创建');
+    await load();
+  } finally {
+    savingOrg.value = false;
+  }
+}
+
+async function toggleOrgStatus(node: OrganizationUnitNodeDto) {
+  await setOrganizationUnitStatus(node.organizationUnitId, node.status !== 'Active');
+  ElMessage.success('组织状态已更新');
+  await load();
+}
+
+function openUserDialog() {
+  userDialog.userName = '';
+  userDialog.displayName = '';
+  userDialog.password = '';
+  userDialog.organizationUnitId = activeCompany.value?.organizationUnits[0]?.organizationUnitId ?? '';
+  userDialog.roleCodes = [];
+  userDialog.visible = true;
+}
+
+async function submitUser() {
+  if (!activeCompany.value) return;
+  if (!userDialog.userName.trim() || !userDialog.displayName.trim() || !userDialog.password) {
+    ElMessage.warning('请填写用户名、姓名和初始密码');
+    return;
+  }
+  savingUser.value = true;
+  try {
+    const created = await createEnterpriseUser({
+      userName: userDialog.userName,
+      displayName: userDialog.displayName,
+      password: userDialog.password,
+      companyId: activeCompany.value.companyId,
+      organizationUnitId: userDialog.organizationUnitId || null,
+      roleCodes: [],
+    });
+    for (const roleCode of userDialog.roleCodes) {
+      await assignEnterpriseRole(created.userId, roleCode, activeCompany.value.companyId);
+    }
+    userDialog.password = '';
+    userDialog.visible = false;
+    ElMessage.success('用户已创建');
+    await load();
+  } finally {
+    savingUser.value = false;
+  }
+}
+
 function countDepartments(nodes: OrganizationUnitNodeDto[]): number {
   return nodes.reduce((sum, node) => sum + 1 + countDepartments(node.children ?? []), 0);
 }
@@ -150,6 +355,15 @@ function flattenEmployees(nodes: OrganizationUnitNodeDto[], departmentName = '')
   for (const node of nodes) {
     rows.push(...(node.employees ?? []).map(employee => ({ ...employee, departmentName: node.name || departmentName })));
     rows.push(...flattenEmployees(node.children ?? [], node.name || departmentName));
+  }
+  return rows;
+}
+
+function flattenDepartments(nodes: OrganizationUnitNodeDto[]): OrganizationUnitNodeDto[] {
+  const rows: OrganizationUnitNodeDto[] = [];
+  for (const node of nodes) {
+    rows.push(node);
+    rows.push(...flattenDepartments(node.children ?? []));
   }
   return rows;
 }
@@ -169,6 +383,12 @@ onMounted(load);
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 12px;
+}
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .org-toolbar h1 {
   font-size: 20px;
@@ -231,6 +451,14 @@ onMounted(load);
 .department-tree {
   height: 260px;
   overflow: auto;
+}
+.department-node {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-right: 8px;
 }
 @media (max-width: 900px) {
   .org-summary,
