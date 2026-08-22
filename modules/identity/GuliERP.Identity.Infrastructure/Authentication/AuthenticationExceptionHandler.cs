@@ -7,6 +7,7 @@ using InvalidCredentialsException = GuliERP.Identity.Application.Authentication.
 using AuthenticationRequiredException = GuliERP.Identity.Application.Authentication.AuthenticationRequiredException;
 using CompanyAccessDeniedException = GuliERP.Identity.Application.Authentication.CompanyAccessDeniedException;
 using InvalidCompanySelectionException = GuliERP.Identity.Application.Authentication.InvalidCompanySelectionException;
+using BackendUnavailableException = GuliERP.Identity.Application.Authentication.BackendUnavailableException;
 
 namespace GuliERP.Identity.Infrastructure.Authentication;
 
@@ -89,6 +90,12 @@ public sealed class AuthenticationExceptionHandler : IExceptionHandler
                 "Invalid company selection.",
                 "The requested company is not selectable."),
 
+            BackendUnavailableException => BuildProblem(
+                StatusCodes.Status503ServiceUnavailable,
+                ErrorCodes.ServiceUnavailable,
+                "Service unavailable.",
+                "The authentication service is temporarily unavailable. Please try again later."),
+
             _ => null,
         };
 
@@ -161,6 +168,12 @@ public sealed class AuthenticationExceptionHandler : IExceptionHandler
                 _logger.LogInformation(
                     "Invalid company selection: targetCompanyId={TargetCompanyId} reason={Reason}",
                     icse.TargetCompanyId, icse.Reason);
+                break;
+            case BackendUnavailableException bue:
+                _logger.LogWarning(
+                    bue.InnerException,
+                    "Backend unavailable: context={Context}",
+                    bue.Context);
                 break;
         }
     }

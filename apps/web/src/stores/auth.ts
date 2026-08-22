@@ -40,14 +40,13 @@ export const useAuthStore = defineStore('auth', {
       return s.user?.userName || '';
     },
     companyName(s): string {
-      // backend DTO only provides companyCode by default; when name not available, fall back to code
-      return s.user?.companyCode || '';
+      return s.user?.companyName || s.user?.companyCode || '';
     },
     companyId(s): string | null {
       return s.user?.companyId ?? null;
     },
     tenantName(s): string {
-      return s.user?.tenantCode || '';
+      return s.user?.tenantName || s.user?.tenantCode || '';
     },
     // BACKEND_COMPANY_LIST_CONTRACT_GAP: The backend LoginResponse does NOT include
     // availableCompanies. There is no HTTP endpoint exposing
@@ -62,7 +61,11 @@ export const useAuthStore = defineStore('auth', {
       // This is NOT a real "available companies" source — it's a UI fallback
       // so the shell can display the current company label.
       if (s.user && s.user.companyId != null && s.user.companyCode != null) {
-        return [{ companyId: s.user.companyId, companyCode: s.user.companyCode }];
+        return [{
+          companyId: s.user.companyId,
+          companyCode: s.user.companyCode,
+          companyName: s.user.companyName ?? undefined,
+        }];
       }
       return [];
     },

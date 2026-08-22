@@ -1,5 +1,5 @@
-// GuliERP Auth Contract Types — FROZEN per TRAE_FRONTEND_AUTH_HANDOFF.md §1-6
-// All shapes match the backend G2-004R1 kernel exactly. Do NOT invent new fields.
+// GuliERP Auth Contract Types — matches backend AuthenticationDtos.cs.
+// All shapes match the backend AuthenticationDtos.cs contract exactly.
 
 // ===== 1. /api/v1/auth/csrf — response (§2.1) =====
 export interface CsrfTokenResponse {
@@ -8,7 +8,7 @@ export interface CsrfTokenResponse {
 }
 
 // ===== 2. User DTO — matches backend LoginResponse exactly (AuthenticationDtos.cs) =====
-//   DO NOT add fields that the backend doesn't return. availableCompanies was removed
+//   Do not add fields that the backend doesn't return. availableCompanies was removed
 //   because the backend LoginResponse does NOT include it. If a future backend
 //   endpoint provides the current user's allowed companies, define a separate DTO.
 //
@@ -23,8 +23,10 @@ export interface AuthUserDto {
   displayName: string;
   tenantId: string;
   tenantCode: string;
+  tenantName?: string | null;
   companyId: string | null;      // backend: long? (nullable when no company selected yet)
   companyCode: string | null;   // backend: string? (nullable when companyId is null)
+  companyName?: string | null;
   isPlatformAdmin: boolean;
 }
 

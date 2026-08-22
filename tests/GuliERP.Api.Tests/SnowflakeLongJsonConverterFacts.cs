@@ -336,8 +336,10 @@ public class SnowflakeLongJsonConverterFacts
             DisplayName: "Test Operator",
             TenantId: 83727350616817781L,
             TenantCode: "test_operator_g2_004_t",
+            TenantName: "Operator Tenant",
             CompanyId: 83727350616817782L,
             CompanyCode: "test_operator_g2_004_c",
+            CompanyName: "Operator Company",
             IsPlatformAdmin: false);
 
         var json = JsonSerializer.Serialize(dto, Options);
@@ -356,8 +358,10 @@ public class SnowflakeLongJsonConverterFacts
             DisplayName: "Platform Admin",
             TenantId: 0L,
             TenantCode: "",
+            TenantName: null,
             CompanyId: null,    // <-- host platform admin
             CompanyCode: null,
+            CompanyName: null,
             IsPlatformAdmin: true);
 
         var json = JsonSerializer.Serialize(dto, Options);

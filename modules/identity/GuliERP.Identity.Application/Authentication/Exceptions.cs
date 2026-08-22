@@ -82,3 +82,38 @@ public sealed class InvalidCompanySelectionException : Exception
         Reason = reason;
     }
 }
+
+/// <summary>
+/// Thrown by <see cref="IAuthenticationService.LoginAsync"/>
+/// and other Identity-bound endpoints when a dependency
+/// (typically PostgreSQL / Npgsql / a network call) is
+/// unreachable or returns a transient infrastructure error
+/// (e.g. Npgsql 28P01, SocketException, TimeoutException,
+/// DbUpdateException from the DB layer).
+///
+/// <para>
+/// Maps to <c>503</c> + <c>code=service_unavailable</c>.
+/// This intentionally supersedes the previous behavior where
+/// infrastructure errors were folded into
+/// <see cref="InvalidCredentialsException"/> — that practice
+/// caused the browser login UI to prompt "invalid username
+/// or password" for cases where the real root cause was a
+/// PostgreSQL connection issue.
+/// </para>
+///
+/// <para>
+/// SECURITY: the response NEVER includes the underlying
+/// exception (no stack trace, no DB host/user/password).
+/// The inner exception is preserved for <c>ILogger</c> only.
+/// </para>
+/// </summary>
+public sealed class BackendUnavailableException : Exception
+{
+    public string? Context { get; }
+
+    public BackendUnavailableException(string? context, Exception inner)
+        : base("Authentication backend is temporarily unavailable.", inner)
+    {
+        Context = context;
+    }
+}

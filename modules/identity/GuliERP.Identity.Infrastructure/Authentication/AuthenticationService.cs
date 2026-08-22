@@ -16,6 +16,7 @@ using LoginResponse = GuliERP.Identity.Application.Authentication.LoginResponse;
 using InvalidCredentialsException = GuliERP.Identity.Application.Authentication.InvalidCredentialsException;
 using AuthenticationRequiredException = GuliERP.Identity.Application.Authentication.AuthenticationRequiredException;
 using CompanyAccessDeniedException = GuliERP.Identity.Application.Authentication.CompanyAccessDeniedException;
+using BackendUnavailableException = GuliERP.Identity.Application.Authentication.BackendUnavailableException;
 
 namespace GuliERP.Identity.Infrastructure.Authentication;
 
@@ -76,6 +77,17 @@ public sealed class AuthenticationService : IAppAuthenticationService
             }
 
             // 2. Tenant check.
+            //    - If caller supplied a tenantCode: verify a tenant with that Code
+            //      exists AND the user belongs to it.
+            //    - If tenantCode is null: do NOT force the user into the
+            //      "default" (DemoTenantCode) tenant. Simply verify the user's
+            //      own TenantId row still exists in the Tenants table (or 0 = host).
+            //      Previously this else branch hardcoded DemoTenantCode, which
+            //      caused users under other tenants (e.g. web_preview_t) to
+            //      always fail login when frontends send tenantCode = null.
+            //      Username is globally unique per UserManager.FindByNameAsync
+            //      (normalized lookup), so the user's TenantId alone is the
+            //      authoritative source.
             if (!string.IsNullOrEmpty(tenantCode))
             {
                 var tenant = await _db.Tenants.AsNoTracking()
@@ -90,12 +102,12 @@ public sealed class AuthenticationService : IAppAuthenticationService
             {
                 if (user.TenantId != 0)
                 {
-                    var defaultTenant = await _db.Tenants.AsNoTracking()
-                        .FirstOrDefaultAsync(t => t.Code == IdentitySeed.DemoTenantCode, ct);
-                    if (defaultTenant is null || user.TenantId != defaultTenant.Id)
+                    var userTenant = await _db.Tenants.AsNoTracking()
+                        .FirstOrDefaultAsync(t => t.Id == user.TenantId, ct);
+                    if (userTenant is null)
                     {
                         throw new InvalidCredentialsException(
-                            userName, tenantCode, "wrong_tenant");
+                            userName, tenantCode, "user_orphaned");
                     }
                 }
             }
@@ -140,16 +152,29 @@ public sealed class AuthenticationService : IAppAuthenticationService
                 or TimeoutException
                 or InvalidOperationException)
         {
-            // DB unavailable or transient failure. Map to the
-            // uniform invalid_credentials response. The internal
-            // logger (per the exception handler) records the
-            // precise cause for ops / SIEM.
+            // G2-004R2 — Backend infrastructure error. Return 503
+            // service_unavailable instead of 401 invalid_credentials.
+            // The previous blanket mapping caused the login UI to
+            // show "invalid username or password" for Npgsql 28P01
+            // (DB auth failure) and other transient DB/network
+            // errors. Operators then spent cycles chasing "wrong
+            // ERP password" when the real issue was the PostgreSQL
+            // connection string.
+            //
+            // Enumeration defense is preserved: the user still
+            // cannot distinguish "user not found" (401) from a
+            // backend outage (503) via the response BODY contents
+            // alone — the STATUS CODE differs, which is the
+            // minimal surface required for correct UI behavior.
+            // The internal logger records the precise cause for
+            // ops / SIEM; the response body is generic 503.
             _logger.LogWarning(
                 ex,
-                "Auth backend failure (mapped to invalid_credentials): userName={UserName}",
+                "Auth backend infrastructure failure (mapped to 503 service_unavailable): userName={UserName}",
                 userName);
-            throw new InvalidCredentialsException(
-                userName, tenantCode, "backend_unavailable");
+            throw new BackendUnavailableException(
+                context: $"login:{userName}",
+                inner: ex);
         }
     }
 
@@ -267,7 +292,8 @@ public sealed class AuthenticationService : IAppAuthenticationService
             claims.Add(new(GuliErpClaimTypes.CompanyId,
                 companyId.Value.ToString(CultureInfo.InvariantCulture)));
         }
-        if (user.IsPlatformAdmin)
+        var isPlatformAdmin = await ResolveIsPlatformAdminAsync(user, companyId, ct);
+        if (isPlatformAdmin)
         {
             claims.Add(new(GuliErpClaimTypes.IsPlatformAdmin, "true"));
         }
@@ -311,8 +337,41 @@ public sealed class AuthenticationService : IAppAuthenticationService
             DisplayName: user.DisplayName ?? user.UserName ?? string.Empty,
             TenantId: user.TenantId,
             TenantCode: tenant?.Code ?? (user.TenantId == 0 ? "<host>" : string.Empty),
+            TenantName: tenant?.Name,
             CompanyId: company?.Id,
             CompanyCode: company?.Code,
-            IsPlatformAdmin: user.IsPlatformAdmin);
+            CompanyName: company?.Name,
+            IsPlatformAdmin: await ResolveIsPlatformAdminAsync(user, companyId, ct));
+    }
+
+    private async Task<bool> ResolveIsPlatformAdminAsync(
+        GuliErpUser user,
+        long? currentCompanyId,
+        CancellationToken ct)
+    {
+        if (user.IsPlatformAdmin)
+        {
+            return true;
+        }
+
+        if (user.TenantId == 0)
+        {
+            return false;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        return await (
+            from assignment in _db.UserRoleAssignments.AsNoTracking()
+            join role in _db.Roles.AsNoTracking() on assignment.RoleId equals role.Id
+            where assignment.TenantId == user.TenantId
+                  && role.TenantId == user.TenantId
+                  && assignment.UserId == user.Id
+                  && assignment.Status == AssignmentStatus.Active
+                  && role.Status == RoleStatus.Active
+                  && role.Code == "PLATFORM_ADMIN"
+                  && (assignment.ValidFrom == null || assignment.ValidFrom <= now)
+                  && (assignment.ValidTo == null || assignment.ValidTo > now)
+                  && (assignment.CompanyId == null || assignment.CompanyId == currentCompanyId)
+            select assignment.Id).AnyAsync(ct);
     }
 }

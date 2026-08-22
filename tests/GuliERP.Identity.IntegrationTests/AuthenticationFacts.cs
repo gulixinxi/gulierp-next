@@ -1,12 +1,21 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text.Json;
 using GuliERP.Api.Authentication;
 using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Application.Authentication;
+using GuliERP.Identity.Domain.Entities;
+using GuliERP.Identity.Domain.Enums;
+using GuliERP.Identity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
 
 namespace GuliERP.Identity.IntegrationTests;
@@ -49,6 +58,31 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         {
             builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString);
             builder.UseEnvironment(env);
+        });
+    }
+
+    private WebApplicationFactory<Program> BuildInMemoryClient(string databaseName)
+    {
+        return _factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Testing");
+            builder.UseSetting(
+                "ConnectionStrings:GuliERP",
+                "Host=127.0.0.1;Port=1;Database=gulierp_g2_003_test;Username=none;Password=none");
+            builder.ConfigureTestServices(services =>
+            {
+                var inMemoryProvider = new ServiceCollection()
+                    .AddEntityFrameworkInMemoryDatabase()
+                    .BuildServiceProvider();
+                services.RemoveAll<DbContextOptions<IdentityDbContext>>();
+                services.AddDbContext<IdentityDbContext>(options =>
+                {
+                    options.UseInMemoryDatabase(databaseName);
+                    options.UseInternalServiceProvider(inMemoryProvider);
+                    options.ConfigureWarnings(warnings =>
+                        warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+                });
+            });
         });
     }
 
@@ -149,14 +183,13 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task Login_BadDb_Returns401InvalidCredentials()
+    public async Task Login_BadDb_Returns503ServiceUnavailable()
     {
         // With the bad-DB connection, the user lookup fails
         // fast (no Postgres to query). The login returns
-        // 401 invalid_credentials — the same uniform response
-        // for "user not found" (DEC-AUTH-006 enumeration
-        // defense). The internal logger gets the precise
-        // outcome; the client never sees the distinction.
+        // 503 service_unavailable — infrastructure failures are
+        // separated from invalid user credentials so the UI does
+        // not tell operators to chase the wrong password.
         using var factory = BuildClient();
         using var client = factory.CreateClient();
         var csrfToken = await FetchCsrfTokenAsync(client);
@@ -170,9 +203,9 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         };
         AttachCsrfToken(request, csrfToken);
         var response = await client.SendAsync(request);
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("invalid_credentials", body);
+        Assert.Contains("service_unavailable", body);
     }
 
     [Fact]
@@ -225,6 +258,45 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         // We expect 401 (no auth cookie) but NOT 400 (no CSRF
         // failure). The distinction matters.
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Login_And_Me_Return_DisplayNames_And_PlatformAdmin_FromRoleAssignment()
+    {
+        using var factory = BuildInMemoryClient(nameof(Login_And_Me_Return_DisplayNames_And_PlatformAdmin_FromRoleAssignment));
+        await SeedPlatformRoleLoginFixtureAsync(factory.Services);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = true,
+        });
+
+        var csrfToken = await FetchCsrfTokenAsync(client);
+        var loginRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/login")
+        {
+            Content = JsonContent.Create(new LoginRequest(
+                UserName: "test_operator_g2_004",
+                Password: "CorrectHorse!2026",
+                TenantCode: null)),
+        };
+        AttachCsrfToken(loginRequest, csrfToken);
+
+        var loginResponse = await client.SendAsync(loginRequest);
+        var loginBody = await loginResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        using (var loginDoc = JsonDocument.Parse(loginBody))
+        {
+            Assert.Equal("Operator Evidence Test User", loginDoc.RootElement.GetProperty("displayName").GetString());
+            Assert.Equal("山东谷粒机械有限公司", loginDoc.RootElement.GetProperty("tenantName").GetString());
+            Assert.Equal("山东谷粒机械有限公司", loginDoc.RootElement.GetProperty("companyName").GetString());
+            Assert.True(loginDoc.RootElement.GetProperty("isPlatformAdmin").GetBoolean());
+        }
+
+        var meResponse = await client.GetAsync("/api/v1/auth/me");
+        var meBody = await meResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, meResponse.StatusCode);
+        using var meDoc = JsonDocument.Parse(meBody);
+        Assert.True(meDoc.RootElement.GetProperty("isPlatformAdmin").GetBoolean());
+        Assert.Equal("山东谷粒机械有限公司", meDoc.RootElement.GetProperty("companyName").GetString());
     }
 
     // ----- /api/v1/auth/logout -----
@@ -327,5 +399,98 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/api/v1/system/ping");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    private static async Task SeedPlatformRoleLoginFixtureAsync(IServiceProvider services)
+    {
+        using var scope = services.CreateScope();
+        var sp = scope.ServiceProvider;
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var userManager = sp.GetRequiredService<UserManager<GuliErpUser>>();
+        var roleManager = sp.GetRequiredService<RoleManager<GuliErpRole>>();
+        var now = DateTimeOffset.UtcNow;
+
+        var tenant = new Tenant
+        {
+            Id = 10_001,
+            Code = "test_operator_g2_004_t",
+            Name = "山东谷粒机械有限公司",
+            Status = TenantStatus.Active,
+            CreatedAt = now,
+            ModifiedAt = now,
+            ConcurrencyVersion = 1,
+        };
+        var company = new Company
+        {
+            Id = 20_001,
+            TenantId = tenant.Id,
+            Code = "test_operator_g2_004_c",
+            Name = "山东谷粒机械有限公司",
+            DefaultCurrency = "CNY",
+            Timezone = "Asia/Shanghai",
+            Status = CompanyStatus.Active,
+            CreatedAt = now,
+            ModifiedAt = now,
+            ConcurrencyVersion = 1,
+        };
+        db.Tenants.Add(tenant);
+        db.Companies.Add(company);
+        await db.SaveChangesAsync();
+
+        var user = new GuliErpUser
+        {
+            TenantId = tenant.Id,
+            UserName = "test_operator_g2_004",
+            Email = "test_operator_g2_004@example.com",
+            EmailConfirmed = true,
+            DisplayName = "Operator Evidence Test User",
+            IsPlatformAdmin = false,
+            Status = UserStatus.Active,
+            CreatedAt = now,
+            ModifiedAt = now,
+            ConcurrencyVersion = 1,
+        };
+        var userResult = await userManager.CreateAsync(user, "CorrectHorse!2026");
+        Assert.True(userResult.Succeeded, string.Join("; ", userResult.Errors.Select(e => e.Description)));
+
+        var role = new GuliErpRole
+        {
+            TenantId = tenant.Id,
+            Name = "Platform Admin",
+            NormalizedName = "PLATFORM ADMIN",
+            Code = "PLATFORM_ADMIN",
+            IsSystem = true,
+            Status = RoleStatus.Active,
+            CreatedAt = now,
+            ModifiedAt = now,
+            ConcurrencyVersion = 1,
+        };
+        var roleResult = await roleManager.CreateAsync(role);
+        Assert.True(roleResult.Succeeded, string.Join("; ", roleResult.Errors.Select(e => e.Description)));
+
+        db.UserCompanyMemberships.Add(new UserCompanyMembership
+        {
+            TenantId = tenant.Id,
+            CompanyId = company.Id,
+            UserId = user.Id,
+            IsDefault = true,
+            JoinedAt = now,
+            Status = MembershipStatus.Active,
+            CreatedAt = now,
+            ModifiedAt = now,
+            ConcurrencyVersion = 1,
+        });
+        db.UserRoleAssignments.Add(new UserRoleAssignment
+        {
+            TenantId = tenant.Id,
+            UserId = user.Id,
+            RoleId = role.Id,
+            CompanyId = null,
+            Status = AssignmentStatus.Active,
+            CreatedAt = now,
+            ModifiedAt = now,
+            ConcurrencyVersion = 1,
+        });
+        await db.SaveChangesAsync();
     }
 }

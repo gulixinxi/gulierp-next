@@ -111,7 +111,7 @@
         </span>
 
         <!-- User menu: display name / username + dropdown with logout -->
-        <el-dropdown trigger="click" @command="onUserCommand">
+        <el-dropdown trigger="click" popper-class="gs-user-menu-popper" @command="onUserCommand">
           <span class="gs-user-chip">
             <el-icon><UserFilled /></el-icon>
             <span class="gs-user-name">{{ auth.displayName || auth.userName || '—' }}</span>
@@ -123,6 +123,8 @@
               <el-dropdown-item disabled>
                 <div class="gs-user-detail-head">
                   <div class="gs-user-detail-name">{{ auth.displayName || auth.userName }}</div>
+                  <div v-if="auth.userName" class="gs-user-detail-user">@{{ auth.userName }}</div>
+                  <div v-if="auth.companyName" class="gs-user-detail-company">公司：{{ auth.companyName }}</div>
                   <div v-if="auth.tenantName" class="gs-user-detail-tenant">租户：{{ auth.tenantName }}</div>
                 </div>
               </el-dropdown-item>
@@ -777,9 +779,17 @@ onBeforeUnmount(() => {
   font-size: 13px;
   color: var(--text-primary, #0F172A);
 }
+.gs-user-detail-user,
+.gs-user-detail-company,
 .gs-user-detail-tenant {
   font-size: 12px;
   color: var(--text-muted, #64748B);
   margin-top: 2px;
+}
+</style>
+
+<style>
+.gs-user-menu-popper {
+  z-index: 3000 !important;
 }
 </style>

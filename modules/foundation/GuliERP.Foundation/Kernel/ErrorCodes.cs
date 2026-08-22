@@ -103,4 +103,19 @@ public static class ErrorCodes
     /// satisfy the required permission / policy.
     /// </summary>
     public const string AuthorizationForbidden = "authorization_forbidden";
+
+    // ----------------------------------------------------------------
+    // G2-004R2 — Service availability code
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Service is temporarily unavailable (DB down, network
+    /// partition, dependency unreachable). Clients SHOULD treat
+    /// this as transient and retry after a backoff; the user UI
+    /// should show a localized "service unavailable" banner with
+    /// a Retry button rather than an "invalid credentials" prompt.
+    /// The response MUST NOT leak the underlying cause (no DB
+    /// user name, no host, no stack trace) per G2-002 ban list.
+    /// </summary>
+    public const string ServiceUnavailable = "service_unavailable";
 }
