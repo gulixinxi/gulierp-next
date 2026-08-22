@@ -5,7 +5,7 @@
 - Goal: DEV-STACK-001R1 - One-command Startup Actual Repair
 - Start HEAD: `81573b2ab8755820ea80c3e5dc172924fcbe36c4`
 - Script repair commit: `ced26184eb1e32032ecf86ac469341d008a7228e`
-- Report commit: pending at report creation
+- Initial report commit: `b6cfd35`
 
 ## 9fdcfc2 Status
 
@@ -84,4 +84,3 @@ Full one-command backend restart remains Operator Runtime Pending because the Po
 cd D:\guli\projects\gulierp-next\
 .\tools\dev\start-stack.ps1
 ```
-
