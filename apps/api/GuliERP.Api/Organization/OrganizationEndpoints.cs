@@ -69,8 +69,15 @@ public static class OrganizationEndpoints
 
         group.MapGet("/tree", async (
             IOrganizationTreeService tree,
+            ICurrentUser currentUser,
+            IRequestContextAccessor requestContext,
             CancellationToken ct) =>
         {
+            if (!currentUser.IsPlatformAdmin)
+            {
+                return ForbiddenProblem(requestContext);
+            }
+
             var dto = await tree.GetTreeAsync(ct);
             return Results.Ok(dto);
         });
@@ -145,6 +152,30 @@ public static class OrganizationEndpoints
             errors[nameof(request.AdminDisplayName)] = new[] { "AdminDisplayName is required." };
         }
         return errors;
+    }
+
+    private static IResult ForbiddenProblem(IRequestContextAccessor requestContext)
+    {
+        var extensions = new Dictionary<string, object?>
+        {
+            ["code"] = ErrorCodes.AuthorizationForbidden,
+        };
+        var rc = requestContext.Current;
+        if (!string.IsNullOrEmpty(rc?.RequestId))
+        {
+            extensions["requestId"] = rc.RequestId;
+        }
+        if (!string.IsNullOrEmpty(rc?.TraceId))
+        {
+            extensions["traceId"] = rc.TraceId;
+        }
+
+        return Results.Problem(
+            statusCode: StatusCodes.Status403Forbidden,
+            title: "Authorization forbidden.",
+            detail: "The current user is not allowed to perform this action.",
+            type: $"https://gulierp.example.com/errors/{ErrorCodes.AuthorizationForbidden}",
+            extensions: extensions);
     }
 }
 
