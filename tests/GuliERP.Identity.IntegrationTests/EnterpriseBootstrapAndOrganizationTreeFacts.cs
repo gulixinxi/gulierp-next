@@ -18,6 +18,66 @@ namespace GuliERP.Identity.IntegrationTests;
 public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
 {
     [Fact]
+    public void IdentityMigrationChain_Contains_PlantIsDefault_AdditiveMigration()
+    {
+        var migrationPath = FindRepoFile(
+            "modules",
+            "identity",
+            "GuliERP.Identity.Infrastructure",
+            "Migrations",
+            "20260822090000_G2EnterpriseOrganizationFoundation.cs");
+        var migration = File.ReadAllText(migrationPath);
+
+        Assert.Contains("AddColumn<bool>", migration);
+        Assert.Contains("name: \"IsDefault\"", migration);
+        Assert.Contains("table: \"gulierp_plant\"", migration);
+        Assert.Contains("defaultValue: false", migration);
+        Assert.Contains("ux_gulierp_plant_company_default", migration);
+    }
+
+    [Fact]
+    public void IdentityModelSnapshot_Contains_PlantIsDefault_And_DefaultIndex()
+    {
+        var snapshotPath = FindRepoFile(
+            "modules",
+            "identity",
+            "GuliERP.Identity.Infrastructure",
+            "Migrations",
+            "IdentityDbContextModelSnapshot.cs");
+        var snapshot = File.ReadAllText(snapshotPath);
+
+        Assert.Contains("b.Property<bool>(\"IsDefault\")", snapshot);
+        Assert.Contains("ux_gulierp_plant_company_default", snapshot);
+        Assert.Contains(".HasFilter(\"\\\"IsDefault\\\" = true\")", snapshot);
+    }
+
+    [Fact]
+    public void FormalBootstrap_Prechecks_RelationalSchema_Before_First_WriteCandidateRead()
+    {
+        var servicePath = FindRepoFile(
+            "modules",
+            "identity",
+            "GuliERP.Identity.Infrastructure",
+            "EnterpriseOrganization",
+            "EnterpriseBootstrapService.cs");
+        var service = File.ReadAllText(servicePath);
+
+        var precheck = service.IndexOf(
+            "await EnsureFormalBootstrapSchemaReadyAsync(ct);",
+            StringComparison.Ordinal);
+        var firstTenantQuery = service.IndexOf(
+            "var existingTenant = await _db.Tenants.FirstOrDefaultAsync",
+            StringComparison.Ordinal);
+        var firstTransaction = service.IndexOf(
+            "await using var tx = await _db.Database.BeginTransactionAsync(ct);",
+            StringComparison.Ordinal);
+
+        Assert.True(precheck >= 0);
+        Assert.True(firstTenantQuery > precheck);
+        Assert.True(firstTransaction > precheck);
+    }
+
+    [Fact]
     public async Task CreateEnterpriseBootstrap_Creates_Company_DefaultPlant_AdminEmployee_And_AdminUser()
     {
         await using var provider = BuildProvider();
@@ -291,5 +351,32 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         services.AddScoped<IOrganizationTreeService, OrganizationTreeService>();
         services.AddScoped<IEnterpriseOrganizationAdminService, EnterpriseOrganizationAdminService>();
         return services.BuildServiceProvider(validateScopes: true);
+    }
+
+    private static string FindRepoFile(params string[] segments)
+    {
+        var roots = new[]
+        {
+            Environment.GetEnvironmentVariable("GULIERP_REPO_ROOT"),
+            Directory.GetCurrentDirectory(),
+            AppContext.BaseDirectory,
+        };
+
+        foreach (var root in roots.Where(r => !string.IsNullOrWhiteSpace(r)).Distinct())
+        {
+            var dir = new DirectoryInfo(root!);
+            while (dir is not null)
+            {
+                var candidate = Path.Combine(new[] { dir.FullName }.Concat(segments).ToArray());
+                if (File.Exists(candidate))
+                {
+                    return candidate;
+                }
+                dir = dir.Parent;
+            }
+        }
+
+        throw new FileNotFoundException(
+            "Unable to locate repository file: " + Path.Combine(segments));
     }
 }

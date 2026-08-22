@@ -8,6 +8,7 @@ using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Common;
 
 namespace GuliERP.Identity.Infrastructure.EnterpriseOrganization;
 
@@ -19,6 +20,7 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
     private const string RootOrgName = "公司";
     private const string SystemAdminRoleCode = "ERP_SYSTEM_ADMIN";
     private const string SystemAdminRoleName = "Enterprise System Admin";
+    private const string RequiredOrganizationMigration = "20260822090000_G2EnterpriseOrganizationFoundation";
 
     private readonly IdentityDbContext _db;
     private readonly UserManager<GuliErpUser> _userManager;
@@ -60,6 +62,8 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
         var tenantCode = NormalizeCode(request.TenantCode ?? tenantName);
         var companyCode = NormalizeCode(request.CompanyCode ?? companyName);
         var now = DateTimeOffset.UtcNow;
+
+        await EnsureFormalBootstrapSchemaReadyAsync(ct);
 
         var existingTenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Code == tenantCode, ct);
         var existingCompany = await _db.Companies.FirstOrDefaultAsync(
@@ -303,6 +307,144 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
             adminRoleCreated,
             companyMembershipCreated,
             roleAssignmentCreated);
+    }
+
+    private async Task EnsureFormalBootstrapSchemaReadyAsync(CancellationToken ct)
+    {
+        if (!_db.Database.IsRelational())
+        {
+            return;
+        }
+
+        IReadOnlyList<string> pendingMigrations;
+        try
+        {
+            pendingMigrations = (await _db.Database.GetPendingMigrationsAsync(ct)).ToArray();
+        }
+        catch (Exception ex)
+        {
+            throw new EnterpriseBootstrapSchemaException(
+                $"Unable to inspect Identity migration state before formal bootstrap: {ex.GetType().Name}: {ex.Message}");
+        }
+
+        if (pendingMigrations.Count > 0)
+        {
+            throw new EnterpriseBootstrapSchemaException(
+                "Identity schema is not current. Pending migrations: "
+                + string.Join(", ", pendingMigrations));
+        }
+
+        var connection = _db.Database.GetDbConnection();
+        var shouldClose = connection.State == System.Data.ConnectionState.Closed;
+        if (shouldClose)
+        {
+            await connection.OpenAsync(ct);
+        }
+
+        try
+        {
+            if (!await HasTableAsync(connection, "identity", "gulierp_employee", ct))
+            {
+                throw new EnterpriseBootstrapSchemaException(
+                    $"Identity schema is missing table identity.gulierp_employee from {RequiredOrganizationMigration}.");
+            }
+
+            if (!await HasColumnAsync(connection, "identity", "gulierp_plant", "IsDefault", ct))
+            {
+                throw new EnterpriseBootstrapSchemaException(
+                    $"Identity schema is missing column identity.gulierp_plant.IsDefault from {RequiredOrganizationMigration}.");
+            }
+
+            if (!await HasIndexAsync(connection, "identity", "ux_gulierp_plant_company_default", ct))
+            {
+                throw new EnterpriseBootstrapSchemaException(
+                    $"Identity schema is missing index identity.ux_gulierp_plant_company_default from {RequiredOrganizationMigration}.");
+            }
+        }
+        finally
+        {
+            if (shouldClose)
+            {
+                await connection.CloseAsync();
+            }
+        }
+    }
+
+    private static async Task<bool> HasTableAsync(
+        DbConnection connection,
+        string schema,
+        string table,
+        CancellationToken ct)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            select exists (
+                select 1
+                from information_schema.tables
+                where table_schema = @schema
+                  and table_name = @table
+            );
+            """;
+        AddParameter(command, "schema", schema);
+        AddParameter(command, "table", table);
+        return await ExecuteBooleanAsync(command, ct);
+    }
+
+    private static async Task<bool> HasColumnAsync(
+        DbConnection connection,
+        string schema,
+        string table,
+        string column,
+        CancellationToken ct)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            select exists (
+                select 1
+                from information_schema.columns
+                where table_schema = @schema
+                  and table_name = @table
+                  and column_name = @column
+            );
+            """;
+        AddParameter(command, "schema", schema);
+        AddParameter(command, "table", table);
+        AddParameter(command, "column", column);
+        return await ExecuteBooleanAsync(command, ct);
+    }
+
+    private static async Task<bool> HasIndexAsync(
+        DbConnection connection,
+        string schema,
+        string index,
+        CancellationToken ct)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            select exists (
+                select 1
+                from pg_indexes
+                where schemaname = @schema
+                  and indexname = @index
+            );
+            """;
+        AddParameter(command, "schema", schema);
+        AddParameter(command, "index", index);
+        return await ExecuteBooleanAsync(command, ct);
+    }
+
+    private static void AddParameter(DbCommand command, string name, object value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value;
+        command.Parameters.Add(parameter);
+    }
+
+    private static async Task<bool> ExecuteBooleanAsync(DbCommand command, CancellationToken ct)
+    {
+        var value = await command.ExecuteScalarAsync(ct);
+        return value is bool result && result;
     }
 
     private async Task<(GuliErpRole Role, bool Created)> EnsureSystemAdminRoleAsync(

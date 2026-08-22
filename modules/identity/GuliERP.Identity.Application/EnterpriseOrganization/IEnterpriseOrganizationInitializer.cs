@@ -216,3 +216,11 @@ public sealed class EnterpriseBootstrapConflictException : Exception
     {
     }
 }
+
+public sealed class EnterpriseBootstrapSchemaException : Exception
+{
+    public EnterpriseBootstrapSchemaException(string reason)
+        : base(reason)
+    {
+    }
+}

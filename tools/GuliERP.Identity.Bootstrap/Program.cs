@@ -949,6 +949,12 @@ public static class Program
                 $"CONFLICT(--formal-enterprise-bootstrap): {ex.Message}");
             return ExitTenantCompanyFailure;
         }
+        catch (EnterpriseBootstrapSchemaException ex)
+        {
+            await Console.Error.WriteLineAsync(
+                $"SCHEMA ERROR(--formal-enterprise-bootstrap): {ex.Message}");
+            return ExitDatabaseUnavailable;
+        }
         catch (Exception ex) when (
             ex is Microsoft.EntityFrameworkCore.DbUpdateException
                 or Npgsql.NpgsqlException
