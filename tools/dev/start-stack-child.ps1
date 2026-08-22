@@ -31,13 +31,15 @@ function Invoke-AndLog {
     Set-Location -LiteralPath $WorkingDirectory
     Write-Log ("Starting {0} {1}" -f $FilePath, ($Arguments -join ' '))
     & $FilePath @Arguments 2>&1 | ForEach-Object {
-        $text = [string]$_
+        param($OutputLine)
+        $text = [string]$OutputLine
         if ($env:GULIERP_STACK_LOG) {
             Add-Content -LiteralPath $env:GULIERP_STACK_LOG -Value $text -Encoding UTF8
         }
         Write-Host $text
     }
-    exit $LASTEXITCODE
+    $nativeExitCode = $LASTEXITCODE
+    exit $nativeExitCode
 }
 
 if ($Role -eq 'backend') {

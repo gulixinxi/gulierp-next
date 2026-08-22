@@ -71,16 +71,40 @@ function Get-PortOwner {
     param([Parameter(Mandatory = $true)][int]$Port)
     try {
         $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop | Select-Object -First 1
-        if (-not $conn) { return $null }
-        $process = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
-        return [pscustomobject]@{
-            Port = $Port
-            ProcessId = [int]$conn.OwningProcess
-            ProcessName = if ($process) { $process.ProcessName } else { '<unknown>' }
-            CommandLine = Get-ProcessCommandLineSafe -ProcessId ([int]$conn.OwningProcess)
+        if ($conn) { return New-PortOwner -Port $Port -ProcessId ([int]$conn.OwningProcess) }
+    } catch {
+        # Fall back for shells where Get-NetTCPConnection is present but denied.
+    }
+    try {
+        $lines = & netstat -ano -p tcp 2>$null
+        foreach ($line in $lines) {
+            if ($line -notmatch '\bLISTENING\b') { continue }
+            $parts = $line -split '\s+' | Where-Object { $_ }
+            if ($parts.Count -lt 5) { continue }
+            $localEndpoint = [string]$parts[1]
+            if (-not $localEndpoint.EndsWith(":$Port", [StringComparison]::OrdinalIgnoreCase)) { continue }
+            $ownerPid = 0
+            if ([int]::TryParse([string]$parts[-1], [ref]$ownerPid) -and $ownerPid -gt 0) {
+                return New-PortOwner -Port $Port -ProcessId $ownerPid
+            }
         }
     } catch {
         return $null
+    }
+    return $null
+}
+
+function New-PortOwner {
+    param(
+        [Parameter(Mandatory = $true)][int]$Port,
+        [Parameter(Mandatory = $true)][int]$ProcessId
+    )
+    $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    return [pscustomobject]@{
+        Port = $Port
+        ProcessId = $ProcessId
+        ProcessName = if ($process) { $process.ProcessName } else { '<unknown>' }
+        CommandLine = Get-ProcessCommandLineSafe -ProcessId $ProcessId
     }
 }
 
@@ -101,18 +125,28 @@ function Test-ProjectProcess {
     if ($Role -eq 'backend' -and $haystack.Contains($needleBackend)) { return $true }
     if ($Role -eq 'backend' -and $haystack.Contains($needleRoot) -and $haystack.Contains('gulierp.api')) { return $true }
     if ($Role -eq 'frontend' -and $haystack.Contains($needleWeb)) { return $true }
-    if ($haystack.Contains($needleRoot) -and $haystack.Contains('start-stack-child.ps1')) { return $true }
+    if ($haystack.Contains($needleRoot) -and
+        $haystack.Contains('start-stack-child.ps1') -and
+        $haystack.Contains(("-role {0}" -f $Role))) {
+        return $true
+    }
     return $false
 }
 
 function Stop-ProjectProcess {
     param(
         [Parameter(Mandatory = $true)][int]$ProcessId,
-        [Parameter(Mandatory = $true)][string]$Role
+        [Parameter(Mandatory = $true)][string]$Role,
+        [switch]$TrustPidFile
     )
     $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
     if (-not $process) { return 'stale' }
-    if (-not (Test-ProjectProcess -ProcessId $ProcessId -Role $Role)) {
+    $trustedByPidFile = $false
+    if ($TrustPidFile) {
+        $trustedByPidFile = ($Role -eq 'backend' -and $process.ProcessName -in @('GuliERP.Api', 'dotnet', 'pwsh', 'powershell')) -or
+                            ($Role -eq 'frontend' -and $process.ProcessName -in @('node', 'npm', 'cmd', 'pwsh', 'powershell'))
+    }
+    if (-not $trustedByPidFile -and -not (Test-ProjectProcess -ProcessId $ProcessId -Role $Role)) {
         Write-Warn ("  refusing to stop {0} pid={1}; process ownership could not be verified" -f $Role, $ProcessId)
         return 'foreign'
     }
@@ -221,13 +255,21 @@ function Assert-PortAvailableOrReusable {
 }
 
 function Stop-PriorStack {
-    $prior = Read-PidRecord
+    param(
+        [object]$Prior,
+        [bool]$StopBackend = $true,
+        [bool]$StopFrontend = $true
+    )
+    $prior = $Prior
     if (-not $prior) { return }
+    $trustPidFile = [string]$prior.repoRoot -eq $RepoRoot
     $backendRecordPid = Get-RecordPid -Record $prior -Role 'backend'
     $frontendRecordPid = Get-RecordPid -Record $prior -Role 'frontend'
-    if ($backendRecordPid) { [void](Stop-ProjectProcess -ProcessId $backendRecordPid -Role 'backend') }
-    if ($frontendRecordPid) { [void](Stop-ProjectProcess -ProcessId $frontendRecordPid -Role 'frontend') }
-    Remove-Item -LiteralPath $PidFile -Force -ErrorAction SilentlyContinue
+    if ($StopBackend -and $backendRecordPid) { [void](Stop-ProjectProcess -ProcessId $backendRecordPid -Role 'backend' -TrustPidFile:$trustPidFile) }
+    if ($StopFrontend -and $frontendRecordPid) { [void](Stop-ProjectProcess -ProcessId $frontendRecordPid -Role 'frontend' -TrustPidFile:$trustPidFile) }
+    if ($StopBackend -and $StopFrontend) {
+        Remove-Item -LiteralPath $PidFile -Force -ErrorAction SilentlyContinue
+    }
     Start-Sleep -Milliseconds 700
 }
 
@@ -237,6 +279,10 @@ function Get-ConnectionString {
     }
     if (-not [string]::IsNullOrWhiteSpace($env:GULIERP_ConnectionStrings__GuliERP)) {
         return $env:GULIERP_ConnectionStrings__GuliERP
+    }
+    Write-Warn 'ConnectionStrings__GuliERP is not set. The launcher will prompt once for the canonical PostgreSQL password.'
+    if ([Console]::IsInputRedirected) {
+        throw 'ConnectionStrings__GuliERP is not set and this shell is non-interactive. Operator PostgreSQL password is required to start the backend.'
     }
     $secure = Read-Host -Prompt "PostgreSQL password for user '$DbUser' (input is masked)" -AsSecureString
     if ($secure.Length -eq 0) { throw 'Empty password; aborting.' }
@@ -250,6 +296,15 @@ function Get-ConnectionString {
         }
         $plain = $null
     }
+}
+
+function ConvertTo-ProcessArgument {
+    param([AllowNull()][string]$Value)
+    if ($null -eq $Value) { return '""' }
+    if ($Value -notmatch '[\s"]') { return $Value }
+    $escaped = $Value -replace '(\\*)"', '$1$1\"'
+    $escaped = $escaped -replace '(\\+)$', '$1$1'
+    return '"' + $escaped + '"'
 }
 
 function Start-StackProcess {
@@ -268,7 +323,12 @@ function Start-StackProcess {
     $psi.RedirectStandardOutput = $false
     $psi.RedirectStandardError = $false
     $psi.CreateNoWindow = $true
-    $psi.Arguments = ('-NoProfile -ExecutionPolicy Bypass -File "{0}" {1}' -f $Runner, ($RunnerArguments -join ' '))
+    $childArguments = @(
+        '-NoProfile',
+        '-ExecutionPolicy', 'Bypass',
+        '-File', $Runner
+    ) + $RunnerArguments
+    $psi.Arguments = ($childArguments | ForEach-Object { ConvertTo-ProcessArgument -Value $_ }) -join ' '
     foreach ($key in $Environment.Keys) {
         $psi.EnvironmentVariables[$key] = [string]$Environment[$key]
     }
@@ -314,9 +374,7 @@ if (-not (Test-Path -LiteralPath $LogDir)) { New-Item -ItemType Directory -Path 
 $Dotnet = Resolve-ToolPath -Name $Dotnet
 $Npm = Resolve-ToolPath -Name $Npm
 
-Stop-PriorStack
-if (-not $SkipBackend) { Assert-PortAvailableOrReusable -Port $BackendPort -Role 'backend' }
-if (-not $SkipFrontend) { Assert-PortAvailableOrReusable -Port $FrontendPort -Role 'frontend' }
+$priorStackRecord = Read-PidRecord
 
 $connection = $null
 if (-not $SkipBackend) {
@@ -327,6 +385,10 @@ if (-not $SkipBackend) {
     & $assert -ConnectionString $connection -ExpectedDatabase $ExpectedDb
     if ($LASTEXITCODE -ne 0) { throw 'DB target guard failed; aborting.' }
 }
+
+Stop-PriorStack -Prior $priorStackRecord -StopBackend:(-not $SkipBackend) -StopFrontend:(-not $SkipFrontend)
+if (-not $SkipBackend) { Assert-PortAvailableOrReusable -Port $BackendPort -Role 'backend' }
+if (-not $SkipFrontend) { Assert-PortAvailableOrReusable -Port $FrontendPort -Role 'frontend' }
 
 try {
     if (-not $SkipBackend) {
@@ -351,9 +413,9 @@ try {
         Write-Info 'Starting backend...'
         $backendArgs = @(
             '-Role', 'backend',
-            '-RepoRoot', ('"{0}"' -f $RepoRoot),
-            '-Dotnet', ('"{0}"' -f $Dotnet),
-            '-BackendCsproj', ('"{0}"' -f $BackendCsproj),
+            '-RepoRoot', $RepoRoot,
+            '-Dotnet', $Dotnet,
+            '-BackendCsproj', $BackendCsproj,
             '-BackendPort', $BackendPort
         )
         $backendProcess = Start-StackProcess -Role 'backend' -RunnerArguments $backendArgs -LogPath $backendLog -Environment @{
@@ -381,9 +443,9 @@ try {
         Write-Info 'Starting frontend...'
         $frontendArgs = @(
             '-Role', 'frontend',
-            '-RepoRoot', ('"{0}"' -f $RepoRoot),
-            '-Npm', ('"{0}"' -f $Npm),
-            '-WebDir', ('"{0}"' -f $WebDir),
+            '-RepoRoot', $RepoRoot,
+            '-Npm', $Npm,
+            '-WebDir', $WebDir,
             '-FrontendPort', $FrontendPort,
             '-BackendUrl', $BackendUrl
         )
@@ -419,14 +481,14 @@ try {
         launchedAt = (Get-Date).ToString('o')
         repoRoot = $RepoRoot
         backend = [pscustomobject]@{
-            pid = $backendRecordedPid
+            pid = if ($backendRecordedPid) { $backendRecordedPid } elseif ($SkipBackend -and $priorStackRecord -and $priorStackRecord.backend) { $priorStackRecord.backend.pid } else { $null }
             url = $BackendUrl
-            log = if ($backendProcess) { $backendLog } else { $null }
+            log = if ($backendProcess) { $backendLog } elseif ($SkipBackend -and $priorStackRecord -and $priorStackRecord.backend) { $priorStackRecord.backend.log } else { $null }
         }
         frontend = [pscustomobject]@{
-            pid = $frontendRecordedPid
+            pid = if ($frontendRecordedPid) { $frontendRecordedPid } elseif ($SkipFrontend -and $priorStackRecord -and $priorStackRecord.frontend) { $priorStackRecord.frontend.pid } else { $null }
             url = $FrontendUrl
-            log = if ($frontendProcess) { $frontendLog } else { $null }
+            log = if ($frontendProcess) { $frontendLog } elseif ($SkipFrontend -and $priorStackRecord -and $priorStackRecord.frontend) { $priorStackRecord.frontend.log } else { $null }
         }
     }
     Set-Content -LiteralPath $PidFile -Value ($pids | ConvertTo-Json -Depth 5) -Encoding UTF8

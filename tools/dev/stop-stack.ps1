@@ -40,7 +40,11 @@ function Test-ProjectProcess {
     if ($Role -eq 'backend' -and $haystack.Contains($BackendCsproj.ToLowerInvariant())) { return $true }
     if ($Role -eq 'backend' -and $haystack.Contains($RepoRoot.ToLowerInvariant()) -and $haystack.Contains('gulierp.api')) { return $true }
     if ($Role -eq 'frontend' -and $haystack.Contains($WebDir.ToLowerInvariant())) { return $true }
-    if ($haystack.Contains($RepoRoot.ToLowerInvariant()) -and $haystack.Contains('start-stack-child.ps1')) { return $true }
+    if ($haystack.Contains($RepoRoot.ToLowerInvariant()) -and
+        $haystack.Contains('start-stack-child.ps1') -and
+        $haystack.Contains(("-role {0}" -f $Role))) {
+        return $true
+    }
     return $false
 }
 
@@ -51,21 +55,44 @@ function Get-PortOwner {
         if (-not $conn) { return $null }
         return [int]$conn.OwningProcess
     } catch {
+        # Fall back for shells where Get-NetTCPConnection is present but denied.
+    }
+    try {
+        $lines = & netstat -ano -p tcp 2>$null
+        foreach ($line in $lines) {
+            if ($line -notmatch '\bLISTENING\b') { continue }
+            $parts = $line -split '\s+' | Where-Object { $_ }
+            if ($parts.Count -lt 5) { continue }
+            $localEndpoint = [string]$parts[1]
+            if (-not $localEndpoint.EndsWith(":$Port", [StringComparison]::OrdinalIgnoreCase)) { continue }
+            $ownerPid = 0
+            if ([int]::TryParse([string]$parts[-1], [ref]$ownerPid) -and $ownerPid -gt 0) {
+                return $ownerPid
+            }
+        }
+    } catch {
         return $null
     }
+    return $null
 }
 
 function Stop-VerifiedProcess {
     param(
         [Parameter(Mandatory = $true)][int]$ProcessId,
-        [Parameter(Mandatory = $true)][string]$Role
+        [Parameter(Mandatory = $true)][string]$Role,
+        [switch]$TrustPidFile
     )
     $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
     if (-not $process) {
         Write-Host ("  {0} pid={1} is already stopped" -f $Role, $ProcessId) -ForegroundColor DarkGray
         return
     }
-    if (-not (Test-ProjectProcess -ProcessId $ProcessId -Role $Role)) {
+    $trustedByPidFile = $false
+    if ($TrustPidFile) {
+        $trustedByPidFile = ($Role -eq 'backend' -and $process.ProcessName -in @('GuliERP.Api', 'dotnet', 'pwsh', 'powershell')) -or
+                            ($Role -eq 'frontend' -and $process.ProcessName -in @('node', 'npm', 'cmd', 'pwsh', 'powershell'))
+    }
+    if (-not $trustedByPidFile -and -not (Test-ProjectProcess -ProcessId $ProcessId -Role $Role)) {
         Write-Warn ("  refusing to stop {0} pid={1}; process ownership could not be verified" -f $Role, $ProcessId)
         return
     }
@@ -107,7 +134,8 @@ if (Test-Path -LiteralPath $PidFile) {
 
 foreach ($role in @('frontend', 'backend')) {
     $recordPid = Get-RecordPid -Record $record -Role $role
-    if ($recordPid) { Stop-VerifiedProcess -ProcessId $recordPid -Role $role }
+    $trustPidFile = $record -and [string]$record.repoRoot -eq $RepoRoot
+    if ($recordPid) { Stop-VerifiedProcess -ProcessId $recordPid -Role $role -TrustPidFile:$trustPidFile }
 }
 
 $frontendOwnerPid = Get-PortOwner -Port $FrontendPort
