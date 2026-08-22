@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\GuliERP.Sales.Domain\GuliERP.Sales.Domain.csproj" />
+  </ItemGroup>
+</Project>

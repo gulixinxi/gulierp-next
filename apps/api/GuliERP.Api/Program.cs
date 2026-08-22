@@ -3,12 +3,14 @@ using GuliERP.Api.Authentication;
 using GuliERP.Api.Kernel;
 using GuliERP.Api.Mdm;
 using GuliERP.Api.Organization;
+using GuliERP.Api.Sales;
 using GuliERP.DocumentKernel.Infrastructure;
 using GuliERP.Foundation;
 using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Infrastructure;
 using GuliERP.Identity.Infrastructure.Authentication;
 using GuliERP.Mdm.Infrastructure;
+using GuliERP.Sales.Infrastructure;
 using TestValidationRequest = GuliERP.Api.Kernel.TestEndpoints.TestValidationRequest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -131,6 +133,12 @@ builder.Services.AddGuliErpMdm(connectionString);
 //     serve as the EF design-time startup project for
 //     DocumentKernel migrations.
 builder.Services.AddGuliErpDocumentKernel(connectionString);
+
+// --- 4e. SALES-001 services (real Sales Order vertical slice) ---
+//     Uses the Document Kernel for OrderNo generation and MDM master
+//     data for customer/item/UOM references. No seed data and no mock
+//     fallback are registered.
+builder.Services.AddGuliErpSales(connectionString);
 
 // --- 5. ProblemDetails + Exception Handler (G2-002 §8) ---
 //     Native ASP.NET Core 10 IExceptionHandler chain. The Foundation
@@ -309,6 +317,7 @@ app.MapGuliErpAuthEndpoints();
 //     authentication endpoints (X-CSRF-TOKEN header + cookie).
 app.MapMdmEndpoints();
 app.MapGuliErpOrganizationEndpoints();
+app.MapSalesOrderEndpoints();
 
 // --- 11b. G2-002R2 test-only endpoints (Environment-gated) ---
 //     These two endpoints exist ONLY to let the Foundation Kernel
@@ -416,6 +425,7 @@ app.MapGet("/", () => Results.Text(
     "  GET/POST/PUT /api/v1/mdm/item-categories ItemCategory master data\n" +
     "  GET/POST/PUT /api/v1/mdm/items           Item master data\n" +
     "  GET  /api/v1/organization/*     Lightweight enterprise organization directory\n" +
+    "  GET/POST/PUT /api/v1/sales/orders Real SalesOrder vertical slice\n" +
     "  (Document Numbering: IDocumentNumberService, consumed by future Sales/PO/Inventory)\n" +
     (app.Environment.IsDevelopment() ? "  GET  /openapi/v1.json            OpenAPI spec (dev only)\n" : ""),
     "text/plain"));

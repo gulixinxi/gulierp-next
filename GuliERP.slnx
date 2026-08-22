@@ -22,6 +22,11 @@
     <Project Path="modules/document-kernel/GuliERP.DocumentKernel.Application/GuliERP.DocumentKernel.Application.csproj" />
     <Project Path="modules/document-kernel/GuliERP.DocumentKernel.Infrastructure/GuliERP.DocumentKernel.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/modules/sales/">
+    <Project Path="modules/sales/GuliERP.Sales.Domain/GuliERP.Sales.Domain.csproj" />
+    <Project Path="modules/sales/GuliERP.Sales.Application/GuliERP.Sales.Application.csproj" />
+    <Project Path="modules/sales/GuliERP.Sales.Infrastructure/GuliERP.Sales.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GuliERP.Foundation.IntegrationTests/GuliERP.Foundation.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.Foundation.Tests/GuliERP.Foundation.Tests.csproj" />
@@ -30,6 +35,7 @@
     <Project Path="tests/GuliERP.Identity.Tests/GuliERP.Identity.Tests.csproj" />
     <Project Path="tests/GuliERP.Mdm.IntegrationTests/GuliERP.Mdm.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.Mdm.Tests/GuliERP.Mdm.Tests.csproj" />
+    <Project Path="tests/GuliERP.Sales.Tests/GuliERP.Sales.Tests.csproj" />
     <Project Path="tests/GuliERP.DocumentKernel.IntegrationTests/GuliERP.DocumentKernel.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.DocumentKernel.Tests/GuliERP.DocumentKernel.Tests.csproj" />
   </Folder>
