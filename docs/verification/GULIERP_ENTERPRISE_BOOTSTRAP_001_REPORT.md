@@ -2,11 +2,11 @@
 
 ## Gate
 
-Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_SDK_BUILD_BLOCKED`
+Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_CODE_READY_OPERATOR_BOOTSTRAP_PENDING`
 
 Start HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`
 
-End HEAD: report update commit SHA is reported in the delivery output.
+End HEAD: report/test-fix commit SHA is reported in the delivery output.
 
 Gate correction:
 
@@ -14,6 +14,15 @@ Gate correction:
 - The earlier `CODE_READY_OPERATOR_BOOTSTRAP_PENDING` conclusion was premature.
 - `dotnet restore/build` fails during SDK/project graph resolution with normal output showing `0 warnings` and `0 errors`; this is not a build PASS.
 - Formal Enterprise Bootstrap must not be executed against canonical PostgreSQL until restore/build and required tests pass.
+
+Gate update on 2026-08-23:
+
+- Operator installed .NET SDK `10.0.400`.
+- `global.json` (`version=10.0.100`, `rollForward=latestFeature`) now selects `10.0.400`.
+- Operator-provided isolated restore/build evidence: Restore PASS, isolated Build PASS.
+- Normal Release output build failure was attributed to a running `GuliERP.Api` process locking the normal Release DLL, not to SDK or C# defects.
+- Automated non-PostgreSQL test suites and focused Enterprise Bootstrap/Organization/Authorization tests pass from a new isolated artifacts directory.
+- PostgreSQL integration tests that require local credentials remain Operator Runtime Pending; no credentials were requested or printed.
 
 ## Audit Summary
 
@@ -145,16 +154,63 @@ No database schema or canonical PostgreSQL data was modified in this round.
 
 Frontend:
 
-- `npm run typecheck`: PASS
+- `npm run typecheck`: PASS.
 - `npm run build`: PASS, with existing Vite/Rollup warnings only.
-- scoped `git diff --check`: PASS
+- Frontend test script: not configured in `apps/web/package.json`.
+- `git diff --check`: PASS.
 
 .NET:
 
-- `dotnet restore GuliERP.slnx --disable-build-servers -p:UseSharedCompilation=false -v:normal`: FAIL before C# compilation; exit code `1`.
-- `dotnet build GuliERP.slnx`: FAIL before C# compilation.
-- `dotnet build tests/GuliERP.Identity.IntegrationTests/GuliERP.Identity.IntegrationTests.csproj`: FAIL before C# compilation.
-- `dotnet test` attempts for Identity/API/Sales/Bootstrap projects: blocked before C# compilation because restore/project graph cannot complete.
+- `dotnet --version`: `10.0.400`.
+- Operator isolated Restore: PASS.
+- Operator isolated Build: PASS.
+- This verification round used isolated artifacts path: `C:\Users\Administrator\AppData\Local\Temp\gulierp-enterprise-tests-3d3718844d4949c8a24f850b544c8011`.
+- Per-project `dotnet test` commands restored, built and tested into that same artifacts path, avoiding stale `bin/obj` output.
+
+Compiled via isolated test/build commands:
+
+- `GuliERP.Api`
+- `GuliERP.Identity.Bootstrap`
+- Identity Domain/Application/Infrastructure
+- MDM Domain/Application/Infrastructure
+- Sales Domain/Application/Infrastructure
+- DocumentKernel Domain/Application/Infrastructure
+- `GuliERP.Identity.Tests`
+- `GuliERP.Identity.IntegrationTests`
+- `GuliERP.Identity.Bootstrap.Tests`
+- `GuliERP.Api.Tests`
+- `GuliERP.Sales.Tests`
+- `GuliERP.Mdm.Tests`
+- `GuliERP.DocumentKernel.Tests`
+- `GuliERP.DocumentKernel.IntegrationTests`
+
+Test results:
+
+| Suite | Result | Count | Notes |
+| --- | --- | ---: | --- |
+| `GuliERP.Identity.Tests` | PASS | 22 passed | Isolated artifacts path |
+| `GuliERP.Identity.Bootstrap.Tests` | PASS | 53 passed | Test root discovery fixed for `--artifacts-path` |
+| `GuliERP.Identity.IntegrationTests` focused safe set | PASS | 41 passed | Enterprise Bootstrap, Organization tree/API, user/admin, role/permission, MDM/Sales auth regression; real PG write test excluded |
+| `GuliERP.Api.Tests` | PASS | 32 passed | Isolated artifacts path |
+| `GuliERP.Sales.Tests` | PASS | 9 passed | Sales 9/9 regression |
+| `GuliERP.Mdm.Tests` | PASS | 67 passed | Test root/seed discovery fixed for `--artifacts-path` |
+| `GuliERP.DocumentKernel.Tests` | PASS | 44 passed | Necessary DocumentKernel unit regression |
+| `GuliERP.DocumentKernel.IntegrationTests` | SKIPPED | 15 skipped | `PGPASSWORD` absent; existing fixture skips instead of faking PASS |
+| `GuliERP.Mdm.IntegrationTests` | PENDING | not run | No `ConnectionStrings__GuliERP` / `GULIERP_ConnectionStrings__GuliERP`; would require real PostgreSQL credentials |
+
+Focused coverage confirmed:
+
+- Tenant creation: PASS via `EnterpriseBootstrapAndOrganizationTreeFacts`.
+- Company creation: PASS via `EnterpriseBootstrapAndOrganizationTreeFacts`.
+- Admin user/employee/membership creation: PASS.
+- `ERP_SYSTEM_ADMIN`, RoleClaim, RoleAssignment: PASS.
+- `identity.organization.read`: PASS via role claim and organization tree endpoint authorization tests.
+- Organization node creation/cycle rejection: PASS.
+- User creation and role assignment guard: PASS.
+- Organization tree empty/safe returns: PASS.
+- Company context and company switching non-DB contracts: PASS.
+- Tenant/company isolation in organization tree: PASS.
+- MDM/Sales authorization regression: PASS in focused safe integration tests.
 
 Observed environment root cause from diagnostic log:
 
@@ -170,10 +226,10 @@ The failure occurs in restore/project graph resolution with `0 warnings` and `0 
 | --- | --- | --- | --- | --- |
 | Repository HEAD | `4b1cf8ce42ce9774002c216668ed2d0d84318726` | Current task HEAD | No | `git rev-parse HEAD` |
 | `dotnet.exe` | `C:\Program Files\dotnet\dotnet.exe` | x64 system dotnet or complete project-local dotnet | No | `Get-Command dotnet -All`, `where.exe dotnet` |
-| SDK selected | `10.0.111` | Compatible complete .NET 10 SDK | Yes | `dotnet --version`, `dotnet --info` |
-| SDK Base Path | `C:\Program Files\dotnet\sdk\10.0.111\` | Complete SDK directory | Yes | `dotnet --info` |
+| SDK selected | `10.0.400` | Compatible complete .NET 10 SDK | No | `dotnet --version`, `dotnet --info` |
+| SDK Base Path | `C:\Program Files\dotnet\sdk\10.0.400\` | Complete SDK directory | No | `dotnet --info` |
 | Process architecture | x64 process on x64 OS | x64 | No | `[Environment]::Is64BitProcess` |
-| Installed SDKs | Only `10.0.111` | At least one complete compatible .NET 10 SDK | Yes | `dotnet --list-sdks` |
+| Installed SDKs | `10.0.111`, `10.0.400` | At least one complete compatible .NET 10 SDK | No | `dotnet --list-sdks` |
 | Installed runtimes | ASP.NET/Core/Desktop `10.0.11`, plus `6.0.36` | .NET 10 runtime present | No | `dotnet --list-runtimes` |
 | Effective `global.json` | `D:\guli\projects\gulierp-next\global.json` with `version=10.0.100`, `rollForward=latestFeature` | Select compatible .NET 10 feature band | No | parent-directory `global.json` search |
 | Parent `global.json` | None found above repo during upward search | None unexpectedly overriding repo | No | upward `global.json` search |
@@ -190,11 +246,11 @@ The failure occurs in restore/project graph resolution with `0 warnings` and `0 
 | --- | --- | --- | --- | --- | --- | --- |
 | `C:\Program Files\dotnet\sdk\10.0.111` | Present | Missing | Missing | Present | Present | System SDK install is incomplete/damaged |
 
-Only one .NET 10 SDK is installed, so there is no complete compatible SDK available for `global.json` roll-forward to select. No evidence was found that repository project files require MAUI/Android/iOS/WASM workload projects. The blocker is categorized as **system SDK installation damaged/incomplete**, not wrong `global.json`, wrong PATH, environment-variable pollution, project-local SDK, or application code.
+The earlier `10.0.111` SDK installation was incomplete. After Operator installed `10.0.400`, `global.json` roll-forward selects a complete compatible SDK. The two locator physical directories missing under `10.0.111` were useful diagnostic evidence for that damaged installation, but the physical presence of those exact directories is not by itself the Build PASS criterion; actual Restore/Build/Test execution is the criterion.
 
 ### Required Operator SDK Repair
 
-Do not hand-create SDK directories, copy SDK fragments, or commit machine SDK files. Repair or reinstall the x64 .NET 10 SDK that provides `10.0.111`/`10.0.100` feature-band compatibility, then rerun:
+Do not hand-create SDK directories, copy SDK fragments, or commit machine SDK files. SDK repair was completed by installing .NET SDK `10.0.400`. The current validation baseline is:
 
 ```powershell
 cd D:\guli\projects\gulierp-next
@@ -208,7 +264,7 @@ During the blocked restore attempt, MSBuild spawned `450` `dotnet.exe` workers w
 
 ## Canonical Runtime
 
-Not executed. Formal enterprise inputs and admin password were not provided during this coding pass. No canonical DB writes were performed.
+Not executed. Formal enterprise inputs and admin password were not provided during this coding pass. No canonical DB writes were performed. No formal Tenant, Company, Admin, RoleAssignment or company membership was created in canonical PostgreSQL.
 
 ## Operator Bootstrap Command
 
@@ -258,6 +314,11 @@ Core files intended for this Goal:
 - `tests/GuliERP.Api.Tests/SnowflakeLongJsonConverterFacts.cs`
 - `tests/GuliERP.Identity.IntegrationTests/EnterpriseBootstrapAndOrganizationTreeFacts.cs`
 - `tests/GuliERP.Identity.IntegrationTests/OrganizationTreeEndpointFacts.cs`
+- `tests/GuliERP.Identity.Bootstrap.Tests/G2_005_OperatorEvidenceHarnessFacts.cs`
+- `tests/GuliERP.Identity.Bootstrap.Tests/OperatorEvidenceHarnessCsrfSessionFacts.cs`
+- `tests/GuliERP.Identity.Bootstrap.Tests/PowerShellAutomaticVariableCollisionFacts.cs`
+- `tests/GuliERP.Mdm.Tests/MdmCurrentTenantParallelTests.cs`
+- `tests/GuliERP.Mdm.Tests/MdmServiceBoundaryArchitectureTests.cs`
 - `tools/GuliERP.Identity.Bootstrap/Program.cs`
 - `docs/verification/GULIERP_ENTERPRISE_BOOTSTRAP_001_REPORT.md`
 
@@ -266,12 +327,13 @@ Historical dirty/WIP files are intentionally not included.
 ## Commits
 
 - `feat(identity): implement formal enterprise bootstrap foundation`
+- pending: test/report fix commit reported in delivery output.
 
 ## Unfinished Content
 
-- .NET build/test verification is blocked by local SDK installation state.
 - Formal tenant/company/admin runtime bootstrap is pending Operator-provided values.
 - Browser runtime verification is pending formal admin and business-user creation.
+- PostgreSQL integration suites that require Operator credentials remain runtime pending.
 
 ## Next Suggested Goal
 

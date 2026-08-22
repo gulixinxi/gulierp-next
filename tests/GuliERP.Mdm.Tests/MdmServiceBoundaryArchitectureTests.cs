@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using GuliERP;
@@ -102,10 +103,11 @@ public sealed class MdmServiceBoundaryArchitectureTests
     // ----------------------------------------------------------------
     // Repos to scan
     // ----------------------------------------------------------------
-    private static readonly string MdmInfraRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "modules", "mdm", "GuliERP.Mdm.Infrastructure"));
-    private static readonly string ApiRoot = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "..", "..", "..", "..", "..", "apps", "api", "GuliERP.Api"));
+    private static readonly string RepoRoot = MdmTestRepoRoot.Find();
+    private static readonly string MdmInfraRoot = Path.Combine(
+        RepoRoot, "modules", "mdm", "GuliERP.Mdm.Infrastructure");
+    private static readonly string ApiRoot = Path.Combine(
+        RepoRoot, "apps", "api", "GuliERP.Api");
 
     [Fact]
     public void No_Code_Outside_Service_Boundary_Reads_MdmDbContext_Directly()
@@ -513,5 +515,29 @@ internal static class PathExtensions
             return fullPath.Substring(fullRoot.Length).TrimStart('\\', '/');
         }
         return fullPath;
+    }
+}
+
+internal static class MdmTestRepoRoot
+{
+    public static string Find([CallerFilePath] string sourceFilePath = "")
+    {
+        foreach (var start in new[]
+        {
+            Path.GetDirectoryName(sourceFilePath),
+            Directory.GetCurrentDirectory(),
+            AppContext.BaseDirectory,
+        })
+        {
+            var dir = start;
+            for (var i = 0; i < 16; i++)
+            {
+                if (string.IsNullOrEmpty(dir)) { break; }
+                if (File.Exists(Path.Combine(dir, "GuliERP.slnx"))) { return dir; }
+                dir = Path.GetDirectoryName(dir);
+            }
+        }
+
+        throw new DirectoryNotFoundException("Could not locate GuliERP.slnx from test source, current directory, or AppContext.BaseDirectory.");
     }
 }

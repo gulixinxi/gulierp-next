@@ -1,4 +1,5 @@
 using System.IO;
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace GuliERP.Identity.Bootstrap.Tests;
@@ -190,14 +191,22 @@ public sealed class G2_005_OperatorEvidenceHarnessFacts
         return File.ReadAllText(fullPath);
     }
 
-    private static string? FindRepoRoot()
+    private static string? FindRepoRoot([CallerFilePath] string sourceFilePath = "")
     {
-        var dir = AppContext.BaseDirectory;
-        for (var i = 0; i < 8; i++)
+        foreach (var start in new[]
         {
-            dir = Path.GetDirectoryName(dir);
-            if (string.IsNullOrEmpty(dir)) { return null; }
-            if (File.Exists(Path.Combine(dir, "GuliERP.slnx"))) { return dir; }
+            Path.GetDirectoryName(sourceFilePath),
+            Directory.GetCurrentDirectory(),
+            AppContext.BaseDirectory,
+        })
+        {
+            var dir = start;
+            for (var i = 0; i < 16; i++)
+            {
+                if (string.IsNullOrEmpty(dir)) { break; }
+                if (File.Exists(Path.Combine(dir, "GuliERP.slnx"))) { return dir; }
+                dir = Path.GetDirectoryName(dir);
+            }
         }
 
         return null;

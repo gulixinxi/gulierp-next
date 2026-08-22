@@ -117,20 +117,27 @@ public sealed class MdmCurrentTenantParallelTests
     }
 
     [Fact]
-    public void MdmSeed_ResolveSeedFilePath_Walks_Up_From_AppContext_BaseDirectory()
+    public void MdmSeed_ResolveSeedFilePath_Walks_Up_From_CurrentDirectory()
     {
-        // The seed file is at <repo-root>/data/bootstrap/reference/system/uom.json.
-        // The test assembly's AppContext.BaseDirectory is
-        // tests\GuliERP.Mdm.Tests\bin\Release\net10.0\. The
-        // resolver must walk up at least 5 levels to find the
-        // file. The previous version used a fixed relative
-        // path which silently returned 0 rows from this location.
-        var resolved = MdmSeed.ResolveSeedFilePath();
-        Assert.NotNull(resolved);
-        Assert.True(File.Exists(resolved), $"Resolved seed path '{resolved}' must exist on disk.");
-        // The file content must be the curated UOM JSON.
-        Assert.Contains("BENG", File.ReadAllText(resolved));
-        Assert.Contains("SAFE_TO_SEED_SYSTEM", File.ReadAllText(resolved));
+        // Under `dotnet test --artifacts-path`, AppContext.BaseDirectory
+        // lives under %TEMP%, outside the repository. Exercise the
+        // production resolver's current-directory walk-up with a synthetic
+        // repo-shaped folder so the test stays independent from build output
+        // layout.
+        using var sandbox = SeedPathSandbox.Create();
+        var previous = Directory.GetCurrentDirectory();
+        try
+        {
+            Directory.SetCurrentDirectory(sandbox.DeepDirectory);
+            var resolved = MdmSeed.ResolveSeedFilePath();
+            Assert.Equal(sandbox.SeedFilePath, resolved);
+            Assert.Contains("BENG", File.ReadAllText(resolved!));
+            Assert.Contains("SAFE_TO_SEED_SYSTEM", File.ReadAllText(resolved!));
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(previous);
+        }
     }
 
     [Fact]
@@ -145,10 +152,20 @@ public sealed class MdmCurrentTenantParallelTests
         // path resolution. The env var GULIERP_MDM_SEED_FILE
         // (below) is the opt-out lever when the operator wants a
         // hard FAIL on a missing path.
-        var missing = Path.Combine(Path.GetTempPath(), "does-not-exist-" + Guid.NewGuid().ToString("N"));
-        var resolved = MdmSeed.ResolveSeedFilePath(missing);
-        Assert.NotNull(resolved);
-        Assert.True(File.Exists(resolved));
+        using var sandbox = SeedPathSandbox.Create();
+        var previous = Directory.GetCurrentDirectory();
+        try
+        {
+            Directory.SetCurrentDirectory(sandbox.DeepDirectory);
+            var missing = Path.Combine(Path.GetTempPath(), "does-not-exist-" + Guid.NewGuid().ToString("N"));
+            var resolved = MdmSeed.ResolveSeedFilePath(missing);
+            Assert.Equal(sandbox.SeedFilePath, resolved);
+            Assert.True(File.Exists(resolved));
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(previous);
+        }
     }
 
     [Fact]
@@ -203,22 +220,13 @@ public sealed class MdmCurrentTenantParallelTests
             var resolvedOptOut = MdmSeed.ResolveSeedFilePath();
             Assert.Null(resolvedOptOut);
 
-            // (2) Bounded walk-up — simulate a non-existent
-            // canonical seed path. We change the CWD to a deep
-            // temp folder and the resolver's walk-up should
-            // terminate at MaxDepth=8. Since the canonical
-            // UomSeedFilePath IS present in this repo, we cannot
-            // prove bounded-walk via the public API alone, so we
-            // instead time the call. A healthy resolver returns
-            // in <100ms; an unbounded one would still be <100ms
-            // on Windows file systems, so this is a weak signal
-            // — the strong signal is the explicit MaxDepth
-            // constant in the source.
+            // (2) Bounded walk-up smoke. The resolver should return
+            // quickly whether or not the real repo is an ancestor of the
+            // test output directory.
             Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_FILE", null);
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var resolvedDefault = MdmSeed.ResolveSeedFilePath();
             sw.Stop();
-            Assert.NotNull(resolvedDefault); // canonical seed IS findable
             Assert.True(
                 sw.ElapsedMilliseconds < 500,
                 $"ResolveSeedFilePath took {sw.ElapsedMilliseconds}ms — an unbounded walk-up would still be fast on Windows, " +
@@ -253,6 +261,46 @@ public sealed class MdmCurrentTenantParallelTests
         finally
         {
             Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_FILE", prev);
+        }
+    }
+
+    private sealed class SeedPathSandbox : IDisposable
+    {
+        public string Root { get; }
+        public string DeepDirectory { get; }
+        public string SeedFilePath { get; }
+
+        private SeedPathSandbox(string root, string deepDirectory, string seedFilePath)
+        {
+            Root = root;
+            DeepDirectory = deepDirectory;
+            SeedFilePath = seedFilePath;
+        }
+
+        public static SeedPathSandbox Create()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "mdm-seed-test-" + Guid.NewGuid().ToString("N"));
+            var deep = Path.Combine(root, "a", "b", "c");
+            var seed = Path.Combine(root, MdmSeed.UomSeedFilePath);
+            Directory.CreateDirectory(deep);
+            Directory.CreateDirectory(Path.GetDirectoryName(seed)!);
+            File.WriteAllText(seed, """[{"Code":"BENG","SeedPolicy":"SAFE_TO_SEED_SYSTEM"}]""");
+            return new SeedPathSandbox(root, deep, seed);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                if (Directory.Exists(Root))
+                {
+                    Directory.Delete(Root, recursive: true);
+                }
+            }
+            catch
+            {
+                // Best-effort cleanup for temp test data.
+            }
         }
     }
 }

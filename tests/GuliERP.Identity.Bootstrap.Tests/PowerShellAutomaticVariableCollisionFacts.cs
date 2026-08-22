@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Management.Automation.Language;
 using Xunit;
 
@@ -162,16 +163,22 @@ public class PowerShellAutomaticVariableCollisionFacts
         }
     }
 
-    private static string? FindRepoRoot()
+    private static string? FindRepoRoot([CallerFilePath] string sourceFilePath = "")
     {
-        // The test is in tests/GuliERP.Identity.Bootstrap.Tests.
-        // Walk up to find the .csproj-containing solution dir.
-        var dir = AppContext.BaseDirectory;
-        for (var i = 0; i < 8; i++)
+        foreach (var start in new[]
         {
-            dir = Path.GetDirectoryName(dir);
-            if (string.IsNullOrEmpty(dir)) { return null; }
-            if (File.Exists(Path.Combine(dir, "GuliERP.slnx"))) { return dir; }
+            Path.GetDirectoryName(sourceFilePath),
+            Directory.GetCurrentDirectory(),
+            AppContext.BaseDirectory,
+        })
+        {
+            var dir = start;
+            for (var i = 0; i < 16; i++)
+            {
+                if (string.IsNullOrEmpty(dir)) { break; }
+                if (File.Exists(Path.Combine(dir, "GuliERP.slnx"))) { return dir; }
+                dir = Path.GetDirectoryName(dir);
+            }
         }
         return null;
     }
