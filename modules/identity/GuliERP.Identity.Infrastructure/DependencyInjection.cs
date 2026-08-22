@@ -194,6 +194,8 @@ public static class DependencyInjection
         services.AddScoped<IUserDirectoryService, UserDirectoryService>();
         services.AddScoped<IEmployeeDirectoryService, EmployeeDirectoryService>();
         services.AddScoped<IEnterpriseOrganizationInitializer, EnterpriseOrganizationInitializer>();
+        services.AddScoped<IEnterpriseBootstrapService, EnterpriseBootstrapService>();
+        services.AddScoped<IOrganizationTreeService, OrganizationTreeService>();
 
         // ----- Company switching service (G2-003 unchanged) -----
         services.AddScoped<ICompanySwitchingService, CompanySwitchingService>();

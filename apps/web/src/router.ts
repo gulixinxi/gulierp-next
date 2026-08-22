@@ -6,6 +6,7 @@ import SalesOrderEdit from './views/sales-order/SalesOrderEdit.vue';
 import SalesOrderDetail from './views/sales-order/SalesOrderDetail.vue';
 import { installAuthRoutes, installAuthGuard } from './router/auth';
 import { installMdmRoutes } from './router/mdm';
+import { installSystemRoutes } from './router/system';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -55,3 +56,4 @@ installAuthGuard(router);
 // WEB-PREVIEW-001: Register MDM routes (UOM / ItemCategory / Item).
 // Surgically merged — preserves Auth + SalesOrder routes above.
 installMdmRoutes(router);
+installSystemRoutes(router);

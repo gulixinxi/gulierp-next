@@ -199,6 +199,17 @@
               <span>物料</span>
             </div>
           </template>
+          <template v-else-if="activeModule === 'system'">
+            <div class="gs-menu-group-title">系统管理</div>
+            <div
+              class="gs-menu-item"
+              :class="{ 'is-active': tabs.activeId === 'list-system-enterprise-organization' }"
+              @click="openEnterpriseOrganization"
+            >
+              <el-icon><OfficeBuilding /></el-icon>
+              <span>企业组织</span>
+            </div>
+          </template>
           <template v-else>
             <div class="gs-menu-group-title">{{ currentModuleLabel }}</div>
             <div class="gs-menu-item" v-for="s in genericSubmenu" :key="s">
@@ -429,6 +440,8 @@ watch(
       activeModule.value = 'mdm';
     } else if (p.startsWith('/sales-order')) {
       activeModule.value = 'sales';
+    } else if (p.startsWith('/system')) {
+      activeModule.value = 'system';
     }
 
     // Tab sync: if a tab with this route already exists, activate it.
@@ -459,6 +472,7 @@ function onModuleClick(m: RailModule) {
   activeModule.value = m.key;
   if (m.key === 'sales') openSalesOrderList();
   if (m.key === 'mdm') openMdmItems();
+  if (m.key === 'system') openEnterpriseOrganization();
 }
 function openSalesOrderList() {
   tabs.ensureList('list-sales-order', '销售订单', 'list', '/sales-order');
@@ -497,6 +511,10 @@ function openWarehouses() {
 function openLocations() {
   tabs.ensureList('list-mdm-locations', '库位', 'list', '/mdm/locations');
   router.push('/mdm/locations').catch(() => {});
+}
+function openEnterpriseOrganization() {
+  tabs.ensureList('list-system-enterprise-organization', '企业组织', 'list', '/system/enterprise-organization');
+  router.push('/system/enterprise-organization').catch(() => {});
 }
 
 // ===== Secondary menu width + collapse (persisted via localStorage) =====
