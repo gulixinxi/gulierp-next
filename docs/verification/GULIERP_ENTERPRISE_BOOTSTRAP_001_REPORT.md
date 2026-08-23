@@ -2,7 +2,7 @@
 
 ## Gate
 
-Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_BUSINESS_ROLE_PACK_CODE_VERIFIED_OPERATOR_APPLY_PENDING` (the canonical PostgreSQL still needs the Operator to run `--ensure-formal-enterprise-business-role-pack GULI GULI001 admin` to upgrade to `..._BUSINESS_ROLE_PACK_VERIFIED`)
+Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_SCHEMA_REPAIR_READY_OPERATOR_DB_UPGRADE_PENDING` (the schema repair migration is committed but NOT yet applied to the canonical PostgreSQL; Operator must run `dotnet ef database update` against the canonical PostgreSQL to apply migration `20260823090247_RoleNameIndexToTenantScope`, then `--ensure-formal-enterprise-business-role-pack GULI GULI001 admin` will succeed)
 
 Start HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`
 
@@ -670,6 +670,51 @@ Current gate after the role pack code commit (re-confirmed after 7/7 test suites
 `GULIERP_ENTERPRISE_BOOTSTRAP_001_BUSINESS_ROLE_PACK_CODE_VERIFIED_OPERATOR_APPLY_PENDING`
 
 The gate is NOT yet `..._BUSINESS_ROLE_PACK_VERIFIED` because the canonical PostgreSQL has not been written by the Operator yet (env `ConnectionStrings__GuliERP` was not set in this Agent session and the user did not provide it via a safe channel).
+
+
+## 2026-08-23 Schema Tenant Isolation Repair (code ready, DB upgrade pending)
+
+Root cause:
+
+- ASP.NET Identity default `identity."AspNetRoles"."RoleNameIndex"` was a GLOBAL UNIQUE on `NormalizedName`, blocking any second Tenant from creating a business role whose display name (case-folded) was already used by another Tenant. After Formal Bootstrap Apply, `GULI` (`83727350616817890`) tried to create `ERP_MDM_OPERATOR` and `ERP_SALES_OPERATOR` but collided with an existing `83726107798405120` tenant that had the same NormalizedNames. Result: `23505 duplicate key value violates unique constraint "RoleNameIndex"`.
+
+Repair design:
+
+- Drop the GLOBAL UNIQUE `RoleNameIndex`.
+- Add per-tenant composite UNIQUE `ux_gulierp_role_tenant_normalizedname` on `(TenantId, NormalizedName)`.
+- Preserve the existing per-tenant UNIQUE `ux_gulierp_role_tenant_code` on `(TenantId, Code)`.
+- Backfill any NULL `NormalizedName` to `UPPER(COALESCE(Name, chr(39)UNNAMED_apos || Id::text))` (per the migration SQL; chr(39) is the apostrophe escape inside the DO block) to keep `RoleManager.FindByNameAsync` consistent.
+
+Migration:
+
+- `20260823090247_RoleNameIndexToTenantScope.cs` contains Step 0 intra-tenant duplicate preflight (refuses to migrate if any intra-tenant NormalizedName duplicates exist), Step 1 DROP INDEX `RoleNameIndex`, Step 2 NULL backfill, Step 3 CREATE UNIQUE INDEX `ux_gulierp_role_tenant_normalizedname`. Down() reverses the operations; Down will FAIL on the `CreateIndex RoleNameIndex` step if any cross-tenant NormalizedName duplicate exists in the interim (operator must rename or delete those rows before re-running Down).
+
+Provisioner enhancement:
+
+- `EnterpriseBusinessRolePackProvisioner.EnsureRolePackAsync` now captures (NOT throws) cross-tenant NormalizedName observations into a new `CrossTenantNormalizedNameCollisions` field on the `EnterpriseRolePackProvisionResult` record. The Provisioner does NOT catch 23505 — the database UNIQUE index is the source of truth. The diagnostic is informational and lets operators audit cross-tenant role-name reuse without breaking the operation.
+
+Tests:
+
+- New file `tests/GuliERP.Identity.IntegrationTests/EnterpriseRolePackCrossTenantFacts.cs` adds 3 cases:
+  1. `TenantA_Creates_ErpMdmOperator_Succeeds` — Tenant A creates `ERP_MDM_OPERATOR`, no cross-tenant collision.
+  2. `TenantB_Creates_SameNormalizedName_AfterTenantA_Succeeds_AndCapturesDiagnostic` — Tenant B creates the same NormalizedName after Tenant A; the diagnostic is captured; the operation succeeds (InMemory provider used; the InMemory provider does NOT enforce UNIQUE constraints, so this test locks down the application-layer Provisioner behavior, not the database UNIQUE behavior).
+  3. `SameTenant_DuplicateProvisionerCall_IsIdempotent_AndDiagnosticStaysClean` — same Tenant A duplicate call is idempotent; no diagnostic for same-tenant scenario.
+
+Not performed yet:
+
+- The canonical PostgreSQL has NOT been updated. Migration `20260823090247_RoleNameIndexToTenantScope` is committed but NOT applied. Operator must run `dotnet ef database update` against the canonical PostgreSQL (the database that Formal Bootstrap was applied to, with `83726107798405120` and `83727350616817890` already present).
+- The post-migration intra-tenant duplicate preflight has NOT been validated against a real PostgreSQL instance with production data.
+- The down-migration path on a database with cross-tenant NormalizedName duplicates has NOT been exercised in a real PostgreSQL.
+- Formal admin logout/relogin → MDM/Sales browser Runtime validation is still pending.
+
+Current gate after the schema repair commit (re-confirmed after 7/7 test suites + 3 new tests PASS at `867ed4d`):
+
+`GULIERP_ENTERPRISE_BOOTSTRAP_001_SCHEMA_REPAIR_READY_OPERATOR_DB_UPGRADE_PENDING`
+
+The gate is NOT yet `..._BUSINESS_ROLE_PACK_VERIFIED` because:
+- The canonical PostgreSQL still needs the migration to be applied.
+- After migration: `--ensure-formal-enterprise-business-role-pack GULI GULI001 admin` must run successfully.
+- After that: formal admin logout/relogin and browser validation.
 
 ## Modified Files
 
