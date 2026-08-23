@@ -2,21 +2,20 @@
   <!--
     UserMenu — GULIERP_SALES_ORDER_UI_REBASE_001 / M1 (2026-08-23).
     Encapsulates the top-bar user menu trigger + dropdown.
-    Structurally ready for the upcoming logout / user-center work (M2+).
-    Today it shows:
+    M1.1 (2026-08-23): logout action was extracted out of this dropdown
+    into a standalone topbar button (vol.pro pattern). This component now
+    owns ONLY identity surfaces:
       - Avatar circle with initials
       - Display name (or username fallback)
       - Role chip (platform admin only; tenant/company role display is M2+)
-      - Dropdown with: detail head, user-center placeholder (disabled), logout
-    No business logic: the avatar initials, role text, and dropdown items are
-    derived from auth store getters. The logout action is delegated to auth.signOut()
-    (which already implements CSRF refresh + POST /auth/logout + state clear + redirect).
+      - Dropdown with: detail head, user-center placeholder (disabled)
+    No business logic: avatar initials, role text, dropdown items are
+    derived from auth store getters. Logout is NOT here anymore.
   -->
   <el-dropdown
     trigger="click"
     popper-class="gs-user-menu-popper"
     :teleported="true"
-    @command="onCommand"
   >
     <button class="gs-user-chip" type="button" :aria-label="ariaLabel">
       <el-avatar :size="28" class="gs-user-avatar">{{ initials }}</el-avatar>
@@ -47,27 +46,21 @@
           <el-icon><User /></el-icon>
           <span>个人中心 (M2+)</span>
         </el-dropdown-item>
-        <el-dropdown-item divided command="logout" :disabled="logoutLoading">
-          <el-icon><SwitchButton /></el-icon>
-          <span>{{ logoutLoading ? '退出中…' : '退出登录' }}</span>
-        </el-dropdown-item>
       </el-dropdown-menu>
     </template>
   </el-dropdown>
 </template>
 
 <script setup lang="ts">
-// GULIERP_SALES_ORDER_UI_REBASE_001 / M1.
-// Read-only wrapper around the auth store. All state mutations go through
-// auth.signOut() so the same lifecycle (CSRF refresh + POST + clear + redirect)
-// is shared with the 401 listener.
-import { computed, ref } from 'vue';
-import { ElMessageBox } from 'element-plus';
-import { ArrowDown, SwitchButton, User } from '@element-plus/icons-vue';
+// GULIERP_SALES_ORDER_UI_REBASE_001 / M1 (identity surface only).
+// M1.1: logout is no longer here — the standalone topbar button in
+// ErpShell.vue owns the sign-out lifecycle. This component is now a
+// pure read-only wrapper around the auth store for identity display.
+import { computed } from 'vue';
+import { ArrowDown, User } from '@element-plus/icons-vue';
 import { useAuthStore } from '../../stores/auth';
 
 const auth = useAuthStore();
-const logoutLoading = ref(false);
 
 const displayName = computed<string>(() => auth.displayName);
 const userName = computed<string>(() => auth.userName);
@@ -77,7 +70,7 @@ const companyName = computed<string>(() => auth.companyName);
 // ariaLabel: em-dash + displayName or userName or "未知用户" fallback.
 const ariaLabel = computed<string>(() => {
   const who = displayName.value || userName.value || '未知用户';
-  return `退出登录 (${who})`;
+  return `用户菜单 (${who})`;
 });
 
 // Avatar initials:
@@ -103,40 +96,6 @@ const roleLabel = computed<string>(() => {
   if (auth.user?.isPlatformAdmin) return '平台管理员';
   return '';
 });
-
-async function onCommand(cmd: string): Promise<void> {
-  if (cmd === 'logout') {
-    await onLogout();
-    return;
-  }
-  if (cmd === 'profile') {
-    // M2+ feature: personal center (avatar upload, password change, etc.).
-    // Today the item is disabled; no-op.
-    return;
-  }
-}
-
-async function onLogout(): Promise<void> {
-  if (logoutLoading.value) return;
-  try {
-    await ElMessageBox.confirm('确认要退出当前账号吗？', '退出登录', {
-      confirmButtonText: '退出',
-      cancelButtonText: '取消',
-      type: 'warning',
-    });
-  } catch {
-    return; // user cancelled
-  }
-  logoutLoading.value = true;
-  try {
-    // auth.signOut() handles CSRF refresh + POST /auth/logout + state clear +
-    // router.replace('/login'). It also surfaces server_logout_not_confirmed
-    // to the login page if the backend call fails.
-    await auth.signOut();
-  } finally {
-    logoutLoading.value = false;
-  }
-}
 </script>
 
 <style scoped>

@@ -113,12 +113,31 @@
         <!--
           User menu: extracted to components/layout/UserMenu.vue (M1 of
           GULIERP_SALES_ORDER_UI_REBASE_001). The component owns the avatar,
-          role chip, dropdown detail head, and the logout / user-center
-          action plumbing. Logout delegates to auth.signOut() which handles
-          CSRF refresh + POST /auth/logout + state clear + redirect to
-          /login. user-center item is reserved (disabled) for M2+.
+          role chip, and dropdown detail head + user-center placeholder
+          (M2+). The logout action was moved OUT of the dropdown in M1.1
+          into the standalone power button below (vol.pro pattern: one
+          click intent, danger color, no nested menu).
         -->
         <UserMenu />
+
+        <!--
+          Standalone logout button (M1.1 of GULIERP_SALES_ORDER_UI_REBASE_001).
+          Click → ElMessageBox warning confirm → auth.signOut() (CSRF refresh
+          + POST /auth/logout + state clear + redirect to /login). Logout
+          intent is exposed in 1 click; no dropdown navigation required.
+        -->
+        <el-button
+          text
+          size="small"
+          class="gs-logout-btn"
+          :loading="logoutLoading"
+          title="退出登录"
+          aria-label="退出登录"
+          @click="onLogout"
+        >
+          <el-icon><SwitchButton /></el-icon>
+          <span>退出</span>
+        </el-button>
 
         <el-button text size="small" @click="tabs.toggleFullscreen()">
           <el-icon><FullScreen /></el-icon>
@@ -331,7 +350,7 @@ function stripTrailingCompanyCode(name?: string, code?: string): string {
   return text;
 }
 
-// ===== Top bar actions: Company switch + User menu =====
+// ===== Top bar actions: Company switch + User menu + Standalone logout =====
 async function onChangeCompany(companyId: string): Promise<void> {
   if (companyLoading.value || companyId === auth.companyId) return;
   companyLoading.value = true;
@@ -346,6 +365,30 @@ async function onChangeCompany(companyId: string): Promise<void> {
     ElMessage.error({ message: title, duration: 2500 });
   } finally {
     companyLoading.value = false;
+  }
+}
+
+// M1.1: Standalone logout button (vol.pro pattern, one-click intent).
+// auth.signOut() handles CSRF refresh + POST /auth/logout + state clear +
+// router.replace('/login'). Server-side failures surface as ElMessage.error
+// inside signOut(); local `finally` ensures the button un-stucks regardless.
+const logoutLoading = ref(false);
+async function onLogout(): Promise<void> {
+  if (logoutLoading.value) return;
+  try {
+    await ElMessageBox.confirm('确认要退出当前账号吗？', '退出登录', {
+      confirmButtonText: '退出',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+  } catch {
+    return; // user cancelled the confirm dialog
+  }
+  logoutLoading.value = true;
+  try {
+    await auth.signOut();
+  } finally {
+    logoutLoading.value = false;
   }
 }
 
@@ -785,6 +828,19 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: var(--text-muted, #64748B);
   margin-top: 2px;
+}
+
+/* M1.1: Standalone logout button (vol.pro pattern).
+   The danger color signals "this is a terminating action"; the small
+   size + plain style keeps it visually subordinate to the user menu
+   (which is the identity surface). Hover deepens the tint. */
+.gs-logout-btn {
+  color: var(--el-color-danger, #f56c6c) !important;
+  margin: 0 4px;
+}
+.gs-logout-btn:hover,
+.gs-logout-btn:focus-visible {
+  background: rgba(245, 108, 108, 0.12) !important;
 }
 </style>
 
