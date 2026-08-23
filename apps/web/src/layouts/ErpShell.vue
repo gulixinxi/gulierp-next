@@ -1,7 +1,11 @@
 <template>
-  <!-- ErpShell — Two-level ERP nav: Module Rail (60px always) + Secondary Menu (resizable)
+  <!-- ErpShell — Two-level ERP nav: Module Rail (60px) + Secondary Menu (resizable)
        Multi-Tab + Document Fullscreen main shell (DEC-UX-001, FROZEN)
-       M1 of GULIERP_SALES_ORDER_UI_REBASE_001 removed dev markers; user menu extracted to components/layout/UserMenu.vue -->
+       GULIERP_DESIGN_SYSTEM_001_ENTERPRISE_FIORI_THEME:
+         - Topbar: solid enterprise blue (#0A6ED1) with white text
+         - Sidebar (rail + secondary): slate #354A5F
+         - Brand line: "GuliERP" only (GuliERP Next / G1B-1R3 Design System
+           labels removed by design system spec) -->
   <div class="gs-shell" :class="{ 'is-fullscreen': tabs.fullscreen }">
     <!-- Top brand bar -->
     <header v-show="!tabs.fullscreen" class="gs-topbar">
@@ -16,13 +20,13 @@
           v-model:visible="searchVisible"
           placement="bottom-start"
           trigger="click"
-          width="360"
+          width="380"
           popper-class="gs-search-popover"
         >
           <template #reference>
             <button class="gs-search-trigger" type="button">
               <el-icon><Search /></el-icon>
-              <span>搜索菜单</span>
+              <span>搜索客户 / 单据 / 物料 / 供应商</span>
             </button>
           </template>
           <div class="gs-search-panel">
@@ -111,33 +115,15 @@
         </span>
 
         <!--
-          User menu: extracted to components/layout/UserMenu.vue (M1 of
-          GULIERP_SALES_ORDER_UI_REBASE_001). The component owns the avatar,
-          role chip, and dropdown detail head + user-center placeholder
-          (M2+). The logout action was moved OUT of the dropdown in M1.1
-          into the standalone power button below (vol.pro pattern: one
-          click intent, danger color, no nested menu).
+          User menu: GULIERP_DESIGN_SYSTEM_001_ENTERPRISE_FIORI_THEME.
+          Identity surface only — avatar, display name, role chip,
+          dropdown detail head (admin/账号/租户/公司), 个人中心 (M2+),
+          修改密码 (预留), 退出登录 (red, IN dropdown only).
+          There is NO standalone topbar logout button — the design
+          system spec keeps the topbar visually quiet. Sign-out
+          lives inside the user dropdown.
         -->
         <UserMenu />
-
-        <!--
-          Standalone logout button (M1.1 of GULIERP_SALES_ORDER_UI_REBASE_001).
-          Click → ElMessageBox warning confirm → auth.signOut() (CSRF refresh
-          + POST /auth/logout + state clear + redirect to /login). Logout
-          intent is exposed in 1 click; no dropdown navigation required.
-        -->
-        <el-button
-          text
-          size="small"
-          class="gs-logout-btn"
-          :loading="logoutLoading"
-          title="退出登录"
-          aria-label="退出登录"
-          @click="onLogout"
-        >
-          <el-icon><SwitchButton /></el-icon>
-          <span>退出</span>
-        </el-button>
 
         <el-button text size="small" @click="tabs.toggleFullscreen()">
           <el-icon><FullScreen /></el-icon>
@@ -306,7 +292,7 @@ import {
   Document, EditPen, Tickets, Close, FullScreen, Bell,
   UserFilled, ArrowLeft, ArrowRight, Van, Money, DataLine,
   TrendCharts, Goods, OfficeBuilding as _OB, Avatar, Files, RefreshRight,
-  SwitchButton, ArrowDown, Loading, ScaleToOriginal, MoreFilled,
+  ArrowDown, Loading, ScaleToOriginal, MoreFilled,
   Search, MagicStick
 } from '@element-plus/icons-vue';
 import {
@@ -350,7 +336,7 @@ function stripTrailingCompanyCode(name?: string, code?: string): string {
   return text;
 }
 
-// ===== Top bar actions: Company switch + User menu + Standalone logout =====
+// ===== Top bar actions: Company switch =====
 async function onChangeCompany(companyId: string): Promise<void> {
   if (companyLoading.value || companyId === auth.companyId) return;
   companyLoading.value = true;
@@ -365,30 +351,6 @@ async function onChangeCompany(companyId: string): Promise<void> {
     ElMessage.error({ message: title, duration: 2500 });
   } finally {
     companyLoading.value = false;
-  }
-}
-
-// M1.1: Standalone logout button (vol.pro pattern, one-click intent).
-// auth.signOut() handles CSRF refresh + POST /auth/logout + state clear +
-// router.replace('/login'). Server-side failures surface as ElMessage.error
-// inside signOut(); local `finally` ensures the button un-stucks regardless.
-const logoutLoading = ref(false);
-async function onLogout(): Promise<void> {
-  if (logoutLoading.value) return;
-  try {
-    await ElMessageBox.confirm('确认要退出当前账号吗？', '退出登录', {
-      confirmButtonText: '退出',
-      cancelButtonText: '取消',
-      type: 'warning',
-    });
-  } catch {
-    return; // user cancelled the confirm dialog
-  }
-  logoutLoading.value = true;
-  try {
-    await auth.signOut();
-  } finally {
-    logoutLoading.value = false;
   }
 }
 
@@ -828,19 +790,6 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: var(--text-muted, #64748B);
   margin-top: 2px;
-}
-
-/* M1.1: Standalone logout button (vol.pro pattern).
-   The danger color signals "this is a terminating action"; the small
-   size + plain style keeps it visually subordinate to the user menu
-   (which is the identity surface). Hover deepens the tint. */
-.gs-logout-btn {
-  color: var(--el-color-danger, #f56c6c) !important;
-  margin: 0 4px;
-}
-.gs-logout-btn:hover,
-.gs-logout-btn:focus-visible {
-  background: rgba(245, 108, 108, 0.12) !important;
 }
 </style>
 

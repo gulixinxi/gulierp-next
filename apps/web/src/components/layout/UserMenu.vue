@@ -1,21 +1,29 @@
 <template>
   <!--
-    UserMenu — GULIERP_SALES_ORDER_UI_REBASE_001 / M1 (2026-08-23).
-    Encapsulates the top-bar user menu trigger + dropdown.
-    M1.1 (2026-08-23): logout action was extracted out of this dropdown
-    into a standalone topbar button (vol.pro pattern). This component now
-    owns ONLY identity surfaces:
-      - Avatar circle with initials
+    UserMenu — GULIERP_DESIGN_SYSTEM_001_ENTERPRISE_FIORI_THEME (2026-08-23).
+    Identity surface for the topbar:
+      - Avatar circle with initials (uses Fiori primary gradient)
       - Display name (or username fallback)
       - Role chip (platform admin only; tenant/company role display is M2+)
-      - Dropdown with: detail head, user-center placeholder (disabled)
-    No business logic: avatar initials, role text, dropdown items are
-    derived from auth store getters. Logout is NOT here anymore.
+      - Dropdown with:
+          · detail head (name + role + account/tenant/company meta)
+          · 个人中心 (M2+, disabled)
+          · 修改密码 (预留, disabled — backend not implemented)
+          · 退出登录 (danger color, IN dropdown only)
+
+    Design rules (GULIERP_DESIGN_SYSTEM_001):
+      - Topbar must remain visually quiet. There is NO standalone
+        topbar logout button.
+      - Sign-out is a deliberate, two-click intent: open user menu
+        → click 退出登录 → ElMessageBox confirm → auth.signOut().
+      - Dropdown text uses the dark-text-on-light-popper pair
+        (text-primary on bg-container).
   -->
   <el-dropdown
     trigger="click"
     popper-class="gs-user-menu-popper"
     :teleported="true"
+    @command="onCommand"
   >
     <button class="gs-user-chip" type="button" :aria-label="ariaLabel">
       <el-avatar :size="28" class="gs-user-avatar">{{ initials }}</el-avatar>
@@ -30,21 +38,36 @@
       <el-icon class="gs-org-chevron"><ArrowDown /></el-icon>
     </button>
     <template #dropdown>
-      <el-dropdown-menu>
-        <el-dropdown-item disabled>
+      <el-dropdown-menu class="gs-user-dropdown-menu">
+        <!-- Detail head: name + role + account/tenant/company -->
+        <el-dropdown-item disabled class="gs-user-detail-item">
           <div class="gs-user-detail-head">
-            <el-avatar :size="40" class="gs-user-avatar gs-user-avatar--lg">{{ initials }}</el-avatar>
+            <el-avatar :size="44" class="gs-user-avatar gs-user-avatar--lg">{{ initials }}</el-avatar>
             <div class="gs-user-detail-text">
               <div class="gs-user-detail-name">{{ displayName || '—' }}</div>
-              <div v-if="userName && displayName !== userName" class="gs-user-detail-handle">@{{ userName }}</div>
+              <div v-if="roleLabel" class="gs-user-detail-role">{{ roleLabel }}</div>
+              <div v-if="userName" class="gs-user-detail-meta">账号：{{ userName }}</div>
               <div v-if="tenantName" class="gs-user-detail-meta">租户：{{ tenantName }}</div>
               <div v-if="companyName" class="gs-user-detail-meta">公司：{{ companyName }}</div>
             </div>
           </div>
         </el-dropdown-item>
+
         <el-dropdown-item disabled command="profile">
           <el-icon><User /></el-icon>
-          <span>个人中心 (M2+)</span>
+          <span>个人中心</span>
+          <span class="gs-user-menu-tag">M2+</span>
+        </el-dropdown-item>
+
+        <el-dropdown-item disabled command="change-password">
+          <el-icon><Lock /></el-icon>
+          <span>修改密码</span>
+          <span class="gs-user-menu-tag">预留</span>
+        </el-dropdown-item>
+
+        <el-dropdown-item divided command="logout" :disabled="logoutLoading" class="gs-user-menu-logout">
+          <el-icon><SwitchButton /></el-icon>
+          <span>{{ logoutLoading ? '退出中…' : '退出登录' }}</span>
         </el-dropdown-item>
       </el-dropdown-menu>
     </template>
@@ -52,22 +75,25 @@
 </template>
 
 <script setup lang="ts">
-// GULIERP_SALES_ORDER_UI_REBASE_001 / M1 (identity surface only).
-// M1.1: logout is no longer here — the standalone topbar button in
-// ErpShell.vue owns the sign-out lifecycle. This component is now a
-// pure read-only wrapper around the auth store for identity display.
-import { computed } from 'vue';
-import { ArrowDown, User } from '@element-plus/icons-vue';
+// GULIERP_DESIGN_SYSTEM_001_ENTERPRISE_FIORI_THEME.
+// Logout is owned by this component (per spec: topbar stays quiet).
+// auth.signOut() handles CSRF refresh + POST /auth/logout + state clear +
+// router.replace('/login'). Server-side failures surface as ElMessage.error
+// inside signOut(); the local `finally` un-sticks the button either way.
+import { computed, ref } from 'vue';
+import { ElMessageBox } from 'element-plus';
+import { ArrowDown, SwitchButton, User, Lock } from '@element-plus/icons-vue';
 import { useAuthStore } from '../../stores/auth';
 
 const auth = useAuthStore();
+const logoutLoading = ref(false);
 
 const displayName = computed<string>(() => auth.displayName);
 const userName = computed<string>(() => auth.userName);
 const tenantName = computed<string>(() => auth.tenantName);
 const companyName = computed<string>(() => auth.companyName);
 
-// ariaLabel: em-dash + displayName or userName or "未知用户" fallback.
+// ariaLabel: short description for the topbar trigger (used by screen readers).
 const ariaLabel = computed<string>(() => {
   const who = displayName.value || userName.value || '未知用户';
   return `用户菜单 (${who})`;
@@ -93,9 +119,38 @@ const initials = computed<string>(() => {
 // Role chip. Today only Platform Admin gets a chip (auth.isPlatformAdmin).
 // Tenant / company role display is deferred to M2+ alongside the user-center.
 const roleLabel = computed<string>(() => {
-  if (auth.user?.isPlatformAdmin) return '平台管理员';
+  if (auth.user?.isPlatformAdmin) return '管理员';
   return '';
 });
+
+async function onCommand(cmd: string): Promise<void> {
+  if (cmd === 'logout') {
+    await onLogout();
+    return;
+  }
+  // profile / change-password are reserved (M2+); the dropdown items
+  // are disabled and the user is not expected to reach here, but if
+  // they do, do nothing.
+}
+
+async function onLogout(): Promise<void> {
+  if (logoutLoading.value) return;
+  try {
+    await ElMessageBox.confirm('确认要退出当前账号吗？', '退出登录', {
+      confirmButtonText: '退出',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+  } catch {
+    return; // user cancelled the confirm dialog
+  }
+  logoutLoading.value = true;
+  try {
+    await auth.signOut();
+  } finally {
+    logoutLoading.value = false;
+  }
+}
 </script>
 
 <style scoped>
@@ -103,23 +158,23 @@ const roleLabel = computed<string>(() => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 36px;
+  height: 32px;
   padding: 0 10px;
   border: 0;
   background: transparent;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
-  color: inherit;
+  color: var(--header-fg);
   font: inherit;
   transition: background 120ms ease;
 }
 .gs-user-chip:hover,
 .gs-user-chip:focus-visible {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--header-hover-bg);
   outline: 0;
 }
 .gs-user-avatar {
-  background: linear-gradient(135deg, #4f6bed, #6b8df0);
+  background: linear-gradient(135deg, #0A6ED1 0%, #085CAF 100%);
   color: #fff;
   font-weight: 600;
   font-size: 12px;
@@ -127,6 +182,8 @@ const roleLabel = computed<string>(() => {
 }
 .gs-user-avatar--lg {
   font-size: 16px;
+  width: 44px !important;
+  height: 44px !important;
 }
 .gs-user-name {
   font-size: 13px;
@@ -134,33 +191,80 @@ const roleLabel = computed<string>(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--header-fg);
 }
 .gs-user-role {
   margin-left: 4px;
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: var(--header-fg) !important;
+  border-color: var(--header-border) !important;
 }
-.gs-user-detail-head {
+.gs-org-chevron {
+  color: var(--header-fg);
+}
+</style>
+
+<style>
+/* Dropdown popper lives at the document root (teleported). These
+   styles are global so the popper can use them. Keep selectors
+   specific enough not to bleed into other Element Plus dropdowns. */
+.gs-user-menu-popper .gs-user-dropdown-menu {
+  min-width: 280px;
+  padding: 4px 0;
+}
+.gs-user-menu-popper .gs-user-detail-item {
+  cursor: default;
+  padding: 12px 16px !important;
+}
+.gs-user-menu-popper .gs-user-detail-item:hover {
+  background: transparent !important;
+}
+.gs-user-menu-popper .gs-user-detail-head {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 4px 8px;
-  min-width: 240px;
 }
-.gs-user-detail-text {
+.gs-user-menu-popper .gs-user-detail-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
-.gs-user-detail-name {
+.gs-user-menu-popper .gs-user-detail-name {
   font-size: 14px;
   font-weight: 600;
+  color: var(--text-primary);
   line-height: 1.4;
 }
-.gs-user-detail-handle {
+.gs-user-menu-popper .gs-user-detail-role {
   font-size: 12px;
-  color: #6b7280;
+  font-weight: 600;
+  color: var(--primary-default);
+  line-height: 1.4;
+  letter-spacing: 0.2px;
 }
-.gs-user-detail-meta {
+.gs-user-menu-popper .gs-user-detail-meta {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.gs-user-menu-popper .gs-user-menu-tag {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.gs-user-menu-popper .gs-user-menu-logout {
+  color: var(--danger-default) !important;
+}
+.gs-user-menu-popper .gs-user-menu-logout:hover {
+  background: var(--danger-bg) !important;
+  color: var(--danger-hover) !important;
+}
+.gs-user-menu-popper .gs-user-menu-logout .el-icon {
+  color: var(--danger-default);
 }
 </style>

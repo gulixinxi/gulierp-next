@@ -1,16 +1,24 @@
 /* GuliERP Design System — Navigation components
-   Two-level ERP nav: Module Rail (60px, always) + Secondary Menu (resizable)
+   Enterprise Fiori Theme (GULIERP_DESIGN_SYSTEM_001_ENTERPRISE_FIORI_THEME, 2026-08-23)
+   ----------------------------------------------------------------------------------
+   Two-level ERP nav on a DARK sidebar (Fiori shell pattern):
+   - Module Rail (60px, always): #354A5F bg, white/light text
+   - Secondary Menu (resizable): #354A5F bg, white/light text, blue selected
+
+   Topbar: #0A6ED1 (Fiori shell primary), white text, white-semi-transparent
+   controls.
+
    Fullscreen hides everything; collapse hides only secondary menu.
    Transition 200ms ease-standard; no instant width:0 collapse. */
 
 /* =====================================================
-   Module Rail
+   Module Rail (60px, always visible except fullscreen)
    ===================================================== */
 .gs-rail {
   width: var(--nav-rail-width);
   flex-shrink: 0;
-  background: var(--rail-bg);
-  color: var(--rail-fg);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-fg);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -27,28 +35,28 @@
   gap: var(--space-1);
   height: 52px;
   font-size: 11px;
-  color: var(--rail-fg);
+  color: var(--sidebar-fg);
   cursor: pointer;
   position: relative;
-  transition: var(--transition-color);
+  transition: background 120ms ease, color 120ms ease;
 }
 .gs-rail-item .gs-rail-icon {
   font-size: 20px;
 }
 .gs-rail-item:hover {
-  color: var(--rail-fg-hover);
-  background: rgba(255,255,255,0.04);
+  color: var(--sidebar-fg-hover);
+  background: rgba(255, 255, 255, 0.06);
 }
 .gs-rail-item.is-active {
-  color: var(--rail-active-fg);
-  background: var(--rail-active-bg);
+  color: var(--sidebar-active-fg);
+  background: var(--sidebar-active-bg);
 }
 .gs-rail-item.is-active::before {
   content: '';
   position: absolute;
   left: 0; top: 8px; bottom: 8px;
   width: 3px;
-  background: var(--color-amber-500);
+  background: #FFFFFF;  /* contrast bar on blue selected item */
   border-radius: 0 2px 2px 0;
 }
 .gs-rail-tooltip {
@@ -56,7 +64,7 @@
   left: calc(var(--nav-rail-width) + 8px);
   top: 50%;
   transform: translateY(-50%);
-  background: var(--color-slate-800);
+  background: var(--color-slate-900);
   color: #fff;
   font-size: var(--erp-font-size-sm);
   padding: var(--space-2) var(--space-4);
@@ -73,11 +81,12 @@
 }
 
 /* =====================================================
-   Secondary Menu
+   Secondary Menu (resizable, collapsible; hidden only when folded)
+   Fiori shell pattern: same dark sidebar background as the rail.
    ===================================================== */
 .gs-secondary {
-  background: var(--bg-container);
-  border-right: 1px solid var(--border-default);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-fg);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -99,21 +108,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--sidebar-divider);
+  background: rgba(255, 255, 255, 0.02);
   flex-shrink: 0;
 }
 .gs-secondary-title {
   font-size: var(--erp-font-size);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-on-sidebar-active);
+  letter-spacing: 0.2px;
 }
 .gs-collapse-btn {
   width: 22px;
   height: 22px;
   border: 1px solid transparent;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--sidebar-fg);
   border-radius: var(--radius-sm);
   display: grid;
   place-items: center;
@@ -122,9 +132,9 @@
   transition: var(--transition-color), border-color var(--motion-fast);
 }
 .gs-collapse-btn:hover {
-  background: var(--bg-subtle);
-  color: var(--primary-default);
-  border-color: var(--border-default);
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  border-color: var(--header-border);
 }
 .gs-menu-list {
   flex: 1;
@@ -136,9 +146,10 @@
   padding: var(--space-3) var(--space-6) var(--space-2);
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-on-sidebar);
   text-transform: uppercase;
   letter-spacing: 0.4px;
+  opacity: 0.7;
 }
 .gs-menu-item {
   display: flex;
@@ -146,38 +157,38 @@
   gap: var(--gap);
   height: 34px;
   padding: 0 var(--space-6);
-  color: var(--text-secondary);
+  color: var(--text-on-sidebar);
   cursor: pointer;
   font-size: var(--erp-font-size);
   border-left: 3px solid transparent;
-  transition: var(--transition-color);
+  transition: background 120ms ease, color 120ms ease;
 }
 .gs-menu-item:hover {
-  color: var(--text-primary);
-  background: var(--bg-subtle);
+  color: var(--text-on-sidebar-active);
+  background: rgba(255, 255, 255, 0.06);
 }
 .gs-menu-item.is-active {
-  color: var(--primary-default);
-  background: var(--primary-bg);
-  border-left-color: var(--primary-default);
+  color: var(--sidebar-active-fg);
+  background: var(--sidebar-active-bg);
+  border-left-color: #FFFFFF;
   font-weight: 500;
 }
 /* MDM-WEB-003: disabled master-data entry (e.g. 员工档案 — no backend yet).
    Visually muted + non-interactive so it cannot be mistaken for a live link. */
 .gs-menu-item.is-disabled {
-  color: var(--text-disabled, #94A3B8);
+  color: rgba(213, 221, 229, 0.45);
   cursor: not-allowed;
   pointer-events: none;
   opacity: 0.7;
 }
 .gs-menu-item.is-disabled:hover {
   background: transparent;
-  color: var(--text-disabled, #94A3B8);
+  color: rgba(213, 221, 229, 0.45);
 }
 .gs-menu-badge-pending {
   margin-left: auto;
-  background: var(--color-slate-400, #94A3B8);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--text-on-sidebar);
   font-size: 10px;
   padding: 0 5px;
   border-radius: 10px;
@@ -186,7 +197,7 @@
 }
 .gs-menu-badge {
   margin-left: auto;
-  background: var(--color-amber-500);
+  background: var(--primary-default);
   color: #fff;
   font-size: 10px;
   padding: 0 5px;
@@ -215,85 +226,194 @@
 
 /* =====================================================
    Top brand bar (ErpShell)
+   Fiori: solid enterprise blue (#0A6ED1), white text.
    ===================================================== */
 .gs-topbar {
   height: var(--topbar-height);
-  background: linear-gradient(90deg, var(--color-slate-900) 0%, var(--color-slate-800) 100%);
-  color: #fff;
+  background: var(--header-bg);
+  color: var(--header-fg);
   display: flex;
   align-items: center;
-  padding: 0 var(--space-7);
-  gap: var(--space-9);
+  padding: 0 var(--space-6);
+  gap: var(--space-6);
   flex-shrink: 0;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 0 var(--header-border), 0 2px 6px rgba(10, 110, 209, 0.12);
 }
 .gs-topbar .brand {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: var(--nav-rail-width);
+  margin-left: calc(-1 * var(--space-6));
+  padding-left: var(--space-6);
+  height: 100%;
 }
 .gs-topbar .brand-logo {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  background: linear-gradient(135deg, var(--color-amber-500) 0%, var(--color-amber-600) 100%);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
   display: grid;
   place-items: center;
   font-weight: 800;
   font-size: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
 }
 .gs-topbar .brand-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.2;
+  letter-spacing: 0.4px;
+  color: var(--header-fg);
 }
-.gs-topbar .brand-edition {
-  background: rgba(255, 255, 255, 0.12);
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 500;
-  margin-left: 4px;
-}
+/* GULIERP_DESIGN_SYSTEM_001: brand sub-line is removed in the Fiori
+   theme. The topbar must read as a single enterprise identity line
+   ("GuliERP" only), not a multi-line stack. The two retired tags
+   — GuliERP Next edition chip and G1B-1R3 Design System label —
+   are intentionally not rendered anywhere. */
+.gs-topbar .brand-edition,
 .gs-topbar .brand-sub {
-  font-size: 11px;
-  color: var(--color-slate-400);
-  margin-top: 2px;
+  display: none;
 }
 .gs-topbar-center {
   display: flex;
   align-items: center;
   gap: var(--gap);
   font-size: 13px;
-  color: #d1d5db;
+  color: var(--header-fg-muted);
+  flex: 0 1 auto;
+  min-width: 0;
 }
 .gs-org-chip {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 3px 10px;
-  border-radius: 12px;
-}
-.gs-org-sep { color: var(--color-slate-500); }
-.gs-user-chip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--header-hover-bg);
+  color: var(--header-fg);
+  font-size: 13px;
+  height: 32px;
 }
-.gs-role-tag {
-  background: rgba(245, 158, 11, 0.18);
-  color: #fbbf24;
-  padding: 1px 6px;
-  border-radius: 8px;
-  font-size: 11px;
+.gs-org-chip--interactive {
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
 }
+.gs-org-chip--interactive:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: var(--header-border);
+}
+.gs-org-chip.is-loading,
+.gs-org-chip.is-loading:hover {
+  cursor: progress;
+  background: rgba(255, 255, 255, 0.08);
+}
+.gs-org-sep { color: var(--header-fg-disabled); }
+.gs-org-chevron {
+  font-size: 12px;
+  opacity: 0.85;
+  transition: transform 180ms ease;
+}
+.gs-org-chevron.is-spin {
+  animation: shell-spin 0.9s linear infinite;
+}
+@keyframes shell-spin { to { transform: rotate(360deg); } }
+.gs-coy-name { color: var(--text-primary); }
 .gs-topbar-right {
   margin-left: auto;
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
-.gs-topbar-right .el-button { color: #d1d5db; }
-.gs-topbar-right .el-button:hover { color: #fff; }
+/* Element Plus plain buttons on the blue topbar */
+.gs-topbar-right .el-button { color: var(--header-fg); }
+.gs-topbar-right .el-button:hover {
+  color: var(--header-fg);
+  background: var(--header-hover-bg);
+}
+.gs-topbar-right .el-button.is-disabled,
+.gs-topbar-right .el-button:disabled { color: var(--header-fg-disabled); }
+
+/* =====================================================
+   Search trigger (Fiori-style "command palette" trigger)
+   - white semi-transparent background
+   - rounded
+   - sits centered in the topbar
+   ===================================================== */
+.gs-search-trigger {
+  width: min(420px, 36vw);
+  height: 32px;
+  border: 1px solid var(--header-border);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--header-fg);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.gs-search-trigger:hover,
+.gs-search-trigger:focus-visible {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.35);
+  outline: 0;
+}
+.gs-search-trigger .el-icon { font-size: 14px; opacity: 0.9; }
+.gs-search-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gs-search-results {
+  max-height: 280px;
+  overflow: auto;
+}
+.gs-search-result {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+.gs-search-result:hover {
+  background: var(--bg-subtle);
+}
+.gs-search-result:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+.gs-search-result small,
+.gs-search-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.gs-search-empty {
+  padding: 16px 8px;
+  text-align: center;
+}
+.gs-safe-panel {
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+.gs-safe-panel p {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
 
 /* =====================================================
    Tab strip (ErpShell)
@@ -354,7 +474,7 @@
 .gs-tab:hover { background: var(--bg-subtle); }
 .gs-tab.is-active {
   background: var(--primary-bg);
-  color: var(--color-blue-600);
+  color: var(--primary-default);
   border-color: var(--primary-border);
   font-weight: 500;
 }
@@ -366,7 +486,7 @@
   padding: 2px;
   color: var(--text-muted);
 }
-.gs-tab-close:hover { background: #fee2e2; color: var(--status-danger); }
+.gs-tab-close:hover { background: var(--danger-bg); color: var(--danger-default); }
 .gs-dirty-dot { color: var(--color-amber-500); font-size: 10px; }
 .gs-tabstrip-actions {
   margin-left: auto;
@@ -392,7 +512,7 @@
 }
 .gs-tab-list::-webkit-scrollbar { height: 4px; }
 .gs-tab-list::-webkit-scrollbar-thumb {
-  background: var(--border-default, #CBD5E1);
+  background: var(--border-default);
   border-radius: 2px;
 }
 
@@ -402,7 +522,7 @@
   z-index: 9999;
   min-width: 140px;
   background: #fff;
-  border: 1px solid var(--border-default, #E2E8F0);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   padding: 4px 0;
@@ -411,20 +531,20 @@
 .gs-ctxmenu-item {
   padding: 6px 16px;
   font-size: 13px;
-  color: var(--text-primary, #0F172A);
+  color: var(--text-primary);
   cursor: pointer;
   white-space: nowrap;
   transition: background 100ms ease;
 }
-.gs-ctxmenu-item:hover { background: var(--bg-subtle, #F1F5F9); }
+.gs-ctxmenu-item:hover { background: var(--bg-subtle); }
 .gs-ctxmenu-item.is-disabled {
-  color: var(--text-muted, #94A3B8);
+  color: var(--text-muted);
   cursor: not-allowed;
   pointer-events: none;
 }
 .gs-ctxmenu-divider {
   height: 1px;
-  background: var(--border-subtle, #E2E8F0);
+  background: var(--border-subtle);
   margin: 4px 0;
 }
 
@@ -442,7 +562,7 @@
   font-size: 13px;
 }
 .mdm-row-actions .mdm-action-sep {
-  color: var(--border-default, #CBD5E1);
+  color: var(--border-default);
   font-size: 12px;
   user-select: none;
 }

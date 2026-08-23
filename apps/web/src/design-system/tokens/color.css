@@ -1,14 +1,39 @@
 /* GuliERP Design System — Color Tokens
-   User brand: Blue (ocean) + Slate (neutral) + Semantic status colors
-   Declared as CSS Variables, consumed by component sheets and Element Plus overrides */
+   Enterprise Fiori Theme (GULIERP_DESIGN_SYSTEM_001_ENTERPRISE_FIORI_THEME, 2026-08-23)
+   ----------------------------------------------------------------------------------
+   User brand: Enterprise Blue + Slate Sidebar + Semantic status colors.
+   Declared as CSS Variables, consumed by component sheets and Element Plus overrides.
+
+   Design direction (FROZEN):
+   - Professional, stable, long-hours office, manufacturing ERP feel.
+   - Inspired by SAP Fiori + Chinese manufacturing ERP (Yonyou / Kingdee / BIP).
+   - NO dark AI-SaaS look, NO gamified look, NO internet-admin-template look.
+
+   Hard rule: any hard-coded palette color in a page component is a bug.
+   Always reference one of the SEMANTIC tokens below (--primary-default,
+   --text-primary, --bg-canvas, ...). If a new color is needed, add a new
+   semantic token here and document the intent. Do not invent hex codes
+   in component files.
+*/
 
 :root {
-  /* — Palette: Blue — */
-  --color-blue-500: #0284C7;
-  --color-blue-600: #0369A1;
-  --color-blue-700: #075985;
+  /* =====================================================
+     Raw palette — building blocks only.
+     Components MUST NOT use these names directly.
+     ===================================================== */
 
-  /* — Palette: Slate (neutral) — */
+  /* — Palette: Enterprise Blue (Fiori-aligned) — */
+  --color-blue-050: #F2F8FC;   /* hover/bg tint */
+  --color-blue-100: #D9EAF7;   /* selected bg, primary borders */
+  --color-blue-200: #A6CEEC;   /* secondary buttons */
+  --color-blue-300: #5DA9DD;   /* hover light */
+  --color-blue-400: #1B90CD;   /* pressed mid */
+  --color-blue-500: #0A6ED1;   /* PRIMARY (Fiori shell primary) */
+  --color-blue-600: #085caf;   /* hover */
+  --color-blue-700: #074693;   /* active / pressed */
+  --color-blue-800: #053374;   /* darkest text on light */
+
+  /* — Palette: Slate Sidebar (Fiori shell) — */
   --color-slate-50:  #F8FAFC;
   --color-slate-100: #F1F5F9;
   --color-slate-200: #E2E8F0;
@@ -16,62 +41,95 @@
   --color-slate-400: #94A3B8;
   --color-slate-500: #64748B;
   --color-slate-600: #475569;
-  --color-slate-700: #334155;
+  --color-slate-700: #354A5F;   /* SIDEBAR (Fiori shell sidebar) */
   --color-slate-800: #1E293B;
   --color-slate-900: #0F172A;
 
   /* — Palette: Status — */
-  --status-danger:  #DC2626;
-  --status-warning: #D97706;
-  --status-success: #059669;
-  --status-info:    #0284C7;
+  --color-green-500: #107E3E;   /* Success (Fiori) */
+  --color-green-600: #0B5A2C;
+  --color-orange-500: #E9730C;  /* Warning (Fiori) */
+  --color-orange-600: #B85808;
+  --color-red-500:   #BB0000;   /* Danger (Fiori) */
+  --color-red-600:   #8B0000;
 
-  /* — Amber (accent / dirty / selected) — */
-  --color-amber-500: #F59E0B;
-  --color-amber-600: #D97706;
-
-  /* =======================================================
-     Semantic mapping — business UI should use these,
-     NEVER the raw palette names above.
-     ======================================================= */
+  /* =====================================================
+     Semantic mapping — business UI must use these.
+     ===================================================== */
 
   /* Background layers */
-  --bg-canvas:     #F8FAFC;   /* overall page shell */
+  --bg-canvas:     #FFFFFF;   /* overall page shell */
   --bg-container:  #FFFFFF;   /* cards, panels, tables */
-  --bg-subtle:     #F1F5F9;   /* zebra rows, header bg */
-  --bg-muted:      #E2E8F0;   /* dividers, disabled surface */
+  --bg-card:       #F7F8FA;   /* subtle card surface */
+  --bg-subtle:     #F7F8FA;   /* zebra rows, header bg */
+  --bg-muted:      #EEF1F4;   /* dividers, disabled surface */
+  --bg-header:     #0A6ED1;   /* top brand bar (Fiori shell primary) */
+  --bg-sidebar:    #354A5F;   /* module rail / secondary menu (Fiori) */
 
   /* Text */
-  --text-primary:   #0F172A;   /* labels, values, titles */
-  --text-secondary: #334155;   /* sub-labels, descriptions */
-  --text-muted:     #64748B;   /* hints, meta, placeholders */
-  --text-disabled:  #94A3B8;
-  --text-inverse:   #FFFFFF;
+  --text-primary:    #1D2D3E;   /* Fiori text-primary */
+  --text-secondary:  #5B738B;   /* Fiori text-secondary */
+  --text-muted:      #6B7C8C;
+  --text-disabled:   #A0AEC0;
+  --text-inverse:    #FFFFFF;   /* on dark surfaces */
+  --text-on-header:  #FFFFFF;   /* on topbar (blue) */
+  --text-on-sidebar: #D5DDE5;   /* on sidebar (slate) */
+  --text-on-sidebar-active: #FFFFFF; /* on sidebar selected item */
 
   /* Border / stroke */
-  --border-default:  #CBD5E1;   /* standard grid/form border */
-  --border-strong:   #94A3B8;
-  --border-subtle:   #E2E8F0;   /* internal dividers */
+  --border-default:  #D9E2EC;   /* Fiori border */
+  --border-strong:   #B8C5D1;
+  --border-subtle:   #E5EBF0;   /* internal dividers */
+  --border-on-header: rgba(255, 255, 255, 0.18);
 
   /* Primary action */
-  --primary-default: #0284C7;
-  --primary-hover:   #0369A1;
-  --primary-active:  #075985;
-  --primary-bg:      #EFF6FF;
-  --primary-border:  #BAE6FD;
+  --primary-default: #0A6ED1;   /* Fiori primary */
+  --primary-hover:   #085CAF;
+  --primary-active:  #074693;
+  --primary-bg:      #F2F8FC;   /* selected background tint */
+  --primary-border:  #D9EAF7;
 
-  /* Danger / warning / success actions & badges */
-  --danger-default:  #DC2626;
-  --warning-default: #D97706;
-  --success-default: #059669;
+  /* Danger / warning / success */
+  --danger-default:   #BB0000;
+  --danger-hover:     #8B0000;
+  --danger-bg:        #FBEAEA;
+  --warning-default:  #E9730C;
+  --warning-hover:    #B85808;
+  --warning-bg:       #FDF1E1;
+  --success-default:  #107E3E;
+  --success-hover:    #0B5A2C;
+  --success-bg:       #E4F2EA;
 
-  /* Module Rail (dark) */
-  --rail-bg:        #0F172A;
-  --rail-fg:        #94A3B8;
-  --rail-fg-hover:  #E2E8F0;
-  --rail-active-bg: #0284C7;
-  --rail-active-fg: #FFFFFF;
+  /* Module Rail + Sidebar */
+  --sidebar-bg:           #354A5F;        /* Fiori sidebar */
+  --sidebar-fg:           #D5DDE5;        /* default text on sidebar */
+  --sidebar-fg-hover:     #FFFFFF;        /* hover */
+  --sidebar-active-bg:    #0A6ED1;        /* selected item — enterprise blue */
+  --sidebar-active-fg:    #FFFFFF;
+  --sidebar-active-bar:   #0A6ED1;        /* 3px left bar on selected item */
+  --sidebar-divider:      rgba(255, 255, 255, 0.10);
+
+  /* Topbar (Header) */
+  --header-bg:            #0A6ED1;        /* Fiori primary */
+  --header-fg:            #FFFFFF;
+  --header-fg-muted:      rgba(255, 255, 255, 0.78);
+  --header-fg-disabled:   rgba(255, 255, 255, 0.45);
+  --header-border:        rgba(255, 255, 255, 0.18);
+  --header-hover-bg:      rgba(255, 255, 255, 0.10);
+
+  /* Backward-compat aliases (read by older components) */
+  --rail-bg:        var(--sidebar-bg);
+  --rail-fg:        var(--sidebar-fg);
+  --rail-fg-hover:  var(--sidebar-fg-hover);
+  --rail-active-bg: var(--sidebar-active-bg);
+  --rail-active-fg: var(--sidebar-active-fg);
+  --color-amber-500: #E9730C;   /* keep as accent (warning-aligned) */
+  --color-amber-600: #B85808;
+  --status-danger:  var(--danger-default);
+  --status-warning: var(--warning-default);
+  --status-success: var(--success-default);
+  --status-info:    var(--primary-default);
 
   /* Selection / focus ring */
-  --focus-ring: rgba(2, 132, 199, 0.35);
+  --focus-ring: rgba(10, 110, 209, 0.35);
 }
