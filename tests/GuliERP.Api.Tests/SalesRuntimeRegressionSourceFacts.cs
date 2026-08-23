@@ -32,15 +32,22 @@ public sealed class SalesRuntimeRegressionSourceFacts
     [Fact]
     public void Shell_User_Menu_Exposes_Logout_And_Uses_Auth_SignOut()
     {
-        var src = File.ReadAllText(Path.Combine(Root, "apps/web/src/layouts/ErpShell.vue"));
+        // GULIERP_SALES_ORDER_UI_REBASE_001 / M1 (2026-08-23):
+        // the user menu was extracted from ErpShell.vue into a dedicated
+        // component (apps/web/src/components/layout/UserMenu.vue). The
+        // intent of this regression test is preserved: the user menu exposes
+        // the logout command, the logout action delegates to auth.signOut(),
+        // and the popper is properly named. We now read BOTH files so the
+        // protection continues to cover the structural goal.
+        var shell = File.ReadAllText(Path.Combine(Root, "apps/web/src/layouts/ErpShell.vue"));
+        var userMenu = File.ReadAllText(Path.Combine(Root, "apps/web/src/components/layout/UserMenu.vue"));
+        var combined = shell + userMenu;
 
-        Assert.Contains("gs-user-menu-popper", src);
-        Assert.Contains("退出登录", src);
-        Assert.Contains("auth.signOut()", src);
-        Assert.Contains("type=\"button\"", src);
-    }
-
-    [Fact]
+        Assert.Contains("gs-user-menu-popper", combined);
+        Assert.Contains("退出登录", combined);
+        Assert.Contains("auth.signOut()", combined);
+        Assert.Contains("type=\"button\"", combined);
+    }    [Fact]
     public void SalesOrder_Runtime_Path_Uses_Real_Apis_And_No_Mock_Order_Source()
     {
         var files = new[]

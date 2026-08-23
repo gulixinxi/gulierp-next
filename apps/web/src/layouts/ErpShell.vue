@@ -1,15 +1,14 @@
 <template>
   <!-- ErpShell — Two-level ERP nav: Module Rail (60px always) + Secondary Menu (resizable)
        Multi-Tab + Document Fullscreen main shell (DEC-UX-001, FROZEN)
-       G1B-1R3: Design System refactor using GuliERP tokens & classes -->
+       M1 of GULIERP_SALES_ORDER_UI_REBASE_001 removed dev markers; user menu extracted to components/layout/UserMenu.vue -->
   <div class="gs-shell" :class="{ 'is-fullscreen': tabs.fullscreen }">
     <!-- Top brand bar -->
     <header v-show="!tabs.fullscreen" class="gs-topbar">
       <div class="brand">
         <div class="brand-logo">谷</div>
         <div class="brand-text">
-          <div class="brand-title">GuliERP <span class="brand-edition">销售版</span></div>
-          <div class="brand-sub">GuliERP Next · G1B-1R3 Design System</div>
+          <div class="brand-title">GuliERP</div>
         </div>
       </div>
       <div class="gs-topbar-center">
@@ -111,32 +110,15 @@
           <span>{{ companyPrimaryLabel }}</span>
         </span>
 
-        <!-- User menu: display name / username + dropdown with logout -->
-        <el-dropdown trigger="click" popper-class="gs-user-menu-popper" :teleported="true" @command="onUserCommand">
-          <button class="gs-user-chip" type="button">
-            <el-icon><UserFilled /></el-icon>
-            <span class="gs-user-name">{{ auth.displayName || auth.userName || '—' }}</span>
-            <span v-if="auth.userName && auth.displayName && auth.userName !== auth.displayName" class="gs-user-handle">@{{ auth.userName }}</span>
-            <el-icon class="gs-org-chevron"><ArrowDown /></el-icon>
-          </button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item disabled>
-                <div class="gs-user-detail-head">
-                  <div class="gs-user-detail-name">{{ auth.displayName || auth.userName }}</div>
-                  <div v-if="auth.userName" class="gs-user-detail-user">@{{ auth.userName }}</div>
-                  <div v-if="companyPrimaryLabel" class="gs-user-detail-company">公司：{{ companyPrimaryLabel }}</div>
-                  <div v-if="auth.companyCode" class="gs-user-detail-company">编码：{{ auth.companyCode }}</div>
-                  <div v-if="auth.tenantName" class="gs-user-detail-tenant">租户：{{ auth.tenantName }}</div>
-                </div>
-              </el-dropdown-item>
-              <el-dropdown-item divided command="logout" :disabled="logoutLoading">
-                <el-icon><SwitchButton /></el-icon>
-                <span>{{ logoutLoading ? '退出中…' : '退出登录' }}</span>
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <!--
+          User menu: extracted to components/layout/UserMenu.vue (M1 of
+          GULIERP_SALES_ORDER_UI_REBASE_001). The component owns the avatar,
+          role chip, dropdown detail head, and the logout / user-center
+          action plumbing. Logout delegates to auth.signOut() which handles
+          CSRF refresh + POST /auth/logout + state clear + redirect to
+          /login. user-center item is reserved (disabled) for M2+.
+        -->
+        <UserMenu />
 
         <el-button text size="small" @click="tabs.toggleFullscreen()">
           <el-icon><FullScreen /></el-icon>
@@ -299,6 +281,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useTabsStore, type ErpTab } from '../stores/tabs';
 import { useAuthStore } from '../stores/auth';
+import UserMenu from '../components/layout/UserMenu.vue';
 import {
   HomeFilled, Sell, ShoppingCart, Box, Coin, Setting, Tools,
   Document, EditPen, Tickets, Close, FullScreen, Bell,
@@ -326,7 +309,6 @@ const auth = useAuthStore();
 
 const dirtyConfirm = reactive({ visible: false, title: '', id: '' });
 const companyLoading = ref(false);
-const logoutLoading = ref(false);
 const searchVisible = ref(false);
 const menuSearch = ref('');
 const companyPrimaryLabel = computed(() =>
@@ -367,25 +349,7 @@ async function onChangeCompany(companyId: string): Promise<void> {
   }
 }
 
-async function onUserCommand(cmd: 'logout' | string): Promise<void> {
-  if (cmd !== 'logout') return;
-  if (logoutLoading.value) return; // prevent double-click
-  try {
-    await ElMessageBox.confirm('确认要退出当前账号吗？', '退出登录', {
-      confirmButtonText: '退出',
-      cancelButtonText: '取消',
-      type: 'warning',
-    });
-  } catch { return; /* cancel */ }
-  logoutLoading.value = true;
-  try {
-    // The backend call is inside auth.signOut(). It clears memory state + pushes /login.
-    // The auth cookie (HttpOnly) is cleared server-side on 204.
-    await auth.signOut();
-  } finally {
-    logoutLoading.value = false;
-  }
-}
+
 
 const iconMap = {
   HomeFilled, Sell, ShoppingCart, Box, Coin, Setting, Tools,
