@@ -2,7 +2,7 @@
 
 ## Gate
 
-Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_OPERATOR_RETEST_PENDING`
+Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_BUSINESS_ROLE_PACK_CODE_READY_OPERATOR_APPLY_PENDING`
 
 Start HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`
 
@@ -583,6 +583,92 @@ Conclusion:
 - No password, hash, token, cookie, or full connection string is recorded in this report.
 - Current gate advances to `GULIERP_ENTERPRISE_BOOTSTRAP_001_OPERATOR_RETEST_PENDING` for browser Runtime validation.
 
+## 2026-08-23 Formal Admin Business Role Pack Repair
+
+Runtime symptom:
+
+- Normal control user `test_operator_g2_004` remains the known-good comparison account in the evidence/test Tenant. Its `ERP_MDM_OPERATOR` and `ERP_SALES_OPERATOR` permissions were not modified by this repair.
+- Formal admin `admin` in Tenant `GULI` / Company `GULI001` authenticated successfully and displayed the correct Shell context (`谷粒信息` / `春清`) but received 403 for MDM/Sales routes.
+- Operator-provided RequestIds:
+  - base data: `6529623a9f5b45548020d0adeb394739`
+  - master data: `0ef438325deb42e9bc0bde2726abba28`
+- Historical runtime logs for those exact RequestIds were not available in the current local log set, so no request-path/method evidence was fabricated.
+
+Root cause:
+
+- Formal residue diagnostic showed the formal Tenant had only one role, `ERP_SYSTEM_ADMIN`, with one active RoleAssignment.
+- `ERP_SYSTEM_ADMIN` correctly contained only the 8 Identity administration permissions:
+  - `identity.organization.read`
+  - `identity.organization.manage`
+  - `identity.user.read`
+  - `identity.user.manage`
+  - `identity.role.read`
+  - `identity.role.assign`
+  - `identity.company.read`
+  - `identity.company.switch`
+- It did not contain MDM/Sales permissions by design, and this separation is preserved.
+- Tenant isolation correctly prevents formal `admin` from reusing the test Tenant roles/data that make `test_operator_g2_004` pass.
+
+Repair design:
+
+- Added a shared enterprise business role pack definition:
+  - `ERP_MDM_OPERATOR` with the exact 12 MDM permissions:
+    - `mdm.uom.read`
+    - `mdm.uom.manage`
+    - `mdm.item-category.read`
+    - `mdm.item-category.manage`
+    - `mdm.item.read`
+    - `mdm.item.manage`
+    - `mdm.business-partner.read`
+    - `mdm.business-partner.manage`
+    - `mdm.warehouse.read`
+    - `mdm.warehouse.manage`
+    - `mdm.location.read`
+    - `mdm.location.manage`
+  - `ERP_SALES_OPERATOR` with the exact 2 Sales permissions:
+    - `sales.order.read`
+    - `sales.order.manage`
+- `ERP_SYSTEM_ADMIN` remains independent and does not receive business permissions.
+- Formal Bootstrap now provisions the first admin with three separate active, Company-scoped RoleAssignments:
+  - `ERP_SYSTEM_ADMIN`
+  - `ERP_MDM_OPERATOR`
+  - `ERP_SALES_OPERATOR`
+- Added a safe existing-enterprise repair CLI:
+  - `--ensure-formal-enterprise-business-role-pack GULI GULI001 admin`
+  - reads the canonical connection string only from environment variables
+  - verifies the fixed successful Bootstrap ID chain before writes
+  - verifies active Company membership and active `ERP_SYSTEM_ADMIN` assignment
+  - creates/reuses roles, backfills missing expected RoleClaims, creates missing Company-scoped RoleAssignments
+  - hard-stops on duplicate roles, wildcard claims, unexpected extra permission claims, inactive role/assignment, wrong Tenant/Company/User
+  - does not read or require the admin password
+  - does not print passwords, hashes, tokens, cookies or full connection strings
+
+Verification:
+
+- `dotnet build tools\GuliERP.Identity.Bootstrap\GuliERP.Identity.Bootstrap.csproj -c Release --no-restore --disable-build-servers -m:1 -p:UseSharedCompilation=false -p:NuGetAudit=false`: PASS, `0 warnings`, `0 errors`
+- `GuliERP.Identity.Tests`: PASS, `22/22`
+- `GuliERP.Identity.Bootstrap.Tests`: PASS, `64/64`
+- Focused isolated `GuliERP.Identity.IntegrationTests` filter `EnterpriseBootstrapAndOrganizationTreeFacts|MdmAuthorizationRegressionFacts|SalesAuthorizationRegressionFacts`: PASS, `28/28`
+  - artifacts: `C:\Users\Administrator\AppData\Local\Temp\gulierp-rolepack-tests-6ac3d57833fa46089f22065dc1b68c39`
+- `GuliERP.Api.Tests`: PASS, `32/32` with isolated artifacts path
+  - normal output run failed only because running API locked `apps/api/GuliERP.Api\bin\Release\net10.0` DLLs
+  - isolated artifacts: `C:\Users\Administrator\AppData\Local\Temp\gulierp-rolepack-api-tests-fe3613b509f046b2a7f961770b824af9`
+- `GuliERP.Mdm.Tests`: PASS, `67/67` with isolated artifacts path
+  - normal output run had 2 seed resolver failures because AppContext walked up to the repo's real `data/bootstrap` tree; isolated artifacts removed that environment collision
+  - isolated artifacts: `C:\Users\Administrator\AppData\Local\Temp\gulierp-rolepack-mdm-tests-bbb2c5a5326d4a6e9e656311bec10ff2`
+- `GuliERP.Sales.Tests`: PASS, `9/9`
+- scoped `git diff --check`: PASS
+
+Not performed yet:
+
+- The canonical PostgreSQL role pack has not yet been applied.
+- Formal admin has not yet logged out/relogged after role pack application.
+- MDM/Sales browser Runtime for formal `admin` remains pending.
+
+Current gate:
+
+`GULIERP_ENTERPRISE_BOOTSTRAP_001_BUSINESS_ROLE_PACK_CODE_READY_OPERATOR_APPLY_PENDING`
+
 ## Modified Files
 
 Core files intended for this Goal:
@@ -625,12 +711,14 @@ Historical dirty/WIP files are intentionally not included.
 - `feat(identity): add formal bootstrap residue diagnostic` (`74b439f`)
 - `docs(verification): record formal residue diagnostic commit` (`da51747`)
 - `fix(identity): correct formal bootstrap residue diagnostics` (`5adfe47`)
-- pending: formal diagnostic result report commit reported in delivery output.
+- `docs(verification): record formal residue diagnostic pass` (`e4b444a`)
+- pending: formal admin business role pack code/report commits reported in delivery output.
 
 ## Unfinished Content
 
 - Formal tenant/company/admin bootstrap completed; read-only residue diagnostic PASS with `NO_PARTIAL_BOOTSTRAP_RESIDUE`.
-- Browser runtime verification is pending formal admin and business-user creation.
+- Formal admin business role pack code is ready; canonical DB application is pending Operator execution.
+- Browser runtime verification is pending role pack application, formal admin logout/relogin, MDM/Sales validation and business-user creation.
 - PostgreSQL integration suites that require Operator credentials remain runtime pending.
 
 ## Next Suggested Goal
