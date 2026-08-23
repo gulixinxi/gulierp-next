@@ -2,7 +2,7 @@
 
 ## Gate
 
-Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_OPERATOR_RESIDUE_DIAGNOSTIC_PENDING`
+Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_OPERATOR_RETEST_PENDING`
 
 Start HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`
 
@@ -511,7 +511,77 @@ Verification after this correction:
 - Focused isolated `GuliERP.Identity.IntegrationTests` filter `FullyQualifiedName~EnterpriseBootstrapAndOrganizationTreeFacts`: PASS, `12/12`
   - artifacts: `C:\Users\Administrator\AppData\Local\Temp\gulierp-enterprise-canonical-code-433e1366035d41fabf2ef9dcbc726fa0`
 
-No database audit or code canonicalization update has been executed in this step. Canonical PostgreSQL remains unchanged by this code/test/report correction.
+No database audit or code canonicalization update had been executed in this code/test/report correction step.
+
+## 2026-08-23 Formal Residue Diagnostic Result
+
+Operator executed the formal read-only diagnostic from PowerShell against the canonical PostgreSQL target:
+
+- DB guard: PASS for `Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=***`
+- Bootstrap CLI build: PASS
+- Diagnostic mode: `--diagnose-formal-enterprise-bootstrap`
+- Diagnostic output: structured JSON
+- `passwordEchoed`: `false`
+
+Migration and schema preflight:
+
+- Applied Identity migrations include:
+  - `20260819150708_G2003_InitializeIdentitySchema`
+  - `20260819162500_G2003V2_AddIdentityReferentialIntegrity`
+  - `20260820100503_IDGEN001_PostgresHiLo`
+  - `20260822090000_G2EnterpriseOrganizationFoundation`
+  - `20260823020050_G2EnterpriseOrganizationSchemaAlignment`
+- `g2EnterpriseOrganizationFoundationApplied`: `true`
+- `plantIsDefaultColumnExists`: `true`
+- `defaultPlantIndexExists`: `true`
+- `employeeTableExists`: `true`
+
+Formal enterprise chain:
+
+- Tenant: `83727350616817890`, Code `GULI`, Name `谷粒`, Status `Active`
+- Company: `83727350616817891`, TenantId `83727350616817890`, Code `GULI001`, Name `谷粒信息`, Status `Active`
+- Default Plant: `83727350616817892`, Code `MAIN`, `IsDefault=true`
+- Root OrganizationUnit: `83727350616817893`, Code `ROOT`, Name `公司`
+- Admin User: `83727350616817894`, UserName `admin`, DisplayName `春清`, Status `Active`, `IsPlatformAdmin=false`
+- Admin Employee: `83727350616817895`, UserId `83727350616817894`, DepartmentId `83727350616817893`
+- Company Membership: `83727350616817896`, `IsDefault=true`
+- Organization Membership: `83727350616817897`, `IsPrimary=true`
+- `ERP_SYSTEM_ADMIN` Role: `83727350616817898`
+- RoleAssignment: `83727350616817899`, CompanyId `83727350616817891`, Status `Active`
+
+RoleClaims are limited to the expected enterprise administration permissions:
+
+- `identity.company.read`
+- `identity.company.switch`
+- `identity.organization.manage`
+- `identity.organization.read`
+- `identity.role.assign`
+- `identity.role.read`
+- `identity.user.manage`
+- `identity.user.read`
+
+Residue and canonical code result:
+
+- `expectedIdChainMatches`: `true`
+- `hasCanonicalTenantCode`: `true`
+- `hasCanonicalCompanyCode`: `true`
+- `requiresCodeCanonicalization`: `false`
+- `hasFailedAdminUser`: `false`
+- `hasCaseInsensitiveDuplicateTenant`: `false`
+- `hasCaseInsensitiveDuplicateCompany`: `false`
+- `hasOrphanCompany`: `false`
+- `hasOrphanPlant`: `false`
+- `hasCompleteFormalChain`: `true`
+- `recommendations`: empty
+- `residueStatus`: `NO_PARTIAL_BOOTSTRAP_RESIDUE`
+
+Conclusion:
+
+- First failed Bootstrap attempt did not leave detectable partial residue.
+- The successful formal enterprise already uses the final canonical codes `GULI/GULI001`.
+- No controlled code canonicalization update is required.
+- No password, hash, token, cookie, or full connection string is recorded in this report.
+- Current gate advances to `GULIERP_ENTERPRISE_BOOTSTRAP_001_OPERATOR_RETEST_PENDING` for browser Runtime validation.
 
 ## Modified Files
 
@@ -553,11 +623,13 @@ Historical dirty/WIP files are intentionally not included.
 - `feat(identity): implement formal enterprise bootstrap foundation`
 - `fix(identity): align organization migration snapshot` (`eabed46`)
 - `feat(identity): add formal bootstrap residue diagnostic` (`74b439f`)
-- pending: report evidence commit reported in delivery output.
+- `docs(verification): record formal residue diagnostic commit` (`da51747`)
+- `fix(identity): correct formal bootstrap residue diagnostics` (`5adfe47`)
+- pending: formal diagnostic result report commit reported in delivery output.
 
 ## Unfinished Content
 
-- Formal tenant/company/admin bootstrap completed; read-only residue diagnostic is pending Operator execution.
+- Formal tenant/company/admin bootstrap completed; read-only residue diagnostic PASS with `NO_PARTIAL_BOOTSTRAP_RESIDUE`.
 - Browser runtime verification is pending formal admin and business-user creation.
 - PostgreSQL integration suites that require Operator credentials remain runtime pending.
 
