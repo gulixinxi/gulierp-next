@@ -2,7 +2,7 @@
 
 ## Gate
 
-Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_BUSINESS_ROLE_PACK_VERIFIED` (Operator Apply confirmed at 2026-08-23: `ok=true`, `tenantId=83727350616817890`, `companyId=83727350616817891`, `userId=83727350616817894`, `mdmRoleCreated=true`, `salesRoleCreated=true`, `mdmClaimsCreated=12`, `salesClaimsCreated=2`, `mdmAssignmentCreated=true`, `salesAssignmentCreated=true`, `rolePackStatus=FORMAL_ENTERPRISE_BUSINESS_ROLE_PACK_APPLIED`). The next gate is `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_VERIFIED` which requires formal admin browser Runtime validation; that is explicitly out of this Goal scope and deferred to a future operator UI validation phase.)
+Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_VERIFIED` (CLOSED at 2026-08-23 after Operator Runtime Browser Smoke PASS + Agent Code-side Verification PASS + 7/7 Build PASS + 54/54 InMemory API smoke via real ASP.NET Core `WebApplicationFactory<Program>`). All three verification sources (Backend Runtime, Frontend Runtime, Formal admin login, Enterprise Organization, MDM pages, Sales Order pages) returned PASS. SalesOrder UI baseline discrepancy (3D status model, action matrix, header fields) is documented in `docs/verification/GULIERP_SALESORDER_UI_BASELINE_DISCREPANCY_NOTE.md` and deferred to the next goal `GULIERP_SALES_ORDER_UI_REBASE_001`. No Admin.NET / no Identity / no Permission / no Role / no DB / no Runtime verification code was modified in this closure.)
 
 Start HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`
 
@@ -763,6 +763,61 @@ Next mainline (Operator-initiated, NOT agent-driven):
 2. Operator opens the 6 MDM pages (UOM, ItemCategory, Item, BusinessPartner, Warehouse, Location) and verifies 200 OK + correct data scope.
 3. Operator opens the Sales order pages and verifies 200 OK + correct data scope.
 4. On all 3 success, gate advances to `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_VERIFIED` and the P6-J-style coverage matrix is complete.
+
+
+## 2026-08-23 Runtime Verification — Goal CLOSED
+
+Operator Browser smoke (real environment, formal admin only):
+
+| Check | Result |
+|---|---|
+| Backend Runtime | PASS |
+| Frontend Runtime | PASS |
+| Login | PASS |
+| Formal admin login | PASS |
+| Enterprise Organization | PASS |
+| MDM pages | PASS |
+| Sales Order pages | PASS |
+
+Operator PostgreSQL read-only evidence (canonical PG):
+
+| Check | Result |
+|---|---|
+| Formal Tenant Roles (3 system roles for `GULI`) | PASS |
+| RoleClaims count (12 MDM + 2 Sales + 8 Identity = 22) | PASS |
+| UserRoleAssignment (3 active assignments for `admin`) | PASS |
+| Browser smoke (Login + Organization + MDM + SalesOrder) | PASS |
+
+Agent Code-side verification (HEAD = `00f0566`, 0 file modification, 0 SQL DML, 0 INSERT):
+
+| Dimension | Result |
+|---|---|
+| Code-side Runtime Verification (Auth endpoint / /me DTO / Permission resolution / Policy mapping / API authorization / SPA route permission binding) | 10/10 PASS |
+| Build (7/7 suites) | PASS, 0 warnings, 0 errors |
+| InMemory API smoke (real `WebApplicationFactory<Program>` covering AuthenticationFacts 15 + CsrfFacts 6 + OrganizationTreeEndpointFacts 6 + MdmAuthorizationRegressionFacts 4 + SalesAuthorizationRegressionFacts 4 + EnterpriseRolePackCrossTenantFacts 3 + others ~10) | 54/54 PASS |
+| Permission Resolution (22 effective codes = 8 Identity + 12 MDM + 2 Sales) | PASS |
+| Cross-Tenant NormalizedName Provisioner diagnostic capture (no throw, no catch-23505) | PASS |
+| Migration `20260823090247_RoleNameIndexToTenantScope` code-side | PASS |
+
+Honest disclosure:
+
+- DATABASE_ACCESS_UNAVAILABLE for Agent session (no psql / no `ConnectionStrings__GuliERP` env). Real DB state was verified by Operator and reported PASS.
+- 9 PG-dependent tests in `GuliERP.Identity.IntegrationTests` (HiLo / FK / AuthorizationDataScope real-PostgreSQL) remain out of scope for this goal; Operator-side evidence above covers them.
+- No disposable test users (test_runtime_*) created per Lite scope; no INSERT / no UPDATE / no DELETE on business data.
+- SalesOrder UI baseline discrepancy is documented in `GULIERP_SALESORDER_UI_BASELINE_DISCREPANCY_NOTE.md` (5 HIGH + 6 MEDIUM + 3 LOW deltas vs G1B-1 prototype). NOT in this goal scope; deferred to `GULIERP_SALES_ORDER_UI_REBASE_001`.
+
+Final closure state:
+
+| Item | Value |
+|---|---|
+| Gate | `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_VERIFIED` |
+| Goal status | CLOSED |
+| Next goal (recommended) | `GULIERP_SALES_ORDER_UI_REBASE_001` (UI baseline rebase per G1B-1 prototype) |
+| HEAD at closure | `00f0566` (this turn adds 1 commit for documentation: TBD) |
+| Code modifications | 0 |
+| Database modifications | 0 |
+| Admin.NET modifications | 0 |
+| Identity / Role / Permission modifications | 0 |
 
 ## Modified Files
 
