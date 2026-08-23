@@ -514,7 +514,7 @@ Historical dirty/WIP files are intentionally not included.
 
 - `feat(identity): implement formal enterprise bootstrap foundation`
 - `fix(identity): align organization migration snapshot` (`eabed46`)
-- pending: formal residue diagnostic commit reported in delivery output.
+- `feat(identity): add formal bootstrap residue diagnostic` (`74b439f`)
 - pending: report evidence commit reported in delivery output.
 
 ## Unfinished Content
