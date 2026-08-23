@@ -2,7 +2,7 @@
 
 ## Gate
 
-Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_BUSINESS_ROLE_PACK_CODE_READY_OPERATOR_APPLY_PENDING`
+Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_BUSINESS_ROLE_PACK_CODE_VERIFIED_OPERATOR_APPLY_PENDING` (the canonical PostgreSQL still needs the Operator to run `--ensure-formal-enterprise-business-role-pack GULI GULI001 admin` to upgrade to `..._BUSINESS_ROLE_PACK_VERIFIED`)
 
 Start HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`
 
@@ -665,9 +665,11 @@ Not performed yet:
 - Formal admin has not yet logged out/relogged after role pack application.
 - MDM/Sales browser Runtime for formal `admin` remains pending.
 
-Current gate:
+Current gate after the role pack code commit (re-confirmed after 7/7 test suites PASS at 8a7383f):
 
-`GULIERP_ENTERPRISE_BOOTSTRAP_001_BUSINESS_ROLE_PACK_CODE_READY_OPERATOR_APPLY_PENDING`
+`GULIERP_ENTERPRISE_BOOTSTRAP_001_BUSINESS_ROLE_PACK_CODE_VERIFIED_OPERATOR_APPLY_PENDING`
+
+The gate is NOT yet `..._BUSINESS_ROLE_PACK_VERIFIED` because the canonical PostgreSQL has not been written by the Operator yet (env `ConnectionStrings__GuliERP` was not set in this Agent session and the user did not provide it via a safe channel).
 
 ## Modified Files
 
@@ -712,15 +714,19 @@ Historical dirty/WIP files are intentionally not included.
 - `docs(verification): record formal residue diagnostic commit` (`da51747`)
 - `fix(identity): correct formal bootstrap residue diagnostics` (`5adfe47`)
 - `docs(verification): record formal residue diagnostic pass` (`e4b444a`)
-- pending: formal admin business role pack code/report commits reported in delivery output.
+- `feat(identity): add formal enterprise business role pack provisioning` (`6f9ea36`)
+- `docs(identity): record enterprise bootstrap business role pack verification` (`8a7383f`)
+- pending: operator execution of `--ensure-formal-enterprise-business-role-pack GULI GULI001 admin` with the canonical GULI PostgreSQL connection string set in `ConnectionStrings__GuliERP` env var.
 
 ## Unfinished Content
 
 - Formal tenant/company/admin bootstrap completed; read-only residue diagnostic PASS with `NO_PARTIAL_BOOTSTRAP_RESIDUE`.
 - Formal admin business role pack code is ready; canonical DB application is pending Operator execution.
+- `GuliERP.Identity.Tests` (22/22), `GuliERP.Identity.Bootstrap.Tests` (64/64), focused `GuliERP.Identity.IntegrationTests` filter (`EnterpriseBootstrapAndOrganizationTreeFacts|MdmAuthorizationRegressionFacts|SalesAuthorizationRegressionFacts`, 28/28), `GuliERP.Api.Tests` (32/32), `GuliERP.Mdm.Tests` (67/67 with isolated `--artifacts-path` under Temp) and `GuliERP.Sales.Tests` (9/9 with isolated `--artifacts-path` under Temp) all PASS on `master@8a7383f` after a clean Bootstrap tool `Release` build (0 warnings, 0 errors).
 - Browser runtime verification is pending role pack application, formal admin logout/relogin, MDM/Sales validation and business-user creation.
 - PostgreSQL integration suites that require Operator credentials remain runtime pending.
+- Working tree is dirty with pre-existing agent-helper files (`.gitignore`, `GULIERP_SALES_001_RUNTIME_REGRESSION_REPAIR_REPORT.md`, `tools/dev/diagnose-operator-user.ps1`, `tools/dev/g2-004-operator-evidence.ps1`) that are NOT part of the Enterprise Bootstrap 001 scope and were intentionally left untouched per the 'do not enlarge scope' rule.
 
 ## Next Suggested Goal
 
-After fixing the local .NET SDK workload locator issue and running the formal bootstrap, perform runtime verification for formal admin, formal business user, MDM/Sales access and logout.
+Operator runs `--ensure-formal-enterprise-business-role-pack GULI GULI001 admin` (with `ConnectionStrings__GuliERP` set to the canonical GULI PostgreSQL connection string) and posts the CLI stdout. After PASS, formal admin performs a logout/relogin and then we enter the runtime verification phase: formal admin to MDM pages, Sales pages, business-user creation, and the P6-J-style coverage matrix.
