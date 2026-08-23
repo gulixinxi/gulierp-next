@@ -6,7 +6,7 @@ Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_SCHEMA_DRIFT_HARD_STOP`
 
 Start HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`
 
-Latest code-fix HEAD: `acaf03dd747bf85a6f2f49e75d45d4b55698e0e6`
+Latest code-fix HEAD: `eabed46`
 
 Final report commit SHA is reported in the delivery output.
 
@@ -362,6 +362,46 @@ Do not paste passwords into chat, logs, reports or command history.
 
 Restore note: initial restore attempts were blocked by transient `NU1900` vulnerability feed access to `https://api.nuget.org/v3/index.json`. Verification commands were rerun with `NuGetAudit=false` and isolated artifacts to avoid network volatility and running API DLL locks.
 
+## 2026-08-23 Migration Alignment Follow-Up
+
+Operator reran the safe canonical Identity migration command from a fresh PowerShell 7.6.0 session. The DB target guard passed for `Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=***`, and `dotnet ef migrations list` showed:
+
+- `20260819150708_G2003_InitializeIdentitySchema`
+- `20260819162500_G2003V2_AddIdentityReferentialIntegrity`
+- `20260820100503_IDGEN001_PostgresHiLo`
+- `20260822090000_G2EnterpriseOrganizationFoundation (Pending)`
+
+Applying the chain then failed before writing schema changes with EF Core `PendingModelChangesWarning`: the repository model for `IdentityDbContext` had pending changes relative to `IdentityDbContextModelSnapshot`.
+
+Root cause refinement:
+
+- Canonical DB is still missing `20260822090000_G2EnterpriseOrganizationFoundation`, which explains the original `identity.gulierp_plant."IsDefault"` runtime failure.
+- EF also detected a model/snapshot alignment delta before it would apply pending migrations.
+- A generated probe showed the only model delta was removal of the redundant single-column employee index `IX_gulierp_employee_CompanyId`; the composite unique index `ux_gulierp_employee_company_no` remains.
+
+Code repair:
+
+- Added migration `20260823020050_G2EnterpriseOrganizationSchemaAlignment`.
+- `Up` drops only `identity.gulierp_employee` index `IX_gulierp_employee_CompanyId`.
+- `Down` recreates only that same index.
+- No tables, columns, formal tenant/company/user rows, migrations history rows, passwords, hashes, tokens or cookies were changed by this repository repair.
+
+Verification after alignment:
+
+- `dotnet --version`: PASS, `10.0.400`
+- Isolated solution build: PASS, `0 warnings`, `0 errors`
+  - artifacts: `C:\Users\Administrator\AppData\Local\Temp\gulierp-schema-alignment-test-3e541f976d7c436a839bb8e85e9809ed`
+- `dotnet ef migrations has-pending-model-changes` with `tools/GuliERP.Identity.Bootstrap` startup project, Release, `--no-build`: PASS, `No changes have been made to the model since the last migration.`
+- `GuliERP.Identity.Tests`: PASS, `22/22`
+- `GuliERP.Identity.Bootstrap.Tests`: PASS, `55/55`
+- Focused `GuliERP.Identity.IntegrationTests` excluding the explicit real-PostgreSQL operator evidence case: PASS, `47/47`
+- Real PostgreSQL `ICompanySwitchingService_ResolveDefault_No_Membership_Returns_Null`: Operator DB Evidence Pending; requires the local secure connection environment and was not run in chat.
+- scoped `git diff --check` for migration/snapshot files: PASS
+
+Current gate remains `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_SCHEMA_DRIFT_HARD_STOP` until the updated HEAD is used to apply the canonical Identity migration chain. Formal Enterprise Bootstrap must not be rerun before that.
+
+Corrected Operator migration command must use the Bootstrap startup project rather than the running API startup output, so it does not depend on a locked or stale API DLL.
+
 ## Modified Files
 
 Core files intended for this Goal:
@@ -380,6 +420,9 @@ Core files intended for this Goal:
 - `modules/identity/GuliERP.Identity.Infrastructure/DependencyInjection.cs`
 - `modules/identity/GuliERP.Identity.Infrastructure/EnterpriseOrganization/EnterpriseBootstrapService.cs`
 - `modules/identity/GuliERP.Identity.Infrastructure/EnterpriseOrganization/EnterpriseOrganizationAdminService.cs`
+- `modules/identity/GuliERP.Identity.Infrastructure/Migrations/20260823020050_G2EnterpriseOrganizationSchemaAlignment.cs`
+- `modules/identity/GuliERP.Identity.Infrastructure/Migrations/20260823020050_G2EnterpriseOrganizationSchemaAlignment.Designer.cs`
+- `modules/identity/GuliERP.Identity.Infrastructure/Migrations/IdentityDbContextModelSnapshot.cs`
 - `tests/GuliERP.Api.Tests/SnowflakeLongJsonConverterFacts.cs`
 - `tests/GuliERP.Identity.IntegrationTests/EnterpriseBootstrapAndOrganizationTreeFacts.cs`
 - `tests/GuliERP.Identity.IntegrationTests/OrganizationTreeEndpointFacts.cs`
@@ -396,7 +439,8 @@ Historical dirty/WIP files are intentionally not included.
 ## Commits
 
 - `feat(identity): implement formal enterprise bootstrap foundation`
-- pending: test/report fix commit reported in delivery output.
+- `fix(identity): align organization migration snapshot` (`eabed46`)
+- pending: report evidence commit reported in delivery output.
 
 ## Unfinished Content
 
