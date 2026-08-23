@@ -2,7 +2,7 @@
 
 ## Gate
 
-Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_SCHEMA_REPAIR_READY_OPERATOR_DB_UPGRADE_PENDING` (the schema repair migration is committed but NOT yet applied to the canonical PostgreSQL; Operator must run `dotnet ef database update` against the canonical PostgreSQL to apply migration `20260823090247_RoleNameIndexToTenantScope`, then `--ensure-formal-enterprise-business-role-pack GULI GULI001 admin` will succeed)
+Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_BUSINESS_ROLE_PACK_VERIFIED` (Operator Apply confirmed at 2026-08-23: `ok=true`, `tenantId=83727350616817890`, `companyId=83727350616817891`, `userId=83727350616817894`, `mdmRoleCreated=true`, `salesRoleCreated=true`, `mdmClaimsCreated=12`, `salesClaimsCreated=2`, `mdmAssignmentCreated=true`, `salesAssignmentCreated=true`, `rolePackStatus=FORMAL_ENTERPRISE_BUSINESS_ROLE_PACK_APPLIED`). The next gate is `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_VERIFIED` which requires formal admin browser Runtime validation; that is explicitly out of this Goal scope and deferred to a future operator UI validation phase.)
 
 Start HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`
 
@@ -715,6 +715,54 @@ The gate is NOT yet `..._BUSINESS_ROLE_PACK_VERIFIED` because:
 - The canonical PostgreSQL still needs the migration to be applied.
 - After migration: `--ensure-formal-enterprise-business-role-pack GULI GULI001 admin` must run successfully.
 - After that: formal admin logout/relogin and browser validation.
+
+
+## 2026-08-23 Operator Apply Success — Gate CLOSED
+
+Operator ran:
+
+`--ensure-formal-enterprise-business-role-pack GULI GULI001 admin`
+
+Confirmed stdout:
+
+```
+ok=true
+tenantId=83727350616817890
+companyId=83727350616817891
+userId=83727350616817894
+mdmRoleCreated=true
+salesRoleCreated=true
+mdmClaimsCreated=12
+salesClaimsCreated=2
+mdmAssignmentCreated=true
+salesAssignmentCreated=true
+rolePackStatus=FORMAL_ENTERPRISE_BUSINESS_ROLE_PACK_APPLIED
+```
+
+Implications:
+
+- Formal Tenant `GULI` (`83727350616817890`) now has all 3 system roles: `ERP_SYSTEM_ADMIN` + `ERP_MDM_OPERATOR` + `ERP_SALES_OPERATOR`.
+- Formal Company `GULI001` (`83727350616817891`) is the Company-scoped target for all 3 active `gulierp_user_role_assignment` rows.
+- Formal Admin User `admin` (`83727350616817894`) has 3 active Company-scoped Assignments, all with `Status = Active`.
+- `ERP_MDM_OPERATOR` carries the canonical 12 MDM permissions (uom / item-category / item / business-partner / warehouse / location × read+manage).
+- `ERP_SALES_OPERATOR` carries the canonical 2 Sales permissions (`sales.order.read`, `sales.order.manage`).
+- `ERP_SYSTEM_ADMIN` carries the canonical 8 Identity administration permissions (unchanged, isolated from business roles).
+- The cross-tenant `NormalizedName` reuse is now structurally allowed: Formal Tenant `83727350616817890` and historical Tenant `83726107798405120` both own `ERP MDM OPERATOR` and `ERP SALES OPERATOR`; the new per-tenant composite UNIQUE index enforces `(TenantId, NormalizedName)` uniqueness, not global uniqueness.
+- Schema Repair migration `20260823090247_RoleNameIndexToTenantScope` was successfully applied to the canonical PostgreSQL; the legacy GLOBAL UNIQUE `RoleNameIndex` was dropped, the new composite UNIQUE `ux_gulierp_role_tenant_normalizedname (TenantId, NormalizedName)` is in place. The pre-existing `ux_gulierp_role_tenant_code (TenantId, Code)` is preserved.
+
+Not performed in this Goal (deferred):
+
+- Formal admin browser Runtime validation (logout/relogin + 6 master-data pages + Sales order pages) — requires Operator UI interaction; out of this Goal scope.
+- `83726107798405120` historical Tenant governance (audit + retention decision) — independent concern; deferred to a separate治理 PoC.
+- Admin.NET Core source diff = 0 throughout.
+- The 9 PG-dependent tests in `GuliERP.Identity.IntegrationTests` (HiLo / FK / AuthorizationDataScope) remain Operator-required and not part of the agent-side 225/225 PASS count. They were excluded from the focused filter `EnterpriseBootstrapAndOrganizationTreeFacts|MdmAuthorizationRegressionFacts|SalesAuthorizationRegressionFacts` and were not re-evaluated in this Apply cycle.
+
+Next mainline (Operator-initiated, NOT agent-driven):
+
+1. Operator logs out of formal `admin` UI session and re-logs in to pick up the new role claims.
+2. Operator opens the 6 MDM pages (UOM, ItemCategory, Item, BusinessPartner, Warehouse, Location) and verifies 200 OK + correct data scope.
+3. Operator opens the Sales order pages and verifies 200 OK + correct data scope.
+4. On all 3 success, gate advances to `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_VERIFIED` and the P6-J-style coverage matrix is complete.
 
 ## Modified Files
 
