@@ -411,44 +411,21 @@ function exportData() {
 </script>
 
 <style scoped>
-.mdm-list {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.mdm-code {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-weight: 600;
-  color: var(--primary-default, #0284C7);
-}
+/* GULIERP_PAGE_THEME_AUDIT_001 / Phase 1 (2026-08-23).
+   .mdm-list, .mdm-code, .mdm-detail-title, .mdm-detail-name,
+   .mdm-error-banner are shared (see design-system/components/mdm-page.css).
+   Page-specific accents (tree indent, path label) stay here. */
 .mdm-cat-name {
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 .mdm-indent-icon {
-  color: var(--text-muted, #64748B);
+  color: var(--text-muted);
   font-size: 12px;
 }
 .mdm-path {
-  color: var(--text-secondary, #334155);
+  color: var(--text-secondary);
   font-size: 13px;
-}
-.mdm-detail-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.mdm-detail-name {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary, #0F172A);
-}
-.mdm-error-banner {
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  background: var(--bg-surface, #FFF);
-  border-top: 1px solid var(--border-subtle, #E2E8F0);
 }
 </style>

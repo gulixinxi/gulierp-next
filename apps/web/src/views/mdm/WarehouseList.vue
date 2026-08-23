@@ -459,50 +459,23 @@ function exportData() {
 </script>
 
 <style scoped>
-.mdm-list {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.mdm-code {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-weight: 600;
-  color: var(--primary-default, #0284C7);
-}
+/* GULIERP_PAGE_THEME_AUDIT_001 / Phase 1 (2026-08-23).
+   .mdm-list, .mdm-code, .mdm-detail-title, .mdm-detail-name,
+   .mdm-error-banner, :deep(.mdm-action-sep) are shared
+   (see design-system/components/mdm-page.css).
+   Page-specific: the warehouse context bar (current warehouse label). */
 .mdm-context-bar {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
   font-size: 13px;
-  color: var(--text-muted, #64748B);
-  background: var(--bg-surface, #FFF);
-  border-bottom: 1px solid var(--border-subtle, #E2E8F0);
+  color: var(--text-muted);
+  background: var(--bg-container);
+  border-bottom: 1px solid var(--border-subtle);
 }
 .mdm-context-hint {
   font-size: 12px;
-  color: var(--text-disabled, #94A3B8);
-}
-.mdm-detail-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.mdm-detail-name {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary, #0F172A);
-}
-.mdm-error-banner {
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  background: var(--bg-surface, #FFF);
-  border-top: 1px solid var(--border-subtle, #E2E8F0);
-}
-:deep(.mdm-action-sep) {
-  color: var(--border-subtle, #E2E8F0);
-  margin: 0 2px;
+  color: var(--text-disabled);
 }
 </style>

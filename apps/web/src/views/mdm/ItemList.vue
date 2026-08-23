@@ -524,29 +524,12 @@ function exportData() {
 </script>
 
 <style scoped>
-.mdm-list {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.mdm-code {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-weight: 600;
-  color: var(--primary-default, #0284C7);
-}
-.mdm-detail-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.mdm-detail-name {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary, #0F172A);
-}
+/* GULIERP_PAGE_THEME_AUDIT_001 / Phase 1 (2026-08-23).
+   .mdm-list, .mdm-code, .mdm-detail-title, .mdm-detail-name,
+   .mdm-error-banner are shared (see design-system/components/mdm-page.css).
+   Page-specific accents stay here (ItemList has extra spec / tabs). */
 .mdm-detail-spec {
-  color: var(--text-muted, #64748B);
+  color: var(--text-muted);
   font-size: 13px;
 }
 .mdm-detail-tabs {
@@ -558,16 +541,9 @@ function exportData() {
   align-items: center;
   gap: 8px;
   padding: 24px 0;
-  color: var(--text-muted, #64748B);
+  color: var(--text-muted);
 }
 .mdm-tab-placeholder p {
   font-size: 13px;
-}
-.mdm-error-banner {
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  background: var(--bg-surface, #FFF);
-  border-top: 1px solid var(--border-subtle, #E2E8F0);
 }
 </style>

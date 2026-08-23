@@ -12,6 +12,7 @@
 @import './design-system/components/table.css';
 @import './design-system/components/form.css';
 @import './design-system/components/document.css';
+@import './design-system/components/mdm-page.css';
 
 * { box-sizing: border-box; }
 

@@ -1,0 +1,87 @@
+/* GuliERP Design System — MDM Page (shared)
+   ----------------------------------------------------------------------------------
+   GULIERP_PAGE_THEME_AUDIT_001 (2026-08-23, Phase 1 = MDM).
+
+   Page-level styles shared by every MDM list page (BusinessPartner,
+   ItemCategory, Item, Location, Uom, Warehouse). Before this file
+   existed, each page duplicated a small <style scoped> block with the
+   same 5-7 rules and the same STALE hex fallbacks (e.g.
+   `var(--primary-default, #0284C7)` — the V1 blue, NOT the Fiori
+   #0A6ED1). The fallbacks were unreachable in practice (the actual
+   tokens already hold the new values), but they violated the design
+   system rule: "no hard-coded color in a page file".
+
+   This file:
+   - Centralizes the common rules so a future token rename only needs
+     one edit, not six.
+   - Uses ONLY semantic tokens; no hex fallbacks.
+   - Lives in the design system, so adding a new MDM page gets the
+     shared rules for free.
+
+   Per-page accents (ItemCategory tree indents, UoM symbol hint,
+   Warehouse context bar) stay in the page's <style scoped> block —
+   they are page-specific, not a shared pattern.
+   ---------------------------------------------------------------------------------- */
+
+:root {
+  /* — Page bg + canvas (locked to the design system spec). — */
+  --mdm-page-bg:           var(--bg-container);                /* #FFFFFF */
+  --mdm-page-text:         var(--text-primary);                /* #1D2D3E */
+  --mdm-page-text-muted:   var(--text-muted);                  /* #6B7C8C */
+  --mdm-page-text-disabled: var(--text-disabled);               /* #A0AEC0 */
+  --mdm-page-border:       var(--border-subtle);               /* #E5EBF0 */
+  --mdm-page-primary:      var(--primary-default);             /* #0A6ED1 */
+  --mdm-page-primary-bg:   var(--primary-bg);                  /* #F2F8FC */
+}
+
+/* — Page root: full-height flex column. The page sets its own inner
+     padding; this only controls the container shape. — */
+.mdm-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--mdm-page-bg);
+  color: var(--mdm-page-text);
+}
+
+/* — Code column (monospace, primary color). All MDM list pages have
+     a "code" column (BENG, CUST-0001, ITEM-0001, WH-01, LOC-01, …)
+     and the operator expects it to read as the row's identity anchor. — */
+.mdm-code {
+  font-family: ui-monospace, SFMono-Regular, 'Fira Code', Consolas, monospace;
+  font-weight: 600;
+  color: var(--mdm-page-primary);
+  letter-spacing: 0.2px;
+}
+
+/* — Detail drawer header (used by all MDM detail drawers). — */
+.mdm-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.mdm-detail-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--mdm-page-text);
+  line-height: 1.3;
+}
+
+/* — Error banner (shown when the list page hits an API error other
+     than authentication_required). The banner sits BELOW the table. — */
+.mdm-error-banner {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--mdm-page-bg);
+  border-top: 1px solid var(--mdm-page-border);
+}
+
+/* — Action separator inside row action clusters. The MdmTableRowActions
+     component renders "编辑 | 停用" with a vertical bar. The bar color
+     is the page border, not the text color. — */
+:deep(.mdm-action-sep) {
+  color: var(--mdm-page-border);
+  margin: 0 2px;
+}
