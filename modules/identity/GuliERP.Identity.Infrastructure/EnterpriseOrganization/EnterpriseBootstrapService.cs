@@ -291,6 +291,14 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
             adminRole.Id,
             now,
             ct);
+        var businessRolePack = await new EnterpriseBusinessRolePackProvisioner(_db)
+            .EnsureInitialAdminBusinessRolePackAsync(
+                tenant.Id,
+                company.Id,
+                adminUser.Id,
+                now,
+                ct);
+        created = created || !businessRolePack.Idempotent;
         await _db.SaveChangesAsync(ct);
 
         await tx.CommitAsync(ct);

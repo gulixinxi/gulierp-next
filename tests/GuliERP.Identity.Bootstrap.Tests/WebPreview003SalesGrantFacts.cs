@@ -25,12 +25,14 @@ public sealed class WebPreview003SalesGrantFacts
     {
         var bootstrapSrc = File.ReadAllText(
             @"D:\guli\projects\gulierp-next\tools\GuliERP.Identity.Bootstrap\Program.cs");
+        var rolePackSrc = File.ReadAllText(
+            @"D:\guli\projects\gulierp-next\modules\identity\GuliERP.Identity.Application\Authorization\EnterpriseBusinessRolePacks.cs");
 
         Assert.Contains("--grant-sales-operator", bootstrapSrc);
-        Assert.Contains("\"ERP_SALES_OPERATOR\"", bootstrapSrc);
+        Assert.Contains("\"ERP_SALES_OPERATOR\"", rolePackSrc);
 
-        var grantRegion = ExtractSalesClaimsRegion(bootstrapSrc);
-        Assert.False(string.IsNullOrEmpty(grantRegion), "Sales claims region not found in Program.cs");
+        var grantRegion = ExtractSalesClaimsRegion(rolePackSrc);
+        Assert.False(string.IsNullOrEmpty(grantRegion), "Sales claims region not found in EnterpriseBusinessRolePacks.cs");
 
         foreach (var code in ExpectedSalesPermissionCodes)
         {
@@ -48,8 +50,8 @@ public sealed class WebPreview003SalesGrantFacts
 
     private static string ExtractSalesClaimsRegion(string src)
     {
-        const string Start = "var salesPermissionCodes = new[]";
-        const string End = "sales.order.manage\",";
+        const string Start = "public static readonly EnterpriseBusinessRolePack SalesOperator";
+        const string End = "\"sales.order.manage\",";
         var i = src.IndexOf(Start, System.StringComparison.Ordinal);
         if (i < 0) { return string.Empty; }
         var j = src.IndexOf(End, i, System.StringComparison.Ordinal);

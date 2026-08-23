@@ -89,16 +89,19 @@ public sealed class WebPreview002MdmGrantFacts
         // whitelist (no wildcard is added).
         var bootstrapSrc = File.ReadAllText(
             @"D:\guli\projects\gulierp-next\tools\GuliERP.Identity.Bootstrap\Program.cs");
+        var rolePackSrc = File.ReadAllText(
+            @"D:\guli\projects\gulierp-next\modules\identity\GuliERP.Identity.Application\Authorization\EnterpriseBusinessRolePacks.cs");
 
-        // The 12 specific MDM codes appear in the tool.
+        // The 12 specific MDM codes appear in the shared role pack
+        // definition used by the tool and Formal Bootstrap.
         foreach (var code in ExpectedMdmPermissionCodes)
         {
-            Assert.Contains($"\"{code}\"", bootstrapSrc);
+            Assert.Contains($"\"{code}\"", rolePackSrc);
         }
 
         // No wildcard patterns inside the grant region.
-        var grantRegion = ExtractMdmClaimsRegion(bootstrapSrc);
-        Assert.False(string.IsNullOrEmpty(grantRegion), "MDM claims region not found in Program.cs");
+        var grantRegion = ExtractMdmClaimsRegion(rolePackSrc);
+        Assert.False(string.IsNullOrEmpty(grantRegion), "MDM claims region not found in EnterpriseBusinessRolePacks.cs");
         Assert.DoesNotContain("\"*\"",                grantRegion);
         Assert.DoesNotContain("\"mdm.*\"",            grantRegion);
         Assert.DoesNotContain("\"mdm.%\"",            grantRegion);
@@ -131,11 +134,14 @@ public sealed class WebPreview002MdmGrantFacts
         var bootstrapSrc = File.ReadAllText(
             @"D:\guli\projects\gulierp-next\tools\GuliERP.Identity.Bootstrap\Program.cs");
 
+        var rolePackSrc = File.ReadAllText(
+            @"D:\guli\projects\gulierp-next\modules\identity\GuliERP.Identity.Application\Authorization\EnterpriseBusinessRolePacks.cs");
+
         // The role code we add is exactly "ERP_MDM_OPERATOR".
-        Assert.Contains("\"ERP_MDM_OPERATOR\"", bootstrapSrc);
+        Assert.Contains("\"ERP_MDM_OPERATOR\"", rolePackSrc);
 
         // The grant region must NOT mention the 4 system role codes.
-        var grantRegion = ExtractMdmClaimsRegion(bootstrapSrc);
+        var grantRegion = ExtractMdmClaimsRegion(rolePackSrc);
         // The 4 system role codes may appear elsewhere in the file
         // (e.g. as constants or seed comments); the assertion scope
         // is the grant region only.
@@ -146,16 +152,16 @@ public sealed class WebPreview002MdmGrantFacts
     }
 
     /// <summary>
-    /// Returns the slice of Program.cs between the
-    /// <c>mdmPermissionCodes</c> variable declaration and the
+    /// Returns the slice of EnterpriseBusinessRolePacks.cs between the
+    /// MDM role pack declaration and the
     /// last MDM permission string. We use this to scope the
     /// "no wildcard" / "no non-MDM permission" assertions to the
     /// grant code, not the rest of the file.
     /// </summary>
     private static string ExtractMdmClaimsRegion(string src)
     {
-        const string Start = "var mdmPermissionCodes = new[]";
-        const string End = "mdm.location.manage\",";
+        const string Start = "public static readonly EnterpriseBusinessRolePack MdmOperator";
+        const string End = "\"mdm.location.manage\",";
         var i = src.IndexOf(Start, System.StringComparison.Ordinal);
         if (i < 0) { return string.Empty; }
         var j = src.IndexOf(End, i, System.StringComparison.Ordinal);

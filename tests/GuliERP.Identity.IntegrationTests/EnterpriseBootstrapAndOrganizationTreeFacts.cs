@@ -2,6 +2,7 @@ using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Application.EnterpriseOrganization;
 using GuliERP.Identity.Application.Authorization;
 using GuliERP.Identity.Domain.Entities;
+using GuliERP.Identity.Domain.Enums;
 using GuliERP.Identity.Infrastructure.Contexts;
 using GuliERP.Identity.Infrastructure.EnterpriseOrganization;
 using GuliERP.Identity.Infrastructure.Authorization;
@@ -237,14 +238,190 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
             .Where(c => c.RoleId == role.Id && c.ClaimType == GuliErpPermissionClaimTypes.Permission)
             .Select(c => c.ClaimValue)
             .ToListAsync();
-        var assignment = await db.UserRoleAssignments.SingleAsync();
+        var assignment = await db.UserRoleAssignments.SingleAsync(a => a.RoleId == role.Id);
 
-        Assert.Contains(GuliErpPermissions.IdentityOrganizationRead, permissions);
-        Assert.Contains(GuliErpPermissions.IdentityOrganizationManage, permissions);
-        Assert.Contains(GuliErpPermissions.IdentityUserManage, permissions);
+        Assert.Equal(
+            GuliErpPermissions.EnterpriseSystemAdminPermissions.OrderBy(p => p),
+            permissions.OrderBy(p => p));
         Assert.Equal(result.AdminUserId, assignment.UserId);
         Assert.Equal(result.CompanyId, assignment.CompanyId);
         Assert.Equal(role.Id, assignment.RoleId);
+    }
+
+    [Fact]
+    public async Task CreateEnterpriseBootstrap_Creates_Independent_Business_Role_Packs_For_Admin()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var bootstrap = sp.GetRequiredService<IEnterpriseBootstrapService>();
+
+        var result = await bootstrap.CreateEnterpriseBootstrapAsync(
+            new CreateEnterpriseBootstrapRequest(
+                "GULI",
+                "Guli Machinery",
+                "GULI",
+                "Guli Machinery",
+                "owner",
+                "Owner Admin",
+                "CorrectHorse!2026"));
+
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var roles = await db.Roles.ToListAsync();
+        var systemAdmin = Assert.Single(roles, r => r.Code == "ERP_SYSTEM_ADMIN");
+        var mdm = Assert.Single(roles, r => r.Code == EnterpriseBusinessRolePacks.MdmOperatorRoleCode);
+        var sales = Assert.Single(roles, r => r.Code == EnterpriseBusinessRolePacks.SalesOperatorRoleCode);
+
+        await AssertRolePermissionsAsync(
+            db,
+            systemAdmin.Id,
+            GuliErpPermissions.EnterpriseSystemAdminPermissions);
+        await AssertRolePermissionsAsync(
+            db,
+            mdm.Id,
+            EnterpriseBusinessRolePacks.MdmOperator.Permissions);
+        await AssertRolePermissionsAsync(
+            db,
+            sales.Id,
+            EnterpriseBusinessRolePacks.SalesOperator.Permissions);
+
+        var assignments = await db.UserRoleAssignments
+            .Where(a => a.UserId == result.AdminUserId)
+            .ToListAsync();
+        Assert.Equal(3, assignments.Count);
+        Assert.All(assignments, a =>
+        {
+            Assert.Equal(result.TenantId, a.TenantId);
+            Assert.Equal(result.CompanyId, a.CompanyId);
+            Assert.Equal(AssignmentStatus.Active, a.Status);
+        });
+        Assert.Contains(assignments, a => a.RoleId == systemAdmin.Id);
+        Assert.Contains(assignments, a => a.RoleId == mdm.Id);
+        Assert.Contains(assignments, a => a.RoleId == sales.Id);
+    }
+
+    [Fact]
+    public async Task CreateEnterpriseBootstrap_Repeated_Run_Does_Not_Duplicate_Business_Role_Pack()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var bootstrap = scope.ServiceProvider.GetRequiredService<IEnterpriseBootstrapService>();
+        var request = new CreateEnterpriseBootstrapRequest(
+            "GULI",
+            "Guli Machinery",
+            "GULI",
+            "Guli Machinery",
+            "owner",
+            "Owner Admin",
+            "CorrectHorse!2026");
+
+        await bootstrap.CreateEnterpriseBootstrapAsync(request);
+        var second = await bootstrap.CreateEnterpriseBootstrapAsync(request);
+
+        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        Assert.False(second.Created);
+        Assert.Equal(3, await db.Roles.CountAsync());
+        Assert.Equal(22, await db.RoleClaims.CountAsync(c => c.ClaimType == GuliErpPermissionClaimTypes.Permission));
+        Assert.Equal(3, await db.UserRoleAssignments.CountAsync());
+    }
+
+    [Fact]
+    public async Task ExistingEnterpriseEnsure_Creates_Missing_Business_Roles_And_Is_Idempotent()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var result = await BootstrapAndRemoveBusinessRolesAsync(sp);
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var provisioner = new EnterpriseBusinessRolePackProvisioner(db);
+
+        var first = await provisioner.EnsureInitialAdminBusinessRolePackAsync(
+            result.TenantId,
+            result.CompanyId,
+            result.AdminUserId,
+            DateTimeOffset.UtcNow);
+        var second = await provisioner.EnsureInitialAdminBusinessRolePackAsync(
+            result.TenantId,
+            result.CompanyId,
+            result.AdminUserId,
+            DateTimeOffset.UtcNow);
+
+        Assert.False(first.Idempotent);
+        Assert.True(first.Mdm.RoleCreated);
+        Assert.True(first.Sales.RoleCreated);
+        Assert.True(first.Mdm.AssignmentCreated);
+        Assert.True(first.Sales.AssignmentCreated);
+        Assert.Equal(EnterpriseBusinessRolePacks.MdmOperator.Permissions.Count, first.Mdm.ClaimsCreated.Count);
+        Assert.Equal(EnterpriseBusinessRolePacks.SalesOperator.Permissions.Count, first.Sales.ClaimsCreated.Count);
+        Assert.True(second.Idempotent);
+        Assert.Equal(3, await db.Roles.CountAsync());
+        Assert.Equal(22, await db.RoleClaims.CountAsync(c => c.ClaimType == GuliErpPermissionClaimTypes.Permission));
+        Assert.Equal(3, await db.UserRoleAssignments.CountAsync());
+    }
+
+    [Fact]
+    public async Task ExistingEnterpriseEnsure_Backfills_Missing_Expected_Claims()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var result = await BootstrapAndRemoveBusinessRolesAsync(sp);
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var provisioner = new EnterpriseBusinessRolePackProvisioner(db);
+        await provisioner.EnsureInitialAdminBusinessRolePackAsync(
+            result.TenantId,
+            result.CompanyId,
+            result.AdminUserId,
+            DateTimeOffset.UtcNow);
+
+        var mdmRole = await db.Roles.SingleAsync(r => r.Code == EnterpriseBusinessRolePacks.MdmOperatorRoleCode);
+        var claim = await db.RoleClaims.SingleAsync(c =>
+            c.RoleId == mdmRole.Id
+            && c.ClaimValue == EnterpriseBusinessRolePacks.MdmOperator.Permissions[0]);
+        db.RoleClaims.Remove(claim);
+        await db.SaveChangesAsync();
+
+        var backfill = await provisioner.EnsureInitialAdminBusinessRolePackAsync(
+            result.TenantId,
+            result.CompanyId,
+            result.AdminUserId,
+            DateTimeOffset.UtcNow);
+
+        Assert.Equal(new[] { EnterpriseBusinessRolePacks.MdmOperator.Permissions[0] }, backfill.Mdm.ClaimsCreated);
+        await AssertRolePermissionsAsync(db, mdmRole.Id, EnterpriseBusinessRolePacks.MdmOperator.Permissions);
+    }
+
+    [Fact]
+    public async Task ExistingEnterpriseEnsure_Stops_When_Role_Has_Unexpected_Wildcard()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var result = await BootstrapAndRemoveBusinessRolesAsync(sp);
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var provisioner = new EnterpriseBusinessRolePackProvisioner(db);
+        await provisioner.EnsureInitialAdminBusinessRolePackAsync(
+            result.TenantId,
+            result.CompanyId,
+            result.AdminUserId,
+            DateTimeOffset.UtcNow);
+
+        var mdmRole = await db.Roles.SingleAsync(r => r.Code == EnterpriseBusinessRolePacks.MdmOperatorRoleCode);
+        db.RoleClaims.Add(new IdentityRoleClaim<long>
+        {
+            RoleId = mdmRole.Id,
+            ClaimType = GuliErpPermissionClaimTypes.Permission,
+            ClaimValue = "*",
+        });
+        await db.SaveChangesAsync();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await provisioner.EnsureInitialAdminBusinessRolePackAsync(
+                result.TenantId,
+                result.CompanyId,
+                result.AdminUserId,
+                DateTimeOffset.UtcNow));
+        Assert.Contains("unexpected permission claims", ex.Message);
     }
 
     [Fact]
@@ -393,6 +570,52 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         services.AddScoped<IOrganizationTreeService, OrganizationTreeService>();
         services.AddScoped<IEnterpriseOrganizationAdminService, EnterpriseOrganizationAdminService>();
         return services.BuildServiceProvider(validateScopes: true);
+    }
+
+    private static async Task AssertRolePermissionsAsync(
+        IdentityDbContext db,
+        long roleId,
+        IReadOnlyList<string> expected)
+    {
+        var permissions = await db.RoleClaims
+            .Where(c => c.RoleId == roleId && c.ClaimType == GuliErpPermissionClaimTypes.Permission)
+            .Select(c => c.ClaimValue)
+            .ToListAsync();
+
+        Assert.Equal(expected.OrderBy(p => p), permissions.OrderBy(p => p));
+    }
+
+    private static async Task<EnterpriseBootstrapResult> BootstrapAndRemoveBusinessRolesAsync(
+        IServiceProvider sp)
+    {
+        var bootstrap = sp.GetRequiredService<IEnterpriseBootstrapService>();
+        var result = await bootstrap.CreateEnterpriseBootstrapAsync(
+            new CreateEnterpriseBootstrapRequest(
+                "GULI",
+                "Guli Machinery",
+                "GULI",
+                "Guli Machinery",
+                "owner",
+                "Owner Admin",
+                "CorrectHorse!2026"));
+
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var businessRoleIds = await db.Roles
+            .Where(r => r.Code == EnterpriseBusinessRolePacks.MdmOperatorRoleCode
+                || r.Code == EnterpriseBusinessRolePacks.SalesOperatorRoleCode)
+            .Select(r => r.Id)
+            .ToArrayAsync();
+        db.UserRoleAssignments.RemoveRange(
+            db.UserRoleAssignments.Where(a => businessRoleIds.Contains(a.RoleId)));
+        db.RoleClaims.RemoveRange(
+            db.RoleClaims.Where(c => businessRoleIds.Contains(c.RoleId)));
+        db.Roles.RemoveRange(
+            db.Roles.Where(r => businessRoleIds.Contains(r.Id)));
+        await db.SaveChangesAsync();
+
+        Assert.Single(await db.Roles.ToListAsync());
+        Assert.Single(await db.UserRoleAssignments.ToListAsync());
+        return result;
     }
 
     private static string FindRepoFile(params string[] segments)

@@ -82,6 +82,7 @@ public static class Program
     public const string MarkerPrefix = "test_operator_";
     public const string ConnectionStringFromEnvironment = "--connection-string-from-env";
     public const string DiagnoseFormalEnterpriseBootstrap = "--diagnose-formal-enterprise-bootstrap";
+    public const string EnsureFormalEnterpriseBusinessRolePack = "--ensure-formal-enterprise-business-role-pack";
     public const string NoPartialBootstrapResidue = "NO_PARTIAL_BOOTSTRAP_RESIDUE";
     public const string PotentialPartialBootstrapResidueDetected = "POTENTIAL_PARTIAL_BOOTSTRAP_RESIDUE_DETECTED";
     public const long FormalTenantId = 83727350616817890;
@@ -151,6 +152,11 @@ public static class Program
         if (args.Length >= 1 && args[0] == DiagnoseFormalEnterpriseBootstrap)
         {
             return await RunDiagnoseFormalEnterpriseBootstrapAsync(args);
+        }
+
+        if (args.Length >= 1 && args[0] == EnsureFormalEnterpriseBusinessRolePack)
+        {
+            return await RunEnsureFormalEnterpriseBusinessRolePackAsync(args);
         }
 
         if (args.Length >= 1 && args[0] == "--diagnose")
@@ -1007,6 +1013,181 @@ public static class Program
         }
 
         return Environment.GetEnvironmentVariable("GULIERP_ConnectionStrings__GuliERP");
+    }
+
+    private static async Task<int> RunEnsureFormalEnterpriseBusinessRolePackAsync(string[] args)
+    {
+        if (args.Length != 4)
+        {
+            await Console.Error.WriteLineAsync(
+                "Usage: gulierp-identity-bootstrap --ensure-formal-enterprise-business-role-pack <TenantCode> <CompanyCode> <AdminUsername>");
+            return ExitSafetyGuard;
+        }
+
+        var tenantCode = args[1].Trim().ToUpperInvariant();
+        var companyCode = args[2].Trim().ToUpperInvariant();
+        var userName = args[3].Trim();
+        if (!string.Equals(tenantCode, "GULI", StringComparison.Ordinal)
+            || !string.Equals(companyCode, "GULI001", StringComparison.Ordinal)
+            || !string.Equals(userName, "admin", StringComparison.Ordinal))
+        {
+            await Console.Error.WriteLineAsync(
+                "SAFETY(--ensure-formal-enterprise-business-role-pack): expected TenantCode=GULI, CompanyCode=GULI001, AdminUsername=admin.");
+            return ExitSafetyGuard;
+        }
+
+        var connectionString = ResolveFormalBootstrapConnectionString(ConnectionStringFromEnvironment);
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            await Console.Error.WriteLineAsync(
+                "ERROR(--ensure-formal-enterprise-business-role-pack): set ConnectionStrings__GuliERP or GULIERP_ConnectionStrings__GuliERP.");
+            return ExitConnectionMissing;
+        }
+
+        var services = new ServiceCollection();
+        services.AddLogging(b =>
+        {
+            b.SetMinimumLevel(LogLevel.Information);
+            b.AddProvider(new StderrLoggerProvider());
+        });
+        services.AddDbContext<IdentityDbContext>(options =>
+        {
+            options.UseNpgsql(
+                connectionString,
+                npg => npg.MigrationsHistoryTable(
+                    "__ef_migrations_history",
+                    IdentityDbContext.DefaultSchema));
+        });
+
+        await using var sp = services.BuildServiceProvider();
+        var db = sp.GetRequiredService<IdentityDbContext>();
+
+        try
+        {
+            var diagnosticData = await CollectFormalEnterpriseBootstrapDiagnosticDataAsync(db);
+            var diagnostic = AnalyzeFormalEnterpriseBootstrap(diagnosticData);
+            if (diagnostic.residueStatus != NoPartialBootstrapResidue
+                || !diagnostic.hasCompleteFormalChain
+                || !diagnostic.expectedIdChainMatches
+                || diagnostic.requiresCodeCanonicalization)
+            {
+                await Console.Error.WriteLineAsync(
+                    "SAFETY(--ensure-formal-enterprise-business-role-pack): formal residue diagnostic is not clean.");
+                return ExitSafetyGuard;
+            }
+
+            var tenant = await db.Tenants.SingleOrDefaultAsync(t => t.Code == tenantCode);
+            var company = await db.Companies.SingleOrDefaultAsync(c => c.Code == companyCode);
+            var user = await db.Users.SingleOrDefaultAsync(u => u.UserName == userName);
+            if (tenant is null || tenant.Id != FormalTenantId || tenant.Status != TenantStatus.Active)
+            {
+                await Console.Error.WriteLineAsync("SAFETY(--ensure-formal-enterprise-business-role-pack): formal Tenant mismatch.");
+                return ExitSafetyGuard;
+            }
+            if (company is null
+                || company.Id != FormalCompanyId
+                || company.TenantId != tenant.Id
+                || company.Status != CompanyStatus.Active)
+            {
+                await Console.Error.WriteLineAsync("SAFETY(--ensure-formal-enterprise-business-role-pack): formal Company mismatch.");
+                return ExitSafetyGuard;
+            }
+            if (user is null
+                || user.Id != FormalAdminUserId
+                || user.TenantId != tenant.Id
+                || user.Status != UserStatus.Active
+                || user.IsPlatformAdmin)
+            {
+                await Console.Error.WriteLineAsync("SAFETY(--ensure-formal-enterprise-business-role-pack): formal admin user mismatch.");
+                return ExitSafetyGuard;
+            }
+
+            var membershipOk = await db.UserCompanyMemberships.AnyAsync(m =>
+                m.TenantId == tenant.Id
+                && m.CompanyId == company.Id
+                && m.UserId == user.Id
+                && m.Status == MembershipStatus.Active);
+            if (!membershipOk)
+            {
+                await Console.Error.WriteLineAsync("SAFETY(--ensure-formal-enterprise-business-role-pack): formal admin has no active company membership.");
+                return ExitSafetyGuard;
+            }
+
+            var systemAdminRole = await db.Roles.SingleOrDefaultAsync(r =>
+                r.TenantId == tenant.Id
+                && r.Code == "ERP_SYSTEM_ADMIN"
+                && r.Status == RoleStatus.Active);
+            if (systemAdminRole is null)
+            {
+                await Console.Error.WriteLineAsync("SAFETY(--ensure-formal-enterprise-business-role-pack): ERP_SYSTEM_ADMIN role missing.");
+                return ExitSafetyGuard;
+            }
+            var systemAdminAssignmentOk = await db.UserRoleAssignments.AnyAsync(a =>
+                a.TenantId == tenant.Id
+                && a.CompanyId == company.Id
+                && a.UserId == user.Id
+                && a.RoleId == systemAdminRole.Id
+                && a.Status == AssignmentStatus.Active);
+            if (!systemAdminAssignmentOk)
+            {
+                await Console.Error.WriteLineAsync("SAFETY(--ensure-formal-enterprise-business-role-pack): admin lacks active ERP_SYSTEM_ADMIN assignment.");
+                return ExitSafetyGuard;
+            }
+
+            await using var tx = await db.Database.BeginTransactionAsync();
+            var result = await new EnterpriseBusinessRolePackProvisioner(db)
+                .EnsureInitialAdminBusinessRolePackAsync(
+                    tenant.Id,
+                    company.Id,
+                    user.Id,
+                    DateTimeOffset.UtcNow);
+            await tx.CommitAsync();
+
+            var output = new
+            {
+                ok = true,
+                tenantId = tenant.Id,
+                companyId = company.Id,
+                userId = user.Id,
+                mdmRoleId = result.Mdm.RoleId,
+                salesRoleId = result.Sales.RoleId,
+                mdmRoleCreated = result.Mdm.RoleCreated,
+                salesRoleCreated = result.Sales.RoleCreated,
+                mdmClaimsCreated = result.Mdm.ClaimsCreated,
+                salesClaimsCreated = result.Sales.ClaimsCreated,
+                mdmAssignmentCreated = result.Mdm.AssignmentCreated,
+                salesAssignmentCreated = result.Sales.AssignmentCreated,
+                idempotent = result.Idempotent,
+                passwordEchoed = false,
+                rolePackStatus = result.Idempotent
+                    ? "FORMAL_ENTERPRISE_BUSINESS_ROLE_PACK_ALREADY_APPLIED"
+                    : "FORMAL_ENTERPRISE_BUSINESS_ROLE_PACK_APPLIED",
+            };
+            await Console.Out.WriteLineAsync(System.Text.Json.JsonSerializer.Serialize(output));
+            return ExitOk;
+        }
+        catch (InvalidOperationException ex)
+        {
+            await Console.Error.WriteLineAsync(
+                $"SAFETY(--ensure-formal-enterprise-business-role-pack): {ex.Message}");
+            return ExitSafetyGuard;
+        }
+        catch (Exception ex) when (
+            ex is Microsoft.EntityFrameworkCore.DbUpdateException
+                or Npgsql.NpgsqlException
+                or System.Net.Sockets.SocketException
+                or TimeoutException)
+        {
+            await Console.Error.WriteLineAsync(
+                $"DB ERROR(--ensure-formal-enterprise-business-role-pack): {ex.GetType().Name}: {ex.Message}");
+            return ExitDatabaseUnavailable;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync(
+                $"EXCEPTION(--ensure-formal-enterprise-business-role-pack): {ex.GetType().Name}: {ex.Message}");
+            return ExitOtherException;
+        }
     }
 
     public sealed record FormalTenantRow(long Id, string Code, string Name, string Status, DateTimeOffset CreatedAt = default);
@@ -1878,13 +2059,10 @@ public static class Program
             // 4. Ensure the ERP_MDM_OPERATOR role exists in the Tenant.
             //    TenantId-scoped: roles are tenant-owned.
             // -------------------------------------------------------------
-            const string MdmOperatorRoleCode = "ERP_MDM_OPERATOR";
-            const string MdmOperatorRoleName = "ERP MDM Operator";
-            const string MdmOperatorRoleDescription =
-                "Read + manage access to UOM, ItemCategory, Item, BusinessPartner, " +
-                "Warehouse, Location. Tenant-wide scope. Excludes Platform Admin, " +
-                "user / role / tenant / company / audit / system config / " +
-                "sales / purchase / inventory capabilities.";
+            var mdmPack = EnterpriseBusinessRolePacks.MdmOperator;
+            var MdmOperatorRoleCode = mdmPack.Code;
+            var MdmOperatorRoleName = mdmPack.Name;
+            var MdmOperatorRoleDescription = mdmPack.Description;
 
             var role = await db.Roles.AsNoTracking()
                 .FirstOrDefaultAsync(r => r.TenantId == user.TenantId
@@ -1939,21 +2117,7 @@ public static class Program
             //    IdentityRoleClaim<long> table — the same one the
             //    runtime PermissionAuthorizationHandler reads from.
             // -------------------------------------------------------------
-            var mdmPermissionCodes = new[]
-            {
-                "mdm.uom.read",
-                "mdm.uom.manage",
-                "mdm.item-category.read",
-                "mdm.item-category.manage",
-                "mdm.item.read",
-                "mdm.item.manage",
-                "mdm.business-partner.read",
-                "mdm.business-partner.manage",
-                "mdm.warehouse.read",
-                "mdm.warehouse.manage",
-                "mdm.location.read",
-                "mdm.location.manage",
-            };
+            var mdmPermissionCodes = mdmPack.Permissions;
 
             var grantedClaims = new List<string>();
             foreach (var code in mdmPermissionCodes)
@@ -2022,7 +2186,7 @@ public static class Program
             }
 
             // Total claims on the role (12 = 6 read + 6 manage).
-            var totalClaims = mdmPermissionCodes.Length;
+            var totalClaims = mdmPermissionCodes.Count;
 
             // -------------------------------------------------------------
             // 7. Output JSON. Password is NEVER echoed.
@@ -2163,11 +2327,10 @@ public static class Program
                     userName, user.Id);
             }
 
-            const string SalesOperatorRoleCode = "ERP_SALES_OPERATOR";
-            const string SalesOperatorRoleName = "ERP Sales Operator";
-            const string SalesOperatorRoleDescription =
-                "Read + manage access to the SalesOrder vertical slice only. " +
-                "Tenant-wide scope. Excludes Platform Admin, MDM, purchase, inventory and workflow capabilities.";
+            var salesPack = EnterpriseBusinessRolePacks.SalesOperator;
+            var SalesOperatorRoleCode = salesPack.Code;
+            var SalesOperatorRoleName = salesPack.Name;
+            var SalesOperatorRoleDescription = salesPack.Description;
 
             var role = await db.Roles.AsNoTracking()
                 .FirstOrDefaultAsync(r => r.TenantId == user.TenantId
@@ -2211,11 +2374,7 @@ public static class Program
                 }
             }
 
-            var salesPermissionCodes = new[]
-            {
-                "sales.order.read",
-                "sales.order.manage",
-            };
+            var salesPermissionCodes = salesPack.Permissions;
 
             var grantedClaims = new List<string>();
             foreach (var code in salesPermissionCodes)
@@ -2276,7 +2435,7 @@ public static class Program
                 roleId = role.Id,
                 roleCode = SalesOperatorRoleCode,
                 grantedClaims = grantedClaims.ToArray(),
-                totalClaims = salesPermissionCodes.Length,
+                totalClaims = salesPermissionCodes.Count,
                 note = "Idempotent. Re-runs are safe and add only missing SalesOrder claims / assignment.",
             };
             await Console.Out.WriteLineAsync(System.Text.Json.JsonSerializer.Serialize(output));
