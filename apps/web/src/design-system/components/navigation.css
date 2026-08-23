@@ -61,15 +61,22 @@
   background: rgba(255, 255, 255, 0.06);
 }
 .gs-rail-item.is-active {
-  color: var(--sidebar-active-fg);
-  background: var(--sidebar-active-bg);
+  color: #FFFFFF;        /* white icon + label on dark rail */
+  /* SHELL_FINAL_POLISH_001: do NOT swap the background to primary blue.
+     The rail is a deep dark surface; a primary-blue module cell would
+     break the 2-tone sidebar pattern (rail=dark, secondary=light). The
+     selection signal here is the 3px primary-blue left edge bar. */
+  background: rgba(255, 255, 255, 0.06);
 }
 .gs-rail-item.is-active::before {
   content: '';
   position: absolute;
   left: 0; top: 8px; bottom: 8px;
   width: 3px;
-  background: #FFFFFF;  /* contrast bar on blue selected item */
+  /* SHELL_FINAL_POLISH_001: the indicator bar is now primary blue
+     (#0A6ED1) instead of white. The bar is the only chrome change
+     for the selected module; the rail surface stays dark. */
+  background: var(--primary-default);
   border-radius: 0 2px 2px 0;
 }
 .gs-rail-tooltip {
@@ -365,12 +372,12 @@
    - sits centered in the topbar (parent .gs-topbar-center has flex: 1)
    ===================================================== */
 .gs-search-trigger {
-  /* SHELL_FINAL_MICRO_FIX_001: fixed 380px with sensible min/max clamps
-     so the box reads as a deliberate control on any screen, not as a
-     "stretched to fill" element. */
-  width: 380px;
+  /* SHELL_FINAL_POLISH_001: 400px (was 380px) — small bump to the
+     spec'd value, still clamped 360–420 so it never stretches or
+     shrinks out of proportion. */
+  width: 400px;
   max-width: 420px;
-  min-width: 320px;
+  min-width: 360px;
   height: 32px;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 4px;

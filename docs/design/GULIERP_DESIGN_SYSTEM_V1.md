@@ -145,12 +145,17 @@ palette is private to the token file.
 
 ### 3.3 Search box (center)
 
-- Width: `min(420px, 36vw)`, height 32px.
+> **SHELL_FINAL_POLISH_001:** width tuned to 400px (was 380px in
+> FINAL MICRO FIX, was `min(420px, 36vw)` in V1). The fixed value
+> reads as a deliberate control on any screen, not as a "stretched
+> to fill" element.
+
+- Width: 400px, clamped `min 360, max 420`, height 32px.
 - Placeholder: `搜索客户 / 单据 / 物料 / 供应商` (the search target
   surface, not the implementation hint).
 - Background: `rgba(255,255,255,0.14)` — semi-transparent white, lets
   the blue topbar bleed through.
-- Border: 1px `var(--header-border)` = `rgba(255,255,255,0.18)`.
+- Border: 1px `rgba(255,255,255,0.25)`.
 - Border radius: 4px (Fiori square-with-soft-corner).
 - Hover: `rgba(255,255,255,0.22)` bg, brighter border.
 - Open popover: white surface, 1px `var(--border-default)`, shadow
@@ -206,21 +211,33 @@ Order (left → right):
 +------+--------------------+
 ```
 
-### 4.1 Module Rail (56px wide, always visible) — DARK
+### 4.1 Module Rail (64px wide, always visible) — DARK
+
+> **SHELL_FINAL_POLISH_001 (2026-08-23):** the rail is widened to 64px
+> for icon+short-label breathing room. The selected state is
+> **no longer a full primary-blue cell**; the rail stays dark, and
+> the only chrome change for the selected module is a 3px primary-blue
+> left edge bar. A blue cell on the dark rail would break the 2-tone
+> sidebar pattern (rail = dark, secondary = light).
 
 - Background: `var(--sidebar-bg)` = `#1F2937`.
 - Item: 52px tall, centered icon + short label.
 - Default text: `var(--sidebar-fg)` = `#D5DDE5`.
 - Hover: text → `#FFFFFF`, bg `rgba(255,255,255,0.06)`.
-- Selected: text → `#FFFFFF`, bg `var(--sidebar-active-bg)` = `#0A6ED1`,
-  plus a 3px white left edge bar (`.gs-rail-item.is-active::before`).
+- Selected: text → `#FFFFFF`, bg `rgba(255,255,255,0.06)` (subtle
+  white-alpha overlay), plus a 3px `var(--sidebar-active-bar)` =
+  `#0A6ED1` left edge bar. NO primary-blue cell background.
 - Tooltip: dark slate `var(--color-slate-900)` bg, white text, shows on
   hover (long label).
 - Modules: 工作台, 基础, 主数据, 销售, 采购, 库存, 生产, 质量, 系统
   (existing `shellNavigation` list — DO NOT change structure without
   ADR).
 
-### 4.2 Secondary Menu (resizable, 160–180px) — LIGHT
+### 4.2 Secondary Menu (180px FIXED) — LIGHT
+
+> **SHELL_FINAL_POLISH_001:** the secondary menu width is now a
+> fixed 180px (no longer a resizable range). The spec wants one
+> canonical width.
 
 - Background: `var(--secondary-menu-bg)` = `#FFFFFF`.
 - Right border: 1px `var(--secondary-menu-divider)` = `#E5EBF0`.
@@ -236,7 +253,7 @@ Order (left → right):
     `var(--secondary-menu-active-bar)` = `#0A6ED1` left edge, weight 600.
   - Disabled (待开发): text `var(--secondary-menu-fg-disabled)` =
     `#94A3B8`, `cursor: not-allowed`, `pointer-events: none`.
-- Resize handle: 4px wide, hover lights up `var(--primary-default)`.
+- Resize handle: kept in DOM (resizing is a no-op since min=max=180).
 - Collapsed state: `width: 0`, `opacity: 0`, `visibility: hidden`,
   `pointer-events: none` — the panel toggle in the tab strip reopens
   it.
@@ -263,10 +280,14 @@ Order (left → right):
 
 ## 5. User Menu
 
-### 5.1 Topbar trigger (SHELL_MICRO_FIX)
+### 5.1 Topbar trigger (SHELL_FINAL_POLISH_001)
 
 - 32px tall, 10px horizontal padding, 4px radius.
-- Avatar: 28×28, gradient `linear-gradient(135deg, #0A6ED1, #085CAF)`.
+- Avatar: 32×32, gradient `linear-gradient(135deg, #0A6ED1, #085CAF)`,
+  with a generic `UserFilled` icon (NOT initials). Using initials
+  (the first character of the display name) produced a visual
+  duplicate: for a user named 清清 the avatar showed 清 next to the
+  清清 label. A generic icon guarantees zero overlap with the name.
 - Display name: 13px, white, ellipsis at 140px.
 - **NO role chip on the trigger.** The role "管理员" is shown only
   inside the dropdown detail head, to avoid duplication.
@@ -281,15 +302,16 @@ Order (left → right):
 **Item 1 — Detail head (disabled):**
 
 ```
-[avatar 44] 清清
-            管理员
-            账号：admin
-            租户：谷粒
-            公司：谷粒信息
+[avatar 56 UserFilled icon] 清清
+                          @admin
+                          [管理员]
+                          租户：谷粒
+                          公司：谷粒信息
 ```
 
-Avatar: 44×44, same gradient as the trigger. The role label
-("管理员") appears here — not on the topbar trigger.
+Avatar: 56×56, same gradient as the trigger, generic UserFilled icon.
+The role label ("管理员") appears here as a primary-tinted chip —
+not on the topbar trigger.
 
 **Item 2 — 个人中心 (disabled, command="profile"):**
 

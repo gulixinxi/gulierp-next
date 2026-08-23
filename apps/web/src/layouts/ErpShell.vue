@@ -493,16 +493,14 @@ function openFirstSearchResult(): void {
 }
 
 // ===== Secondary menu width + collapse (persisted via localStorage) =====
-// SHELL_FINAL_MICRO_FIX_001 (2026-08-23): the secondary menu is now a
-// LIGHT surface (white), and the spec tightens its width to the
-// 160–180px range. The Module Rail was also tightened from 60px to 56px
-// (see design-system/tokens/sizing.css). Stored values from previous
-// sessions are clamped into the new range on load so an old 216/280
-// value never reappears.
+// SHELL_FINAL_POLISH_001 (2026-08-23): the secondary menu is now a
+// FIXED 180px width (the spec no longer wants a resizable range).
+// Stored values from previous sessions (160 / 168 / 180) all map to
+// 180 now, so legacy localStorage entries still render correctly.
 const LS_WIDTH_KEY    = 'erp.shell.secondaryWidth';
 const LS_COLLAPSE_KEY = 'erp.shell.secondaryCollapsed';
-const DEFAULT_W = 168;
-const MIN_W = 160;
+const DEFAULT_W = 180;
+const MIN_W = 180;
 const MAX_W = 180;
 
 // Clamp any out-of-range stored value (e.g. 240px from a

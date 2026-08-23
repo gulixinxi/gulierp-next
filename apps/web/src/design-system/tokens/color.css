@@ -110,7 +110,7 @@
   --sidebar-fg-hover:     #FFFFFF;        /* hover */
   --sidebar-active-bg:    #0A6ED1;        /* selected module — enterprise blue */
   --sidebar-active-fg:    #FFFFFF;
-  --sidebar-active-bar:   #FFFFFF;        /* 3px left bar on selected module (white) */
+  --sidebar-active-bar:   #0A6ED1;        /* SHELL_FINAL_POLISH_001: 3px left bar on selected module is now primary blue (was white). The rail cell bg stays dark; the blue bar is the only chrome change. */
   --sidebar-divider:      rgba(255, 255, 255, 0.10);
 
   /* Secondary Menu (light) — 2-tone sidebar pattern (Fiori / Yonyou / Kingdee).

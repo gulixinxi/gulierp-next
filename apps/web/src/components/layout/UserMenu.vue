@@ -1,17 +1,18 @@
 <template>
   <!--
-    UserMenu — GULIERP_DESIGN_SYSTEM_001 / SHELL_MICRO_FIX (2026-08-23).
-    Trigger (topbar): avatar + display name + chevron only.
-      - The role chip is NOT shown here to avoid duplication with
-        the dropdown's detail head role line.
-      - The display name is shown ONLY in the topbar trigger;
-        the dropdown detail head shows the larger identity card.
+    UserMenu — GULIERP_SHELL_FINAL_POLISH_001 (2026-08-23).
+    Trigger (topbar): 32px avatar (generic UserFilled icon) + display
+      name + chevron. The avatar does NOT show initials — the previous
+      implementation rendered the first character of the display name
+      inside the avatar, which produced a "清" inside the circle next
+      to "清清" in the label (visual duplicate of the name's first
+      char). A generic icon guarantees zero overlap with the name.
     Dropdown:
-      · detail head (avatar 44 + name + 管理员 + 账号/租户/公司 meta)
+      · detail head (56px avatar + name + @username + role + tenant/company)
       · 个人中心 (M2+, disabled)
       · 修改密码 (预留, disabled)
     Sign-out is NOT here — it lives in the standalone topbar
-    button (per SHELL_MICRO_FIX Operator decision).
+    button (SHELL_MICRO_FIX Operator decision; unchanged in FINAL POLISH).
   -->
   <el-dropdown
     trigger="click"
@@ -19,19 +20,20 @@
     :teleported="true"
   >
     <button class="gs-user-chip" type="button" :aria-label="ariaLabel">
-      <el-avatar :size="28" class="gs-user-avatar">{{ initials }}</el-avatar>
+      <el-avatar :size="32" class="gs-user-avatar">
+        <el-icon class="gs-user-avatar-icon"><UserFilled /></el-icon>
+      </el-avatar>
       <span class="gs-user-name">{{ displayName || '—' }}</span>
       <el-icon class="gs-org-chevron"><ArrowDown /></el-icon>
     </button>
     <template #dropdown>
       <el-dropdown-menu class="gs-user-dropdown-menu">
-        <!-- Detail head: avatar + name + @username + role + tenant/company.
-             SHELL_FINAL_MICRO_FIX_001: the @username row is shown in
-             addition to the name to give the user a clear at-a-glance
-             account handle, matching the Operator-specified pattern. -->
+        <!-- Detail head: avatar + name + @username + role + tenant/company. -->
         <el-dropdown-item disabled class="gs-user-detail-item">
           <div class="gs-user-detail-head">
-            <el-avatar :size="48" class="gs-user-avatar gs-user-avatar--lg">{{ initials }}</el-avatar>
+            <el-avatar :size="56" class="gs-user-avatar gs-user-avatar--lg">
+              <el-icon class="gs-user-avatar-icon gs-user-avatar-icon--lg"><UserFilled /></el-icon>
+            </el-avatar>
             <div class="gs-user-detail-text">
               <div class="gs-user-detail-name">{{ displayName || '—' }}</div>
               <div v-if="userName" class="gs-user-detail-handle">@{{ userName }}</div>
@@ -59,13 +61,15 @@
 </template>
 
 <script setup lang="ts">
-// GULIERP_DESIGN_SYSTEM_001 / SHELL_MICRO_FIX.
-// Identity surface only — no business actions, no sign-out.
-// All action plumbing (sign-out, profile, change-password) lives
-// in the topbar / future WorkItems. This component is a pure
-// read-only wrapper around the auth store for identity display.
+// GULIERP_SHELL_FINAL_POLISH_001 (2026-08-23).
+// FINAL POLISH drops the avatar-initials logic entirely. The trigger
+// now shows a generic UserFilled icon inside the avatar circle; the
+// display name appears exactly once (in the label). No more
+// "first char of name" inside the avatar → no visual duplicate of
+// the name's first character. This component remains a pure
+// read-only wrapper around the auth store.
 import { computed } from 'vue';
-import { ArrowDown, User, Lock } from '@element-plus/icons-vue';
+import { ArrowDown, User, UserFilled, Lock } from '@element-plus/icons-vue';
 import { useAuthStore } from '../../stores/auth';
 
 const auth = useAuthStore();
@@ -79,24 +83,6 @@ const companyName = computed<string>(() => auth.companyName);
 const ariaLabel = computed<string>(() => {
   const who = displayName.value || userName.value || '未知用户';
   return `用户菜单 (${who})`;
-});
-
-// Avatar initials:
-//   - Chinese display name (any length): first 1 character
-//     (avoids duplicate-with-name on short Chinese names like "清清")
-//   - English display name (whitespace-separated): first letter of first 2 words
-//   - Fallback: first 1 character uppercase
-const initials = computed<string>(() => {
-  const name = (displayName.value || userName.value || '').trim();
-  if (!name) return '?';
-  if (/[\u4e00-\u9fa5]/.test(name)) {
-    return name.slice(0, 1);
-  }
-  const parts = name.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 1).toUpperCase();
 });
 
 // Role chip. Today only Platform Admin gets a chip (auth.isPlatformAdmin).
@@ -130,14 +116,19 @@ const roleLabel = computed<string>(() => {
 .gs-user-avatar {
   background: linear-gradient(135deg, #0A6ED1 0%, #085CAF 100%);
   color: #fff;
-  font-weight: 600;
-  font-size: 12px;
-  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.gs-user-avatar-icon {
+  font-size: 18px;
+}
+.gs-user-avatar-icon--lg {
+  font-size: 28px;
 }
 .gs-user-avatar--lg {
-  font-size: 18px;
-  width: 48px !important;
-  height: 48px !important;
+  width: 56px !important;
+  height: 56px !important;
 }
 .gs-user-name {
   font-size: 13px;
@@ -162,7 +153,7 @@ const roleLabel = computed<string>(() => {
 }
 .gs-user-menu-popper .gs-user-detail-item {
   cursor: default;
-  padding: 12px 16px !important;
+  padding: 14px 16px !important;
 }
 .gs-user-menu-popper .gs-user-detail-item:hover {
   background: transparent !important;
@@ -170,7 +161,7 @@ const roleLabel = computed<string>(() => {
 .gs-user-menu-popper .gs-user-detail-head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 .gs-user-menu-popper .gs-user-detail-text {
   display: flex;
