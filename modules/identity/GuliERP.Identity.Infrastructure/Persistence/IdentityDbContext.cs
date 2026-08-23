@@ -279,17 +279,27 @@ public sealed class IdentityDbContext : IdentityDbContext<GuliErpUser, GuliErpRo
             b.Property(r => r.Description).HasMaxLength(2000);
             b.Property(r => r.Status).HasConversion<int>();
             // UNIQUE (TenantId, Code) — Role code unique within Tenant.
-            // (Identity's default index on NormalizedName is replaced
-            // by our composite (TenantId, Code) index, since
-            // Application uses Code as the stable identifier.)
+            // (Identity's default index on NormalizedName is demoted
+            // to non-unique below; we instead enforce uniqueness on
+            // the per-tenant composite (TenantId, NormalizedName)
+            // because GuliERP is multi-tenant and two Tenants
+            // legitimately need to define the same business role
+            // (e.g. "ERP_MDM_OPERATOR").)
             b.HasIndex(r => new { r.TenantId, r.Code })
                 .IsUnique()
                 .HasDatabaseName("ux_gulierp_role_tenant_code");
+            // UNIQUE (TenantId, NormalizedName) — Role display name
+            // (case-folded) unique within Tenant. G2-003V3 / GULIERP_
+            // ENTERPRISE_BOOTSTRAP_001 schema repair.
+            b.HasIndex(r => new { r.TenantId, r.NormalizedName })
+                .IsUnique()
+                .HasDatabaseName("ux_gulierp_role_tenant_normalizedname");
             // FK: GuliErpRole.TenantId → Tenant.Id (DEC-ID-007; G2-003V2)
             b.HasOne<Tenant>().WithMany().HasForeignKey(r => r.TenantId)
                 .OnDelete(DeleteBehavior.Restrict);
             b.Property(r => r.ConcurrencyVersion).IsConcurrencyToken();
         });
+
 
         modelBuilder.Entity<UserCompanyMembership>(b =>
         {

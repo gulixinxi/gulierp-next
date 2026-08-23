@@ -8,12 +8,30 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GuliERP.Identity.Infrastructure.EnterpriseOrganization;
 
+/// <summary>
+/// G2-003V3 / GULIERP_ENTERPRISE_BOOTSTRAP_001: cross-tenant
+/// NormalizedName collision observation. Captured for diagnostic
+/// purposes — the actual database UNIQUE index
+/// (TenantId, NormalizedName) is the source of truth, so a
+/// non-empty collection is NOT an error.
+/// </summary>
+public sealed record CrossTenantNormalizedNameCollision(
+    long ExistingRoleId,
+    long ExistingTenantId,
+    string ExistingRoleCode,
+    string NormalizedName);
+
 public sealed record EnterpriseRolePackProvisionResult(
     long RoleId,
     string RoleCode,
     bool RoleCreated,
     IReadOnlyList<string> ClaimsCreated,
-    bool AssignmentCreated);
+    bool AssignmentCreated,
+    IReadOnlyList<CrossTenantNormalizedNameCollision> CrossTenantNormalizedNameCollisions)
+{
+    public bool HasCrossTenantNormalizedNameCollisions =>
+        CrossTenantNormalizedNameCollisions.Count > 0;
+}
 
 public sealed record EnterpriseBusinessRolePackProvisionResult(
     EnterpriseRolePackProvisionResult Mdm,
@@ -81,13 +99,34 @@ public sealed class EnterpriseBusinessRolePackProvisioner
 
         var roleCreated = false;
         var role = roles.SingleOrDefault();
+
+        // G2-003V3 / GULIERP_ENTERPRISE_BOOTSTRAP_001:
+        // cross-tenant NormalizedName observation. We do NOT throw
+        // here. The database UNIQUE index (TenantId, NormalizedName)
+        // added by migration 20260824000001_RoleNameIndexToTenantScope
+        // is the source of truth: two Tenants legitimately share
+        // NormalizedName. We surface the cross-tenant usage as a
+        // diagnostic in the result so the operator can audit it
+        // without breaking the operation.
+        var targetNormalizedName = pack.Name.ToUpperInvariant();
+        var crossTenantCollisions = await _db.Roles
+            .AsNoTracking()
+            .Where(r => r.NormalizedName == targetNormalizedName
+                     && r.TenantId != tenantId)
+            .Select(r => new CrossTenantNormalizedNameCollision(
+                r.Id,
+                r.TenantId,
+                r.Code,
+                r.NormalizedName ?? string.Empty))
+            .ToListAsync(ct);
+
         if (role is null)
         {
             role = new GuliErpRole
             {
                 TenantId = tenantId,
                 Name = pack.Name,
-                NormalizedName = pack.Name.ToUpperInvariant(),
+                NormalizedName = targetNormalizedName,
                 Code = pack.Code,
                 IsSystem = true,
                 Description = pack.Description,
@@ -192,6 +231,7 @@ public sealed class EnterpriseBusinessRolePackProvisioner
             pack.Code,
             roleCreated,
             claimsCreated,
-            assignmentCreated);
+            assignmentCreated,
+            crossTenantCollisions);
     }
 }
