@@ -33,7 +33,9 @@
   --color-blue-700: #074693;   /* active / pressed */
   --color-blue-800: #053374;   /* darkest text on light */
 
-  /* — Palette: Slate Sidebar (Fiori shell) — */
+  /* — Palette: Slate Sidebar (Module Rail only, see SHELL_FINAL_MICRO_FIX_001)
+     The Module Rail is the ONLY dark surface in the shell chrome.
+     The Secondary Menu uses a light surface (see --secondary-menu-* below). */
   --color-slate-50:  #F8FAFC;
   --color-slate-100: #F1F5F9;
   --color-slate-200: #E2E8F0;
@@ -41,7 +43,7 @@
   --color-slate-400: #94A3B8;
   --color-slate-500: #64748B;
   --color-slate-600: #475569;
-  --color-slate-700: #354A5F;   /* SIDEBAR (Fiori shell sidebar) */
+  --color-slate-700: #354A5F;   /* legacy — kept for back-compat, not used in V1 shell */
   --color-slate-800: #1E293B;
   --color-slate-900: #0F172A;
 
@@ -64,7 +66,7 @@
   --bg-subtle:     #F7F8FA;   /* zebra rows, header bg */
   --bg-muted:      #EEF1F4;   /* dividers, disabled surface */
   --bg-header:     #0A6ED1;   /* top brand bar (Fiori shell primary) */
-  --bg-sidebar:    #354A5F;   /* module rail / secondary menu (Fiori) */
+  --bg-sidebar:    #1F2937;   /* MODULE RAIL only (SHELL_FINAL_MICRO_FIX_001) */
 
   /* Text */
   --text-primary:    #1D2D3E;   /* Fiori text-primary */
@@ -88,6 +90,7 @@
   --primary-active:  #074693;
   --primary-bg:      #F2F8FC;   /* selected background tint */
   --primary-border:  #D9EAF7;
+  --secondary-menu-active-bg:   #E5F1FC;   /* light blue for selected item in secondary menu */
 
   /* Danger / warning / success */
   --danger-default:   #BB0000;
@@ -100,14 +103,29 @@
   --success-hover:    #0B5A2C;
   --success-bg:       #E4F2EA;
 
-  /* Module Rail + Sidebar */
-  --sidebar-bg:           #354A5F;        /* Fiori sidebar */
-  --sidebar-fg:           #D5DDE5;        /* default text on sidebar */
+  /* Module Rail (dark) — the ONLY dark chrome in the shell.
+     The Secondary Menu is a separate, light surface (see below). */
+  --sidebar-bg:           #1F2937;        /* Module Rail (Fiori / Chinese ERP) */
+  --sidebar-fg:           #D5DDE5;        /* default text on rail */
   --sidebar-fg-hover:     #FFFFFF;        /* hover */
-  --sidebar-active-bg:    #0A6ED1;        /* selected item — enterprise blue */
+  --sidebar-active-bg:    #0A6ED1;        /* selected module — enterprise blue */
   --sidebar-active-fg:    #FFFFFF;
-  --sidebar-active-bar:   #0A6ED1;        /* 3px left bar on selected item */
+  --sidebar-active-bar:   #FFFFFF;        /* 3px left bar on selected module (white) */
   --sidebar-divider:      rgba(255, 255, 255, 0.10);
+
+  /* Secondary Menu (light) — 2-tone sidebar pattern (Fiori / Yonyou / Kingdee).
+     Lives in the column to the right of the Module Rail. The two surfaces
+     are deliberately distinct so the user can tell at a glance which level
+     of the nav they are reading. */
+  --secondary-menu-bg:           #FFFFFF;   /* light surface */
+  --secondary-menu-fg:           #334155;   /* default text — slate-700 */
+  --secondary-menu-fg-hover:     #0A6ED1;   /* hover text — primary */
+  --secondary-menu-fg-disabled:  #94A3B8;   /* disabled items — slate-400 */
+  --secondary-menu-active-bg:    #E5F1FC;   /* selected row — light primary tint */
+  --secondary-menu-active-fg:    #0A6ED1;   /* selected text — primary */
+  --secondary-menu-active-bar:   #0A6ED1;   /* 3px left bar on selected item */
+  --secondary-menu-divider:      #E5EBF0;   /* light divider on the white surface */
+  --secondary-menu-group-fg:     #94A3B8;   /* group label — muted */
 
   /* Topbar (Header) */
   --header-bg:            #0A6ED1;        /* Fiori primary */

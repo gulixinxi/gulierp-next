@@ -187,11 +187,28 @@ Order (left → right):
 
 ---
 
-## 4. Sidebar (Module Rail + Secondary Menu)
+## 4. Sidebar (Module Rail + Secondary Menu) — 2-tone
 
-### 4.1 Module Rail (60px wide, always visible)
+> **SHELL_FINAL_MICRO_FIX_001 (2026-08-23):** the sidebar is split into
+> two visually distinct surfaces. The Module Rail is the dark primary
+> module picker; the Secondary Menu is a separate LIGHT surface for the
+> second-level item list. Single-color sidebars look visually flat and
+> make the two levels ambiguous. The split is enforced by the source-grep
+> regression test.
 
-- Background: `var(--sidebar-bg)` = `#354A5F`.
+```
++------+--------------------+
+| 56px | 160–180px          |
+| DARK | LIGHT              |
++------+--------------------+
+| rail | secondary          |
+| #1F2 | #FFFFFF            |
++------+--------------------+
+```
+
+### 4.1 Module Rail (56px wide, always visible) — DARK
+
+- Background: `var(--sidebar-bg)` = `#1F2937`.
 - Item: 52px tall, centered icon + short label.
 - Default text: `var(--sidebar-fg)` = `#D5DDE5`.
 - Hover: text → `#FFFFFF`, bg `rgba(255,255,255,0.06)`.
@@ -203,25 +220,33 @@ Order (left → right):
   (existing `shellNavigation` list — DO NOT change structure without
   ADR).
 
-### 4.2 Secondary Menu (resizable, 136–220px wide)
+### 4.2 Secondary Menu (resizable, 160–180px) — LIGHT
 
-- Background: `var(--sidebar-bg)` — same dark slate as the rail. The
-  two visually fuse into a single "sidebar" surface.
-- Header: 40px tall, semi-transparent white overlay
-  (`rgba(255,255,255,0.02)`), bottom border `var(--sidebar-divider)`.
-- Group title: 11px / 600 / uppercase / `var(--text-on-sidebar)` @ 70%
-  opacity.
-- Item: 34px tall, 24px left padding, 3px transparent left border.
-  - Default: `var(--text-on-sidebar)` = `#D5DDE5`.
-  - Hover: text `#FFFFFF`, bg `rgba(255,255,255,0.06)`.
-  - Selected: text `#FFFFFF`, bg `var(--sidebar-active-bg)` = `#0A6ED1`,
-    3px white left edge.
-  - Disabled (待开发): text `rgba(213,221,229,0.45)`, `cursor: not-allowed`,
-    `pointer-events: none`.
+- Background: `var(--secondary-menu-bg)` = `#FFFFFF`.
+- Right border: 1px `var(--secondary-menu-divider)` = `#E5EBF0`.
+- Header: 40px tall, white bg, bottom border `var(--secondary-menu-divider)`.
+- Group title: 11px / 600 / uppercase / `var(--secondary-menu-group-fg)`
+  = `#94A3B8`.
+- Item: 36px tall, 20px left padding, 3px transparent left border.
+  - Default: `var(--secondary-menu-fg)` = `#334155` (slate-700).
+  - Hover: text `var(--secondary-menu-fg-hover)` = `#0A6ED1`,
+    bg `var(--bg-subtle)` = `#F7F8FA`.
+  - Selected: text `var(--secondary-menu-active-fg)` = `#0A6ED1`,
+    bg `var(--secondary-menu-active-bg)` = `#E5F1FC`, 3px
+    `var(--secondary-menu-active-bar)` = `#0A6ED1` left edge, weight 600.
+  - Disabled (待开发): text `var(--secondary-menu-fg-disabled)` =
+    `#94A3B8`, `cursor: not-allowed`, `pointer-events: none`.
 - Resize handle: 4px wide, hover lights up `var(--primary-default)`.
 - Collapsed state: `width: 0`, `opacity: 0`, `visibility: hidden`,
   `pointer-events: none` — the panel toggle in the tab strip reopens
   it.
+
+> **Why the split matters:** a user looking at the dark column knows
+> "this is the module picker"; the white column tells them "this is the
+> list of pages inside the active module". Without the split, a
+> long list of dark items on dark feels like one undifferentiated block
+> — the user has to read every item to know which level it belongs to.
+> This is the SAP Fiori / Yonyou / Kingdee / BIP pattern.
 
 ### 4.3 Tab strip (bottom of header, full content width)
 

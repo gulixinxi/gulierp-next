@@ -493,15 +493,17 @@ function openFirstSearchResult(): void {
 }
 
 // ===== Secondary menu width + collapse (persisted via localStorage) =====
+// SHELL_FINAL_MICRO_FIX_001 (2026-08-23): the secondary menu is now a
+// LIGHT surface (white), and the spec tightens its width to the
+// 160–180px range. The Module Rail was also tightened from 60px to 56px
+// (see design-system/tokens/sizing.css). Stored values from previous
+// sessions are clamped into the new range on load so an old 216/280
+// value never reappears.
 const LS_WIDTH_KEY    = 'erp.shell.secondaryWidth';
 const LS_COLLAPSE_KEY = 'erp.shell.secondaryCollapsed';
-// WEB-UX-SHELL-001: sidebar width reduced from 216/180/280 to
-// 160/136/220 so the main content area gets more space on
-// 1080p / 1366×768 screens. Chinese 4–6 char menu labels
-// still render correctly at 136px.
-const DEFAULT_W = 160;
-const MIN_W = 136;
-const MAX_W = 220;
+const DEFAULT_W = 168;
+const MIN_W = 160;
+const MAX_W = 180;
 
 // Clamp any out-of-range stored value (e.g. 240px from a
 // previous session with the old 216/280 defaults) to the

@@ -1,12 +1,25 @@
 /* GuliERP Design System — Navigation components
    Enterprise Fiori Theme (GULIERP_DESIGN_SYSTEM_001_ENTERPRISE_FIORI_THEME, 2026-08-23)
+   SHELL_FINAL_MICRO_FIX_001 (2026-08-23): split the sidebar into 2 surfaces
    ----------------------------------------------------------------------------------
-   Two-level ERP nav on a DARK sidebar (Fiori shell pattern):
-   - Module Rail (60px, always): #354A5F bg, white/light text
-   - Secondary Menu (resizable): #354A5F bg, white/light text, blue selected
+   Two-level ERP nav with a 2-tone sidebar (the standard pattern for mature
+   enterprise ERPs — SAP Fiori, Yonyou, Kingdee, BIP):
+
+   - Module Rail (56–60px, always visible): DARK surface (#1F2937).
+     This is the primary module picker. White icons + short labels.
+     Selected module = primary blue background with a 3px white edge bar.
+   - Secondary Menu (resizable 136–220px): LIGHT surface (#FFFFFF).
+     This is the second-level picker, grouped under the active module.
+     Dark text on white. Selected item = light primary blue background
+     (#E5F1FC) with primary blue text and a 3px primary blue edge bar.
+
+   The two surfaces are visually distinct on purpose: at a glance, the
+   user can tell whether they are looking at the module list (dark) or
+   the item list inside a module (light). Single-color sidebars look
+   visually flat and make the levels ambiguous.
 
    Topbar: #0A6ED1 (Fiori shell primary), white text, white-semi-transparent
-   controls.
+   controls. The search box is centered via flex: 1 on the center slot.
 
    Fullscreen hides everything; collapse hides only secondary menu.
    Transition 200ms ease-standard; no instant width:0 collapse. */
@@ -82,11 +95,14 @@
 
 /* =====================================================
    Secondary Menu (resizable, collapsible; hidden only when folded)
-   Fiori shell pattern: same dark sidebar background as the rail.
+   SHELL_FINAL_MICRO_FIX_001: this is now a LIGHT surface, distinct
+   from the dark Module Rail. White bg, dark slate text, primary
+   blue selection.
    ===================================================== */
 .gs-secondary {
-  background: var(--sidebar-bg);
-  color: var(--sidebar-fg);
+  background: var(--secondary-menu-bg);
+  color: var(--secondary-menu-fg);
+  border-right: 1px solid var(--secondary-menu-divider);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -108,14 +124,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--sidebar-divider);
-  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--secondary-menu-divider);
+  background: var(--secondary-menu-bg);
   flex-shrink: 0;
 }
 .gs-secondary-title {
   font-size: var(--erp-font-size);
   font-weight: 600;
-  color: var(--text-on-sidebar-active);
+  color: var(--text-primary);
   letter-spacing: 0.2px;
 }
 .gs-collapse-btn {
@@ -123,7 +139,7 @@
   height: 22px;
   border: 1px solid transparent;
   background: transparent;
-  color: var(--sidebar-fg);
+  color: var(--text-muted);
   border-radius: var(--radius-sm);
   display: grid;
   place-items: center;
@@ -132,9 +148,9 @@
   transition: var(--transition-color), border-color var(--motion-fast);
 }
 .gs-collapse-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #FFFFFF;
-  border-color: var(--header-border);
+  background: var(--bg-subtle);
+  color: var(--primary-default);
+  border-color: var(--border-default);
 }
 .gs-menu-list {
   flex: 1;
@@ -146,49 +162,48 @@
   padding: var(--space-3) var(--space-6) var(--space-2);
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-on-sidebar);
+  color: var(--secondary-menu-group-fg);
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  opacity: 0.7;
 }
 .gs-menu-item {
   display: flex;
   align-items: center;
   gap: var(--gap);
-  height: 34px;
-  padding: 0 var(--space-6);
-  color: var(--text-on-sidebar);
+  height: 36px;
+  padding: 0 var(--space-5);
+  color: var(--secondary-menu-fg);
   cursor: pointer;
   font-size: var(--erp-font-size);
   border-left: 3px solid transparent;
   transition: background 120ms ease, color 120ms ease;
 }
 .gs-menu-item:hover {
-  color: var(--text-on-sidebar-active);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--secondary-menu-fg-hover);
+  background: var(--bg-subtle);
 }
 .gs-menu-item.is-active {
-  color: var(--sidebar-active-fg);
-  background: var(--sidebar-active-bg);
-  border-left-color: #FFFFFF;
-  font-weight: 500;
+  color: var(--secondary-menu-active-fg);
+  background: var(--secondary-menu-active-bg);
+  border-left-color: var(--secondary-menu-active-bar);
+  font-weight: 600;
 }
 /* MDM-WEB-003: disabled master-data entry (e.g. 员工档案 — no backend yet).
    Visually muted + non-interactive so it cannot be mistaken for a live link. */
 .gs-menu-item.is-disabled {
-  color: rgba(213, 221, 229, 0.45);
+  color: var(--secondary-menu-fg-disabled);
   cursor: not-allowed;
   pointer-events: none;
-  opacity: 0.7;
+  opacity: 0.85;
 }
 .gs-menu-item.is-disabled:hover {
   background: transparent;
-  color: rgba(213, 221, 229, 0.45);
+  color: var(--secondary-menu-fg-disabled);
 }
 .gs-menu-badge-pending {
   margin-left: auto;
-  background: rgba(255, 255, 255, 0.16);
-  color: var(--text-on-sidebar);
+  background: var(--bg-muted);
+  color: var(--text-muted);
   font-size: 10px;
   padding: 0 5px;
   border-radius: 10px;
@@ -279,11 +294,17 @@
 .gs-topbar-center {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--gap);
   font-size: 13px;
   color: var(--header-fg-muted);
-  flex: 0 1 auto;
+  /* SHELL_FINAL_MICRO_FIX_001: flex: 1 so the search trigger is truly
+     centered between the brand (left) and the right controls. The
+     previous flex: 0 1 auto made the center slot only as wide as its
+     content, which pushed the search trigger left of true center. */
+  flex: 1 1 auto;
   min-width: 0;
+  padding: 0 var(--space-6);
 }
 .gs-org-chip {
   display: inline-flex;
@@ -341,12 +362,17 @@
    Search trigger (Fiori-style "command palette" trigger)
    - white semi-transparent background
    - rounded
-   - sits centered in the topbar
+   - sits centered in the topbar (parent .gs-topbar-center has flex: 1)
    ===================================================== */
 .gs-search-trigger {
-  width: min(420px, 36vw);
+  /* SHELL_FINAL_MICRO_FIX_001: fixed 380px with sensible min/max clamps
+     so the box reads as a deliberate control on any screen, not as a
+     "stretched to fill" element. */
+  width: 380px;
+  max-width: 420px;
+  min-width: 320px;
   height: 32px;
-  border: 1px solid var(--header-border);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.14);
   color: var(--header-fg);
@@ -362,7 +388,7 @@
 .gs-search-trigger:hover,
 .gs-search-trigger:focus-visible {
   background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.40);
   outline: 0;
 }
 .gs-search-trigger .el-icon { font-size: 14px; opacity: 0.9; }

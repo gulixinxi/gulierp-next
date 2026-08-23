@@ -3,10 +3,10 @@
 
 :root {
   /* — Navigation — */
-  --nav-rail-width:         60px;   /* Module rail: always visible */
-  --nav-secondary-default:  216px;  /* Secondary menu default width */
-  --nav-secondary-min:      180px;
-  --nav-secondary-max:      280px;
+  --nav-rail-width:         56px;   /* Module rail: always visible (SHELL_FINAL_MICRO_FIX_001: was 60px) */
+  --nav-secondary-default:  168px;  /* Secondary menu default width (was 216px — too wide for light surface) */
+  --nav-secondary-min:      160px;
+  --nav-secondary-max:      180px;
 
   /* — Layout — */
   --topbar-height:          52px;
