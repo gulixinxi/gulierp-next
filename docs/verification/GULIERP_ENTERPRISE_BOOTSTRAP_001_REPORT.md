@@ -2,7 +2,7 @@
 
 ## Gate
 
-Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_SCHEMA_DRIFT_HARD_STOP`
+Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_CODE_READY_OPERATOR_BOOTSTRAP_PENDING`
 
 Start HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`
 
@@ -31,7 +31,8 @@ Runtime correction on 2026-08-23:
 - Formal Bootstrap was attempted with the non-sensitive identifiers recorded below.
 - The attempt failed with PostgreSQL `42703` because canonical DB schema did not expose `identity.gulierp_plant."IsDefault"`.
 - Code now fails fast before formal writes when required Identity migrations/schema objects are missing.
-- Canonical migration application is still pending Operator local DB password input.
+- Canonical migration application was completed by Operator local PowerShell after the migration alignment repair.
+- Formal Bootstrap has not been rerun after schema repair.
 
 ## Audit Summary
 
@@ -290,7 +291,7 @@ Observed failure:
 - Failing object: `identity.gulierp_plant."IsDefault"`
 - CLI exit code: `4`
 - Failure phase: default Plant lookup inside formal enterprise bootstrap.
-- Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_SCHEMA_DRIFT_HARD_STOP`
+- Gate at time of failure: `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_SCHEMA_DRIFT_HARD_STOP`
 
 No password, hash, token, cookie or complete connection string is recorded in this report.
 
@@ -398,7 +399,27 @@ Verification after alignment:
 - Real PostgreSQL `ICompanySwitchingService_ResolveDefault_No_Membership_Returns_Null`: Operator DB Evidence Pending; requires the local secure connection environment and was not run in chat.
 - scoped `git diff --check` for migration/snapshot files: PASS
 
-Current gate remains `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_SCHEMA_DRIFT_HARD_STOP` until the updated HEAD is used to apply the canonical Identity migration chain. Formal Enterprise Bootstrap must not be rerun before that.
+Operator reran the updated migration command at HEAD `ecc347c361ca8c3da4e8d771a6d2ff5a463c57dc`.
+
+Migration application result:
+
+- DB target guard: PASS for `Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=***`
+- `dotnet --version`: PASS, `10.0.400`
+- `GuliERP.Identity.Infrastructure` Release build: PASS
+- `GuliERP.Identity.Bootstrap` Release build: PASS
+- `dotnet ef migrations has-pending-model-changes`: PASS, `No changes have been made to the model since the last migration.`
+- Identity migrations before:
+  - `20260819150708_G2003_InitializeIdentitySchema`
+  - `20260819162500_G2003V2_AddIdentityReferentialIntegrity`
+  - `20260820100503_IDGEN001_PostgresHiLo`
+  - `20260822090000_G2EnterpriseOrganizationFoundation (Pending)`
+  - `20260823020050_G2EnterpriseOrganizationSchemaAlignment (Pending)`
+- Applied migrations:
+  - `20260822090000_G2EnterpriseOrganizationFoundation`
+  - `20260823020050_G2EnterpriseOrganizationSchemaAlignment`
+- Identity migrations after: all five migrations applied, no pending Identity migrations shown.
+
+Current gate is now `GULIERP_ENTERPRISE_BOOTSTRAP_001_CODE_READY_OPERATOR_BOOTSTRAP_PENDING`. Formal Enterprise Bootstrap may be retried with the same formal identifiers and a locally entered admin password.
 
 Corrected Operator migration command must use the Bootstrap startup project rather than the running API startup output, so it does not depend on a locked or stale API DLL.
 
