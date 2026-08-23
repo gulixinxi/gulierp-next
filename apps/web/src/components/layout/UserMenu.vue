@@ -1,18 +1,28 @@
 <template>
   <!--
-    UserMenu — GULIERP_SHELL_FINAL_POLISH_001 (2026-08-23).
-    Trigger (topbar): 32px avatar (generic UserFilled icon) + display
-      name + chevron. The avatar does NOT show initials — the previous
-      implementation rendered the first character of the display name
-      inside the avatar, which produced a "清" inside the circle next
-      to "清清" in the label (visual duplicate of the name's first
-      char). A generic icon guarantees zero overlap with the name.
-    Dropdown:
-      · detail head (56px avatar + name + @username + role + tenant/company)
-      · 个人中心 (M2+, disabled)
-      · 修改密码 (预留, disabled)
-    Sign-out is NOT here — it lives in the standalone topbar
-    button (SHELL_MICRO_FIX Operator decision; unchanged in FINAL POLISH).
+    UserMenu — GULIERP_SHELL_FINAL_POLISH_003 (2026-08-23).
+    Enterprise ERP identity surface. NOT a SaaS / social product:
+    no large colored avatar circles, no first-initial chips, no
+    social-style profile card. The trigger is a compact icon +
+    display name + chevron; the dropdown is a quiet identity card
+    + plain menu items.
+
+    GULIERP_DESIGN_SYSTEM_001 §5 (final polish refinement):
+    - Trigger: icon (UserFilled, 16px) + name + chevron only.
+      NO avatar circle. NO initials. NO role chip in the topbar.
+    - Dropdown detail head: 32px UserFilled icon (auxiliary, not
+      a dominant blue circle) + name + @username + tenant + company.
+      The role line is removed from the detail head (a Platform
+      Admin's role is now implicit; the topbar trigger does not
+      show a role chip either, per FINAL POLISH 001).
+    - Dropdown items: 个人中心, 修改密码. The "M2+" and "预留"
+      dev-state tags are removed — production users should not see
+      internal development phase labels.
+    - Sign-out: NOT in the dropdown. The standalone topbar logout
+      button (in ErpShell.vue) owns sign-out. The auth flow
+      (warning confirm -> sign-out helper -> CSRF refresh +
+      POST /auth/logout + state clear + redirect to /login) is
+      unchanged and not re-implemented here.
   -->
   <el-dropdown
     trigger="click"
@@ -20,24 +30,21 @@
     :teleported="true"
   >
     <button class="gs-user-chip" type="button" :aria-label="ariaLabel">
-      <el-avatar :size="32" class="gs-user-avatar">
-        <el-icon class="gs-user-avatar-icon"><UserFilled /></el-icon>
-      </el-avatar>
+      <el-icon :size="16" class="gs-user-icon"><UserFilled /></el-icon>
       <span class="gs-user-name">{{ displayName || '—' }}</span>
       <el-icon class="gs-org-chevron"><ArrowDown /></el-icon>
     </button>
     <template #dropdown>
       <el-dropdown-menu class="gs-user-dropdown-menu">
-        <!-- Detail head: avatar + name + @username + role + tenant/company. -->
+        <!-- Identity head: small icon + name + @handle + tenant/company.
+             The icon is intentionally SUBTLE (32px slate, NOT a blue
+             gradient circle) so the name remains the visual anchor. -->
         <el-dropdown-item disabled class="gs-user-detail-item">
           <div class="gs-user-detail-head">
-            <el-avatar :size="56" class="gs-user-avatar gs-user-avatar--lg">
-              <el-icon class="gs-user-avatar-icon gs-user-avatar-icon--lg"><UserFilled /></el-icon>
-            </el-avatar>
+            <el-icon :size="32" class="gs-user-detail-icon"><UserFilled /></el-icon>
             <div class="gs-user-detail-text">
               <div class="gs-user-detail-name">{{ displayName || '—' }}</div>
               <div v-if="userName" class="gs-user-detail-handle">@{{ userName }}</div>
-              <div v-if="roleLabel" class="gs-user-detail-role">{{ roleLabel }}</div>
               <div v-if="tenantName" class="gs-user-detail-meta">租户：{{ tenantName }}</div>
               <div v-if="companyName" class="gs-user-detail-meta">公司：{{ companyName }}</div>
             </div>
@@ -47,13 +54,11 @@
         <el-dropdown-item disabled command="profile">
           <el-icon><User /></el-icon>
           <span>个人中心</span>
-          <span class="gs-user-menu-tag">M2+</span>
         </el-dropdown-item>
 
         <el-dropdown-item disabled command="change-password">
           <el-icon><Lock /></el-icon>
           <span>修改密码</span>
-          <span class="gs-user-menu-tag">预留</span>
         </el-dropdown-item>
       </el-dropdown-menu>
     </template>
@@ -61,13 +66,10 @@
 </template>
 
 <script setup lang="ts">
-// GULIERP_SHELL_FINAL_POLISH_001 (2026-08-23).
-// FINAL POLISH drops the avatar-initials logic entirely. The trigger
-// now shows a generic UserFilled icon inside the avatar circle; the
-// display name appears exactly once (in the label). No more
-// "first char of name" inside the avatar → no visual duplicate of
-// the name's first character. This component remains a pure
-// read-only wrapper around the auth store.
+// GULIERP_SHELL_FINAL_POLISH_003 (2026-08-23).
+// Identity surface only — read-only wrapper around the auth store.
+// No business actions, no sign-out (lives in the topbar button),
+// no role chip, no initials, no avatar circle.
 import { computed } from 'vue';
 import { ArrowDown, User, UserFilled, Lock } from '@element-plus/icons-vue';
 import { useAuthStore } from '../../stores/auth';
@@ -84,22 +86,18 @@ const ariaLabel = computed<string>(() => {
   const who = displayName.value || userName.value || '未知用户';
   return `用户菜单 (${who})`;
 });
-
-// Role chip. Today only Platform Admin gets a chip (auth.isPlatformAdmin).
-// Tenant / company role display is deferred to M2+ alongside the user-center.
-const roleLabel = computed<string>(() => {
-  if (auth.user?.isPlatformAdmin) return '管理员';
-  return '';
-});
 </script>
 
 <style scoped>
+/* Topbar trigger: compact icon + name + chevron. 32px tall to
+   match the height of the other topbar controls (logout button,
+   company chip). No avatar circle, no role chip. */
 .gs-user-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   height: 32px;
-  padding: 0 10px;
+  padding: 0 8px;
   border: 0;
   background: transparent;
   border-radius: 4px;
@@ -113,22 +111,12 @@ const roleLabel = computed<string>(() => {
   background: var(--header-hover-bg);
   outline: 0;
 }
-.gs-user-avatar {
-  background: linear-gradient(135deg, #0A6ED1 0%, #085CAF 100%);
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.gs-user-icon {
+  color: var(--header-fg-muted, rgba(255, 255, 255, 0.78));
+  transition: color 120ms ease;
 }
-.gs-user-avatar-icon {
-  font-size: 18px;
-}
-.gs-user-avatar-icon--lg {
-  font-size: 28px;
-}
-.gs-user-avatar--lg {
-  width: 56px !important;
-  height: 56px !important;
+.gs-user-chip:hover .gs-user-icon {
+  color: var(--header-fg);
 }
 .gs-user-name {
   font-size: 13px;
@@ -148,8 +136,10 @@ const roleLabel = computed<string>(() => {
    styles are global so the popper can use them. Keep selectors
    specific enough not to bleed into other Element Plus dropdowns. */
 .gs-user-menu-popper .gs-user-dropdown-menu {
-  min-width: 280px;
+  min-width: 260px;
   padding: 4px 0;
+  border: 1px solid var(--border-default);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 .gs-user-menu-popper .gs-user-detail-item {
   cursor: default;
@@ -161,7 +151,19 @@ const roleLabel = computed<string>(() => {
 .gs-user-menu-popper .gs-user-detail-head {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+}
+.gs-user-menu-popper .gs-user-detail-icon {
+  /* Subtle slate icon — NOT a blue gradient circle.
+     The name is the visual anchor; the icon is a small auxiliary
+     marker so the identity line still reads as "person + name". */
+  color: var(--text-secondary, #5B738B);
+  flex-shrink: 0;
+  background: var(--bg-subtle, #F7F8FA);
+  border: 1px solid var(--border-subtle, #E5EBF0);
+  border-radius: 6px;
+  padding: 8px;
+  box-sizing: content-box;
 }
 .gs-user-menu-popper .gs-user-detail-text {
   display: flex;
@@ -172,42 +174,19 @@ const roleLabel = computed<string>(() => {
 .gs-user-menu-popper .gs-user-detail-name {
   font-size: 15px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-primary, #1D2D3E);
   line-height: 1.3;
 }
 .gs-user-menu-popper .gs-user-detail-handle {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text-muted, #6B7C8C);
   line-height: 1.4;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   margin-top: 1px;
 }
-.gs-user-menu-popper .gs-user-detail-role {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--primary-default);
-  line-height: 1.4;
-  letter-spacing: 0.2px;
-  margin-top: 4px;
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 3px;
-  background: var(--primary-bg);
-  border: 1px solid var(--primary-border);
-  align-self: flex-start;
-}
 .gs-user-menu-popper .gs-user-detail-meta {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--text-secondary, #5B738B);
   line-height: 1.5;
-}
-.gs-user-menu-popper .gs-user-menu-tag {
-  margin-left: auto;
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 3px;
-  background: var(--bg-subtle);
-  color: var(--text-muted);
-  font-weight: 500;
 }
 </style>

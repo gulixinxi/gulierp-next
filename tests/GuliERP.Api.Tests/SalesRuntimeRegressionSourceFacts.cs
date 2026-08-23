@@ -77,25 +77,48 @@ public sealed class SalesRuntimeRegressionSourceFacts
         Assert.Contains("const MIN_W = 180", shell);
         Assert.Contains("const MAX_W = 180", shell);
 
-        // ── UserMenu: trigger = 32px generic-icon avatar + name + chevron ──
+        // ── UserMenu: SHELL_FINAL_POLISH_003 — ERP-style identity surface ──
+        // GULIERP_SHELL_FINAL_POLISH_003 removed the avatar circle entirely.
+        // The trigger is icon + name + chevron; the dropdown detail head
+        // uses a small (32px) icon — NOT a colored circle. The dev tags
+        // "M2+" and "预留" are removed from the menu items.
         Assert.Contains("gs-user-menu-popper", userMenu);
         Assert.Contains(".gs-user-name", userMenu);
         Assert.Contains("ArrowDown", userMenu);
+        // Topbar trigger icon = 16px (was 32px avatar in 001; the avatar
+        // circle is gone in 003). Dropdown detail icon = 32px.
+        Assert.Contains(":size=\"16\"", userMenu);
         Assert.Contains(":size=\"32\"", userMenu);
-        Assert.Contains(":size=\"56\"", userMenu);
+        // No 56px avatar (was the dropdown detail avatar in 001).
+        Assert.DoesNotContain(":size=\"56\"", userMenu);
+        // No <el-avatar> element anywhere in UserMenu (no avatar circle).
+        Assert.DoesNotContain("<el-avatar", userMenu);
+        // The avatar-icon class (used for icons inside el-avatar) is gone
+        // because there is no el-avatar. New class names: gs-user-icon
+        // (topbar) + gs-user-detail-icon (dropdown).
+        Assert.DoesNotContain("gs-user-avatar-icon", userMenu);
+        Assert.Contains("gs-user-icon", userMenu);
+        Assert.Contains("gs-user-detail-icon", userMenu);
         Assert.Contains("UserFilled", userMenu);
-        Assert.Contains("gs-user-avatar-icon", userMenu);
+        // Initials logic is fully removed (was already gone in 001, kept here
+        // for safety so a regression re-introducing first-initial avatars fails).
         Assert.DoesNotContain("{{ initials }}", userMenu);
         Assert.DoesNotContain("const initials = computed", userMenu);
         Assert.DoesNotContain("name.slice(0, 1)", userMenu);
         Assert.DoesNotContain("name.slice(-2)", userMenu);
         Assert.DoesNotContain(".gs-user-role", userMenu);
+        // No role chip line in the dropdown detail head (管理员 removed).
+        Assert.DoesNotContain("管理员", userMenu);
 
         Assert.Contains("个人中心", userMenu);
         Assert.Contains("修改密码", userMenu);
+        // Dev-state tags removed.
+        Assert.DoesNotContain("个人中心 (M2+)", userMenu);
+        Assert.DoesNotContain("修改密码 (预留)", userMenu);
+        Assert.DoesNotContain("gs-user-menu-tag", userMenu);
+
         Assert.Contains("租户", userMenu);
         Assert.Contains("公司", userMenu);
-        Assert.Contains("管理员", userMenu);
         Assert.Contains("gs-user-detail-handle", userMenu);
         Assert.Contains("@{{ userName }}", userMenu);
 
