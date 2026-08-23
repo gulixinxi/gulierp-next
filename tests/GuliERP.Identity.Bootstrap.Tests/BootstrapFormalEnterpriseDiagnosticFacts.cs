@@ -17,28 +17,46 @@ public sealed class BootstrapFormalEnterpriseDiagnosticFacts
         Assert.True(result.hasCompleteFormalChain);
         Assert.True(result.g2EnterpriseOrganizationFoundationApplied);
         Assert.False(result.passwordEchoed);
+        Assert.True(result.expectedIdChainMatches);
+        Assert.True(result.hasCanonicalTenantCode);
+        Assert.True(result.hasCanonicalCompanyCode);
+        Assert.False(result.requiresCodeCanonicalization);
         Assert.Single(result.tenantMatches);
         Assert.Single(result.companyMatches);
         Assert.Single(result.userMatches);
-        Assert.Equal("guli", result.tenantMatches[0].Code);
-        Assert.Equal("guli001", result.companyMatches[0].Code);
+        Assert.Equal("GULI", result.tenantMatches[0].Code);
+        Assert.Equal("GULI001", result.companyMatches[0].Code);
         Assert.Equal("admin", result.userMatches[0].UserName);
+    }
+
+    [Fact]
+    public void FormalDiagnostic_LowercaseOnlyCompleteChain_ReturnsNoResidueButRequiresCanonicalization()
+    {
+        var result = Program.AnalyzeFormalEnterpriseBootstrap(BuildFormalData(tenantCode: "guli", companyCode: "guli001"));
+
+        Assert.Equal(Program.NoPartialBootstrapResidue, result.residueStatus);
+        Assert.True(result.hasCompleteFormalChain);
+        Assert.True(result.expectedIdChainMatches);
+        Assert.False(result.hasCanonicalTenantCode);
+        Assert.False(result.hasCanonicalCompanyCode);
+        Assert.True(result.requiresCodeCanonicalization);
+        Assert.Contains(result.recommendations, r => r.Contains("controlled canonicalization", StringComparison.Ordinal));
     }
 
     [Fact]
     public void FormalDiagnostic_CaseDuplicate_ReturnsPotentialResidue()
     {
         var data = BuildFormalData(
-            extraTenants: new[] { new Program.FormalTenantRow(2, "GULI", "谷粒", "Active") },
-            extraCompanies: new[] { new Program.FormalCompanyRow(20, 2, "GULI001", "谷粒科技", "Active") });
+            extraTenants: new[] { new Program.FormalTenantRow(2, "guli", "谷粒", "Active") },
+            extraCompanies: new[] { new Program.FormalCompanyRow(20, 2, "guli001", "谷粒科技", "Active") });
 
         var result = Program.AnalyzeFormalEnterpriseBootstrap(data);
 
         Assert.Equal(Program.PotentialPartialBootstrapResidueDetected, result.residueStatus);
         Assert.True(result.hasCaseInsensitiveDuplicateTenant);
         Assert.True(result.hasCaseInsensitiveDuplicateCompany);
-        Assert.True(result.hasUppercaseFailedTenantCode);
-        Assert.True(result.hasUppercaseFailedCompanyCode);
+        Assert.False(result.hasUppercaseFailedTenantCode);
+        Assert.False(result.hasUppercaseFailedCompanyCode);
     }
 
     [Fact]
@@ -144,21 +162,23 @@ public sealed class BootstrapFormalEnterpriseDiagnosticFacts
 
     private static Program.FormalEnterpriseBootstrapDiagnosticData BuildFormalData(
         IReadOnlyList<string>? migrationIds = null,
+        string tenantCode = "GULI",
+        string companyCode = "GULI001",
         IReadOnlyList<Program.FormalTenantRow>? extraTenants = null,
         IReadOnlyList<Program.FormalCompanyRow>? extraCompanies = null,
         IReadOnlyList<Program.FormalPlantRow>? extraPlants = null,
         IReadOnlyList<Program.FormalUserRow>? extraUsers = null)
     {
-        var tenants = new List<Program.FormalTenantRow> { new(1, "guli", "谷粒", "Active") };
+        var tenants = new List<Program.FormalTenantRow> { new(Program.FormalTenantId, tenantCode, "谷粒", "Active") };
         if (extraTenants is not null) tenants.AddRange(extraTenants);
 
-        var companies = new List<Program.FormalCompanyRow> { new(10, 1, "guli001", "谷粒信息", "Active") };
+        var companies = new List<Program.FormalCompanyRow> { new(Program.FormalCompanyId, Program.FormalTenantId, companyCode, "谷粒信息", "Active") };
         if (extraCompanies is not null) companies.AddRange(extraCompanies);
 
-        var plants = new List<Program.FormalPlantRow> { new(30, 1, 10, "MAIN", "主工厂", true, "Active") };
+        var plants = new List<Program.FormalPlantRow> { new(Program.FormalDefaultPlantId, Program.FormalTenantId, Program.FormalCompanyId, "MAIN", "主工厂", true, "Active") };
         if (extraPlants is not null) plants.AddRange(extraPlants);
 
-        var users = new List<Program.FormalUserRow> { new(100, 1, "admin", "春清", "Active", false) };
+        var users = new List<Program.FormalUserRow> { new(Program.FormalAdminUserId, Program.FormalTenantId, "admin", "春清", "Active", false) };
         if (extraUsers is not null) users.AddRange(extraUsers);
 
         var roleClaims = GuliErpPermissions.EnterpriseSystemAdminPermissions
@@ -186,29 +206,29 @@ public sealed class BootstrapFormalEnterpriseDiagnosticFacts
             Plants: plants,
             OrganizationUnits: new[]
             {
-                new Program.FormalOrganizationUnitRow(40, 1, 10, null, "ROOT", "谷粒信息", "Active"),
+                new Program.FormalOrganizationUnitRow(Program.FormalRootOrganizationUnitId, Program.FormalTenantId, Program.FormalCompanyId, null, "ROOT", "谷粒信息", "Active"),
             },
             Employees: new[]
             {
-                new Program.FormalEmployeeRow(50, 1, 10, 40, 100, "ADMIN", "春清", "Active"),
+                new Program.FormalEmployeeRow(Program.FormalAdminEmployeeId, Program.FormalTenantId, Program.FormalCompanyId, Program.FormalRootOrganizationUnitId, Program.FormalAdminUserId, "ADMIN", "春清", "Active"),
             },
             Users: users,
             CompanyMemberships: new[]
             {
-                new Program.FormalCompanyMembershipRow(60, 1, 10, 100, true, "Active"),
+                new Program.FormalCompanyMembershipRow(60, Program.FormalTenantId, Program.FormalCompanyId, Program.FormalAdminUserId, true, "Active"),
             },
             OrganizationMemberships: new[]
             {
-                new Program.FormalOrganizationMembershipRow(70, 1, 10, 100, 40, true, "Active"),
+                new Program.FormalOrganizationMembershipRow(70, Program.FormalTenantId, Program.FormalCompanyId, Program.FormalAdminUserId, Program.FormalRootOrganizationUnitId, true, "Active"),
             },
             Roles: new[]
             {
-                new Program.FormalRoleRow(200, 1, "ERP_SYSTEM_ADMIN", "Enterprise System Admin", true, "Active"),
+                new Program.FormalRoleRow(200, Program.FormalTenantId, "ERP_SYSTEM_ADMIN", "Enterprise System Admin", true, "Active"),
             },
             RoleClaims: roleClaims,
             RoleAssignments: new[]
             {
-                new Program.FormalRoleAssignmentRow(80, 1, 100, 200, 10, "Active"),
+                new Program.FormalRoleAssignmentRow(80, Program.FormalTenantId, Program.FormalAdminUserId, 200, Program.FormalCompanyId, "Active"),
             });
     }
 

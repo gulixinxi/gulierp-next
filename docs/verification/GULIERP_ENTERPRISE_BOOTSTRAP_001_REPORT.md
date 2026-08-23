@@ -475,6 +475,44 @@ Verification:
 
 Current gate remains `GULIERP_ENTERPRISE_BOOTSTRAP_001_OPERATOR_RESIDUE_DIAGNOSTIC_PENDING` until Operator runs the new CLI diagnostic and returns the JSON result. Browser Runtime validation must wait for `NO_PARTIAL_BOOTSTRAP_RESIDUE`.
 
+## 2026-08-23 Formal Code Canonicalization Audit Correction
+
+Operator corrected the formal coding rule after the successful Bootstrap:
+
+- Final canonical `TenantCode`: `GULI`
+- Final canonical `CompanyCode`: `GULI001`
+- Formal `TenantName`: `谷粒`
+- Formal `CompanyName`: `谷粒信息`
+- Formal `AdminUsername`: `admin`
+- Formal `AdminDisplayName`: `春清`
+
+The diagnostic assumption was corrected: uppercase `GULI/GULI001` is no longer treated as failed-attempt residue by case alone. Residue detection now prioritizes the successful Bootstrap ID chain and relationship completeness:
+
+- TenantId `83727350616817890`
+- CompanyId `83727350616817891`
+- DefaultPlantId `83727350616817892`
+- RootOrganizationUnitId `83727350616817893`
+- AdminUserId `83727350616817894`
+- AdminEmployeeId `83727350616817895`
+
+Diagnostic behavior after correction:
+
+- If exactly one complete formal chain exists with the expected IDs but codes are lowercase `guli/guli001`, the read-only diagnostic can still report `NO_PARTIAL_BOOTSTRAP_RESIDUE` and sets `requiresCodeCanonicalization=true`.
+- If uppercase and lowercase logical records both exist, the diagnostic reports `POTENTIAL_PARTIAL_BOOTSTRAP_RESIDUE_DETECTED` with IDs, codes, timestamps and relationship counts; no cleanup, merge or rename is performed.
+- If the uppercase record is already the unique complete formal chain, no code correction is required.
+
+Application behavior is protected by focused integration coverage: `EnterpriseBootstrapService` normalizes Tenant/Company codes at the input boundary, so lowercase `guli/guli001` persists as uppercase `GULI/GULI001`, and a later uppercase request is idempotently matched to the same Tenant/Company/User rather than creating a duplicate. Username `admin` remains lowercase.
+
+Verification after this correction:
+
+- `dotnet --version`: PASS, `10.0.400`
+- `dotnet build tools\GuliERP.Identity.Bootstrap\GuliERP.Identity.Bootstrap.csproj -c Release --no-restore --disable-build-servers -m:1 -p:UseSharedCompilation=false -p:NuGetAudit=false`: PASS, `0 warnings`, `0 errors`
+- `GuliERP.Identity.Bootstrap.Tests`: PASS, `64/64`
+- Focused isolated `GuliERP.Identity.IntegrationTests` filter `FullyQualifiedName~EnterpriseBootstrapAndOrganizationTreeFacts`: PASS, `12/12`
+  - artifacts: `C:\Users\Administrator\AppData\Local\Temp\gulierp-enterprise-canonical-code-433e1366035d41fabf2ef9dcbc726fa0`
+
+No database audit or code canonicalization update has been executed in this step. Canonical PostgreSQL remains unchanged by this code/test/report correction.
+
 ## Modified Files
 
 Core files intended for this Goal:

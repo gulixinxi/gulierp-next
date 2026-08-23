@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace GuliERP.Identity.IntegrationTests;
@@ -135,6 +136,47 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
 
         Assert.Equal(first.TenantId, second.TenantId);
         Assert.False(second.Created);
+    }
+
+    [Fact]
+    public async Task CreateEnterpriseBootstrap_Normalizes_Tenant_And_Company_Codes_To_Uppercase()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var bootstrap = sp.GetRequiredService<IEnterpriseBootstrapService>();
+
+        var first = await bootstrap.CreateEnterpriseBootstrapAsync(
+            new CreateEnterpriseBootstrapRequest(
+                "guli",
+                "谷粒",
+                "guli001",
+                "谷粒信息",
+                "admin",
+                "春清",
+                "CorrectHorse!2026"));
+
+        var second = await bootstrap.CreateEnterpriseBootstrapAsync(
+            new CreateEnterpriseBootstrapRequest(
+                "GULI",
+                "谷粒",
+                "GULI001",
+                "谷粒信息",
+                "admin",
+                "春清",
+                "CorrectHorse!2026"));
+
+        var db = sp.GetRequiredService<IdentityDbContext>();
+        var tenant = await db.Tenants.SingleAsync();
+        var company = await db.Companies.SingleAsync();
+        var user = await db.Users.SingleAsync();
+
+        Assert.Equal(first.TenantId, second.TenantId);
+        Assert.Equal(first.CompanyId, second.CompanyId);
+        Assert.False(second.Created);
+        Assert.Equal("GULI", tenant.Code);
+        Assert.Equal("GULI001", company.Code);
+        Assert.Equal("admin", user.UserName);
     }
 
     [Fact]
@@ -357,6 +399,7 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
     {
         var roots = new[]
         {
+            GetSourceDirectory(),
             Environment.GetEnvironmentVariable("GULIERP_REPO_ROOT"),
             Directory.GetCurrentDirectory(),
             AppContext.BaseDirectory,
@@ -379,4 +422,7 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         throw new FileNotFoundException(
             "Unable to locate repository file: " + Path.Combine(segments));
     }
+
+    private static string? GetSourceDirectory([CallerFilePath] string sourceFilePath = "")
+        => Path.GetDirectoryName(sourceFilePath);
 }

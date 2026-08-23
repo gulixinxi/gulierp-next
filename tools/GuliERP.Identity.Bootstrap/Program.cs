@@ -84,6 +84,12 @@ public static class Program
     public const string DiagnoseFormalEnterpriseBootstrap = "--diagnose-formal-enterprise-bootstrap";
     public const string NoPartialBootstrapResidue = "NO_PARTIAL_BOOTSTRAP_RESIDUE";
     public const string PotentialPartialBootstrapResidueDetected = "POTENTIAL_PARTIAL_BOOTSTRAP_RESIDUE_DETECTED";
+    public const long FormalTenantId = 83727350616817890;
+    public const long FormalCompanyId = 83727350616817891;
+    public const long FormalDefaultPlantId = 83727350616817892;
+    public const long FormalRootOrganizationUnitId = 83727350616817893;
+    public const long FormalAdminUserId = 83727350616817894;
+    public const long FormalAdminEmployeeId = 83727350616817895;
 
     public const int ExitOk = 0;
     public const int ExitSafetyGuard = 2;
@@ -1003,27 +1009,27 @@ public static class Program
         return Environment.GetEnvironmentVariable("GULIERP_ConnectionStrings__GuliERP");
     }
 
-    public sealed record FormalTenantRow(long Id, string Code, string Name, string Status);
+    public sealed record FormalTenantRow(long Id, string Code, string Name, string Status, DateTimeOffset CreatedAt = default);
 
-    public sealed record FormalCompanyRow(long Id, long TenantId, string Code, string Name, string Status);
+    public sealed record FormalCompanyRow(long Id, long TenantId, string Code, string Name, string Status, DateTimeOffset CreatedAt = default);
 
-    public sealed record FormalPlantRow(long Id, long TenantId, long CompanyId, string Code, string Name, bool IsDefault, string Status);
+    public sealed record FormalPlantRow(long Id, long TenantId, long CompanyId, string Code, string Name, bool IsDefault, string Status, DateTimeOffset CreatedAt = default);
 
-    public sealed record FormalOrganizationUnitRow(long Id, long TenantId, long CompanyId, long? ParentOrganizationUnitId, string Code, string Name, string Status);
+    public sealed record FormalOrganizationUnitRow(long Id, long TenantId, long CompanyId, long? ParentOrganizationUnitId, string Code, string Name, string Status, DateTimeOffset CreatedAt = default);
 
-    public sealed record FormalEmployeeRow(long Id, long TenantId, long CompanyId, long? DepartmentId, long? UserId, string EmployeeNo, string Name, string Status);
+    public sealed record FormalEmployeeRow(long Id, long TenantId, long CompanyId, long? DepartmentId, long? UserId, string EmployeeNo, string Name, string Status, DateTimeOffset CreatedAt = default);
 
-    public sealed record FormalUserRow(long Id, long TenantId, string? UserName, string DisplayName, string Status, bool IsPlatformAdmin);
+    public sealed record FormalUserRow(long Id, long TenantId, string? UserName, string DisplayName, string Status, bool IsPlatformAdmin, DateTimeOffset CreatedAt = default);
 
-    public sealed record FormalCompanyMembershipRow(long Id, long TenantId, long CompanyId, long UserId, bool IsDefault, string Status);
+    public sealed record FormalCompanyMembershipRow(long Id, long TenantId, long CompanyId, long UserId, bool IsDefault, string Status, DateTimeOffset CreatedAt = default);
 
-    public sealed record FormalOrganizationMembershipRow(long Id, long TenantId, long CompanyId, long UserId, long OrganizationUnitId, bool IsPrimary, string Status);
+    public sealed record FormalOrganizationMembershipRow(long Id, long TenantId, long CompanyId, long UserId, long OrganizationUnitId, bool IsPrimary, string Status, DateTimeOffset CreatedAt = default);
 
-    public sealed record FormalRoleRow(long Id, long TenantId, string Code, string Name, bool IsSystem, string Status);
+    public sealed record FormalRoleRow(long Id, long TenantId, string Code, string Name, bool IsSystem, string Status, DateTimeOffset CreatedAt = default);
 
     public sealed record FormalRoleClaimRow(long Id, long RoleId, string ClaimType, string? ClaimValue);
 
-    public sealed record FormalRoleAssignmentRow(long Id, long TenantId, long UserId, long RoleId, long? CompanyId, string Status);
+    public sealed record FormalRoleAssignmentRow(long Id, long TenantId, long UserId, long RoleId, long? CompanyId, string Status, DateTimeOffset CreatedAt = default);
 
     public sealed record FormalEnterpriseBootstrapDiagnosticData(
         IReadOnlyList<string> MigrationIds,
@@ -1077,6 +1083,10 @@ public static class Program
         IReadOnlyList<FormalRoleClaimRow> systemAdminRoleClaims,
         IReadOnlyList<FormalRoleAssignmentRow> roleAssignmentMatches,
         IReadOnlyList<FormalTenantCounts> countsByTenant,
+        bool expectedIdChainMatches,
+        bool hasCanonicalTenantCode,
+        bool hasCanonicalCompanyCode,
+        bool requiresCodeCanonicalization,
         bool hasUppercaseFailedTenantCode,
         bool hasLowercaseFormalTenantCode,
         bool hasUppercaseFailedCompanyCode,
@@ -1099,12 +1109,14 @@ public static class Program
         var companyIds = data.Companies.Select(c => c.Id).ToHashSet();
         var userIds = data.Users.Select(u => u.Id).ToHashSet();
         var roleIds = data.Roles.Select(r => r.Id).ToHashSet();
-        var adminUser = data.Users.FirstOrDefault(
-            u => string.Equals(u.UserName, "admin", StringComparison.Ordinal));
-        var formalTenant = data.Tenants.FirstOrDefault(
-            t => string.Equals(t.Code, "guli", StringComparison.Ordinal));
-        var formalCompany = data.Companies.FirstOrDefault(
-            c => string.Equals(c.Code, "guli001", StringComparison.Ordinal));
+        var adminUser = data.Users.FirstOrDefault(u => u.Id == FormalAdminUserId)
+            ?? data.Users.FirstOrDefault(u => string.Equals(u.UserName, "admin", StringComparison.Ordinal));
+        var formalTenant = data.Tenants.FirstOrDefault(t => t.Id == FormalTenantId)
+            ?? data.Tenants.FirstOrDefault(t => string.Equals(t.Code, "GULI", StringComparison.Ordinal))
+            ?? data.Tenants.FirstOrDefault(t => string.Equals(t.Code, "guli", StringComparison.Ordinal));
+        var formalCompany = data.Companies.FirstOrDefault(c => c.Id == FormalCompanyId)
+            ?? data.Companies.FirstOrDefault(c => string.Equals(c.Code, "GULI001", StringComparison.Ordinal))
+            ?? data.Companies.FirstOrDefault(c => string.Equals(c.Code, "guli001", StringComparison.Ordinal));
         var systemAdminRole = data.Roles.FirstOrDefault(
             r => string.Equals(r.Code, "ERP_SYSTEM_ADMIN", StringComparison.Ordinal));
 
@@ -1143,9 +1155,18 @@ public static class Program
                 data.RoleAssignments.Count(a => a.TenantId == t.Id)))
             .ToArray();
 
-        var hasUppercaseFailedTenantCode = data.Tenants.Any(t => string.Equals(t.Code, "GULI", StringComparison.Ordinal));
+        var hasCanonicalTenantCode = formalTenant is not null
+            && string.Equals(formalTenant.Code, "GULI", StringComparison.Ordinal);
+        var hasCanonicalCompanyCode = formalCompany is not null
+            && string.Equals(formalCompany.Code, "GULI001", StringComparison.Ordinal);
+        var requiresCodeCanonicalization = formalTenant is not null
+            && formalCompany is not null
+            && (!hasCanonicalTenantCode || !hasCanonicalCompanyCode)
+            && data.Tenants.Count == 1
+            && data.Companies.Count == 1;
+        var hasUppercaseFailedTenantCode = false;
         var hasLowercaseFormalTenantCode = formalTenant is not null;
-        var hasUppercaseFailedCompanyCode = data.Companies.Any(c => string.Equals(c.Code, "GULI001", StringComparison.Ordinal));
+        var hasUppercaseFailedCompanyCode = false;
         var hasLowercaseFormalCompanyCode = formalCompany is not null;
         var hasFailedAdminUser = data.Users.Any(u => string.Equals(u.UserName, "guli_admin", StringComparison.Ordinal));
         var hasFormalAdminUser = adminUser is not null;
@@ -1176,12 +1197,32 @@ public static class Program
                 && a.RoleId == systemAdminRole.Id
                 && a.CompanyId == formalCompany.Id);
 
-        var hasDefaultPlant = formalTenant is not null && formalCompany is not null
-            && data.Plants.Any(p => p.TenantId == formalTenant.Id && p.CompanyId == formalCompany.Id && p.IsDefault);
-        var hasRootOrganization = formalTenant is not null && formalCompany is not null
-            && data.OrganizationUnits.Any(o => o.TenantId == formalTenant.Id && o.CompanyId == formalCompany.Id && o.ParentOrganizationUnitId is null);
-        var hasAdminEmployee = adminUser is not null && formalTenant is not null && formalCompany is not null
-            && data.Employees.Any(e => e.TenantId == formalTenant.Id && e.CompanyId == formalCompany.Id && e.UserId == adminUser.Id);
+        var formalDefaultPlant = formalTenant is null || formalCompany is null
+            ? null
+            : data.Plants.FirstOrDefault(p => p.Id == FormalDefaultPlantId)
+                ?? data.Plants.FirstOrDefault(p => p.TenantId == formalTenant.Id && p.CompanyId == formalCompany.Id && p.IsDefault);
+        var formalRootOrganization = formalTenant is null || formalCompany is null
+            ? null
+            : data.OrganizationUnits.FirstOrDefault(o => o.Id == FormalRootOrganizationUnitId)
+                ?? data.OrganizationUnits.FirstOrDefault(o => o.TenantId == formalTenant.Id && o.CompanyId == formalCompany.Id && o.ParentOrganizationUnitId is null);
+        var formalAdminEmployee = adminUser is null || formalTenant is null || formalCompany is null
+            ? null
+            : data.Employees.FirstOrDefault(e => e.Id == FormalAdminEmployeeId)
+                ?? data.Employees.FirstOrDefault(e => e.TenantId == formalTenant.Id && e.CompanyId == formalCompany.Id && e.UserId == adminUser.Id);
+        var expectedIdChainMatches = formalTenant?.Id == FormalTenantId
+            && formalCompany?.Id == FormalCompanyId
+            && formalDefaultPlant?.Id == FormalDefaultPlantId
+            && formalRootOrganization?.Id == FormalRootOrganizationUnitId
+            && adminUser?.Id == FormalAdminUserId
+            && formalAdminEmployee?.Id == FormalAdminEmployeeId
+            && formalCompany.TenantId == formalTenant.Id
+            && formalDefaultPlant.TenantId == formalTenant.Id
+            && formalDefaultPlant.CompanyId == formalCompany.Id
+            && formalRootOrganization.TenantId == formalTenant.Id
+            && formalRootOrganization.CompanyId == formalCompany.Id
+            && formalAdminEmployee.TenantId == formalTenant.Id
+            && formalAdminEmployee.CompanyId == formalCompany.Id
+            && formalAdminEmployee.UserId == adminUser.Id;
 
         var migrationApplied = data.MigrationIds.Contains(
             "20260822090000_G2EnterpriseOrganizationFoundation",
@@ -1194,17 +1235,16 @@ public static class Program
         var hasCompleteFormalChain = schemaReady
             && data.Tenants.Count == 1
             && data.Companies.Count == 1
+            && expectedIdChainMatches
             && hasLowercaseFormalTenantCode
             && hasLowercaseFormalCompanyCode
             && hasFormalAdminUser
-            && !hasUppercaseFailedTenantCode
-            && !hasUppercaseFailedCompanyCode
             && !hasFailedAdminUser
             && !hasOrphanCompany
             && !hasOrphanPlant
-            && hasDefaultPlant
-            && hasRootOrganization
-            && hasAdminEmployee
+            && formalDefaultPlant is not null
+            && formalRootOrganization is not null
+            && formalAdminEmployee is not null
             && formalCompanyMembership is not null
             && formalOrganizationMembership is not null
             && systemAdminRole is not null
@@ -1216,9 +1256,9 @@ public static class Program
         {
             recommendations.Add("Verify Identity migrations and schema preflight before browser runtime validation.");
         }
-        if (hasUppercaseFailedTenantCode || hasUppercaseFailedCompanyCode || hasFailedAdminUser)
+        if (hasFailedAdminUser)
         {
-            recommendations.Add("Potential failed-attempt residue exists; stop and review before any cleanup.");
+            recommendations.Add("Potential failed-attempt admin user residue exists; stop and review before any cleanup.");
         }
         if (hasCaseInsensitiveDuplicateTenant || hasCaseInsensitiveDuplicateCompany)
         {
@@ -1227,6 +1267,10 @@ public static class Program
         if (hasOrphanCompany || hasOrphanPlant)
         {
             recommendations.Add("Orphan Company or Plant relationship detected; review IDs before remediation.");
+        }
+        if (requiresCodeCanonicalization)
+        {
+            recommendations.Add("Unique formal chain is present but TenantCode/CompanyCode require controlled canonicalization to GULI/GULI001 after read-only audit approval.");
         }
         if (!hasCompleteFormalChain)
         {
@@ -1258,6 +1302,10 @@ public static class Program
             systemAdminClaims,
             roleAssignments,
             countsByTenant,
+            expectedIdChainMatches,
+            hasCanonicalTenantCode,
+            hasCanonicalCompanyCode,
+            requiresCodeCanonicalization,
             hasUppercaseFailedTenantCode,
             hasLowercaseFormalTenantCode,
             hasUppercaseFailedCompanyCode,
@@ -1359,53 +1407,53 @@ public static class Program
 
         var tenants = await db.Tenants.AsNoTracking()
             .Where(t => t.Code.ToLower() == "guli")
-            .Select(t => new FormalTenantRow(t.Id, t.Code, t.Name, t.Status.ToString()))
+            .Select(t => new FormalTenantRow(t.Id, t.Code, t.Name, t.Status.ToString(), t.CreatedAt))
             .ToArrayAsync();
 
         var tenantIds = tenants.Select(t => t.Id).ToArray();
 
         var companies = await db.Companies.AsNoTracking()
             .Where(c => c.Code.ToLower() == "guli001")
-            .Select(c => new FormalCompanyRow(c.Id, c.TenantId, c.Code, c.Name, c.Status.ToString()))
+            .Select(c => new FormalCompanyRow(c.Id, c.TenantId, c.Code, c.Name, c.Status.ToString(), c.CreatedAt))
             .ToArrayAsync();
 
         var companyIds = companies.Select(c => c.Id).ToArray();
 
         var users = await db.Users.AsNoTracking()
             .Where(u => u.UserName != null && (u.UserName.ToLower() == "admin" || u.UserName.ToLower() == "guli_admin"))
-            .Select(u => new FormalUserRow(u.Id, u.TenantId, u.UserName, u.DisplayName, u.Status.ToString(), u.IsPlatformAdmin))
+            .Select(u => new FormalUserRow(u.Id, u.TenantId, u.UserName, u.DisplayName, u.Status.ToString(), u.IsPlatformAdmin, u.CreatedAt))
             .ToArrayAsync();
 
         var userIds = users.Select(u => u.Id).ToArray();
 
         var plants = await db.Plants.AsNoTracking()
             .Where(p => tenantIds.Contains(p.TenantId) || companyIds.Contains(p.CompanyId))
-            .Select(p => new FormalPlantRow(p.Id, p.TenantId, p.CompanyId, p.Code, p.Name, p.IsDefault, p.Status.ToString()))
+            .Select(p => new FormalPlantRow(p.Id, p.TenantId, p.CompanyId, p.Code, p.Name, p.IsDefault, p.Status.ToString(), p.CreatedAt))
             .ToArrayAsync();
 
         var organizationUnits = await db.OrganizationUnits.AsNoTracking()
             .Where(o => tenantIds.Contains(o.TenantId) || companyIds.Contains(o.CompanyId))
-            .Select(o => new FormalOrganizationUnitRow(o.Id, o.TenantId, o.CompanyId, o.ParentOrganizationUnitId, o.Code, o.Name, o.Status.ToString()))
+            .Select(o => new FormalOrganizationUnitRow(o.Id, o.TenantId, o.CompanyId, o.ParentOrganizationUnitId, o.Code, o.Name, o.Status.ToString(), o.CreatedAt))
             .ToArrayAsync();
 
         var employees = await db.Employees.AsNoTracking()
             .Where(e => tenantIds.Contains(e.TenantId) || companyIds.Contains(e.CompanyId) || (e.UserId.HasValue && userIds.Contains(e.UserId.Value)))
-            .Select(e => new FormalEmployeeRow(e.Id, e.TenantId, e.CompanyId, e.DepartmentId, e.UserId, e.EmployeeNo, e.Name, e.Status.ToString()))
+            .Select(e => new FormalEmployeeRow(e.Id, e.TenantId, e.CompanyId, e.DepartmentId, e.UserId, e.EmployeeNo, e.Name, e.Status.ToString(), e.CreatedAt))
             .ToArrayAsync();
 
         var companyMemberships = await db.UserCompanyMemberships.AsNoTracking()
             .Where(m => tenantIds.Contains(m.TenantId) || companyIds.Contains(m.CompanyId) || userIds.Contains(m.UserId))
-            .Select(m => new FormalCompanyMembershipRow(m.Id, m.TenantId, m.CompanyId, m.UserId, m.IsDefault, m.Status.ToString()))
+            .Select(m => new FormalCompanyMembershipRow(m.Id, m.TenantId, m.CompanyId, m.UserId, m.IsDefault, m.Status.ToString(), m.CreatedAt))
             .ToArrayAsync();
 
         var organizationMemberships = await db.UserOrganizationMemberships.AsNoTracking()
             .Where(m => tenantIds.Contains(m.TenantId) || companyIds.Contains(m.CompanyId) || userIds.Contains(m.UserId))
-            .Select(m => new FormalOrganizationMembershipRow(m.Id, m.TenantId, m.CompanyId, m.UserId, m.OrganizationUnitId, m.IsPrimary, m.Status.ToString()))
+            .Select(m => new FormalOrganizationMembershipRow(m.Id, m.TenantId, m.CompanyId, m.UserId, m.OrganizationUnitId, m.IsPrimary, m.Status.ToString(), m.CreatedAt))
             .ToArrayAsync();
 
         var roles = await db.Roles.AsNoTracking()
             .Where(r => tenantIds.Contains(r.TenantId) && r.Code == "ERP_SYSTEM_ADMIN")
-            .Select(r => new FormalRoleRow(r.Id, r.TenantId, r.Code, r.Name!, r.IsSystem, r.Status.ToString()))
+            .Select(r => new FormalRoleRow(r.Id, r.TenantId, r.Code, r.Name!, r.IsSystem, r.Status.ToString(), r.CreatedAt))
             .ToArrayAsync();
 
         var roleIds = roles.Select(r => r.Id).ToArray();
@@ -1417,7 +1465,7 @@ public static class Program
 
         var roleAssignments = await db.UserRoleAssignments.AsNoTracking()
             .Where(a => tenantIds.Contains(a.TenantId) || userIds.Contains(a.UserId) || roleIds.Contains(a.RoleId))
-            .Select(a => new FormalRoleAssignmentRow(a.Id, a.TenantId, a.UserId, a.RoleId, a.CompanyId, a.Status.ToString()))
+            .Select(a => new FormalRoleAssignmentRow(a.Id, a.TenantId, a.UserId, a.RoleId, a.CompanyId, a.Status.ToString(), a.CreatedAt))
             .ToArrayAsync();
 
         return new FormalEnterpriseBootstrapDiagnosticData(
