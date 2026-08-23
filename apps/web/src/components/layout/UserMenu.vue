@@ -1,40 +1,26 @@
 <template>
   <!--
-    UserMenu — GULIERP_DESIGN_SYSTEM_001_ENTERPRISE_FIORI_THEME (2026-08-23).
-    Identity surface for the topbar:
-      - Avatar circle with initials (uses Fiori primary gradient)
-      - Display name (or username fallback)
-      - Role chip (platform admin only; tenant/company role display is M2+)
-      - Dropdown with:
-          · detail head (name + role + account/tenant/company meta)
-          · 个人中心 (M2+, disabled)
-          · 修改密码 (预留, disabled — backend not implemented)
-          · 退出登录 (danger color, IN dropdown only)
-
-    Design rules (GULIERP_DESIGN_SYSTEM_001):
-      - Topbar must remain visually quiet. There is NO standalone
-        topbar logout button.
-      - Sign-out is a deliberate, two-click intent: open user menu
-        → click 退出登录 → ElMessageBox confirm → auth.signOut().
-      - Dropdown text uses the dark-text-on-light-popper pair
-        (text-primary on bg-container).
+    UserMenu — GULIERP_DESIGN_SYSTEM_001 / SHELL_MICRO_FIX (2026-08-23).
+    Trigger (topbar): avatar + display name + chevron only.
+      - The role chip is NOT shown here to avoid duplication with
+        the dropdown's detail head role line.
+      - The display name is shown ONLY in the topbar trigger;
+        the dropdown detail head shows the larger identity card.
+    Dropdown:
+      · detail head (avatar 44 + name + 管理员 + 账号/租户/公司 meta)
+      · 个人中心 (M2+, disabled)
+      · 修改密码 (预留, disabled)
+    Sign-out is NOT here — it lives in the standalone topbar
+    button (per SHELL_MICRO_FIX Operator decision).
   -->
   <el-dropdown
     trigger="click"
     popper-class="gs-user-menu-popper"
     :teleported="true"
-    @command="onCommand"
   >
     <button class="gs-user-chip" type="button" :aria-label="ariaLabel">
       <el-avatar :size="28" class="gs-user-avatar">{{ initials }}</el-avatar>
       <span class="gs-user-name">{{ displayName || '—' }}</span>
-      <el-tag
-        v-if="roleLabel"
-        size="small"
-        type="info"
-        effect="plain"
-        class="gs-user-role"
-      >{{ roleLabel }}</el-tag>
       <el-icon class="gs-org-chevron"><ArrowDown /></el-icon>
     </button>
     <template #dropdown>
@@ -64,29 +50,22 @@
           <span>修改密码</span>
           <span class="gs-user-menu-tag">预留</span>
         </el-dropdown-item>
-
-        <el-dropdown-item divided command="logout" :disabled="logoutLoading" class="gs-user-menu-logout">
-          <el-icon><SwitchButton /></el-icon>
-          <span>{{ logoutLoading ? '退出中…' : '退出登录' }}</span>
-        </el-dropdown-item>
       </el-dropdown-menu>
     </template>
   </el-dropdown>
 </template>
 
 <script setup lang="ts">
-// GULIERP_DESIGN_SYSTEM_001_ENTERPRISE_FIORI_THEME.
-// Logout is owned by this component (per spec: topbar stays quiet).
-// auth.signOut() handles CSRF refresh + POST /auth/logout + state clear +
-// router.replace('/login'). Server-side failures surface as ElMessage.error
-// inside signOut(); the local `finally` un-sticks the button either way.
-import { computed, ref } from 'vue';
-import { ElMessageBox } from 'element-plus';
-import { ArrowDown, SwitchButton, User, Lock } from '@element-plus/icons-vue';
+// GULIERP_DESIGN_SYSTEM_001 / SHELL_MICRO_FIX.
+// Identity surface only — no business actions, no sign-out.
+// All action plumbing (sign-out, profile, change-password) lives
+// in the topbar / future WorkItems. This component is a pure
+// read-only wrapper around the auth store for identity display.
+import { computed } from 'vue';
+import { ArrowDown, User, Lock } from '@element-plus/icons-vue';
 import { useAuthStore } from '../../stores/auth';
 
 const auth = useAuthStore();
-const logoutLoading = ref(false);
 
 const displayName = computed<string>(() => auth.displayName);
 const userName = computed<string>(() => auth.userName);
@@ -122,35 +101,6 @@ const roleLabel = computed<string>(() => {
   if (auth.user?.isPlatformAdmin) return '管理员';
   return '';
 });
-
-async function onCommand(cmd: string): Promise<void> {
-  if (cmd === 'logout') {
-    await onLogout();
-    return;
-  }
-  // profile / change-password are reserved (M2+); the dropdown items
-  // are disabled and the user is not expected to reach here, but if
-  // they do, do nothing.
-}
-
-async function onLogout(): Promise<void> {
-  if (logoutLoading.value) return;
-  try {
-    await ElMessageBox.confirm('确认要退出当前账号吗？', '退出登录', {
-      confirmButtonText: '退出',
-      cancelButtonText: '取消',
-      type: 'warning',
-    });
-  } catch {
-    return; // user cancelled the confirm dialog
-  }
-  logoutLoading.value = true;
-  try {
-    await auth.signOut();
-  } finally {
-    logoutLoading.value = false;
-  }
-}
 </script>
 
 <style scoped>
@@ -192,12 +142,6 @@ async function onLogout(): Promise<void> {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--header-fg);
-}
-.gs-user-role {
-  margin-left: 4px;
-  background: rgba(255, 255, 255, 0.16) !important;
-  color: var(--header-fg) !important;
-  border-color: var(--header-border) !important;
 }
 .gs-org-chevron {
   color: var(--header-fg);
@@ -256,15 +200,5 @@ async function onLogout(): Promise<void> {
   background: var(--bg-subtle);
   color: var(--text-muted);
   font-weight: 500;
-}
-.gs-user-menu-popper .gs-user-menu-logout {
-  color: var(--danger-default) !important;
-}
-.gs-user-menu-popper .gs-user-menu-logout:hover {
-  background: var(--danger-bg) !important;
-  color: var(--danger-hover) !important;
-}
-.gs-user-menu-popper .gs-user-menu-logout .el-icon {
-  color: var(--danger-default);
 }
 </style>

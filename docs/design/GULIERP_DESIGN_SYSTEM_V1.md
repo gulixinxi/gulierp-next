@@ -117,9 +117,9 @@ palette is private to the token file.
 
 ```
 +------------------------------------------------------------------+
-| [谷] GuliERP   [搜索客户/单据/物料/供应商 ▾]  …  AI  消息  谷粒  |清清|  全屏 |
+| [谷] GuliERP   [搜索客户/单据/物料/供应商 ▾]  …  AI  消息  谷粒  [清清 ▾]  [⏻退出]  全屏 |
 +------------------------------------------------------------------+
-        ↑ blue bg #0A6ED1        ↑ white-semi bg            ↑ white  ↑ white chip
+        ↑ blue bg #0A6ED1        ↑ white-semi bg            ↑ white    ↑ white→danger on hover
 ```
 
 ### 3.1 Specs
@@ -156,25 +156,34 @@ palette is private to the token file.
 - Open popover: white surface, 1px `var(--border-default)`, shadow
   `0 4px 16px rgba(0,0,0,0.12)`. Result row hover: `--bg-subtle`.
 
-### 3.4 Right cluster
+### 3.4 Right cluster (SHELL_MICRO_FIX, 2026-08-23)
 
 Order (left → right):
 
 1. **AI 助手** (text + MagicStick icon) — opens a placeholder popover.
    Disabled behavior is explicit: "待接入，不调用模型或后端接口".
 2. **消息** (text + Bell icon) — placeholder popover, no fake counts.
-3. **Company switch** — chip with OfficeBuilding icon + company name
+3. **企业信息** — company chip with OfficeBuilding icon + company name
    + chevron. Background `var(--header-hover-bg)`, white text. When
    multiple companies: opens dropdown with the list, current item
    tagged "当前".
-4. **User menu** — avatar + display name + role chip (管理员 if
-   `isPlatformAdmin`) + chevron. See §5.
-5. **进入全屏编辑** (text + FullScreen icon) — toggles
+4. **用户 (UserMenu)** — avatar + display name + chevron. **The role
+   chip "管理员" is NOT shown here**; it lives in the dropdown detail
+   head to avoid duplication. See §5.
+5. **退出 (Standalone logout)** — SwitchButton icon + "退出" text.
+   **Default = white** (matches topbar). **Hover / focus / loading =
+   danger color** (`var(--danger-default)` text, `var(--danger-bg)` bg).
+   NOT a permanent red button. Click → ElMessageBox warning confirm
+   → `auth.signOut()` (CSRF refresh + POST /auth/logout + state clear
+   + redirect to /login).
+6. **进入全屏编辑** (text + FullScreen icon) — toggles
    `tabs.toggleFullscreen()`.
 
-> **Design rule:** no standalone topbar logout button. Sign-out lives
-> inside the user menu dropdown, in red. The topbar must remain visually
-> quiet.
+> **Design rule (SHELL_MICRO_FIX):** sign-out is a high-frequency
+> operation in a daily-driver ERP. It lives in the topbar for 1-click
+> reach, not buried in a dropdown. The button is visually quiet by
+> default (matches topbar) and only signals danger on hover / focus /
+> loading — it must NOT be a permanent red button.
 
 ---
 
@@ -229,14 +238,13 @@ Order (left → right):
 
 ## 5. User Menu
 
-### 5.1 Topbar trigger
+### 5.1 Topbar trigger (SHELL_MICRO_FIX)
 
 - 32px tall, 10px horizontal padding, 4px radius.
 - Avatar: 28×28, gradient `linear-gradient(135deg, #0A6ED1, #085CAF)`.
 - Display name: 13px, white, ellipsis at 140px.
-- Role chip (only if `auth.user?.isPlatformAdmin`):
-  "管理员", white text, bg `rgba(255,255,255,0.16)`, border
-  `var(--header-border)`.
+- **NO role chip on the trigger.** The role "管理员" is shown only
+  inside the dropdown detail head, to avoid duplication.
 - Chevron: white ArrowDown.
 - Hover: bg `var(--header-hover-bg)`.
 
@@ -255,7 +263,8 @@ Order (left → right):
             公司：谷粒信息
 ```
 
-Avatar: 44×44, same gradient as the trigger.
+Avatar: 44×44, same gradient as the trigger. The role label
+("管理员") appears here — not on the topbar trigger.
 
 **Item 2 — 个人中心 (disabled, command="profile"):**
 
@@ -268,15 +277,9 @@ Avatar: 44×44, same gradient as the trigger.
 - `<Lock />` icon + "修改密码" + "预留" tag.
 - The "预留" tag uses the same chip style as M2+.
 
-**Item 4 — 退出登录 (danger, command="logout"):**
-
-- `<SwitchButton />` icon + label.
-- Text color: `var(--danger-default)` = `#BB0000`.
-- Hover bg: `var(--danger-bg)`, text `--danger-hover`.
-- Divided from the items above by Element Plus's `divided` attribute.
-- Click → `ElMessageBox.confirm('确认要退出当前账号吗？', '退出登录',
-  { type: 'warning' })` → `auth.signOut()` (which handles CSRF
-  refresh + POST /auth/logout + state clear + redirect to /login).
+> **SHELL_MICRO_FIX:** 退出登录 is NOT a dropdown item. Sign-out
+> lives in the topbar as a standalone button (see §3.4 item 5). The
+> topbar path is the 1-click intent for a high-frequency operation.
 
 ---
 
@@ -360,9 +363,19 @@ will be flagged in review and should be fixed before merge.
    placeholders and tooltips that are explicitly internal.
 8. **All new components must include source-grep coverage** in
    `tests/GuliERP.Api.Tests/SalesRuntimeRegressionSourceFacts.cs` if
-   they encode a hard structural rule (e.g. "logout lives in
-   dropdown, not in topbar"). The pattern is to assert the presence
-   of expected class names / strings AND the absence of anti-patterns.
+   they encode a hard structural rule (e.g. "topbar logout button is
+   white by default and danger on hover"). The pattern is to assert
+   the presence of expected class names / strings AND the absence
+   of anti-patterns.
+9. **Topbar logout button — visual contract.** Default state MUST be
+   white text (matches topbar). Hover / focus / loading MUST be
+   danger color. A permanently red logout button in the topbar is a
+   spec violation. This is enforced by
+   `SalesRuntimeRegressionSourceFacts.Shell_User_Menu_Exposes_Logout_And_Uses_Auth_SignOut`.
+10. **UserMenu trigger — no role chip.** The role "管理员" lives in
+    the dropdown detail head only. The trigger shows avatar + display
+    name + chevron. This avoids displaying the same identity line
+    twice.
 
 ---
 

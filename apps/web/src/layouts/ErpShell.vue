@@ -115,15 +115,36 @@
         </span>
 
         <!--
-          User menu: GULIERP_DESIGN_SYSTEM_001_ENTERPRISE_FIORI_THEME.
-          Identity surface only — avatar, display name, role chip,
-          dropdown detail head (admin/账号/租户/公司), 个人中心 (M2+),
-          修改密码 (预留), 退出登录 (red, IN dropdown only).
-          There is NO standalone topbar logout button — the design
-          system spec keeps the topbar visually quiet. Sign-out
-          lives inside the user dropdown.
+          User menu: GULIERP_DESIGN_SYSTEM_001 / SHELL_MICRO_FIX (2026-08-23).
+          Trigger shows avatar + display name + chevron only (no role chip,
+          no duplicate displayName). The dropdown detail head carries the
+          role + 账号/租户/公司 meta; the menu items are 个人中心 (M2+)
+          and 修改密码 (预留). Sign-out is NOT here — it is the standalone
+          topbar button below (Operator decision: enterprise ERP, high
+          frequency desktop operation, not hidden in a dropdown).
         -->
         <UserMenu />
+
+        <!--
+          Standalone topbar logout (SHELL_MICRO_FIX, 2026-08-23).
+          Visual: white text by default (matches topbar), danger color on
+          hover only. NOT a permanent red button — the spec is explicit
+          about "no always-on red". Click → ElMessageBox confirm →
+          auth.signOut() (CSRF refresh + POST /auth/logout + state clear
+          + redirect to /login).
+        -->
+        <el-button
+          text
+          size="small"
+          class="gs-logout-btn"
+          :loading="logoutLoading"
+          title="退出登录"
+          aria-label="退出登录"
+          @click="onLogout"
+        >
+          <el-icon><SwitchButton /></el-icon>
+          <span>退出</span>
+        </el-button>
 
         <el-button text size="small" @click="tabs.toggleFullscreen()">
           <el-icon><FullScreen /></el-icon>
@@ -292,7 +313,7 @@ import {
   Document, EditPen, Tickets, Close, FullScreen, Bell,
   UserFilled, ArrowLeft, ArrowRight, Van, Money, DataLine,
   TrendCharts, Goods, OfficeBuilding as _OB, Avatar, Files, RefreshRight,
-  ArrowDown, Loading, ScaleToOriginal, MoreFilled,
+  SwitchButton, ArrowDown, Loading, ScaleToOriginal, MoreFilled,
   Search, MagicStick
 } from '@element-plus/icons-vue';
 import {
@@ -336,7 +357,7 @@ function stripTrailingCompanyCode(name?: string, code?: string): string {
   return text;
 }
 
-// ===== Top bar actions: Company switch =====
+// ===== Top bar actions: Company switch + Standalone logout =====
 async function onChangeCompany(companyId: string): Promise<void> {
   if (companyLoading.value || companyId === auth.companyId) return;
   companyLoading.value = true;
@@ -351,6 +372,31 @@ async function onChangeCompany(companyId: string): Promise<void> {
     ElMessage.error({ message: title, duration: 2500 });
   } finally {
     companyLoading.value = false;
+  }
+}
+
+// SHELL_MICRO_FIX: standalone topbar logout (GULIERP_DESIGN_SYSTEM_001).
+// Visual: white text default, danger color on hover only (see
+// .gs-logout-btn). auth.signOut() handles CSRF refresh + POST /auth/logout
+// + state clear + router.replace('/login'). Local `finally` ensures the
+// button un-stucks regardless of signOut failure.
+const logoutLoading = ref(false);
+async function onLogout(): Promise<void> {
+  if (logoutLoading.value) return;
+  try {
+    await ElMessageBox.confirm('确认要退出当前账号吗？', '退出登录', {
+      confirmButtonText: '退出',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+  } catch {
+    return; // user cancelled the confirm dialog
+  }
+  logoutLoading.value = true;
+  try {
+    await auth.signOut();
+  } finally {
+    logoutLoading.value = false;
   }
 }
 
@@ -790,6 +836,26 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: var(--text-muted, #64748B);
   margin-top: 2px;
+}
+
+/* SHELL_MICRO_FIX: standalone topbar logout button.
+   GULIERP_DESIGN_SYSTEM_001 spec is explicit: NOT a permanent red
+   button. Default = white (matches topbar), hover/focus = danger
+   color. Loading state keeps the danger tint so the in-flight
+   intent is visible. */
+.gs-logout-btn {
+  color: var(--header-fg) !important;
+  margin: 0 4px;
+}
+.gs-logout-btn:hover,
+.gs-logout-btn:focus-visible {
+  background: var(--danger-bg) !important;
+  color: var(--danger-default) !important;
+}
+.gs-logout-btn.is-loading,
+.gs-logout-btn.is-loading:hover {
+  background: var(--danger-bg) !important;
+  color: var(--danger-default) !important;
 }
 </style>
 

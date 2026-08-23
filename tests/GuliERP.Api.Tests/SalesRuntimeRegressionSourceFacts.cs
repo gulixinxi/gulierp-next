@@ -32,32 +32,52 @@ public sealed class SalesRuntimeRegressionSourceFacts
     [Fact]
     public void Shell_User_Menu_Exposes_Logout_And_Uses_Auth_SignOut()
     {
-        // GULIERP_DESIGN_SYSTEM_001_ENTERPRISE_FIORI_THEME (2026-08-23):
-        // M1 extracted the user menu into components/layout/UserMenu.vue.
-        // M1.1 (vol.pro) added a standalone topbar logout button — that
-        // decision was REVERSED by the design system spec. The topbar
-        // must stay visually quiet; sign-out lives in the UserMenu
-        // dropdown (red text), is reached via two clicks (avatar →
-        // 退出登录), and the action delegates to auth.signOut().
+        // GULIERP_DESIGN_SYSTEM_001 / SHELL_MICRO_FIX (2026-08-23):
+        // Operator reversed the design-system-V1 decision: for a daily-driver
+        // ERP the sign-out action is high-frequency and must be reachable
+        // from the topbar in one click, not buried in a dropdown. The
+        // logout button is back in ErpShell.vue, but the visual contract
+        // is updated:
+        //   - default: white text (matches topbar, NOT a permanent red)
+        //   - hover / focus / loading: danger color
+        // The UserMenu is identity-only now: trigger shows avatar + name
+        // + chevron (no role chip, no duplicate displayName), dropdown
+        // shows detail head + 个人中心 + 修改密码 (no 退出登录).
         var shell = File.ReadAllText(Path.Combine(Root, "apps/web/src/layouts/ErpShell.vue"));
         var userMenu = File.ReadAllText(Path.Combine(Root, "apps/web/src/components/layout/UserMenu.vue"));
 
-        // ErpShell must NOT carry a standalone topbar logout button.
-        // The topbar stays quiet per design system spec.
-        Assert.DoesNotContain("gs-logout-btn", shell);
-        Assert.DoesNotContain("async function onLogout", shell);
-        Assert.DoesNotContain("SwitchButton", shell);
+        // ErpShell owns the standalone topbar logout button.
+        Assert.Contains("class=\"gs-logout-btn\"", shell);
+        Assert.Contains("SwitchButton", shell);
+        Assert.Contains("auth.signOut()", shell);
+        Assert.Contains("async function onLogout", shell);
+        Assert.Contains("title=\"退出登录\"", shell);
 
-        // UserMenu owns the dropdown: detail head, 个人中心 (M2+),
-        // 修改密码 (预留), 退出登录 (red, IN dropdown only).
+        // Visual contract: NOT a permanent red button.
+        // The .gs-logout-btn class must use white default + danger hover.
+        Assert.Contains(".gs-logout-btn {", shell);
+        Assert.Contains("color: var(--header-fg) !important", shell);
+        Assert.Contains("color: var(--danger-default) !important", shell);
+
+        // UserMenu: identity-only, no logout, no role chip in trigger.
         Assert.Contains("gs-user-menu-popper", userMenu);
         Assert.Contains("个人中心", userMenu);
         Assert.Contains("修改密码", userMenu);
-        Assert.Contains("command=\"logout\"", userMenu);
-        Assert.Contains("auth.signOut()", userMenu);
-        Assert.Contains("退出登录", userMenu);
-        Assert.Contains("gs-user-menu-logout", userMenu);
-        Assert.Contains("var(--danger-default)", userMenu);
+        Assert.Contains("账号", userMenu);
+        Assert.Contains("租户", userMenu);
+        Assert.Contains("公司", userMenu);
+        Assert.Contains("管理员", userMenu);
+
+        // UserMenu must NOT carry logout (it lives in the topbar).
+        Assert.DoesNotContain("command=\"logout\"", userMenu);
+        Assert.DoesNotContain("auth.signOut()", userMenu);
+        Assert.DoesNotContain("退出登录", userMenu);
+        Assert.DoesNotContain("gs-user-menu-logout", userMenu);
+
+        // The role chip in the trigger would duplicate the dropdown head.
+        // Trigger must be avatar + name + chevron only.
+        // (We check for the absence of the .gs-user-role style.)
+        Assert.DoesNotContain(".gs-user-role", userMenu);
     }    [Fact]
     public void SalesOrder_Runtime_Path_Uses_Real_Apis_And_No_Mock_Order_Source()
     {
