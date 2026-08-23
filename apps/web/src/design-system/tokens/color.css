@@ -33,7 +33,7 @@
   --color-blue-700: #074693;   /* active / pressed */
   --color-blue-800: #053374;   /* darkest text on light */
 
-  /* — Palette: Slate Sidebar (Module Rail only, see SHELL_FINAL_MICRO_FIX_001)
+  /* — Palette: Slate Sidebar (Module Rail only)
      The Module Rail is the ONLY dark surface in the shell chrome.
      The Secondary Menu uses a light surface (see --secondary-menu-* below). */
   --color-slate-50:  #F8FAFC;
@@ -43,7 +43,7 @@
   --color-slate-400: #94A3B8;
   --color-slate-500: #64748B;
   --color-slate-600: #475569;
-  --color-slate-700: #354A5F;   /* legacy — kept for back-compat, not used in V1 shell */
+  --color-slate-700: #354A5F;   /* Module Rail surface (SHELL_FINAL_POLISH_002A: restored from #1F2937) */
   --color-slate-800: #1E293B;
   --color-slate-900: #0F172A;
 
@@ -105,12 +105,13 @@
 
   /* Module Rail (dark) — the ONLY dark chrome in the shell.
      The Secondary Menu is a separate, light surface (see below). */
-  --sidebar-bg:           #1F2937;        /* Module Rail (Fiori / Chinese ERP) */
-  --sidebar-fg:           #D5DDE5;        /* default text on rail */
+  --sidebar-bg:           #354A5F;        /* SHELL_FINAL_POLISH_002A: restored to #354A5F (was #1F2937 in 001). The spec prefers the slightly warmer slate-700 for the rail. */
+  --sidebar-fg:           rgba(255, 255, 255, 0.85);   /* default text on rail (SHELL_FINAL_POLISH_002A) */
   --sidebar-fg-hover:     #FFFFFF;        /* hover */
-  --sidebar-active-bg:    #0A6ED1;        /* selected module — enterprise blue */
+  --sidebar-icon-fg:      rgba(255, 255, 255, 0.75);   /* default icon on rail (SHELL_FINAL_POLISH_002A) */
+  --sidebar-active-bg:    rgba(10, 110, 209, 0.25);    /* SHELL_FINAL_POLISH_002A: slight primary-blue tint on selected module (NOT a solid blue cell — keeps the 2-tone pattern) */
   --sidebar-active-fg:    #FFFFFF;
-  --sidebar-active-bar:   #0A6ED1;        /* SHELL_FINAL_POLISH_001: 3px left bar on selected module is now primary blue (was white). The rail cell bg stays dark; the blue bar is the only chrome change. */
+  --sidebar-active-bar:   #0A6ED1;        /* 4px left bar on selected module (SHELL_FINAL_POLISH_002A: was 3px) */
   --sidebar-divider:      rgba(255, 255, 255, 0.10);
 
   /* Secondary Menu (light) — 2-tone sidebar pattern (Fiori / Yonyou / Kingdee).

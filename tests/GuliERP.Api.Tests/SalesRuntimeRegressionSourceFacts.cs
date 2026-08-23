@@ -32,26 +32,28 @@ public sealed class SalesRuntimeRegressionSourceFacts
     [Fact]
     public void Shell_User_Menu_Exposes_Logout_And_Uses_Auth_SignOut()
     {
-        // GULIERP_SHELL_FINAL_POLISH_001 (2026-08-23):
-        // FINAL POLISH consolidates the visual contract:
-        //   - UserMenu trigger: 32px avatar (generic UserFilled icon, NOT
-        //     initials) + display name + chevron. The previous
-        //     "initials = first char of name" approach produced a
-        //     visible duplicate (avatar "清" + label "清清" side by side).
-        //     A generic icon guarantees zero overlap with the name.
-        //   - Dropdown head: 56px avatar (also generic icon) + name +
+        // GULIERP_SHELL_FINAL_POLISH_002A (2026-08-23):
+        // FINAL POLISH 002A is a tight micro-fix on the rail selected
+        // feedback. The shell was "shippable" after FINAL POLISH 001
+        // but the 3px blue bar alone was not enough visual signal.
+        // 002A adds:
+        //   - rail surface restored to #354A5F (was #1F2937 in 001 —
+        //     the spec prefers the slightly warmer slate-700).
+        //   - rail icon and label get dedicated alpha colors so the
+        //     icon does not overpower the short Chinese label.
+        //   - rail selected module: 4px blue bar (was 3px) + slight
+        //     primary-blue tint background rgba(10,110,209,0.25) +
+        //     font-weight 600 on the label + full-white icon.
+        //   - secondary menu UNCHANGED (180px, #E5F1FC selected bg,
+        //     primary text + 3px bar).
+        // Everything from FINAL POLISH 001 stays:
+        //   - UserMenu trigger = 32px generic UserFilled icon avatar
+        //     (NOT initials) + name + chevron.
+        //   - UserMenu dropdown head = 56px generic icon + name +
         //     @username + role chip + tenant + company.
-        //   - Sidebar: rail 64px dark #1F2937, secondary 180px FIXED
-        //     light. Rail selected = NO full primary-blue background
-        //     (the 2-tone pattern is broken if the rail cell turns blue);
-        //     the selection signal is the 3px #0A6ED1 left edge bar.
-        //   - Secondary selected keeps the light blue bg + primary text
-        //     + 3px primary bar (unchanged from FINAL MICRO FIX).
-        //   - Topbar search: 400px wide, centered (flex: 1 on center).
-        //   - Logout button: unchanged from SHELL_MICRO_FIX (white
-        //     default, danger on hover/focus/loading, never permanently
-        //     red). Click flow = ElMessageBox confirm -> auth.signOut()
-        //     -> CSRF + POST /auth/logout + redirect /login.
+        //   - topbar search 400px centered (flex: 1 on center).
+        //   - logout button = white default + danger hover/focus/
+        //     loading, never permanently red.
         var shell = File.ReadAllText(Path.Combine(Root, "apps/web/src/layouts/ErpShell.vue"));
         var userMenu = File.ReadAllText(Path.Combine(Root, "apps/web/src/components/layout/UserMenu.vue"));
         var navCss = File.ReadAllText(Path.Combine(Root, "apps/web/src/design-system/components/navigation.css"));
@@ -79,28 +81,16 @@ public sealed class SalesRuntimeRegressionSourceFacts
         Assert.Contains("gs-user-menu-popper", userMenu);
         Assert.Contains(".gs-user-name", userMenu);
         Assert.Contains("ArrowDown", userMenu);
-
-        // Trigger avatar size = 32px (was 28px in M1/MICRO_FIX).
         Assert.Contains(":size=\"32\"", userMenu);
-        // Dropdown head avatar size = 56px (was 48px in MICRO_FIX).
         Assert.Contains(":size=\"56\"", userMenu);
-
-        // The avatar slot MUST contain a generic icon (UserFilled), NOT
-        // a computed `initials` text. The previous `{{ initials }}`
-        // rendered the first char of the display name and produced a
-        // visual duplicate.
         Assert.Contains("UserFilled", userMenu);
         Assert.Contains("gs-user-avatar-icon", userMenu);
         Assert.DoesNotContain("{{ initials }}", userMenu);
-        // The `initials` computed property must be removed entirely.
         Assert.DoesNotContain("const initials = computed", userMenu);
         Assert.DoesNotContain("name.slice(0, 1)", userMenu);
         Assert.DoesNotContain("name.slice(-2)", userMenu);
-
-        // No role chip in the trigger.
         Assert.DoesNotContain(".gs-user-role", userMenu);
 
-        // Dropdown: detail head + 个人中心 + 修改密码. NO 退出登录.
         Assert.Contains("个人中心", userMenu);
         Assert.Contains("修改密码", userMenu);
         Assert.Contains("租户", userMenu);
@@ -114,29 +104,37 @@ public sealed class SalesRuntimeRegressionSourceFacts
         Assert.DoesNotContain("退出登录", userMenu);
         Assert.DoesNotContain("gs-user-menu-logout", userMenu);
 
-        // ── 2-tone sidebar (FINAL POLISH refinement) ──────────────────
-        // Rail uses dark --sidebar-bg (#1F2937).
-        // Secondary menu uses light --secondary-menu-bg (#FFFFFF).
+        // ── 2-tone sidebar (FINAL POLISH 002A: rail surface restored) ─
+        // Rail uses --sidebar-bg = #354A5F (was #1F2937 in 001).
+        // Secondary menu uses --secondary-menu-bg = #FFFFFF.
         Assert.Contains("background: var(--sidebar-bg)", navCss);
         Assert.Contains("background: var(--secondary-menu-bg)", navCss);
-        Assert.Contains("--sidebar-bg:           #1F2937", colorTokens);
+        Assert.Contains("--sidebar-bg:           #354A5F", colorTokens);
         Assert.Contains("--secondary-menu-bg:           #FFFFFF", colorTokens);
 
-        // RAIL SELECTED: the .is-active block must NOT swap background
-        // to the primary blue. Selection is signalled ONLY by the
-        // 3px primary-blue left edge bar. The rail cell bg stays
-        // dark (with a subtle white-alpha hover overlay for the
-        // click feedback).
+        // ── Rail colors (FINAL POLISH 002A) ─────────────────────────
+        // Unselected icon and label get dedicated alpha tokens so the
+        // icon does not overpower the short Chinese label.
+        Assert.Contains("--sidebar-icon-fg:      rgba(255, 255, 255, 0.75)", colorTokens);
+        Assert.Contains("--sidebar-fg:           rgba(255, 255, 255, 0.85)", colorTokens);
+        // The rail-item icon rule must use the dedicated alpha token.
+        Assert.Contains("color: var(--sidebar-icon-fg)", navCss);
+
+        // ── Rail selected: 4px blue bar + slight blue tint bg + weight 600 ─
         Assert.Contains(".gs-rail-item.is-active {", navCss);
         Assert.Contains(".gs-rail-item.is-active::before {", navCss);
-        Assert.Contains("background: var(--primary-default)", navCss);
-        // The rail's selected block must NOT carry a full primary-blue bg.
-        Assert.DoesNotContain("background: var(--sidebar-active-bg)", navCss);
-        // And the active-bar alias for the rail must be primary blue,
-        // not white (was white in MICRO_FIX).
+        // Slight primary-blue tint bg (NOT a solid blue cell).
+        Assert.Contains("background: var(--sidebar-active-bg)", navCss);
+        Assert.Contains("font-weight: 600", navCss);
+        // 4px bar (was 3px in 001).
+        Assert.Contains("width: 4px", navCss);
+        // Token values: alpha-tint active bg + primary-blue bar.
+        Assert.Contains("--sidebar-active-bg:    rgba(10, 110, 209, 0.25)", colorTokens);
         Assert.Contains("--sidebar-active-bar:   #0A6ED1", colorTokens);
+        // White icon + white label on the selected module.
+        Assert.Contains("color: #FFFFFF", navCss);
 
-        // Secondary menu selected state = light blue bg + primary text + 3px primary bar.
+        // ── Secondary menu selected: unchanged from FINAL POLISH 001 ───
         Assert.Contains("background: var(--secondary-menu-active-bg)", navCss);
         Assert.Contains("color: var(--secondary-menu-active-fg)", navCss);
         Assert.Contains("border-left-color: var(--secondary-menu-active-bar)", navCss);

@@ -55,28 +55,37 @@
 }
 .gs-rail-item .gs-rail-icon {
   font-size: 20px;
+  /* SHELL_FINAL_POLISH_002A: the icon gets its own alpha (slightly
+     dimmer than the label) so the icon does not overpower the short
+     Chinese label on a 64px-wide column. */
+  color: var(--sidebar-icon-fg);
+  transition: color 120ms ease;
 }
 .gs-rail-item:hover {
   color: var(--sidebar-fg-hover);
   background: rgba(255, 255, 255, 0.06);
 }
+.gs-rail-item:hover .gs-rail-icon {
+  color: var(--sidebar-fg-hover);
+}
 .gs-rail-item.is-active {
-  color: #FFFFFF;        /* white icon + label on dark rail */
-  /* SHELL_FINAL_POLISH_001: do NOT swap the background to primary blue.
-     The rail is a deep dark surface; a primary-blue module cell would
-     break the 2-tone sidebar pattern (rail=dark, secondary=light). The
-     selection signal here is the 3px primary-blue left edge bar. */
-  background: rgba(255, 255, 255, 0.06);
+  color: #FFFFFF;                         /* white label */
+  font-weight: 600;                       /* SHELL_FINAL_POLISH_002A: weight bump for selected */
+  background: var(--sidebar-active-bg);   /* slight primary-blue tint (NOT a solid blue cell) */
+}
+.gs-rail-item.is-active .gs-rail-icon {
+  color: #FFFFFF;                         /* white icon on selected */
 }
 .gs-rail-item.is-active::before {
   content: '';
   position: absolute;
   left: 0; top: 8px; bottom: 8px;
-  width: 3px;
-  /* SHELL_FINAL_POLISH_001: the indicator bar is now primary blue
-     (#0A6ED1) instead of white. The bar is the only chrome change
-     for the selected module; the rail surface stays dark. */
-  background: var(--primary-default);
+  /* SHELL_FINAL_POLISH_002A: bar is 4px (was 3px). The thicker bar +
+     the slight blue tint bg + the weight bump give the selected
+     module a clear, deliberate feedback without breaking the 2-tone
+     sidebar pattern. */
+  width: 4px;
+  background: var(--sidebar-active-bar);  /* #0A6ED1 */
   border-radius: 0 2px 2px 0;
 }
 .gs-rail-tooltip {

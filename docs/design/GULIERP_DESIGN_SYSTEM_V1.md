@@ -213,22 +213,30 @@ Order (left → right):
 
 ### 4.1 Module Rail (64px wide, always visible) — DARK
 
-> **SHELL_FINAL_POLISH_001 (2026-08-23):** the rail is widened to 64px
-> for icon+short-label breathing room. The selected state is
-> **no longer a full primary-blue cell**; the rail stays dark, and
-> the only chrome change for the selected module is a 3px primary-blue
-> left edge bar. A blue cell on the dark rail would break the 2-tone
-> sidebar pattern (rail = dark, secondary = light).
+> **SHELL_FINAL_POLISH_002A (2026-08-23):** the rail surface is
+> restored to `#354A5F` (the slate-700 used in V1). The selected
+> module gets stronger visual feedback: a 4px primary-blue left
+> edge bar, a slight primary-blue tint background
+> `rgba(10, 110, 209, 0.25)` (NOT a solid blue cell — the 2-tone
+> pattern is preserved), a white icon, and a white label at
+> weight 600. The icon and the label now have dedicated alpha
+> tokens so the icon does not overpower the short Chinese label.
 
-- Background: `var(--sidebar-bg)` = `#1F2937`.
+- Background: `var(--sidebar-bg)` = `#354A5F`.
 - Item: 52px tall, centered icon + short label.
-- Default text: `var(--sidebar-fg)` = `#D5DDE5`.
-- Hover: text → `#FFFFFF`, bg `rgba(255,255,255,0.06)`.
-- Selected: text → `#FFFFFF`, bg `rgba(255,255,255,0.06)` (subtle
-  white-alpha overlay), plus a 3px `var(--sidebar-active-bar)` =
-  `#0A6ED1` left edge bar. NO primary-blue cell background.
-- Tooltip: dark slate `var(--color-slate-900)` bg, white text, shows on
-  hover (long label).
+- Default icon: `var(--sidebar-icon-fg)` = `rgba(255,255,255,0.75)`.
+- Default label: `var(--sidebar-fg)` = `rgba(255,255,255,0.85)`.
+- Hover: icon + label → `#FFFFFF`, bg `rgba(255,255,255,0.06)`.
+- Selected:
+  - icon: `#FFFFFF`
+  - label: `#FFFFFF`, `font-weight: 600`
+  - bg: `var(--sidebar-active-bg)` = `rgba(10,110,209,0.25)`
+    (slight primary-blue tint; the rail cell is NOT a solid blue
+    block — the 2-tone pattern with the light secondary menu is
+    preserved)
+  - left edge bar: 4px `var(--sidebar-active-bar)` = `#0A6ED1`
+- Tooltip: dark slate `var(--color-slate-900)` bg, white text, shows
+  on hover (long label).
 - Modules: 工作台, 基础, 主数据, 销售, 采购, 库存, 生产, 质量, 系统
   (existing `shellNavigation` list — DO NOT change structure without
   ADR).
