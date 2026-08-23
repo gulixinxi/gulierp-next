@@ -2,7 +2,7 @@
 
 ## Gate
 
-Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_CODE_READY_OPERATOR_BOOTSTRAP_PENDING`
+Current gate: `GULIERP_ENTERPRISE_BOOTSTRAP_001_OPERATOR_RESIDUE_DIAGNOSTIC_PENDING`
 
 Start HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`
 
@@ -423,6 +423,58 @@ Current gate is now `GULIERP_ENTERPRISE_BOOTSTRAP_001_CODE_READY_OPERATOR_BOOTST
 
 Corrected Operator migration command must use the Bootstrap startup project rather than the running API startup output, so it does not depend on a locked or stale API DLL.
 
+## 2026-08-23 Formal Bootstrap Residue Diagnostic Follow-Up
+
+Operator completed formal Enterprise Bootstrap after schema repair. Non-sensitive result summary:
+
+- `ok`: `true`
+- `tenantCode`: `guli`
+- `tenantName`: `谷粒`
+- `companyCode`: `guli001`
+- `companyName`: `谷粒信息`
+- `adminUsername`: `admin`
+- `adminDisplayName`: `春清`
+- default Plant: created
+- root OrganizationUnit: created
+- `ERP_SYSTEM_ADMIN`: created
+- Company Membership: created
+- RoleAssignment: created
+- `passwordEchoed`: `false`
+- marker: `FORMAL_ENTERPRISE_BOOTSTRAP_DONE`
+
+The first ad hoc PowerShell residue diagnostic did not execute SQL. The canonical DB guard passed, but `New-Object Npgsql.NpgsqlConnection` failed before connecting because PowerShell had loaded only `Npgsql.dll` without the full .NET dependency load context:
+
+- missing assembly: `Microsoft.Extensions.Logging.Abstractions, Version=10.0.0.0`
+- classification: temporary diagnostic harness defect
+- not a PostgreSQL, Migration, Schema, or Bootstrap failure
+- no SQL executed and no database write occurred
+
+Code repair:
+
+- Added formal read-only CLI mode `--diagnose-formal-enterprise-bootstrap` to `tools/GuliERP.Identity.Bootstrap`.
+- The mode reads the canonical connection string only from `ConnectionStrings__GuliERP` or `GULIERP_ConnectionStrings__GuliERP`.
+- The mode rejects extra argv arguments so the connection string and password are not exposed in process lists.
+- The mode uses `AsNoTracking`/catalog reads and does not call `SaveChanges`, Bootstrap, delete, merge, or repair paths.
+- Output is structured JSON and includes:
+  - Identity migration history,
+  - `20260822090000_G2EnterpriseOrganizationFoundation` applied flag,
+  - `identity.gulierp_plant.IsDefault`,
+  - `ux_gulierp_plant_company_default`,
+  - `identity.gulierp_employee`,
+  - case-insensitive Tenant/Company/User matches for `guli`, `guli001`, `admin`, `guli_admin`,
+  - formal Tenant/Company/Plant/OrganizationUnit/Employee/Membership/`ERP_SYSTEM_ADMIN`/RoleClaims/RoleAssignment relationship checks,
+  - final residue marker: `NO_PARTIAL_BOOTSTRAP_RESIDUE` or `POTENTIAL_PARTIAL_BOOTSTRAP_RESIDUE_DETECTED`.
+
+Verification:
+
+- `dotnet build tools\GuliERP.Identity.Bootstrap\GuliERP.Identity.Bootstrap.csproj -c Release --no-restore --disable-build-servers -m:1 -p:UseSharedCompilation=false -p:NuGetAudit=false`: PASS, `0 warnings`, `0 errors`
+- Rebuilt full `GuliERP.Identity.Bootstrap.Tests`: PASS, `63/63`
+- CLI missing environment connection safety path: PASS, returns `ExitConnectionMissing`
+- CLI argv connection string rejection path: PASS, returns `ExitSafetyGuard`
+- scoped `git diff --check`: PASS
+
+Current gate remains `GULIERP_ENTERPRISE_BOOTSTRAP_001_OPERATOR_RESIDUE_DIAGNOSTIC_PENDING` until Operator runs the new CLI diagnostic and returns the JSON result. Browser Runtime validation must wait for `NO_PARTIAL_BOOTSTRAP_RESIDUE`.
+
 ## Modified Files
 
 Core files intended for this Goal:
@@ -450,6 +502,7 @@ Core files intended for this Goal:
 - `tests/GuliERP.Identity.Bootstrap.Tests/G2_005_OperatorEvidenceHarnessFacts.cs`
 - `tests/GuliERP.Identity.Bootstrap.Tests/OperatorEvidenceHarnessCsrfSessionFacts.cs`
 - `tests/GuliERP.Identity.Bootstrap.Tests/PowerShellAutomaticVariableCollisionFacts.cs`
+- `tests/GuliERP.Identity.Bootstrap.Tests/BootstrapFormalEnterpriseDiagnosticFacts.cs`
 - `tests/GuliERP.Mdm.Tests/MdmCurrentTenantParallelTests.cs`
 - `tests/GuliERP.Mdm.Tests/MdmServiceBoundaryArchitectureTests.cs`
 - `tools/GuliERP.Identity.Bootstrap/Program.cs`
@@ -461,11 +514,12 @@ Historical dirty/WIP files are intentionally not included.
 
 - `feat(identity): implement formal enterprise bootstrap foundation`
 - `fix(identity): align organization migration snapshot` (`eabed46`)
+- pending: formal residue diagnostic commit reported in delivery output.
 - pending: report evidence commit reported in delivery output.
 
 ## Unfinished Content
 
-- Formal tenant/company/admin runtime bootstrap is pending Operator-provided values.
+- Formal tenant/company/admin bootstrap completed; read-only residue diagnostic is pending Operator execution.
 - Browser runtime verification is pending formal admin and business-user creation.
 - PostgreSQL integration suites that require Operator credentials remain runtime pending.
 

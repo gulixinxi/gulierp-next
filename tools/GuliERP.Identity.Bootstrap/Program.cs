@@ -1,5 +1,6 @@
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
+using GuliERP.Identity.Application.Authorization;
 using GuliERP.Identity.Application.EnterpriseOrganization;
 using GuliERP.Identity.Infrastructure.EnterpriseOrganization;
 using GuliERP.Identity.Infrastructure.Authorization;
@@ -80,6 +81,9 @@ public static class Program
     /// </summary>
     public const string MarkerPrefix = "test_operator_";
     public const string ConnectionStringFromEnvironment = "--connection-string-from-env";
+    public const string DiagnoseFormalEnterpriseBootstrap = "--diagnose-formal-enterprise-bootstrap";
+    public const string NoPartialBootstrapResidue = "NO_PARTIAL_BOOTSTRAP_RESIDUE";
+    public const string PotentialPartialBootstrapResidueDetected = "POTENTIAL_PARTIAL_BOOTSTRAP_RESIDUE_DETECTED";
 
     public const int ExitOk = 0;
     public const int ExitSafetyGuard = 2;
@@ -136,6 +140,11 @@ public static class Program
         if (args.Length >= 1 && args[0] == "--formal-enterprise-bootstrap")
         {
             return await RunFormalEnterpriseBootstrapAsync(args);
+        }
+
+        if (args.Length >= 1 && args[0] == DiagnoseFormalEnterpriseBootstrap)
+        {
+            return await RunDiagnoseFormalEnterpriseBootstrapAsync(args);
         }
 
         if (args.Length >= 1 && args[0] == "--diagnose")
@@ -992,6 +1001,441 @@ public static class Program
         }
 
         return Environment.GetEnvironmentVariable("GULIERP_ConnectionStrings__GuliERP");
+    }
+
+    public sealed record FormalTenantRow(long Id, string Code, string Name, string Status);
+
+    public sealed record FormalCompanyRow(long Id, long TenantId, string Code, string Name, string Status);
+
+    public sealed record FormalPlantRow(long Id, long TenantId, long CompanyId, string Code, string Name, bool IsDefault, string Status);
+
+    public sealed record FormalOrganizationUnitRow(long Id, long TenantId, long CompanyId, long? ParentOrganizationUnitId, string Code, string Name, string Status);
+
+    public sealed record FormalEmployeeRow(long Id, long TenantId, long CompanyId, long? DepartmentId, long? UserId, string EmployeeNo, string Name, string Status);
+
+    public sealed record FormalUserRow(long Id, long TenantId, string? UserName, string DisplayName, string Status, bool IsPlatformAdmin);
+
+    public sealed record FormalCompanyMembershipRow(long Id, long TenantId, long CompanyId, long UserId, bool IsDefault, string Status);
+
+    public sealed record FormalOrganizationMembershipRow(long Id, long TenantId, long CompanyId, long UserId, long OrganizationUnitId, bool IsPrimary, string Status);
+
+    public sealed record FormalRoleRow(long Id, long TenantId, string Code, string Name, bool IsSystem, string Status);
+
+    public sealed record FormalRoleClaimRow(long Id, long RoleId, string ClaimType, string? ClaimValue);
+
+    public sealed record FormalRoleAssignmentRow(long Id, long TenantId, long UserId, long RoleId, long? CompanyId, string Status);
+
+    public sealed record FormalEnterpriseBootstrapDiagnosticData(
+        IReadOnlyList<string> MigrationIds,
+        bool PlantIsDefaultColumnExists,
+        bool DefaultPlantIndexExists,
+        bool EmployeeTableExists,
+        IReadOnlyList<FormalTenantRow> Tenants,
+        IReadOnlyList<FormalCompanyRow> Companies,
+        IReadOnlyList<FormalPlantRow> Plants,
+        IReadOnlyList<FormalOrganizationUnitRow> OrganizationUnits,
+        IReadOnlyList<FormalEmployeeRow> Employees,
+        IReadOnlyList<FormalUserRow> Users,
+        IReadOnlyList<FormalCompanyMembershipRow> CompanyMemberships,
+        IReadOnlyList<FormalOrganizationMembershipRow> OrganizationMemberships,
+        IReadOnlyList<FormalRoleRow> Roles,
+        IReadOnlyList<FormalRoleClaimRow> RoleClaims,
+        IReadOnlyList<FormalRoleAssignmentRow> RoleAssignments);
+
+    public sealed record FormalTenantCounts(
+        long TenantId,
+        string TenantCode,
+        int Companies,
+        int Plants,
+        int OrganizationUnits,
+        int Employees,
+        int Users,
+        int CompanyMemberships,
+        int OrganizationMemberships,
+        int Roles,
+        int RoleClaims,
+        int RoleAssignments);
+
+    public sealed record FormalEnterpriseBootstrapDiagnosticResult(
+        bool diagnostic,
+        string diagnosticName,
+        string gate,
+        IReadOnlyList<string> migrationHistory,
+        bool g2EnterpriseOrganizationFoundationApplied,
+        bool plantIsDefaultColumnExists,
+        bool defaultPlantIndexExists,
+        bool employeeTableExists,
+        IReadOnlyList<FormalTenantRow> tenantMatches,
+        IReadOnlyList<FormalCompanyRow> companyMatches,
+        IReadOnlyList<FormalUserRow> userMatches,
+        IReadOnlyList<FormalPlantRow> plantMatches,
+        IReadOnlyList<FormalOrganizationUnitRow> organizationUnitMatches,
+        IReadOnlyList<FormalEmployeeRow> employeeMatches,
+        IReadOnlyList<FormalCompanyMembershipRow> companyMembershipMatches,
+        IReadOnlyList<FormalOrganizationMembershipRow> organizationMembershipMatches,
+        IReadOnlyList<FormalRoleRow> systemAdminRoles,
+        IReadOnlyList<FormalRoleClaimRow> systemAdminRoleClaims,
+        IReadOnlyList<FormalRoleAssignmentRow> roleAssignmentMatches,
+        IReadOnlyList<FormalTenantCounts> countsByTenant,
+        bool hasUppercaseFailedTenantCode,
+        bool hasLowercaseFormalTenantCode,
+        bool hasUppercaseFailedCompanyCode,
+        bool hasLowercaseFormalCompanyCode,
+        bool hasFailedAdminUser,
+        bool hasFormalAdminUser,
+        bool hasCaseInsensitiveDuplicateTenant,
+        bool hasCaseInsensitiveDuplicateCompany,
+        bool hasOrphanCompany,
+        bool hasOrphanPlant,
+        bool hasCompleteFormalChain,
+        IReadOnlyList<string> recommendations,
+        string residueStatus,
+        bool passwordEchoed);
+
+    public static FormalEnterpriseBootstrapDiagnosticResult AnalyzeFormalEnterpriseBootstrap(
+        FormalEnterpriseBootstrapDiagnosticData data)
+    {
+        var tenantIds = data.Tenants.Select(t => t.Id).ToHashSet();
+        var companyIds = data.Companies.Select(c => c.Id).ToHashSet();
+        var userIds = data.Users.Select(u => u.Id).ToHashSet();
+        var roleIds = data.Roles.Select(r => r.Id).ToHashSet();
+        var adminUser = data.Users.FirstOrDefault(
+            u => string.Equals(u.UserName, "admin", StringComparison.Ordinal));
+        var formalTenant = data.Tenants.FirstOrDefault(
+            t => string.Equals(t.Code, "guli", StringComparison.Ordinal));
+        var formalCompany = data.Companies.FirstOrDefault(
+            c => string.Equals(c.Code, "guli001", StringComparison.Ordinal));
+        var systemAdminRole = data.Roles.FirstOrDefault(
+            r => string.Equals(r.Code, "ERP_SYSTEM_ADMIN", StringComparison.Ordinal));
+
+        var requiredPermissions = GuliErpPermissions.EnterpriseSystemAdminPermissions;
+        var systemAdminClaims = systemAdminRole is null
+            ? Array.Empty<FormalRoleClaimRow>()
+            : data.RoleClaims
+                .Where(c => c.RoleId == systemAdminRole.Id)
+                .OrderBy(c => c.ClaimValue, StringComparer.Ordinal)
+                .ToArray();
+
+        var hasAllSystemAdminClaims = requiredPermissions.All(permission =>
+            systemAdminClaims.Any(c =>
+                string.Equals(c.ClaimType, GuliErpPermissionClaimTypes.Permission, StringComparison.Ordinal)
+                && string.Equals(c.ClaimValue, permission, StringComparison.Ordinal)));
+
+        var roleAssignments = data.RoleAssignments
+            .Where(a => roleIds.Contains(a.RoleId) && userIds.Contains(a.UserId))
+            .OrderBy(a => a.Id)
+            .ToArray();
+
+        var countsByTenant = data.Tenants
+            .OrderBy(t => t.Id)
+            .Select(t => new FormalTenantCounts(
+                t.Id,
+                t.Code,
+                data.Companies.Count(c => c.TenantId == t.Id),
+                data.Plants.Count(p => p.TenantId == t.Id),
+                data.OrganizationUnits.Count(o => o.TenantId == t.Id),
+                data.Employees.Count(e => e.TenantId == t.Id),
+                data.Users.Count(u => u.TenantId == t.Id),
+                data.CompanyMemberships.Count(m => m.TenantId == t.Id),
+                data.OrganizationMemberships.Count(m => m.TenantId == t.Id),
+                data.Roles.Count(r => r.TenantId == t.Id),
+                data.RoleClaims.Count(c => data.Roles.Any(r => r.TenantId == t.Id && r.Id == c.RoleId)),
+                data.RoleAssignments.Count(a => a.TenantId == t.Id)))
+            .ToArray();
+
+        var hasUppercaseFailedTenantCode = data.Tenants.Any(t => string.Equals(t.Code, "GULI", StringComparison.Ordinal));
+        var hasLowercaseFormalTenantCode = formalTenant is not null;
+        var hasUppercaseFailedCompanyCode = data.Companies.Any(c => string.Equals(c.Code, "GULI001", StringComparison.Ordinal));
+        var hasLowercaseFormalCompanyCode = formalCompany is not null;
+        var hasFailedAdminUser = data.Users.Any(u => string.Equals(u.UserName, "guli_admin", StringComparison.Ordinal));
+        var hasFormalAdminUser = adminUser is not null;
+        var hasCaseInsensitiveDuplicateTenant = data.Tenants.Count != 1;
+        var hasCaseInsensitiveDuplicateCompany = data.Companies.Count != 1;
+        var hasOrphanCompany = data.Companies.Any(c => !tenantIds.Contains(c.TenantId));
+        var hasOrphanPlant = data.Plants.Any(p => !tenantIds.Contains(p.TenantId) || !companyIds.Contains(p.CompanyId));
+
+        var formalCompanyMembership = adminUser is null || formalTenant is null || formalCompany is null
+            ? null
+            : data.CompanyMemberships.FirstOrDefault(m =>
+                m.TenantId == formalTenant.Id
+                && m.CompanyId == formalCompany.Id
+                && m.UserId == adminUser.Id);
+
+        var formalOrganizationMembership = adminUser is null || formalTenant is null || formalCompany is null
+            ? null
+            : data.OrganizationMemberships.FirstOrDefault(m =>
+                m.TenantId == formalTenant.Id
+                && m.CompanyId == formalCompany.Id
+                && m.UserId == adminUser.Id);
+
+        var formalRoleAssignment = adminUser is null || formalTenant is null || formalCompany is null || systemAdminRole is null
+            ? null
+            : data.RoleAssignments.FirstOrDefault(a =>
+                a.TenantId == formalTenant.Id
+                && a.UserId == adminUser.Id
+                && a.RoleId == systemAdminRole.Id
+                && a.CompanyId == formalCompany.Id);
+
+        var hasDefaultPlant = formalTenant is not null && formalCompany is not null
+            && data.Plants.Any(p => p.TenantId == formalTenant.Id && p.CompanyId == formalCompany.Id && p.IsDefault);
+        var hasRootOrganization = formalTenant is not null && formalCompany is not null
+            && data.OrganizationUnits.Any(o => o.TenantId == formalTenant.Id && o.CompanyId == formalCompany.Id && o.ParentOrganizationUnitId is null);
+        var hasAdminEmployee = adminUser is not null && formalTenant is not null && formalCompany is not null
+            && data.Employees.Any(e => e.TenantId == formalTenant.Id && e.CompanyId == formalCompany.Id && e.UserId == adminUser.Id);
+
+        var migrationApplied = data.MigrationIds.Contains(
+            "20260822090000_G2EnterpriseOrganizationFoundation",
+            StringComparer.Ordinal);
+        var schemaReady = migrationApplied
+            && data.PlantIsDefaultColumnExists
+            && data.DefaultPlantIndexExists
+            && data.EmployeeTableExists;
+
+        var hasCompleteFormalChain = schemaReady
+            && data.Tenants.Count == 1
+            && data.Companies.Count == 1
+            && hasLowercaseFormalTenantCode
+            && hasLowercaseFormalCompanyCode
+            && hasFormalAdminUser
+            && !hasUppercaseFailedTenantCode
+            && !hasUppercaseFailedCompanyCode
+            && !hasFailedAdminUser
+            && !hasOrphanCompany
+            && !hasOrphanPlant
+            && hasDefaultPlant
+            && hasRootOrganization
+            && hasAdminEmployee
+            && formalCompanyMembership is not null
+            && formalOrganizationMembership is not null
+            && systemAdminRole is not null
+            && hasAllSystemAdminClaims
+            && formalRoleAssignment is not null;
+
+        var recommendations = new List<string>();
+        if (!schemaReady)
+        {
+            recommendations.Add("Verify Identity migrations and schema preflight before browser runtime validation.");
+        }
+        if (hasUppercaseFailedTenantCode || hasUppercaseFailedCompanyCode || hasFailedAdminUser)
+        {
+            recommendations.Add("Potential failed-attempt residue exists; stop and review before any cleanup.");
+        }
+        if (hasCaseInsensitiveDuplicateTenant || hasCaseInsensitiveDuplicateCompany)
+        {
+            recommendations.Add("Case-insensitive duplicate enterprise codes detected; do not continue runtime validation.");
+        }
+        if (hasOrphanCompany || hasOrphanPlant)
+        {
+            recommendations.Add("Orphan Company or Plant relationship detected; review IDs before remediation.");
+        }
+        if (!hasCompleteFormalChain)
+        {
+            recommendations.Add("Do not clean, merge, delete, or rerun Bootstrap without explicit Operator authorization.");
+        }
+
+        var residueStatus = hasCompleteFormalChain
+            ? NoPartialBootstrapResidue
+            : PotentialPartialBootstrapResidueDetected;
+
+        return new FormalEnterpriseBootstrapDiagnosticResult(
+            true,
+            "formal-enterprise-bootstrap-residue",
+            "GULIERP_ENTERPRISE_BOOTSTRAP_001_OPERATOR_RESIDUE_DIAGNOSTIC_PENDING",
+            data.MigrationIds,
+            migrationApplied,
+            data.PlantIsDefaultColumnExists,
+            data.DefaultPlantIndexExists,
+            data.EmployeeTableExists,
+            data.Tenants.OrderBy(t => t.Id).ToArray(),
+            data.Companies.OrderBy(c => c.TenantId).ThenBy(c => c.Id).ToArray(),
+            data.Users.OrderBy(u => u.TenantId).ThenBy(u => u.Id).ToArray(),
+            data.Plants.OrderBy(p => p.TenantId).ThenBy(p => p.CompanyId).ThenBy(p => p.Id).ToArray(),
+            data.OrganizationUnits.OrderBy(o => o.TenantId).ThenBy(o => o.CompanyId).ThenBy(o => o.Id).ToArray(),
+            data.Employees.OrderBy(e => e.TenantId).ThenBy(e => e.CompanyId).ThenBy(e => e.Id).ToArray(),
+            data.CompanyMemberships.OrderBy(m => m.TenantId).ThenBy(m => m.CompanyId).ThenBy(m => m.UserId).ToArray(),
+            data.OrganizationMemberships.OrderBy(m => m.TenantId).ThenBy(m => m.CompanyId).ThenBy(m => m.UserId).ToArray(),
+            data.Roles.Where(r => string.Equals(r.Code, "ERP_SYSTEM_ADMIN", StringComparison.Ordinal)).OrderBy(r => r.Id).ToArray(),
+            systemAdminClaims,
+            roleAssignments,
+            countsByTenant,
+            hasUppercaseFailedTenantCode,
+            hasLowercaseFormalTenantCode,
+            hasUppercaseFailedCompanyCode,
+            hasLowercaseFormalCompanyCode,
+            hasFailedAdminUser,
+            hasFormalAdminUser,
+            hasCaseInsensitiveDuplicateTenant,
+            hasCaseInsensitiveDuplicateCompany,
+            hasOrphanCompany,
+            hasOrphanPlant,
+            hasCompleteFormalChain,
+            recommendations,
+            residueStatus,
+            false);
+    }
+
+    private static async Task<int> RunDiagnoseFormalEnterpriseBootstrapAsync(string[] args)
+    {
+        if (args.Length != 1)
+        {
+            await Console.Error.WriteLineAsync(
+                "Usage: gulierp-identity-bootstrap --diagnose-formal-enterprise-bootstrap  (connection string from ConnectionStrings__GuliERP or GULIERP_ConnectionStrings__GuliERP)");
+            return ExitSafetyGuard;
+        }
+
+        var connectionString = ResolveFormalBootstrapConnectionString(ConnectionStringFromEnvironment);
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            await Console.Error.WriteLineAsync(
+                "ERROR(--diagnose-formal-enterprise-bootstrap): connection string is missing. " +
+                "Set ConnectionStrings__GuliERP or GULIERP_ConnectionStrings__GuliERP.");
+            return ExitConnectionMissing;
+        }
+
+        try
+        {
+            var services = new ServiceCollection();
+            services.AddLogging(b =>
+            {
+                b.SetMinimumLevel(LogLevel.Warning);
+                b.AddProvider(new StderrLoggerProvider());
+            });
+            services.AddDbContext<IdentityDbContext>(options =>
+            {
+                options.UseNpgsql(
+                    connectionString,
+                    npg => npg.MigrationsHistoryTable(
+                        "__ef_migrations_history",
+                        IdentityDbContext.DefaultSchema));
+            });
+
+            await using var sp = services.BuildServiceProvider();
+            var db = sp.GetRequiredService<IdentityDbContext>();
+            var data = await CollectFormalEnterpriseBootstrapDiagnosticDataAsync(db);
+            var output = AnalyzeFormalEnterpriseBootstrap(data);
+            await Console.Out.WriteLineAsync(System.Text.Json.JsonSerializer.Serialize(output));
+            return ExitOk;
+        }
+        catch (Exception ex) when (
+            ex is Microsoft.EntityFrameworkCore.DbUpdateException
+                or Npgsql.NpgsqlException
+                or System.Net.Sockets.SocketException
+                or TimeoutException)
+        {
+            await Console.Error.WriteLineAsync(
+                $"DB ERROR(--diagnose-formal-enterprise-bootstrap): {ex.GetType().Name}: {ex.Message}");
+            return ExitDatabaseUnavailable;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync(
+                $"EXCEPTION(--diagnose-formal-enterprise-bootstrap): {ex.GetType().Name}: {ex.Message}");
+            return ExitOtherException;
+        }
+    }
+
+    private static async Task<FormalEnterpriseBootstrapDiagnosticData> CollectFormalEnterpriseBootstrapDiagnosticDataAsync(
+        IdentityDbContext db)
+    {
+        var migrationIds = await db.Database
+            .SqlQueryRaw<string>(
+                "select \"MigrationId\" as \"Value\" from identity.__ef_migrations_history order by \"MigrationId\"")
+            .ToArrayAsync();
+
+        var plantIsDefaultColumnExists = await db.Database
+            .SqlQueryRaw<bool>(
+                "select exists (select 1 from information_schema.columns where table_schema = 'identity' and table_name = 'gulierp_plant' and column_name = 'IsDefault') as \"Value\"")
+            .SingleAsync();
+
+        var defaultPlantIndexExists = await db.Database
+            .SqlQueryRaw<bool>(
+                "select exists (select 1 from pg_indexes where schemaname = 'identity' and tablename = 'gulierp_plant' and indexname = 'ux_gulierp_plant_company_default') as \"Value\"")
+            .SingleAsync();
+
+        var employeeTableExists = await db.Database
+            .SqlQueryRaw<bool>(
+                "select exists (select 1 from information_schema.tables where table_schema = 'identity' and table_name = 'gulierp_employee') as \"Value\"")
+            .SingleAsync();
+
+        var tenants = await db.Tenants.AsNoTracking()
+            .Where(t => t.Code.ToLower() == "guli")
+            .Select(t => new FormalTenantRow(t.Id, t.Code, t.Name, t.Status.ToString()))
+            .ToArrayAsync();
+
+        var tenantIds = tenants.Select(t => t.Id).ToArray();
+
+        var companies = await db.Companies.AsNoTracking()
+            .Where(c => c.Code.ToLower() == "guli001")
+            .Select(c => new FormalCompanyRow(c.Id, c.TenantId, c.Code, c.Name, c.Status.ToString()))
+            .ToArrayAsync();
+
+        var companyIds = companies.Select(c => c.Id).ToArray();
+
+        var users = await db.Users.AsNoTracking()
+            .Where(u => u.UserName != null && (u.UserName.ToLower() == "admin" || u.UserName.ToLower() == "guli_admin"))
+            .Select(u => new FormalUserRow(u.Id, u.TenantId, u.UserName, u.DisplayName, u.Status.ToString(), u.IsPlatformAdmin))
+            .ToArrayAsync();
+
+        var userIds = users.Select(u => u.Id).ToArray();
+
+        var plants = await db.Plants.AsNoTracking()
+            .Where(p => tenantIds.Contains(p.TenantId) || companyIds.Contains(p.CompanyId))
+            .Select(p => new FormalPlantRow(p.Id, p.TenantId, p.CompanyId, p.Code, p.Name, p.IsDefault, p.Status.ToString()))
+            .ToArrayAsync();
+
+        var organizationUnits = await db.OrganizationUnits.AsNoTracking()
+            .Where(o => tenantIds.Contains(o.TenantId) || companyIds.Contains(o.CompanyId))
+            .Select(o => new FormalOrganizationUnitRow(o.Id, o.TenantId, o.CompanyId, o.ParentOrganizationUnitId, o.Code, o.Name, o.Status.ToString()))
+            .ToArrayAsync();
+
+        var employees = await db.Employees.AsNoTracking()
+            .Where(e => tenantIds.Contains(e.TenantId) || companyIds.Contains(e.CompanyId) || (e.UserId.HasValue && userIds.Contains(e.UserId.Value)))
+            .Select(e => new FormalEmployeeRow(e.Id, e.TenantId, e.CompanyId, e.DepartmentId, e.UserId, e.EmployeeNo, e.Name, e.Status.ToString()))
+            .ToArrayAsync();
+
+        var companyMemberships = await db.UserCompanyMemberships.AsNoTracking()
+            .Where(m => tenantIds.Contains(m.TenantId) || companyIds.Contains(m.CompanyId) || userIds.Contains(m.UserId))
+            .Select(m => new FormalCompanyMembershipRow(m.Id, m.TenantId, m.CompanyId, m.UserId, m.IsDefault, m.Status.ToString()))
+            .ToArrayAsync();
+
+        var organizationMemberships = await db.UserOrganizationMemberships.AsNoTracking()
+            .Where(m => tenantIds.Contains(m.TenantId) || companyIds.Contains(m.CompanyId) || userIds.Contains(m.UserId))
+            .Select(m => new FormalOrganizationMembershipRow(m.Id, m.TenantId, m.CompanyId, m.UserId, m.OrganizationUnitId, m.IsPrimary, m.Status.ToString()))
+            .ToArrayAsync();
+
+        var roles = await db.Roles.AsNoTracking()
+            .Where(r => tenantIds.Contains(r.TenantId) && r.Code == "ERP_SYSTEM_ADMIN")
+            .Select(r => new FormalRoleRow(r.Id, r.TenantId, r.Code, r.Name!, r.IsSystem, r.Status.ToString()))
+            .ToArrayAsync();
+
+        var roleIds = roles.Select(r => r.Id).ToArray();
+
+        var roleClaims = await db.RoleClaims.AsNoTracking()
+            .Where(c => roleIds.Contains(c.RoleId))
+            .Select(c => new FormalRoleClaimRow(c.Id, c.RoleId, c.ClaimType!, c.ClaimValue))
+            .ToArrayAsync();
+
+        var roleAssignments = await db.UserRoleAssignments.AsNoTracking()
+            .Where(a => tenantIds.Contains(a.TenantId) || userIds.Contains(a.UserId) || roleIds.Contains(a.RoleId))
+            .Select(a => new FormalRoleAssignmentRow(a.Id, a.TenantId, a.UserId, a.RoleId, a.CompanyId, a.Status.ToString()))
+            .ToArrayAsync();
+
+        return new FormalEnterpriseBootstrapDiagnosticData(
+            migrationIds,
+            plantIsDefaultColumnExists,
+            defaultPlantIndexExists,
+            employeeTableExists,
+            tenants,
+            companies,
+            plants,
+            organizationUnits,
+            employees,
+            users,
+            companyMemberships,
+            organizationMemberships,
+            roles,
+            roleClaims,
+            roleAssignments);
     }
 
     /// <summary>
