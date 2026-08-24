@@ -26,6 +26,7 @@ import type {
   WarehouseListParams,
   Warehouse,
   WarehouseForm,
+  MasterDataStatusInt,
 } from '../../types/mdm';
 import {
   whTypeIntToUi,
@@ -104,7 +105,7 @@ export async function listWarehouses(
  *  Warehouse cascade dropdown per Handoff §12. */
 export async function listAllWarehousesActiveOnly(): Promise<Warehouse[]> {
   const result = await apiGet<PagedResult<WarehouseDto>>('/api/v1/mdm/warehouses', {
-    params: { page: 1, pageSize: 200 } as any,
+    params: { page: 1, pageSize: 200, status: 1 as MasterDataStatusInt } as any,
   });
   return result.items.map(dtoToUi);
 }

@@ -65,10 +65,29 @@ export async function listUoms(params: UomListParams): Promise<PagedResult<Uom>>
   const qp: Record<string, string | number | undefined> = {};
   if (params.keyword) qp.keyword = params.keyword;
   if (params.status != null) qp.status = params.status;
-  if (params.dimension != null) qp.dimension = params.dimension;
-  qp.page = params.page ?? 1;
-  qp.pageSize = params.pageSize ?? 20;
-  const result = await apiGet<PagedResult<UomDto>>('/api/v1/mdm/uoms', { params: qp as any });
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 20;
+
+  // Backend UOM list supports keyword/status/page/pageSize only. Dimension is
+  // a UI filter, so fetch a bounded complete page and filter locally when set.
+  qp.page = params.dimension != null ? 1 : page;
+  qp.pageSize = params.dimension != null ? Math.max(200, pageSize) : pageSize;
+  let result = await apiGet<PagedResult<UomDto>>('/api/v1/mdm/uoms', { params: qp as any });
+  if (params.dimension != null && result.totalCount > result.items.length) {
+    result = await apiGet<PagedResult<UomDto>>('/api/v1/mdm/uoms', {
+      params: { ...qp, page: 1, pageSize: result.totalCount } as any,
+    });
+  }
+  if (params.dimension != null) {
+    const filtered = result.items.filter(item => item.dimension === params.dimension);
+    const start = (page - 1) * pageSize;
+    return {
+      items: filtered.slice(start, start + pageSize).map(dtoToUi),
+      page,
+      pageSize,
+      totalCount: filtered.length,
+    };
+  }
   return {
     ...result,
     items: result.items.map(dtoToUi),
