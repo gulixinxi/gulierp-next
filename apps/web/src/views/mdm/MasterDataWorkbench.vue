@@ -45,6 +45,7 @@ import {
   Goods,
   OfficeBuilding,
   ScaleToOriginal,
+  UserFilled,
 } from '@element-plus/icons-vue';
 
 interface WorkbenchModule {
@@ -85,6 +86,13 @@ const primaryModules: WorkbenchModule[] = [
     icon: OfficeBuilding,
   },
   {
+    title: '员工档案',
+    description: '按公司查看员工号、姓名、部门、关联用户与状态',
+    route: '/mdm/employees',
+    status: '真实 API',
+    icon: UserFilled,
+  },
+  {
     title: '仓库',
     description: '维护公司范围内的仓库档案与地址信息',
     route: '/mdm/warehouses',
@@ -101,10 +109,6 @@ const primaryModules: WorkbenchModule[] = [
 ];
 
 const deferredModules = [
-  {
-    title: '员工档案',
-    reason: '已有后端能力，前端列表页后续接入',
-  },
   {
     title: '基础字典',
     reason: '未发现可直接接入的 CRUD API',
