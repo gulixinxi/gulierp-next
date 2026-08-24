@@ -66,16 +66,25 @@ public class BootstrapDiagnoseFacts
         // either ExitDatabaseUnavailable (DB unreachable) or
         // ExitOk (if the operator DB happened to be available).
         // The contract is: the marker check passes.
-        var exit = await Program.Main(new[]
+        var savedStdin = Console.In;
+        try
         {
-            "--diagnose",
-            "Host=127.0.0.1;Port=1;Database=none;Timeout=1;Command Timeout=1",
-            "test_operator_g2_004",
-        });
-        // We don't assert the exact code; we assert that it
-        // did NOT return the safety guard (i.e. the marker
-        // check passed). The DB-down path is what we expect.
-        Assert.NotEqual(Program.ExitSafetyGuard, exit);
+            Console.SetIn(new NeverEndingTextReader());
+            var exit = await Program.Main(new[]
+            {
+                "--diagnose",
+                "Host=127.0.0.1;Port=1;Database=none;Timeout=1;Command Timeout=1",
+                "test_operator_g2_004",
+            }).WaitAsync(System.TimeSpan.FromSeconds(5));
+            // We don't assert the exact code; we assert that it
+            // did NOT return the safety guard (i.e. the marker
+            // check passed). The DB-down path is what we expect.
+            Assert.NotEqual(Program.ExitSafetyGuard, exit);
+        }
+        finally
+        {
+            Console.SetIn(savedStdin);
+        }
     }
 
     [Fact]
@@ -103,5 +112,13 @@ public class BootstrapDiagnoseFacts
             "prod_user_admin",
         });
         Assert.Equal(Program.ExitSafetyGuard, exit);
+    }
+
+    private sealed class NeverEndingTextReader : System.IO.TextReader
+    {
+        private readonly TaskCompletionSource<string> completion = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override Task<string> ReadToEndAsync() => completion.Task;
     }
 }

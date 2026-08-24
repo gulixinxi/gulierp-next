@@ -73,6 +73,8 @@ namespace GuliERP.Identity.Bootstrap;
 /// </summary>
 public static class Program
 {
+    private static readonly TimeSpan StandardInputReadTimeout = TimeSpan.FromMilliseconds(250);
+
     /// <summary>
     /// The default marker prefix for the G2-004 / G2-005 chain. The
     /// bootstrap refuses to touch anything without a marker prefix
@@ -224,7 +226,7 @@ public static class Program
         string? passwordLine;
         try
         {
-            passwordLine = await Console.In.ReadToEndAsync();
+            passwordLine = await ReadStandardInputToEndAsync();
         }
         catch
         {
@@ -385,7 +387,7 @@ public static class Program
         string? passwordLine;
         try
         {
-            passwordLine = await Console.In.ReadToEndAsync();
+            passwordLine = await ReadStandardInputToEndAsync();
         }
         catch
         {
@@ -887,7 +889,7 @@ public static class Program
 
         try
         {
-            password = (await Console.In.ReadToEndAsync()).Trim();
+            password = (await ReadStandardInputToEndAsync() ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(password))
             {
                 await Console.Error.WriteLineAsync(
@@ -929,7 +931,8 @@ public static class Program
             await using var sp = services.BuildServiceProvider();
             var db = sp.GetRequiredService<IdentityDbContext>();
             var userManager = sp.GetRequiredService<UserManager<GuliErpUser>>();
-            var bootstrap = new EnterpriseBootstrapService(db, userManager);
+            var logger = sp.GetRequiredService<ILogger<EnterpriseBootstrapService>>();
+            var bootstrap = new EnterpriseBootstrapService(db, userManager, logger);
 
             var result = await bootstrap.CreateEnterpriseBootstrapAsync(
                 new CreateEnterpriseBootstrapRequest(
@@ -1711,7 +1714,7 @@ public static class Program
         string? candidatePassword = null;
         try
         {
-            var stdin = await Console.In.ReadToEndAsync();
+            var stdin = await ReadStandardInputToEndAsync();
             candidatePassword = stdin?.Trim();
         }
         catch { /* empty STDIN is fine for the no-verify path */ }
@@ -1864,6 +1867,43 @@ public static class Program
             await Console.Error.WriteLineAsync($"EXCEPTION: {ex.GetType().Name}: {ex.Message}");
             return ExitOtherException;
         }
+    }
+
+    /// <summary>
+    /// Reads CLI stdin only when input is redirected or tests explicitly
+    /// replace <see cref="Console.In"/>. An inherited interactive console
+    /// stream may never send EOF, so the bootstrap treats it as empty input
+    /// instead of waiting forever.
+    /// </summary>
+    public static async Task<string?> ReadStandardInputToEndAsync()
+    {
+        var stdin = Console.In;
+        if (!Console.IsInputRedirected && !IsStringReaderBacked(stdin))
+        {
+            return null;
+        }
+
+        var readTask = stdin.ReadToEndAsync();
+        var completedTask = await Task.WhenAny(readTask, Task.Delay(StandardInputReadTimeout));
+        if (!ReferenceEquals(completedTask, readTask))
+        {
+            return null;
+        }
+
+        return await readTask;
+    }
+
+    private static bool IsStringReaderBacked(TextReader reader)
+    {
+        if (reader is StringReader)
+        {
+            return true;
+        }
+
+        var innerReader = reader.GetType()
+            .GetField("_in", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?.GetValue(reader);
+        return innerReader is StringReader;
     }
 
     /// <summary>
