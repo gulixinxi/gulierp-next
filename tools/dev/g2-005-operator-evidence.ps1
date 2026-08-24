@@ -15,7 +15,9 @@ stops only script-owned host PIDs.
 #>
 [CmdletBinding()]
 param(
-    [switch]$SkipPrompt
+    [switch]$SkipPrompt,
+    [switch]$FocusBootstrapTestOnly,
+    [switch]$FocusIdentityIntegrationTestOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -91,6 +93,35 @@ function Save-OperatorConnectionEnvironment {
     }
 }
 
+function Save-HarnessEnvironment {
+    [CmdletBinding()]
+    param()
+
+    $state = @{}
+    foreach ($name in Get-HarnessEnvironmentVariableNames) {
+        $state[$name] = @{
+            Exists = Test-Path -LiteralPath "Env:$name"
+            Value = (Get-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue).Value
+        }
+    }
+    return $state
+}
+
+function Restore-HarnessEnvironment {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)] [hashtable]$State)
+
+    foreach ($name in $State.Keys) {
+        $item = $State[$name]
+        if ($item.Exists) {
+            Set-Item -Path "Env:$name" -Value $item.Value
+        }
+        else {
+            Remove-Item -Path "Env:$name" -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 function Set-OperatorConnectionEnvironment {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)] [string]$ConnectionString)
@@ -98,6 +129,83 @@ function Set-OperatorConnectionEnvironment {
     $env:ConnectionStrings__GuliERP = $ConnectionString
     $env:GULIERP_ConnectionStrings__GuliERP = $ConnectionString
     $env:GULIERP_FOUNDATION_CONNECTION = $ConnectionString
+}
+
+function Get-CleanTestEnvironmentRemovals {
+    [CmdletBinding()]
+    param()
+
+    return @(Get-HarnessEnvironmentVariableNames)
+}
+
+function Get-PostgreSqlTestEnvironmentOverrides {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)] [string]$ConnectionString)
+
+    return @{
+        ConnectionStrings__GuliERP = $ConnectionString
+        GULIERP_ConnectionStrings__GuliERP = $ConnectionString
+        GULIERP_FOUNDATION_CONNECTION = $ConnectionString
+    }
+}
+
+function Get-ConnectionStringDatabaseName {
+    [CmdletBinding()]
+    param([string]$ConnectionString)
+
+    if ([string]::IsNullOrWhiteSpace($ConnectionString)) { return $null }
+    foreach ($part in ($ConnectionString -split ';')) {
+        $kv = $part -split '=', 2
+        if ($kv.Count -eq 2 -and $kv[0].Trim() -ieq 'Database') {
+            return $kv[1].Trim()
+        }
+    }
+    return $null
+}
+
+function Assert-ApprovedOperatorDatabaseTarget {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)] [string]$ConnectionString)
+
+    $databaseName = Get-ConnectionStringDatabaseName -ConnectionString $ConnectionString
+    if ($databaseName -ne $DefaultPgDatabase) {
+        $displayTarget = if ([string]::IsNullOrWhiteSpace($databaseName)) { 'UNKNOWN' } else { $databaseName }
+        Fail-Fatal "Database target is not approved for G2-005 PG focused verification. Database target=$displayTarget" 2
+    }
+    Write-Host "  ConnectionStrings__GuliERP = PRESENT"
+    Write-Host "  Database target = $DefaultPgDatabase"
+}
+
+function Resolve-OperatorPostgreSqlConnectionString {
+    [CmdletBinding()]
+    param([switch]$PromptIfMissing)
+
+    $resolvedConnection = $env:ConnectionStrings__GuliERP
+    if (-not $resolvedConnection) { $resolvedConnection = $env:GULIERP_ConnectionStrings__GuliERP }
+    if (-not $resolvedConnection) { $resolvedConnection = $env:GULIERP_FOUNDATION_CONNECTION }
+
+    if ($resolvedConnection) {
+        Write-Host "[G2-005] Using caller-provided PostgreSQL connection string."
+        return $resolvedConnection
+    }
+
+    if (-not $PromptIfMissing) {
+        Fail-Fatal "No PostgreSQL connection string is present for focused PG verification." 3
+    }
+
+    Write-Host "[G2-005] Using default Operator PostgreSQL target:"
+    Write-Host "  Host=$DefaultPgHost;Port=$DefaultPgPort;Database=$DefaultPgDatabase;Username=$DefaultPgUsername;Password=***"
+    Write-Host "[G2-005] PostgreSQL password will be read via Read-Host -AsSecureString (NOT echoed)."
+    $script:OperatorPgSecurePassword = Read-Host -Prompt 'PostgreSQL password' -AsSecureString
+    if ($null -eq $script:OperatorPgSecurePassword -or $script:OperatorPgSecurePassword.Length -lt 1) {
+        Fail-Fatal "Empty PostgreSQL password. Aborting." 2
+    }
+
+    Use-OperatorPlainPassword {
+        param($plainPwd)
+        $script:ResolvedOperatorConnection = "Host=$DefaultPgHost;Port=$DefaultPgPort;Database=$DefaultPgDatabase;Username=$DefaultPgUsername;Password=$plainPwd"
+    }
+    return $script:ResolvedOperatorConnection
 }
 
 function Restore-OperatorConnectionEnvironment {
@@ -321,6 +429,354 @@ function Parse-TrxCounters {
         Outcome = [string]$trx.TestRun.ResultSummary.outcome
         Path = $TrxPath
     }
+}
+
+function Get-ProcessTreeIds {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)] [int]$RootProcessId)
+
+    $ids = New-Object 'System.Collections.Generic.List[int]'
+    if ($RootProcessId -le 0) { return @() }
+    [void]$ids.Add($RootProcessId)
+
+    for ($i = 0; $i -lt $ids.Count; $i++) {
+        $parentId = $ids[$i]
+        $children = Get-CimInstance Win32_Process -Filter "ParentProcessId = $parentId" -ErrorAction SilentlyContinue
+        foreach ($child in @($children)) {
+            $childId = [int]$child.ProcessId
+            if ($childId -gt 0 -and -not $ids.Contains($childId)) {
+                [void]$ids.Add($childId)
+            }
+        }
+    }
+
+    return @($ids)
+}
+
+function Stop-OwnedProcessTree {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)] [int]$RootProcessId)
+
+    $treeIds = @(Get-ProcessTreeIds -RootProcessId $RootProcessId)
+    foreach ($processId in ($treeIds | Select-Object -Skip 1 | Sort-Object -Descending)) {
+        Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+    }
+    Stop-Process -Id $RootProcessId -Force -ErrorAction SilentlyContinue
+}
+
+function Format-CommandForLog {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [string]$FilePath,
+        [Parameter(Mandatory = $true)] [string[]]$Arguments
+    )
+
+    $parts = @($FilePath) + $Arguments
+    return ($parts | ForEach-Object {
+            if ($_ -match '[\s;]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ }
+        }) -join ' '
+}
+
+function Get-HarnessEnvironmentVariableNames {
+    [CmdletBinding()]
+    param()
+
+    return @(
+        'ConnectionStrings__GuliERP',
+        'GULIERP_ConnectionStrings__GuliERP',
+        'GULIERP_FOUNDATION_CONNECTION',
+        'GULIERP_OPERATOR_USER',
+        'GULIERP_OPERATOR_TENANT',
+        'PGHOST',
+        'PGPORT',
+        'PGDATABASE',
+        'PGUSER',
+        'PGPASSWORD',
+        'PGPASSFILE',
+        'PGSERVICE'
+    )
+}
+
+function Write-EnvironmentPresenceSnapshot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [string]$Label,
+        [hashtable]$EnvironmentOverrides,
+        [string[]]$EnvironmentRemovals
+    )
+
+    $removalSet = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($name in @($EnvironmentRemovals)) { [void]$removalSet.Add($name) }
+
+    Write-Host "    Environment snapshot: $Label"
+    foreach ($name in Get-HarnessEnvironmentVariableNames) {
+        $parentPresent = Test-Path -LiteralPath "Env:$name"
+        $childPresent = $parentPresent
+        if ($removalSet.Contains($name)) {
+            $childPresent = $false
+        }
+        if ($EnvironmentOverrides -and $EnvironmentOverrides.ContainsKey($name)) {
+            $childPresent = $true
+        }
+
+        $parentState = if ($parentPresent) { 'PRESENT' } else { 'ABSENT' }
+        $childState = if ($childPresent) { 'PRESENT' } else { 'ABSENT' }
+        Write-Host "      $name parent=$parentState child=$childState"
+    }
+}
+
+function Write-ChildProcessEnvironmentContractSnapshot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [string]$Label,
+        [Parameter(Mandatory = $true)] [System.Diagnostics.ProcessStartInfo]$ProcessStartInfo
+    )
+
+    $keys = @(
+        'PATH',
+        'PATHEXT',
+        'DOTNET_ROOT',
+        'DOTNET_ROOT_X64',
+        'DOTNET_CLI_HOME',
+        'DOTNET_SKIP_FIRST_TIME_EXPERIENCE',
+        'DOTNET_NOLOGO',
+        'HOME',
+        'USERPROFILE',
+        'TEMP',
+        'TMP',
+        'NUGET_PACKAGES',
+        'MSBUILDDEBUGPATH',
+        'MSBUILDDISABLENODEREUSE'
+    )
+
+    Write-Host "    Child ProcessStartInfo environment contract: $Label"
+    Write-Host "      ProcessStartInfo.EnvironmentVariables.Count=$($ProcessStartInfo.EnvironmentVariables.Count)"
+    foreach ($key in $keys) {
+        $state = if ($ProcessStartInfo.EnvironmentVariables.ContainsKey($key)) { 'PRESENT' } else { 'ABSENT' }
+        Write-Host "      $key=$state"
+    }
+}
+
+function Set-ProcessEnvironment {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [System.Diagnostics.ProcessStartInfo]$ProcessStartInfo,
+        [hashtable]$EnvironmentOverrides,
+        [string[]]$EnvironmentRemovals
+    )
+
+    foreach ($name in @($EnvironmentRemovals)) {
+        if ($ProcessStartInfo.EnvironmentVariables.ContainsKey($name)) {
+            $ProcessStartInfo.EnvironmentVariables.Remove($name)
+        }
+    }
+
+    if ($EnvironmentOverrides) {
+        foreach ($name in $EnvironmentOverrides.Keys) {
+            $value = [string]$EnvironmentOverrides[$name]
+            if ($ProcessStartInfo.EnvironmentVariables.ContainsKey($name)) {
+                $ProcessStartInfo.EnvironmentVariables[$name] = $value
+            }
+            else {
+                $ProcessStartInfo.EnvironmentVariables.Add($name, $value)
+            }
+        }
+    }
+}
+
+function Join-ProcessArguments {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)] [string[]]$Arguments)
+
+    return ($Arguments | ForEach-Object {
+            if ($_ -notmatch '[\s"]') { return $_ }
+            '"' + ($_ -replace '(\\*)"', '$1$1\"' -replace '(\\+)$', '$1$1') + '"'
+        }) -join ' '
+}
+
+function Get-BufferedTail {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [System.Collections.IList]$Lines,
+        [int]$LineCount = 80
+    )
+
+    if ($Lines.Count -eq 0) { return @() }
+    $skip = [Math]::Max(0, $Lines.Count - $LineCount)
+    return @($Lines[$skip..($Lines.Count - 1)] |
+        ForEach-Object { (Redact-SecretText $_).TrimEnd() })
+}
+
+function Invoke-DotNetTestWithTimeout {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [string]$SuiteName,
+        [Parameter(Mandatory = $true)] [string]$SuiteProject,
+        [Parameter(Mandatory = $true)] [string]$EvidenceDir,
+        [hashtable]$EnvironmentOverrides,
+        [string[]]$EnvironmentRemovals,
+        [int]$TimeoutSec = 300
+    )
+
+    if (-not (Test-Path -LiteralPath $EvidenceDir)) {
+        New-Item -ItemType Directory -Path $EvidenceDir -Force | Out-Null
+    }
+
+    $parentWorkingDirectory = (Get-Location).Path
+    $processWorkingDirectory = $RepoRoot
+    if ([System.IO.Path]::IsPathRooted($SuiteProject)) {
+        $projectPath = $SuiteProject
+    }
+    else {
+        $projectPath = Join-Path $RepoRoot $SuiteProject
+    }
+    $projectPath = [System.IO.Path]::GetFullPath($projectPath)
+    if (-not (Test-Path -LiteralPath $projectPath -PathType Leaf)) {
+        Write-Host "  [FATAL] $SuiteName project file missing: $projectPath" -ForegroundColor Red
+        Write-Host "    Parent PowerShell CWD: $parentWorkingDirectory" -ForegroundColor Red
+        Write-Host "    RepoRoot: $RepoRoot" -ForegroundColor Red
+        Write-Host "    Process WorkingDirectory: $processWorkingDirectory" -ForegroundColor Red
+        Fail-Fatal "[$SuiteName] project file missing before dotnet test start." 1
+    }
+
+    $suiteStart = Get-Date
+    $trxFile = Join-Path $EvidenceDir ($SuiteName + '.trx')
+    $stdoutFile = Join-Path $EvidenceDir ($SuiteName + '.stdout.log')
+    $stderrFile = Join-Path $EvidenceDir ($SuiteName + '.stderr.log')
+    $trxLogger = "trx;LogFileName=$trxFile"
+    # Static harness guard: keep the TRX logger contract visible as "--logger $trxLogger".
+    $dotnetTestArgs = @('test', $projectPath, '-c', 'Release', '--no-build', '--nologo', '--logger', $trxLogger)
+    $sanitizedCommand = Format-CommandForLog -FilePath $Dotnet -Arguments $dotnetTestArgs
+
+    Write-Host "  [RUN] $SuiteName"
+    Write-Host "    Parent PowerShell CWD: $parentWorkingDirectory"
+    Write-Host "    Process WorkingDirectory: $processWorkingDirectory"
+    Write-Host "    Project: $projectPath"
+    Write-Host "    Project exists: True"
+    Write-EnvironmentPresenceSnapshot -Label $SuiteName -EnvironmentOverrides $EnvironmentOverrides -EnvironmentRemovals $EnvironmentRemovals
+    Write-Host "    RedirectStandardInput: False"
+    Write-Host "    Command: $sanitizedCommand"
+    Write-Host "    TRX: $trxFile"
+    Write-Host "    Timeout: ${TimeoutSec}s"
+
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $Dotnet
+    $psi.WorkingDirectory = $processWorkingDirectory
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+    $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+    Set-ProcessEnvironment -ProcessStartInfo $psi -EnvironmentOverrides $EnvironmentOverrides -EnvironmentRemovals $EnvironmentRemovals
+    Write-ChildProcessEnvironmentContractSnapshot -Label $SuiteName -ProcessStartInfo $psi
+
+    $argumentListProperty = [System.Diagnostics.ProcessStartInfo].GetProperty('ArgumentList')
+    if ($argumentListProperty) {
+        foreach ($argument in $dotnetTestArgs) {
+            [void]$psi.ArgumentList.Add($argument)
+        }
+    }
+    else {
+        $psi.Arguments = Join-ProcessArguments -Arguments $dotnetTestArgs
+    }
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $psi
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    $started = $process.Start()
+    if (-not $started) {
+        Fail-Fatal "Failed to start dotnet test for $SuiteName." 1
+    }
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    $nextHeartbeat = (Get-Date).AddSeconds(10)
+
+    while ((Get-Date) -lt $deadline) {
+        $exited = $process.WaitForExit(1000)
+        if ((Get-Date) -ge $nextHeartbeat) {
+            Write-Host "    Still running: elapsed=$([int]$stopwatch.Elapsed.TotalSeconds)s PID=$($process.Id)"
+            $nextHeartbeat = (Get-Date).AddSeconds(10)
+        }
+        if ($exited) { break }
+    }
+
+    $stopwatch.Stop()
+    if (-not $process.HasExited) {
+        $elapsed = [int]$stopwatch.Elapsed.TotalSeconds
+        Write-Host "  [TIMEOUT] $SuiteName after ${elapsed}s. PID=$($process.Id)" -ForegroundColor Red
+        Write-Host "    Command: $sanitizedCommand" -ForegroundColor Red
+        Stop-OwnedProcessTree -RootProcessId $process.Id
+        $process.WaitForExit()
+        $stdoutText = $stdoutTask.Result
+        $stderrText = $stderrTask.Result
+        $stdoutLinesBuffer = @($stdoutText -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
+        $stderrLinesBuffer = @($stderrText -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
+        Set-Content -LiteralPath $stdoutFile -Value $stdoutLinesBuffer -Encoding UTF8
+        Set-Content -LiteralPath $stderrFile -Value $stderrLinesBuffer -Encoding UTF8
+        $stderrTail = Get-BufferedTail -Lines $stderrLinesBuffer
+        if ($stderrTail.Count -gt 0) {
+            Write-Host "    STDERR tail:" -ForegroundColor Yellow
+            foreach ($line in $stderrTail) { Write-Host "      $line" -ForegroundColor Yellow }
+        }
+        Fail-Fatal "$SuiteName timed out after ${TimeoutSec}s." 1
+    }
+
+    $process.WaitForExit()
+    $stdoutText = $stdoutTask.Result
+    $stderrText = $stderrTask.Result
+    $stdoutLinesBuffer = @($stdoutText -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
+    $stderrLinesBuffer = @($stderrText -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
+    Set-Content -LiteralPath $stdoutFile -Value $stdoutLinesBuffer -Encoding UTF8
+    Set-Content -LiteralPath $stderrFile -Value $stderrLinesBuffer -Encoding UTF8
+    foreach ($line in $stdoutLinesBuffer) {
+        Write-Host "    $((Redact-SecretText $line).TrimEnd())"
+    }
+    foreach ($line in $stderrLinesBuffer) {
+        Write-Host "    STDERR: $((Redact-SecretText $line).TrimEnd())"
+    }
+    $suiteExit = $process.ExitCode
+    if (-not (Test-Path -LiteralPath $trxFile -PathType Leaf)) {
+        $stderrTail = Get-BufferedTail -Lines $stderrLinesBuffer
+        if ($stderrTail.Count -gt 0) {
+            Write-Host "    STDERR tail:" -ForegroundColor Yellow
+            foreach ($line in $stderrTail) { Write-Host "      $line" -ForegroundColor Yellow }
+        }
+        Fail-Fatal "[$SuiteName] TRX file missing: $trxFile" 1
+    }
+
+    $trxInfo = Get-Item -LiteralPath $trxFile
+    if ($trxInfo.LastWriteTime -lt $suiteStart.AddSeconds(-1)) {
+        Fail-Fatal "[$SuiteName] TRX is stale: $trxFile (LastWriteTime=$($trxInfo.LastWriteTime), suiteStart=$suiteStart)" 1
+    }
+
+    $c = Parse-TrxCounters -TrxPath $trxFile -SuiteName $SuiteName
+    Write-Host "    Elapsed: $([int]$stopwatch.Elapsed.TotalSeconds)s"
+    Write-Host "    TRX: total=$($c.Total) executed=$($c.Executed) passed=$($c.Passed) failed=$($c.Failed) notExecuted=$($c.NotExecuted) outcome=$($c.Outcome)"
+
+    if ($suiteExit -ne 0) {
+        $stderrTail = Get-BufferedTail -Lines $stderrLinesBuffer
+        if ($stderrTail.Count -gt 0) {
+            Write-Host "    STDERR tail:" -ForegroundColor Yellow
+            foreach ($line in $stderrTail) { Write-Host "      $line" -ForegroundColor Yellow }
+        }
+        Write-Host "  [FAIL] $SuiteName : dotnet test exited $suiteExit" -ForegroundColor Red
+        return @{ Counters = $c; ExitCode = $suiteExit; TimedOut = $false; TrxPath = $trxFile }
+    }
+
+    if ($c.Failed -gt 0 -or $c.NotExecuted -gt 0) {
+        Write-Host "  [FAIL] $SuiteName : TRX failed=$($c.Failed) notExecuted=$($c.NotExecuted)" -ForegroundColor Red
+        return @{ Counters = $c; ExitCode = $suiteExit; TimedOut = $false; TrxPath = $trxFile }
+    }
+
+    if ($c.Outcome -ne 'Completed' -and $c.Outcome -ne 'Passed') {
+        Write-Host "  [FAIL] $SuiteName : TRX outcome=$($c.Outcome)" -ForegroundColor Red
+        return @{ Counters = $c; ExitCode = $suiteExit; TimedOut = $false; TrxPath = $trxFile }
+    }
+
+    Pass "$SuiteName : $($c.Passed)/$($c.Total) passed (TRX)"
+    return @{ Counters = $c; ExitCode = $suiteExit; TimedOut = $false; TrxPath = $trxFile }
 }
 
 function Assert-Status {
@@ -708,6 +1164,78 @@ Write-Host "Dotnet: $Dotnet"
 
 $script:OriginalOperatorConnectionEnvironment = Save-OperatorConnectionEnvironment
 
+if ($FocusBootstrapTestOnly) {
+    $savedHarnessEnvironment = Save-HarnessEnvironment
+    try {
+        Step-Header 4 'Focused Bootstrap TRX suite'
+        $runId = Get-Date -Format 'yyyyMMdd-HHmmss'
+        $trxDir = Join-Path $RepoRoot "tests/_evidence_trx/g2-005/$runId"
+        $environmentOverrides = @{}
+        $result = Invoke-DotNetTestWithTimeout `
+            -SuiteName 'GuliERP.Identity.Bootstrap.Tests' `
+            -SuiteProject 'tests/GuliERP.Identity.Bootstrap.Tests/GuliERP.Identity.Bootstrap.Tests.csproj' `
+            -EvidenceDir $trxDir `
+            -EnvironmentRemovals (Get-CleanTestEnvironmentRemovals) `
+            -EnvironmentOverrides $environmentOverrides `
+            -TimeoutSec 300
+
+        $c = $result.Counters
+        if ($result.ExitCode -ne 0 -or $c.Failed -gt 0 -or $c.NotExecuted -gt 0) {
+            Fail-Fatal "Focused Bootstrap suite FAILED (exit=$($result.ExitCode), failed=$($c.Failed), notExecuted=$($c.NotExecuted))." 1
+        }
+
+        Write-Host ""
+        Write-Host "[G2-005] Focused Bootstrap verification PASS."
+        Write-Host "TRX: $($result.TrxPath)"
+        Restore-OperatorConnectionEnvironment
+        Complete-Cleanup
+        Stop-AllOwnedHosts
+        return
+    }
+    finally {
+        Restore-HarnessEnvironment -State $savedHarnessEnvironment
+    }
+}
+
+if ($FocusIdentityIntegrationTestOnly) {
+    Step-Header 4 'Focused Identity Integration PG suite'
+    $parentBefore = Save-OperatorConnectionEnvironment
+    try {
+        $promptForPgPassword = -not $SkipPrompt
+        $conn = Resolve-OperatorPostgreSqlConnectionString -PromptIfMissing:$promptForPgPassword
+        Assert-ApprovedOperatorDatabaseTarget -ConnectionString $conn
+
+        $runId = Get-Date -Format 'yyyyMMdd-HHmmss'
+        $trxDir = Join-Path $RepoRoot "tests/_evidence_trx/g2-005/$runId"
+        $result = Invoke-DotNetTestWithTimeout `
+            -SuiteName 'GuliERP.Identity.IntegrationTests' `
+            -SuiteProject 'tests/GuliERP.Identity.IntegrationTests/GuliERP.Identity.IntegrationTests.csproj' `
+            -EvidenceDir $trxDir `
+            -EnvironmentRemovals (Get-CleanTestEnvironmentRemovals) `
+            -EnvironmentOverrides (Get-PostgreSqlTestEnvironmentOverrides -ConnectionString $conn) `
+            -TimeoutSec 300
+
+        $c = $result.Counters
+        if ($result.ExitCode -ne 0 -or $c.Failed -gt 0 -or $c.NotExecuted -gt 0) {
+            Fail-Fatal "Focused Identity Integration suite FAILED (exit=$($result.ExitCode), failed=$($c.Failed), notExecuted=$($c.NotExecuted))." 1
+        }
+
+        Write-Host ""
+        Write-Host "[G2-005] Focused Identity Integration verification PASS."
+        Write-Host "TRX: $($result.TrxPath)"
+        $parentConnectionState = if ($parentBefore.ConnectionStrings__GuliERP.Exists) { 'PRESENT' } else { 'ABSENT' }
+        Write-Host "Parent environment unchanged: ConnectionStrings__GuliERP=$parentConnectionState"
+        Restore-OperatorConnectionEnvironment
+        Complete-Cleanup
+        Stop-AllOwnedHosts
+        return
+    }
+    finally {
+        Restore-OperatorConnectionEnvironment
+        Complete-Cleanup
+    }
+}
+
 $conn = $env:ConnectionStrings__GuliERP
 if (-not $conn) { $conn = $env:GULIERP_ConnectionStrings__GuliERP }
 if (-not $conn) { $conn = $env:GULIERP_FOUNDATION_CONNECTION }
@@ -791,15 +1319,17 @@ try {
     Pass "Identity migration applied (or already up to date)"
 
     Step-Header 4 'Actual TRX suites'
-    $trxDir = Join-Path $RepoRoot 'tests/_evidence_trx/g2-005'
-    if (-not (Test-Path $trxDir)) { New-Item -ItemType Directory -Path $trxDir -Force | Out-Null }
+    $runId = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $trxDir = Join-Path $RepoRoot "tests/_evidence_trx/g2-005/$runId"
+    if (-not (Test-Path -LiteralPath $trxDir)) { New-Item -ItemType Directory -Path $trxDir -Force | Out-Null }
+    Write-Host "  Evidence directory: $trxDir"
 
     $suites = @(
-        @{ Name = 'GuliERP.Identity.Bootstrap.Tests';       Project = 'tests/GuliERP.Identity.Bootstrap.Tests/GuliERP.Identity.Bootstrap.Tests.csproj' },
-        @{ Name = 'GuliERP.Identity.Tests';                 Project = 'tests/GuliERP.Identity.Tests/GuliERP.Identity.Tests.csproj' },
-        @{ Name = 'GuliERP.Foundation.Tests';               Project = 'tests/GuliERP.Foundation.Tests/GuliERP.Foundation.Tests.csproj' },
-        @{ Name = 'GuliERP.Identity.IntegrationTests';      Project = 'tests/GuliERP.Identity.IntegrationTests/GuliERP.Identity.IntegrationTests.csproj' },
-        @{ Name = 'GuliERP.Foundation.IntegrationTests';    Project = 'tests/GuliERP.Foundation.IntegrationTests/GuliERP.Foundation.IntegrationTests.csproj' }
+        @{ Name = 'GuliERP.Identity.Bootstrap.Tests';       Project = 'tests/GuliERP.Identity.Bootstrap.Tests/GuliERP.Identity.Bootstrap.Tests.csproj';       Environment = 'clean' },
+        @{ Name = 'GuliERP.Identity.Tests';                 Project = 'tests/GuliERP.Identity.Tests/GuliERP.Identity.Tests.csproj';                         Environment = 'clean' },
+        @{ Name = 'GuliERP.Foundation.Tests';               Project = 'tests/GuliERP.Foundation.Tests/GuliERP.Foundation.Tests.csproj';                     Environment = 'clean' },
+        @{ Name = 'GuliERP.Identity.IntegrationTests';      Project = 'tests/GuliERP.Identity.IntegrationTests/GuliERP.Identity.IntegrationTests.csproj';   Environment = 'pg' },
+        @{ Name = 'GuliERP.Foundation.IntegrationTests';    Project = 'tests/GuliERP.Foundation.IntegrationTests/GuliERP.Foundation.IntegrationTests.csproj'; Environment = 'pg' }
     )
 
     $grandTotal = 0
@@ -811,34 +1341,23 @@ try {
     foreach ($suite in $suites) {
         $suiteName = $suite.Name
         $suiteProject = $suite.Project
-        Write-Host "  [RUN] dotnet test $suiteName ..."
-        $trxFile = Join-Path $trxDir ($suiteName + '.trx')
-        $trxLogger = "trx;LogFileName=$trxFile"
-        & $Dotnet test $suiteProject -c Release --no-build --nologo --logger $trxLogger 2>&1 | Tee-Object -Variable suiteOut | Out-Null
-        $suiteExit = $LASTEXITCODE
-        try {
-            $c = Parse-TrxCounters -TrxPath $trxFile -SuiteName $suiteName
-        }
-        catch {
-            Fail-Fatal $_.Exception.Message 1
+        $environmentRemovals = @(Get-CleanTestEnvironmentRemovals)
+        $environmentOverrides = @{}
+        if ($suite.Environment -eq 'pg') {
+            $environmentOverrides = Get-PostgreSqlTestEnvironmentOverrides -ConnectionString $conn
         }
 
-        Write-Host "    TRX: total=$($c.Total) executed=$($c.Executed) passed=$($c.Passed) failed=$($c.Failed) notExecuted=$($c.NotExecuted) outcome=$($c.Outcome)"
-        if ($suiteExit -ne 0) {
-            Write-RedactedCommandDiagnostics -Label "$suiteName test" -Output $suiteOut
-            Write-Host "  [FAIL] $suiteName : dotnet test exited $suiteExit" -ForegroundColor Red
+        Write-Host "  Suite environment contract: $suiteName -> $($suite.Environment)"
+        $result = Invoke-DotNetTestWithTimeout `
+            -SuiteName $suiteName `
+            -SuiteProject $suiteProject `
+            -EvidenceDir $trxDir `
+            -EnvironmentRemovals $environmentRemovals `
+            -EnvironmentOverrides $environmentOverrides `
+            -TimeoutSec 300
+        $c = $result.Counters
+        if ($result.ExitCode -ne 0 -or $c.Failed -gt 0 -or $c.NotExecuted -gt 0 -or ($c.Outcome -ne 'Completed' -and $c.Outcome -ne 'Passed')) {
             $suiteHasFailure = $true
-        }
-        elseif ($c.Failed -gt 0 -or $c.NotExecuted -gt 0) {
-            Write-Host "  [FAIL] $suiteName : TRX failed=$($c.Failed) notExecuted=$($c.NotExecuted)" -ForegroundColor Red
-            $suiteHasFailure = $true
-        }
-        elseif ($c.Outcome -ne 'Completed' -and $c.Outcome -ne 'Passed') {
-            Write-Host "  [FAIL] $suiteName : TRX outcome=$($c.Outcome)" -ForegroundColor Red
-            $suiteHasFailure = $true
-        }
-        else {
-            Pass "$suiteName : $($c.Passed)/$($c.Total) passed (TRX)"
         }
 
         $grandTotal += $c.Total

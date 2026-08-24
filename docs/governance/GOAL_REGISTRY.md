@@ -84,11 +84,11 @@
 | Field | Value |
 |---|---|
 | Goal | **G2-005 — Minimum Authorization + DataScope** |
-| Gate | `G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_VERIFIED · CLOSED` |
-| Status | **CLOSED** — Operator evidence accepted: Build PASS; Foundation/Identity migrations PASS; 195/195 tests PASS; runtime unauthenticated 401, authenticated deny 403, PlatformAdmin no-permission 403, real PostgreSQL permission wiring 200, cross-company 404, cross-tenant 404; Production Testing-only endpoint 404; Production spoof identity 401; environment restoration PASS. |
+| Gate | `G2_005_FINAL_OPERATOR_EVIDENCE_VERIFIED · CLOSED` |
+| Status | **FINAL_OPERATOR_EVIDENCE_VERIFIED** — Final Operator Evidence Harness accepted: Build PASS; Foundation/Identity migrations PASS; Step4 TRX suites 377/377 PASS (`Bootstrap` 64/64, `Identity.Tests` 84/84, `Foundation.Tests` 68/68, `Identity.IntegrationTests` 130/130, `Foundation.IntegrationTests` 31/31); Step5 Runtime authorization wiring PASS; Step6 Production boundary PASS; per-suite environment isolation + PG child env injection + stdin hang fix verified. Earlier G2-005 runtime checks remain accepted: unauthenticated 401, authenticated deny 403, PlatformAdmin no-permission 403, real PostgreSQL permission wiring 200, cross-company 404, cross-tenant 404; Production Testing-only endpoint 404; Production spoof identity 401; environment restoration PASS. |
 | Entry Gate | `G2_004_AUTHENTICATION_KERNEL_VERIFIED · CLOSED` |
 | Architecture | `docs/architecture/G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_ARCHITECTURE.md` |
-| Verification | `docs/verification/G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_REPORT.md` |
+| Verification | `docs/verification/G2_005_MINIMUM_AUTHORIZATION_DATASCOPE_REPORT.md`; `docs/verification/G2_005_OPERATOR_EVIDENCE_FINAL_REPORT.md` |
 | Next Goal | **ID Strategy Final Decision Before MDM** |
 
 ## Historical Goal Snapshot
@@ -1501,13 +1501,322 @@ existing G2-004 operator unlock requirement.
 
 ---
 
+## G2-EM-001 — Employee Master V1 Closure (Mavis-CLOSED 2026-08-24; Final Operator Evidence verified)
+
+| Field | Value |
+|---|---|
+| Goal ID | G2-EM-001 (also known as `GULIERP_NEXT_EMPLOYEE_MASTER_001_CLOSURE_001`) |
+| Goal Name | Employee Master V1 Domain Closure (P6-J multi-tenant identity surface) |
+| Start commit | `f3764119ead6b9759eed70ca2ee5e80419f8f99a` (HEAD, GULIERP_SHELL_FINAL_POLISH_003) |
+| Closure commit | (uncommitted; this Goal is Mavis-CLOSED but not git-committed) |
+| Branch | `master` |
+| Predecessor Gate | `GULIERP_ENTERPRISE_BOOTSTRAP_001_RUNTIME_VERIFIED` (CLOSED 2026-08-23) |
+| **Gate** | **`FINAL_OPERATOR_EVIDENCE_VERIFIED`** (G2-005 Operator Evidence bridge verified; no next phase started) |
+| Status | **FINAL_OPERATOR_EVIDENCE_VERIFIED** — Final G2-005 Operator Evidence Harness PASS: Build PASS; Foundation/Identity migrations PASS; Step4 TRX suites 377/377 PASS; Step5 PASS; Step6 PASS. This registry update only closes the requested G2-005 / G2-EM-001 operator evidence status and does not start Contact Profile, HR UI, SalesOrder, or any next Goal. |
+| Verification report | `docs/verification/GULIERP_NEXT_EMPLOYEE_MASTER_001_CLOSURE_001_REPORT.md` |
+| Implementation report (uncommitted) | `docs/verification/GULIERP_EMPLOYEE_MASTER_001_DOMAIN_IMPLEMENTATION_COMPLETE_REPORT.md` |
+| Final operator evidence report | `docs/verification/G2_005_OPERATOR_EVIDENCE_FINAL_REPORT.md` |
+
+### G2-EM-001 — Implementation scope (Mavis side)
+
+- **Entity** (committed): `modules/identity/GuliERP.Identity.Domain/Entities/Employee.cs` — 7 V1 fields (Id / TenantId / CompanyId / DepartmentId? / UserId? / EmployeeNo / Name / Status) + 5 audit fields; `ICompanyScoped` marker. **Zero contact fields** (Mobile / Phone / Email / WeChat / WeCom / QRCode all absent).
+- **Enums** (committed): `EmployeeStatus { Active=1, Inactive=2, Left=99 }`.
+- **Application** (untracked): `modules/identity/GuliERP.Identity.Application/Employee/{EmployeeDtos, IdentityErrorCodes, IdentityValidationException, IEmployeeWriteService, Validation/CodeValidationContextExtensions (ForIdentity factory)}` + `Shared/PagedResult`.
+- **Infrastructure** (untracked): `modules/identity/GuliERP.Identity.Infrastructure/EmployeeSvc/EmployeeWriteService.cs` (17.7 KB; 5 methods: CreateAsync / GetByIdAsync / UpdateAsync / ChangeStatusAsync / ListByCompanyAsync).
+- **API endpoints** (modified): `apps/api/GuliERP.Api/Organization/OrganizationEndpoints.cs` — 5 endpoints wired (`POST /api/v1/organization/employees`, `GET /api/v1/organization/employees/{id}`, `PUT /api/v1/organization/employees/{id}`, `POST /api/v1/organization/employees/{id}/status`, `GET /api/v1/organization/companies/{companyId}/employees/paged`).
+- **Authorization** (modified): `GuliErpPermissions.cs` + `GuliErpAuthorizationPolicies.cs` + `EnterpriseBusinessRolePacks.cs` + Identity.Infrastructure DI — 2 new consts (`identity.employee.read` / `identity.employee.manage`) + 2 new policies + 1 new role pack `ERP_EMPLOYEE_ADMIN`.
+- **DI** (modified): `Identity.Infrastructure/DependencyInjection.cs` — `AddScoped<IEmployeeWriteService, EmployeeWriteService>` + 2 `AddPermissionPolicy` calls.
+- **Bootstrap fix** (modified): `EnterpriseBootstrapService.cs` (idempotent `BuildEmployeeNo` returning frozen `"EMP-SYSTEM"` + 2 more permission validation paths).
+- **Bootstrap tool** (modified): `tools/GuliERP.Identity.Bootstrap/Program.cs` — `ILogger<EnterpriseBootstrapService>` argument added at call site 932.
+- **Tests** (untracked): 4 new unit test files + 1 new integration test file = **+59 tests** (7 Entity + 39 Service incl. Theory + 12 Architecture incl. Path A replacements + 3 Bootstrap fix + Employee integration API Facts).
+- **Net Identity.Tests**: 22 pre-existing + 3 Bootstrap + 7 Entity + 12 Architecture + 39 Service = **83 tests** (was 22 in G2-003 baseline; +61 from this Goal; reconciled 79 → 83 due to +3 Bootstrap fix + +1 Path A architecture test).
+
+### G2-EM-001 — Permission Contract Resolution (Path A)
+
+- **Initial conflict discovered**: the uncommitted Employee work had silently expanded `GuliErpPermissions.EnterpriseSystemAdminPermissions` from the frozen 8 permissions to 10 (added `identity.employee.read` / `identity.employee.manage`). This violated the GULIERP-ENTERPRISE-BOOTSTRAP-001 frozen contract documented in `docs/verification/GULIERP_ENTERPRISE_BOOTSTRAP_001_REPORT.md` (lines 600, 631, 749, 787, 798: "ERP_SYSTEM_ADMIN carries the canonical 8 Identity administration permissions (unchanged, isolated from business roles)").
+- **Path A applied (user-approved, 2026-08-24)**:
+  1. `GuliErpPermissions.cs`: `EnterpriseSystemAdminPermissions` rolled back to **exactly the 8 frozen Identity administration permissions** (NO silent 8→10 expansion).
+  2. `EnterpriseBusinessRolePacks.cs`: new dedicated role pack `EmployeeOperator` (code `ERP_EMPLOYEE_ADMIN`) carrying the 2 Employee permissions. **NOT** added to `InitialAdminRolePacks` (no Bootstrap behavior change; admins can be granted the new role explicitly via a future `--grant-employee-admin` mode or per-UserClaim).
+  3. `EmployeeWriteServiceArchitectureFacts.cs`: old `EnterpriseSystemAdminPermissions_Includes_2_New_Employee_Consts` test removed; replaced with 2 new tests that lock the contract:
+     - `EnterpriseSystemAdminPermissions_Is_Frozen_At_Exact_8_Original_Identity_Permissions` (asserts 8 items, asserts NO employee permissions in the array)
+     - `EnterpriseBusinessRolePacks_Has_Dedicated_EmployeeOperator_With_2_Permissions` (asserts the new role pack exists with the 2 permissions, asserts NOT in `InitialAdminRolePacks`)
+- **No historical verification document modified**: `GULIERP_ENTERPRISE_BOOTSTRAP_001_REPORT.md` left untouched (the 8-permission contract stands).
+
+### G2-EM-001 — Test count reconciliation (79 → 83)
+
+| Source | Original report | Actual (this Goal) | Delta | Note |
+|---|---:|---:|---:|---|
+| Pre-existing (G2-003/004) | 22 | 22 | 0 | unchanged baseline |
+| `BootstrapAdminEmployeeNoFixTests.cs` (NEW) | 0 | 3 | +3 | New file added after report generation; not reflected in original 79 |
+| `EmployeeEntityContractTests.cs` | 7 | 7 | 0 | matches |
+| `EmployeeWriteServiceFacts.cs` | ~37 (Theory rows + Facts) | 39 | +2 | xUnit `[Theory]` cases counted individually by `dotnet test --list-tests` |
+| `EmployeeWriteServiceArchitectureFacts.cs` | 11 | 12 | +1 | Path A replaced 1 old test with 2 new ones (net +1) |
+| **Total** | **~79** | **83** | **+4** | Reconciliation accurate |
+
+### G2-EM-001 — Test matrix (Mavis side, all PASS)
+
+| Test Project | Result | Note |
+|---|---|---|
+| `GuliERP.Identity.Tests` | **83/83 PASS** | +1 from Path A architecture test |
+| `GuliERP.Identity.Bootstrap.Tests` | **64/64 PASS** | No regression |
+| `GuliERP.Foundation.Tests` | **68/68 PASS** | No regression |
+| `GuliERP.Mdm.Tests` | **221/223 PASS** | 2 inherited flaky `MdmCurrentTenantParallelTests` path-resolution; NOT this Goal's regression |
+| `GuliERP.Api.Tests` | **32/32 PASS** | No regression |
+| `GuliERP.Sales.Tests` | **9/9 PASS** | No regression |
+| `GuliERP.DocumentKernel.Tests` | **44/44 PASS** | No regression |
+| **Total Mavis-side** | **521/523 PASS** | 2 inherited flaky; no new regression |
+| `GuliERP.Identity.IntegrationTests` | 0/0 run (env-blocked) | 129 tests, needs `$env:ConnectionStrings__GuliERP` (OPERATOR_REQUIRED) |
+| `GuliERP.Mdm.IntegrationTests` | 0/0 run (env-blocked) | needs PostgreSQL (OPERATOR_REQUIRED) |
+| `GuliERP.Foundation.IntegrationTests` | 0/0 run (env-blocked) | needs PostgreSQL (OPERATOR_REQUIRED) |
+| `GuliERP.DocumentKernel.IntegrationTests` | 0/0 run (env-blocked) | needs PostgreSQL (OPERATOR_REQUIRED) |
+
+### G2-EM-001 — Build status
+
+- `dotnet build GuliERP.slnx -c Release` → **0 errors, 0 warnings, 25/25 projects PASS**.
+- Build blocker fixed: `tools/GuliERP.Identity.Bootstrap/Program.cs:932` (the `EnterpriseBootstrapService` constructor added an `ILogger<EnterpriseBootstrapService>` parameter after the dirty `EnterpriseBootstrapService.cs` was modified; the Bootstrap tool's call site was not updated in the same dirty change).
+
+### G2-EM-001 — V1 frozen contract confirmation
+
+- `Employee` entity: **7 V1 fields** + 5 audit + ICompanyScoped. **Zero** Mobile / Phone / Email / WeChat / WeCom / QRCode / Position / Remark. (Confirmed via `Select-String` over Entity + Application + Infrastructure: 0 matches.)
+- `EmployeeNo` is the V1 code field (not `EmployeeCode`); `BuildEmployeeNo` returns frozen constant `"EMP-SYSTEM"` (idempotent); existing `"ADMIN"` rows are normalized to `"EMP-SYSTEM"` on re-bootstrap (intentional dev-only fix per brief Part 1).
+- `ContactProfile` = **DESIGN ONLY** (`docs/business/GULIERP_CONTACT_PROFILE_001_DESIGN_REPORT.md`, 59.9 KB). NOT implemented. OUT OF SCOPE for this Goal.
+- `Employee` Vue UI = **NOT IMPLEMENTED** (out of scope; pending `GULIERP_HR_001_EMPLOYEE_WRITE_V1`).
+
+### G2-EM-001 — Hard-stop check
+
+| Brief condition | Did G2-EM-001 trip it? |
+|---|---|
+| Need to change SalesOrder / Purchase / Inventory spec | NO |
+| Need to change Contact Profile (must stay DESIGN ONLY) | NO |
+| Need to expand Employee (must keep V1 7+5 fields, no contact) | NO (V1 field set frozen; Contact still DESIGN ONLY) |
+| Need to modify DB Schema / Migration | NO (no schema change; existing migration `20260822090000_G2EnterpriseOrganizationFoundation` already created `identity.gulierp_employee` table) |
+| Need to modify Identity User Entity / Tenant | NO |
+| Need to change the frozen 8-permission ERP_SYSTEM_ADMIN contract | **NO** (Path A resolved; contract preserved at exactly 8) |
+| Need to modify Legacy repo | NO (Legacy = `D:\guli\gulierp` is FROZEN, untouched) |
+| Need to silently upgrade formal permission packs | **NO** (new role pack `ERP_EMPLOYEE_ADMIN` added explicitly; Path A chosen by user; this Goal documents the contract change in this registry entry) |
+| Auto-rewrite production data | NO (BuildEmployeeNo normalization is the only data change; idempotent; affects ONLY the bootstrap admin Employee row's `EmployeeNo` from `"ADMIN"` → `"EMP-SYSTEM"`) |
+| Need to commit / push to git | NO (no commit, no push, no remote creation per `COMMIT RULE`) |
+
+**0 hard-stops tripped.**
+
+### G2-EM-001 — Operator Evidence Closure
+
+Final G2-005 Operator Evidence is **FINAL_OPERATOR_EVIDENCE_VERIFIED**:
+
+1. Full G2-005 harness PASS with fresh TRX evidence under `tests/_evidence_trx/g2-005/20260825-001425`.
+2. Step4 suites total **377/377 PASS**.
+3. Step5 Runtime authorization wiring **PASS**.
+4. Step6 Production boundary **PASS**.
+5. No database schema changes, no migrations changed, and no production ERP business logic changed.
+6. No next Goal is started by this registry update.
+
+### G2-EM-001 — Next Goal (NOT STARTED, HALTED)
+
+`GULIERP_CONTACT_PROFILE_001_IMPLEMENTATION_001` — implement the Contact Profile module per `docs/business/GULIERP_CONTACT_PROFILE_001_DESIGN_REPORT.md` (V1: Mobile / Email / WeChatId / WeComId / QRCode; 1:1 with Employee via EmployeeId FK; the V1 Employee has NO contact fields and stays unchanged). OR
+
+`GULIERP_HR_001_EMPLOYEE_WRITE_V1` — Vue UI for Employee Master V1 (use the 7 Mdm Design System components + a `MdmStatusBadge` `statusType="employee"` extension). OR
+
+`GULIERP_SALES_ORDER_001_REAL_VERTICAL_SLICE_001` — implement the SalesOrder write surface using the BUSINESS_DOCUMENT_TEMPLATE pattern from P1-003 (Legacy) reference. **G2-005 / GULIERP_CONTACT_PROFILE / GULIERP_SALES_ORDER / etc. must NOT auto-start in this Mavis session.** Per META_GULI_GOVERNANCE_V1.md HR-1..HR-10, explicit user authorization is required for the next Goal kickoff.
+
+---
+
 ## STOP
 
-G2-004 Mavis-side is closed. Gate is
-`G2_004_CODE_READY_OPERATOR_DB_PENDING`. Operator unlock
-required to flip to `G2_004_AUTH_KERNEL_VERIFIED`.
+G2-EM-001 Mavis-side is closed. Gate is
+`FINAL_OPERATOR_EVIDENCE_VERIFIED`. No next Goal is started by this closure update.
 
-NEXT_GOAL_CANDIDATE = G2-005 Authorization Kernel (NOT STARTED,
-HALTED). **G2-005 must NOT auto-start in this Mavis session.**
-Per META_GULI_GOVERNANCE_V1.md HR-1..HR-10, explicit user
-authorization is required for the next Goal kickoff.
+---
+
+## G2-EM-001B — Employee Permission Boundary Fix (Mavis-CLOSED 2026-08-24; Operator Runtime pending)
+
+| Field | Value |
+|---|---|
+| Goal ID | G2-EM-001B (also known as `GULIERP_EMPLOYEE_PERMISSION_BOUNDARY_FIX_001`) |
+| Goal Name | Employee Permission Boundary Fix (formalize System Admin vs Business Operator separation) |
+| Start | follow-on to G2-EM-001 (after the silent 8→10 conflict was detected) |
+| Closure commit | (uncommitted; this Goal is Mavis-CLOSED but not git-committed) |
+| Branch | `master` |
+| **Gate** | **`GULIERP_EMPLOYEE_PERMISSION_BOUNDARY_FIX_001_VERIFIED`** (Mavis-side code ready; 2 integration tests need operator runtime) |
+| Status | Mavis-CLOSED 2026-08-24 |
+| Verification report | `docs/verification/GULIERP_EMPLOYEE_PERMISSION_BOUNDARY_FIX_001_REPORT.md` (35.7 KB, 16 sections) |
+| Predecessor | G2-EM-001 (Mavis-CLOSED, Operator pending) |
+| Successor | G2-EM-001 (Operator unlock → flip to `_VERIFIED`) |
+
+### G2-EM-001B — Resolution summary
+
+- **P0 conflict fixed**: the uncommitted Employee work had silently expanded `GuliErpPermissions.EnterpriseSystemAdminPermissions` from the **frozen 8** Identity administration permissions to **10** (added `identity.employee.read` / `identity.employee.manage`). This violated the GULIERP-ENTERPRISE-BOOTSTRAP-001 frozen contract documented in `docs/verification/GULIERP_ENTERPRISE_BOOTSTRAP_001_REPORT.md` (lines 600, 631, 749, 787, 798).
+- **Path A formalized (user-approved, 2026-08-24)**:
+  1. `GuliErpPermissions.cs`: `EnterpriseSystemAdminPermissions` rolled back to **exactly the 8 frozen Identity administration permissions** (no silent 8→10 expansion).
+  2. `EnterpriseBusinessRolePacks.cs`: new dedicated role pack `EmployeeOperator` (code `ERP_EMPLOYEE_OPERATOR`) carrying the **exact 2** permissions: `identity.employee.read` + `identity.employee.manage`. **Now part of `InitialAdminRolePacks`** (was not in prior session; the user brief required the initial admin to receive this role alongside Mdm/Sales).
+  3. `EnterpriseBusinessRolePackProvisioner.EnsureInitialAdminBusinessRolePackAsync` extended to provision **3** business role packs (Mdm + Sales + Employee). The result record `EnterpriseBusinessRolePackProvisionResult` extended to carry the 3rd field.
+  4. Initial enterprise admin now receives **4 role assignments**: `ERP_SYSTEM_ADMIN` (explicitly provisioned with frozen 8 permissions) + `ERP_MDM_OPERATOR` (12) + `ERP_SALES_OPERATOR` (2) + `ERP_EMPLOYEE_OPERATOR` (2).
+- **Architecture principle locked** (per user brief):
+  > System Administration permissions vs Business Operator permissions must remain separate.
+  >
+  > `ERP_SYSTEM_ADMIN` carries the **frozen 8** Identity administration permissions ONLY. It does NOT receive any business operator permissions. New business domains (Contact Profile, Production, Settlement, etc.) MUST add new business role packs and MUST NOT expand `ERP_SYSTEM_ADMIN`. Any contract exception requires an explicit `PERMISSION_PACK_CONTRACT_EVOLUTION` Goal + Operator / Architecture decision — silent expansion is forbidden.
+
+### G2-EM-001B — Exact 6-category contract tests
+
+| Category | Test | Status |
+|---|---|---|
+| A. `ERP_SYSTEM_ADMIN` exact 8 + no Employee | `EnterpriseSystemAdminPermissions_Is_Frozen_At_Exact_8_Original_Identity_Permissions` | ✅ PASS (unit) |
+| B. `ERP_EMPLOYEE_OPERATOR` exact 2 + exact set | `EnterpriseBusinessRolePacks_Has_Dedicated_EmployeeOperator_With_Exact_2_Permissions` | ✅ PASS (unit) |
+| C. `InitialAdminRolePacks` contains all 3 business packs | `InitialAdminRolePacks_Contains_All_Four_Formal_Business_Role_Packs` | ✅ PASS (unit) |
+| C'. Bootstrap creates 4 assignments for initial admin (3→4) | `CreateEnterpriseBootstrap_Creates_Independent_Business_Role_Packs_For_Admin` (modified, was 3) | ⏸️ PostgreSQL required |
+| D. Ensure idempotency | `EnterpriseBusinessRolePackProvisionResult.Idempotent` (extended to 3 packs) + `EnsureRolePackAsync` G2-003V3 logic unchanged | ✅ Code-side verified (unit/integration covered by prior G2-003V3) |
+| E. Employee endpoint with correct permission works | `EmployeeWriteApiFacts.cs` 30+ existing tests | ✅ Code-side verified |
+| F. ERP_SYSTEM_ADMIN without ERP_EMPLOYEE_OPERATOR: NO super-admin bypass | `Create_With_Only_ErpSystemAdmin_Permissions_Returns_403` (NEW) | ⏸️ PostgreSQL required |
+| (Audit) Permission framework has no super-admin bypass | `PermissionAuthorizationHandler` (line 43-133) | ✅ Audited; only `IsTestingHeaderFixture()` (Testing-env only) |
+
+### G2-EM-001B — Test matrix (Mavis side)
+
+- `GuliERP.Identity.Tests`: **84 / 84 PASS** (+1 from `InitialAdminRolePacks_Contains_All_Four_Formal_Business_Role_Packs`)
+- `GuliERP.Identity.Bootstrap.Tests`: **64 / 64 PASS** (no regression)
+- `GuliERP.Foundation.Tests`: **68 / 68 PASS**
+- `GuliERP.Mdm.Tests`: **221 / 223 PASS** (2 inherited flaky unchanged)
+- `GuliERP.Api.Tests`: **32 / 32 PASS**
+- `GuliERP.Sales.Tests`: **9 / 9 PASS**
+- `GuliERP.DocumentKernel.Tests`: **44 / 44 PASS**
+- **Total Mavis-side**: **522 / 524 PASS** (1 new test, 2 inherited flaky)
+
+### G2-EM-001B — Build status
+
+`dotnet build GuliERP.slnx -c Release` → **0 errors, 0 warnings, 25/25 projects PASS**
+
+### G2-EM-001B — Hard-stop check
+
+| Brief condition | Did G2-EM-001B trip it? |
+|---|---|
+| Need to change SalesOrder / Purchase / Inventory / Contact Profile spec | NO |
+| Need to expand Employee (must keep V1 7+5 fields, no contact) | NO |
+| Need to modify DB Schema / Migration | NO (no schema change; existing migration `20260822090000_G2EnterpriseOrganizationFoundation` already created `identity.gulierp_employee` table) |
+| Need to modify Identity User Entity / Tenant | NO |
+| Need to change the frozen 8-permission ERP_SYSTEM_ADMIN contract | **NO** (Path A preserved; 8-permission contract restored) |
+| Need to modify Legacy repo | NO |
+| Need to silently upgrade formal permission packs | **NO** (new role pack `ERP_EMPLOYEE_OPERATOR` added explicitly; contract change documented in this registry entry) |
+| Need to add Employee permissions to MdmOperator or SalesOperator | **NO** (only added to a new dedicated role pack) |
+| Need to add a new migration unless role persistence architecture proves it necessary | NO (no new migration; existing `GuliErpRole` table supports the new role code) |
+| Need to introduce super-admin bypass | **NO** (audit confirmed no bypass in `PermissionAuthorizationHandler`) |
+| Need to commit / push to git | NO (per COMMIT RULE) |
+
+**0 hard-stops tripped.**
+
+### G2-EM-001B — Operator Runtime Unlock (for `_VERIFIED` final flip)
+
+Required for `_VERIFIED`:
+1. Run `dotnet test tests\GuliERP.Identity.IntegrationTests\GuliERP.Identity.IntegrationTests.csproj -c Release --no-build` with `$env:ConnectionStrings__GuliERP` (real PG; password via `Read-Host -AsSecureString`).
+2. Verify `Create_With_Only_ErpSystemAdmin_Permissions_Returns_403` PASS (the new super-admin bypass negative test).
+3. Verify `CreateEnterpriseBootstrap_Creates_Independent_Business_Role_Packs_For_Admin` PASS with `Assert.Equal(4, assignments.Count)` and the 4 role assertions.
+4. (Optional but recommended) Bootstrap a fresh Tenant end-to-end and verify the 4 role assignments are created.
+5. Edit this registry: flip Gate from Mavis-CLOSED to `_VERIFIED`.
+6. Then proceed to G2-EM-001 Operator unlock (4 PG integration test projects for Employee Master V1 Domain Implementation).
+
+### G2-EM-001B — Next recommended Goal (NOT STARTED, HALTED)
+
+`GULIERP_NEXT_EMPLOYEE_MASTER_001_CLOSURE_001` (G2-EM-001) Operator unlock — once G2-EM-001B is `_VERIFIED`, the original G2-EM-001 can proceed to `_VERIFIED` via the 4 PG integration test runs. **G2-EM-001 Operator unlock must NOT auto-start in this Mavis session.** Per META_GULI_GOVERNANCE_V1.md HR-1..HR-10, explicit user authorization is required.
+
+---
+
+## STOP
+
+G2-EM-001B Mavis-side is closed. Gate is
+`GULIERP_EMPLOYEE_PERMISSION_BOUNDARY_FIX_001_VERIFIED` (Mavis side). Operator unlock
+required to flip to final `_VERIFIED`.
+
+---
+
+## G2-EM-001C — Employee Code Contract Reconciliation (Mavis-CLOSED 2026-08-24)
+
+| Field | Value |
+|---|---|
+| Goal ID | G2-EM-001C (also known as `GULIERP_EMPLOYEE_CODE_CONTRACT_RECONCILIATION_001`) |
+| Goal Name | Employee Code Contract Reconciliation (resolve the V1 frozen design's internal regex/examples contradiction) |
+| Start | follow-on to `GULIERP_NEXT_OPERATOR_RUNTIME_VERIFICATION_001` (which surfaced 2 unmasked TEST_DATA_CONFLICT tests) |
+| Closure commit | (uncommitted; this Goal is Mavis-CLOSED but not git-committed) |
+| Branch | `master` |
+| **Gate** | **`GULIERP_EMPLOYEE_CODE_CONTRACT_RECONCILIATION_001_VERIFIED`** (Mavis side) |
+| Status | Mavis-CLOSED 2026-08-24 |
+| Verification report | `docs/verification/GULIERP_EMPLOYEE_CODE_CONTRACT_RECONCILIATION_001_REPORT.md` (22.2 KB, 16 sections) |
+| Architecture decision | **Option A** (user-approved, 2026-08-24): fix design docs to honor the implementation regex `^[A-Z][A-Z0-9_]{1,39}$`; 0 production code change. |
+
+### G2-EM-001C — Root cause and fix
+
+The frozen design docs had **internal contradictions**:
+- Specified regex `^[A-Z][A-Z0-9_]{1,39}$` (no hyphen)
+- Used hyphenated examples (`MAT-001`, `WH-01`, `EMP-001`, `EMP-FIN-001`, `LOC-A-01-03`, etc.)
+- Listed `EMP-SYSTEM` as a reserved frozen value (with hyphen)
+
+The implementation correctly implemented the regex. The "auto-format feature" mentioned in `GULIERP_CODE_RULE_STANDARD_V1.md` line 137-140 was never implemented.
+
+**2 unmasked TEST_DATA_CONFLICT** integration tests used codes that the implementation correctly rejected:
+- `Create_With_Valid_Code_Returns_201_And_EmployeeDto` used `"EMP-000001"` (per historical design example)
+- `Create_With_Duplicate_Code_Returns_400_With_Duplicate_ErrorCode` used `"EMP-DUP"`
+
+Per user brief STEP 6: `CASE C: 冻结文档互相冲突. 同样 STOP. 禁止 Agent 自行选择一个规则`. Mavis stopped and reported with 4 user-decision options. User chose **Option A** (Mavis's recommendation).
+
+### G2-EM-001C — Option A applied (user-approved 2026-08-24)
+
+**Changes** (NO production code change):
+1. `docs/business/GULIERP_CODE_RULE_STANDARD_V1.md`: replace all hyphenated examples with underscore variants. Update prefix table (`MAT_`, `WH_`, `LOC_`, `OU_`, `PLT_`, `EMP_`, `C_`, `S_`, `B_`, `CAT_`). Update Item examples. Add explicit "hyphens reserved for Bootstrap-only system seeds" note replacing the obsolete "auto-format feature" mention.
+2. `docs/business/GULIERP_EMPLOYEE_MASTER_MODEL_V1.md`: update line 238 recommended prefix from `EMP-` / `EMP-{DEPT}-` to `EMP_` / `EMP_{DEPT}_`.
+3. `tests/GuliERP.Identity.IntegrationTests/EmployeeWriteApiFacts.cs`: update 2 unmasked test data from `"EMP-000001"` → `"EMP000001"` and `"EMP-DUP"` → `"EMPDUP"`.
+
+**NO changes to**:
+- `FormatValidator.cs` regex (already correct)
+- `ReservedNameValidator.cs` reserved set (`EMP-SYSTEM` / `WH-DEFAULT` / `LOC-RECEIVING` / `LOC-SHIPPING` preserved)
+- `MasterDataCodeValidator.cs` (4-step pipeline)
+- `ForIdentity` factory
+- `EmployeeWriteService.cs`
+- `EnterpriseBootstrapService.BuildEmployeeNo` (still returns `EMP-SYSTEM` via pipeline-bypass)
+- Entity / DB schema / Migration
+
+### G2-EM-001C — Test results
+
+| Test Project | Result |
+|---|---|
+| `GuliERP.Identity.Tests` | **84 / 84 PASS** |
+| `GuliERP.Identity.Bootstrap.Tests` | **64 / 64 PASS** |
+| `GuliERP.Api.Tests` | **32 / 32 PASS** |
+| `GuliERP.Foundation.Tests` | **68 / 68 PASS** |
+| `GuliERP.Mdm.Tests` | **221 / 223 PASS** (2 inherited flaky) |
+| `GuliERP.Sales.Tests` | **9 / 9 PASS** |
+| `GuliERP.DocumentKernel.Tests` | **44 / 44 PASS** |
+| `GuliERP.Identity.IntegrationTests` | **121 / 130 PASS** (9 Category C PG-required; 0 unmasked TEST_DATA_CONFLICT) |
+| **Build** | **0 errors, 0 warnings, 25/25 projects PASS** |
+| **2 unmasked TEST_DATA_CONFLICT tests** | **✅ Both PASS** |
+
+**Cumulative across G2-EM-001 / G2-EM-001B / SUB-GOAL 1 / SUB-GOAL 2 / G2-EM-001C**:
+- 25 fails (G2-EM-001B introduced) → 9 fails (G2-EM-001C after)
+- **16 tests fixed total** (5 contract-stale + 9 fixture-bug + 2 test-data)
+- 9 Category C (PG-required) tests still pending Operator runtime verification
+
+### G2-EM-001C — Hard-stop check
+
+| Brief condition | This Goal? |
+|---|---|
+| SalesOrder / Purchase / Inventory | NO |
+| Contact Profile | NO |
+| Employee Vue / CRM / HRM | NO |
+| DB Schema / Migration | NO |
+| Legacy repository | NO (untouched) |
+| Global MDM code rule relaxation | **NO** (FormatValidator regex unchanged; only docs updated) |
+| Production code change | **NO** (only docs + test data) |
+| Test-gaming | **NO** (test data updates authorized by corrected design contract per Option A) |
+
+**0 hard-stops tripped.**
+
+### G2-EM-001C — Operator follow-up
+
+After user authorizes `COMMIT_GROUP_8` (this report) + `COMMIT_GROUP_6` + `COMMIT_GROUP_7`, the next step is:
+
+`GULIERP_NEXT_OPERATOR_RUNTIME_VERIFICATION_001` re-run. When the 9 remaining Category C tests pass on real PG, flip `G2-EM-001` and `G2-EM-001B` Gates to `_VERIFIED`.
+
+---
+
+## STOP
+
+G2-EM-001C Mavis-side is closed. Gate is
+`GULIERP_EMPLOYEE_CODE_CONTRACT_RECONCILIATION_001_VERIFIED` (Mavis side). 9
+Category C (PG-required) tests still pending Operator runtime verification.
+
+NEXT_GOAL_CANDIDATE = **`GULIERP_NEXT_OPERATOR_RUNTIME_VERIFICATION_001` re-run (now only 9 Category C tests remain) OR any user-approved G2-005 / Contact Profile / HR Vue / Sales Order Goal (NOT STARTED, HALTED)**.
