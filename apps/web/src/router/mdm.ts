@@ -18,9 +18,14 @@ export function installMdmRoutes(router: Router): void {
   router.addRoute({
     path: '/mdm',
     component: ErpShell,
-    redirect: '/mdm/items',
     meta: { requiresAuth: true, module: 'mdm' },
     children: [
+      {
+        path: '',
+        name: 'mdm-workbench',
+        component: () => import('../views/mdm/MasterDataWorkbench.vue'),
+        meta: { title: '主数据中心', module: 'mdm' },
+      },
       {
         path: 'uoms',
         name: 'mdm-uoms',

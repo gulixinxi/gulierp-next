@@ -81,6 +81,7 @@ export const shellNavigation: ShellNavigationModule[] = [
       {
         label: '主数据',
         items: [
+          { id: 'mdm-workbench', label: '主数据中心', icon: 'Menu', route: '/mdm', tabTitle: '主数据中心' },
           { id: 'list-mdm-uoms', label: '计量单位', icon: 'ScaleToOriginal', route: '/mdm/uoms', tabTitle: '计量单位' },
           { id: 'list-mdm-item-categories', label: '物料分类', icon: 'Files', route: '/mdm/item-categories', tabTitle: '物料分类' },
           { id: 'list-mdm-items', label: '商品档案', icon: 'Goods', route: '/mdm/items', tabTitle: '商品档案' },
@@ -159,7 +160,8 @@ export const shellNavigation: ShellNavigationModule[] = [
 export function findNavigationItemByRoute(path: string): ShellNavigationItem | undefined {
   return shellNavigation
     .flatMap(module => module.groups.flatMap(group => group.items))
-    .find(item => item.route === path || (item.route !== '/' && path.startsWith(`${item.route}/`)));
+    .filter(item => item.route === path || (item.route !== '/' && path.startsWith(`${item.route}/`)))
+    .sort((a, b) => (b.route?.length ?? 0) - (a.route?.length ?? 0))[0];
 }
 
 export function findNavigationModuleByRoute(path: string): ShellNavigationModule | undefined {
