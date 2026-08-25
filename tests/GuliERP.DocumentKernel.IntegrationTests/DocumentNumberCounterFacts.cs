@@ -178,6 +178,45 @@ public sealed class DocumentNumberCounterFacts
             await svc.GenerateAsync(
                 new DocumentNumberRequest(DocumentType.SalesOrder, 0, _companyId, period, null, 1)));
     }
+
+    /// <summary>
+    /// G2-DOCNO-002 regression test. 10 consecutive GenerateAsync
+    /// calls in the same scope must return 10 distinct, monotonically
+    /// increasing Document Numbers. Pre-fix, call #2 raised
+    /// <c>NpgsqlOperationInProgressException</c> on the fix-up
+    /// UPDATE because the RETURNING reader from call #1 was still
+    /// active on the same DbConnection.
+    /// </summary>
+    [SkippableFact]
+    public async Task GenerateAsync_Ten_Consecutive_Calls_Return_Sequence_1_to_10()
+    {
+        Skip.IfNot(_fx.IsAvailable, "PGPASSWORD not set; integration test skipped");
+        var svc = CreateService();
+        var period = DateOnly.FromDateTime(DateTime.UtcNow);
+        var periodKey = period.ToString("yyyyMMdd");
+        await _fx.ResetCounterScopeAsync(_tenantId, _companyId, (int)DocumentType.SalesOrder, periodKey);
+
+        var docNos = new System.Collections.Generic.List<string>();
+        for (var i = 1; i <= 10; i++)
+        {
+            var r = await svc.GenerateAsync(
+                new DocumentNumberRequest(DocumentType.SalesOrder, _tenantId, _companyId, period, null, 1));
+            Assert.Equal(i, r.SequenceValue);
+            Assert.EndsWith($"-{(i).ToString("D6")}", r.DocumentNo);
+            docNos.Add(r.DocumentNo);
+        }
+
+        // All 10 distinct.
+        Assert.Equal(10, docNos.Distinct().Count());
+
+        // The stored LastGeneratedDocumentNo must reflect the LAST
+        // generated number (not the stale sequence-1 placeholder).
+        // Pre-fix, this column was 'SO-...-000001' even after call #2
+        // because the fix-up UPDATE was rejected by Npgsql.
+        var stored = await _fx.GetLastGeneratedDocumentNoAsync(
+            _tenantId, _companyId, (int)DocumentType.SalesOrder, periodKey);
+        Assert.Equal(docNos.Last(), stored);
+    }
 }
 
 // --- Stub Foundation contracts (V1 audit deferred; tests do not need real ICurrentTenant / ICurrentUser) ---

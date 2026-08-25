@@ -99,6 +99,40 @@ public sealed class DocumentKernelConnectionFixture : IAsyncLifetime
             new object[] { tenantId, companyId, documentType, periodKey });
     }
 
+    /// <summary>
+    /// Read back the <c>LastGeneratedDocumentNo</c> column for a
+    /// specific scope. G2-DOCNO-002 regression test helper: after
+    /// the connection-in-progress fix, this column must reflect the
+    /// actual post-increment rendered Number (not the stale
+    /// placeholder).
+    /// </summary>
+    public async Task<string?> GetLastGeneratedDocumentNoAsync(
+        long tenantId, long companyId, int documentType, string periodKey)
+    {
+        if (!IsAvailable) return null;
+        await using var ctx = CreateContext();
+        var conn = ctx.Database.GetDbConnection();
+        await conn.OpenAsync();
+        try
+        {
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                @"SELECT ""LastGeneratedDocumentNo"" FROM doc_kernel.document_number_counter
+                  WHERE ""TenantId"" = @p0 AND ""CompanyId"" = @p1
+                    AND ""DocumentType"" = @p2 AND ""PeriodKey"" = @p3";
+            cmd.Parameters.Add(new Npgsql.NpgsqlParameter("p0", tenantId));
+            cmd.Parameters.Add(new Npgsql.NpgsqlParameter("p1", companyId));
+            cmd.Parameters.Add(new Npgsql.NpgsqlParameter("p2", documentType));
+            cmd.Parameters.Add(new Npgsql.NpgsqlParameter("p3", periodKey));
+            var result = await cmd.ExecuteScalarAsync();
+            return result is null or DBNull ? null : (string)result;
+        }
+        finally
+        {
+            await conn.CloseAsync();
+        }
+    }
+
     public async Task InitializeAsync()
     {
         // xUnit calls InitializeAsync once per collection. We

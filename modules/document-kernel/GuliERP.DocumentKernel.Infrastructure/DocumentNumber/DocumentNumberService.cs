@@ -187,6 +187,16 @@ RETURNING ""LastValue"", ""LastGeneratedDocumentNo"";
                 newValue = reader.GetInt64(0);
                 returnedNo = reader.GetString(1);
             }
+            // G2-DOCNO-002 fix: explicitly close the RETURNING reader
+            // before any subsequent command can run on the same
+            // connection. Npgsql refuses a second command while a
+            // DataReader is still active ("A command is already in
+            // progress"). Without this, the fix-up UPDATE below
+            // raises NpgsqlOperationInProgressException for every
+            // 2nd+ GenerateAsync call in the same scope.
+            // (idempotent with the await using block's eventual
+            // dispose; safe to call early.)
+            await reader.CloseAsync();
             // Post-process: the EXCLUDED.lastGeneratedDocumentNo for
             // the INSERT path may differ from the actual post-
             // increment value. Re-render from the returned value
