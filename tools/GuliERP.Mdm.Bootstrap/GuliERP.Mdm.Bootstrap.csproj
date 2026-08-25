@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>GuliERP.Mdm.Bootstrap</RootNamespace>
+    <AssemblyName>seed-mdm-dictionary</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <!-- This CLI tool needs Microsoft.Extensions.Hosting + Configuration,
+         which are NOT in Directory.Packages.props (CPM). Override
+         CPM locally so this tool can declare its own package versions. -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <!--
+      MDM V1 dictionary seed CLI tool.
+      Per docs/planning/G3_MDM_DICTIONARY_V1_SEED_B1_REVISED_PLAN.md
+      §1.1, the API tier MUST NOT auto-seed master data. This tool
+      is the single seed entry point. The exit codes are:
+        0 = success (all 9 dicts seeded or skipped)
+        1 = no dictionary files found in directory
+        2 = seed directory does not exist
+        3 = connection string not provided
+        4 = validation error (bad JSON, missing meta, sentinel mismatch)
+        5 = tenant not resolved
+        7 = other exception
+    -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\modules\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\..\modules\mdm\GuliERP.Mdm.Application\GuliERP.Mdm.Application.csproj" />
+    <ProjectReference Include="..\..\modules\mdm\GuliERP.Mdm.Infrastructure\GuliERP.Mdm.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+  </ItemGroup>
+
+</Project>

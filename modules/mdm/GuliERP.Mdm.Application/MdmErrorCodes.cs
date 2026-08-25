@@ -133,4 +133,40 @@ public static class MdmErrorCodes
     /// </summary>
     public const string CodeResemblesDocumentNumber =
         "mdm_code_resembles_document_number";
+
+    // ============================================================
+    // G3_MDM_DICTIONARY_V1_SEED_B1 — seed error codes.
+    // Filled by MdmDictionarySeedService (B1 implementation).
+    // Per docs/planning/G3_MDM_DICTIONARY_V1_SEED_B1_REVISED_PLAN.md
+    // §1.3, the seed enforces 3 invariants: valid JSON, meta.default_item_code
+    // present, sentinel matches items.
+    // ============================================================
+
+    /// <summary>
+    /// The dictionary seed JSON file is not valid JSON (parse
+    /// error). Filled by MdmDictionarySeedService.
+    /// </summary>
+    public const string DictionarySeedJsonInvalid =
+        "mdm_dictionary_seed_json_invalid";
+
+    /// <summary>
+    /// The dictionary seed JSON file is missing the
+    /// <c>meta.default_item_code</c> field (Architecture Decision
+    /// #3 in the B1 plan: the sentinel is NOT the first item;
+    /// the JSON must declare it explicitly).
+    /// Filled by MdmDictionarySeedService.
+    /// </summary>
+    public const string DictionarySeedMetaMissing =
+        "mdm_dictionary_seed_meta_missing";
+
+    /// <summary>
+    /// The dictionary seed's <c>meta.default_item_code</c> value
+    /// does not match any item in the <c>items</c> array, OR
+    /// exactly one item is not flagged <c>is_default=true</c>
+    /// (no default), OR multiple items are flagged
+    /// <c>is_default=true</c> (multiple defaults).
+    /// Filled by MdmDictionarySeedService.
+    /// </summary>
+    public const string DictionarySeedSentinelMismatch =
+        "mdm_dictionary_seed_sentinel_mismatch";
 }
