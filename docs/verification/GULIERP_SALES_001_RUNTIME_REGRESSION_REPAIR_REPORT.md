@@ -4,7 +4,7 @@
 
 - Start HEAD: `e50d8a59634cbd24116c236149c772bb3f7b92b1`
 - Core repair HEAD: `c3678855d080223906b30dd031bf991816d892a8`
-- Report commit: see final `git log --oneline -5` output after docs commit.
+- Report commit: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`.
 
 ## 2. Sales 403 Finding
 
@@ -27,8 +27,17 @@
 ## 4. DB And Migration Status
 
 - Canonical DB target required by task: `Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata`.
-- Local `ConnectionStrings__GuliERP`: `NOT_SET`.
-- Migration/application/runtime browser validation: Operator pending because this environment has no PostgreSQL password and must not invent or log one.
+- Local Codex shell `ConnectionStrings__GuliERP`: `NOT_SET`.
+- Operator-applied canonical DB activation on 2026-08-22 23:10-23:12:
+  - `dotnet ef migrations list` before: `20260822130000_SALES001_RealSalesOrderVerticalSlice (Pending)`.
+  - `dotnet ef database update`: applied `20260822130000_SALES001_RealSalesOrderVerticalSlice`.
+  - `dotnet ef migrations list` after: `20260822130000_SALES001_RealSalesOrderVerticalSlice`.
+  - `--grant-sales-operator`: `ok=true`, user `test_operator_g2_004`, role `ERP_SALES_OPERATOR`, granted claims exactly `sales.order.read`, `sales.order.manage`.
+  - `--diagnose`: user exists, active, unlocked, tenant binding valid, company binding valid, password verification skipped.
+- Operator-applied DocumentKernel DB activation on 2026-08-22 23:47:
+  - `dotnet ef migrations list` before: `20260821000000_DOCKERNEL001_InitializeDocKernelSchema (Pending)`.
+  - `dotnet ef database update`: applied `20260821000000_DOCKERNEL001_InitializeDocKernelSchema`.
+  - `dotnet ef migrations list` after: `20260821000000_DOCKERNEL001_InitializeDocKernelSchema`.
 - No schema, Migration file, SQL script, PostgreSQL data, Sales Domain/Application/Infrastructure, or MDM business logic was modified.
 
 ## 5. UI Repair Scope
@@ -66,10 +75,41 @@
 
 ## 8. Runtime Status
 
-- Real canonical PostgreSQL and Operator browser checks were not run in this environment because `ConnectionStrings__GuliERP` is not set and no password is available.
-- Operator final command after setting the canonical connection securely:
-  - Grant Sales role: `dotnet run --project tools/GuliERP.Identity.Bootstrap -- --grant-sales-operator "<ConnectionStrings__GuliERP>" test_operator_g2_004`
-  - Logout/login, then verify Sales list, draft save, edit, confirm, cancel, detail refresh, top company label, user menu/logout.
+- Current HEAD: `c00b5059a9a40e9cf9004a8692e50a72d13c235b`.
+- Current project runtime:
+  - Backend: `http://127.0.0.1:5000`, PID `62724`, started `2026-08-22 22:33:17`.
+  - Frontend: `http://127.0.0.1:5173`, PID `94136`, started `2026-08-22 22:33:19`.
+- HTTP checks:
+  - Backend `/health/live`: 200.
+  - Backend `/api/v1/auth/csrf`: 200.
+  - Frontend `/`: 200.
+  - Frontend `/src/layouts/ErpShell.vue`: 200, contains `companyPrimaryLabel` and `退出登录`.
+  - Frontend `/src/views/sales-order/SalesOrderList.vue`: 200, contains original UI markers `高级筛选` and `gs-bulk-bar`.
+- Operator screenshot evidence after DB activation:
+  - Browser is on the running ERP shell with authenticated user `test_operator_g2_004`.
+  - Company primary label shows `Operator evidence test company` only; `CompanyCode` is no longer appended in the main top-bar label.
+  - MDM UOM list loads real data, proving the current authenticated session can read canonical MDM data.
+- Browser automation limitation:
+  - Playwright could not attach to the user's daily Chrome profile because the Playwright extension is not installed.
+  - Resolved by launching an isolated Chrome profile at `D:\guli\projects\gulierp-next\.runtime-browser-profile` with CDP on `127.0.0.1:9223`.
+- Sales runtime flow after DB activation:
+  - `GET /api/v1/auth/me`: 200, user `test_operator_g2_004`.
+  - `GET /api/v1/mdm/business-partners`: 200, real customer `潍坊鸿玉源商贸有限公司 (CUST-001)`.
+  - `GET /api/v1/mdm/items`: 200, real item `螺纹钢 (ITEM-001)`.
+  - `GET /api/v1/mdm/uoms`: 200, real UOM data available.
+  - `POST /api/v1/sales/orders`: 201, created `SO-20260822-000001` (`83727350616817870`).
+  - `GET /api/v1/sales/orders/{id}`: 200, Draft persisted after read/refresh.
+  - `PUT /api/v1/sales/orders/{id}`: 200, Draft edit succeeded, `concurrencyVersion=2`.
+  - `GET /api/v1/sales/orders?keyword=SO-20260822-000001`: 200, `totalCount=1`.
+  - `POST /api/v1/sales/orders/{id}/confirm`: 200, status moved to Confirmed (`2`), `concurrencyVersion=3`.
+  - Post-confirm `PUT /api/v1/sales/orders/{id}`: expected 400 `sales.invalid_status_transition`, detail `Only Draft sales orders can be edited.`
+- Sales detail UI:
+  - Detail route `/sales-order/83727350616817870` rendered order number, `已确认`, `单据头信息`, `订单明细`, `来源/下游`, `操作日志`, customer and item text.
+- Logout:
+  - User menu displayed `退出登录`.
+  - Confirmation dialog displayed `确认要退出当前账号吗？`.
+  - Clicking `退出` routed to `/login`.
+  - `GET /api/v1/auth/me` after logout returned 401 `authentication_required`.
 
 ## 9. Modified Files
 
@@ -87,7 +127,9 @@
 
 ## 10. Risk And Next Step
 
-- Remaining risk: true Operator runtime depends on applying Sales Migration and granting `ERP_SALES_OPERATOR` in canonical PostgreSQL, then relogging to refresh the browser session.
-- Next suggested Goal: Operator-only runtime acceptance using canonical DB credentials, capturing RequestId/TraceId if any Sales 403 remains. Do not start purchase/inventory/RBAC expansion in this goal.
+- Remaining risk: none observed in the GULIERP_SALES_001R1 runtime path after canonical Sales + DocumentKernel migrations and Sales operator provisioning.
+- No 403 remained during Sales list/create/read/update/confirm runtime verification.
+- Earlier `POST /api/v1/sales/orders` 500 was caused by missing DocumentKernel runtime schema and was resolved by applying the official DocumentKernel EF migration.
+- Next suggested step: keep this goal closed; do not start purchase/inventory/RBAC expansion from this runtime repair.
 
-Current Gate: `GULIERP_SALES_001_RUNTIME_REGRESSION_FIXED_OPERATOR_RETEST_PENDING`
+Current Gate: `GULIERP_SALES_001_RUNTIME_VERIFIED`
