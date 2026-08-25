@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [
+      {
+        "command": "node .cursor/hooks/activate-meta-theory-spine.mjs",
+        "timeout": 5
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "node .cursor/hooks/enforce-agent-dispatch.mjs",
+        "timeout": 10,
+        "failClosed": true
+      },
+      {
+        "command": "node .cursor/hooks/graphify-context.mjs"
+      }
+    ]
+  }
+}

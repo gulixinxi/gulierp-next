@@ -1,0 +1,682 @@
+{
+  "generatedAt": "2026-06-12T14:50:31.408Z",
+  "registryName": "meta-kim-capabilities",
+  "scope": "repo-canonical",
+  "canonicalProjection": "config/capability-index/meta-kim-capabilities.json",
+  "canonicalSource": "config/capability-index/meta-kim-capabilities.json",
+  "localGlobalInventory": ".meta-kim/state/{profile}/capability-index/global-capabilities.json",
+  "mirroredTo": [
+    ".claude/capability-index/meta-kim-capabilities.json",
+    ".codex/capability-index/meta-kim-capabilities.json",
+    "openclaw/capability-index/meta-kim-capabilities.json",
+    ".cursor/capability-index/meta-kim-capabilities.json"
+  ],
+  "fetchOrder": [
+    "repo canonical capability index",
+    "runtime mirror",
+    "local global inventory",
+    "capability gap packet and return to Thinking"
+  ],
+  "summary": {
+    "totalAgents": 9,
+    "totalSkills": 16,
+    "totalHooks": 23,
+    "totalMcpServers": 1,
+    "totalMcpTools": 3,
+    "totalPlugins": 4,
+    "totalCommands": 3
+  },
+  "abstractCapabilitySlots": [
+    {
+      "slotId": "run-scoped-meta-skill-selection",
+      "description": "Abstract slot for selecting concrete child skills at runtime Fetch without binding them into long-term meta-agent identity.",
+      "allowedProviderIds": [
+        "meta-theory",
+        "agent-teams-playbook",
+        "superpowers",
+        "ecc",
+        "findskill"
+      ],
+      "selectedSkillScope": "run_only"
+    },
+    {
+      "slotId": "interface-integration-contract",
+      "description": "Abstract slot for internal API and third-party provider integration work: evidence-backed field ledger, provider adapter boundary, auth/signature, idempotency, callback, error model, contract tests, observability, and rollback gates.",
+      "allowedProviderIds": [
+        "meta-theory",
+        "agent-teams-playbook",
+        "superpowers",
+        "ecc",
+        "findskill"
+      ],
+      "selectedSkillScope": "run_only"
+    }
+  ],
+  "metaSkillProviders": {
+    "meta-theory": {
+      "id": "meta-theory",
+      "providerKind": "meta-skill-package",
+      "allowedForLongTermAgentIdentity": true,
+      "concreteSubSkillBindingForbidden": true,
+      "notes": "May be referenced as a long-term provider package; concrete child skills are selected per run during Fetch."
+    },
+    "agent-teams-playbook": {
+      "id": "agent-teams-playbook",
+      "providerKind": "meta-skill-package",
+      "allowedForLongTermAgentIdentity": true,
+      "concreteSubSkillBindingForbidden": true,
+      "notes": "May be referenced as a long-term provider package; concrete child skills are selected per run during Fetch."
+    },
+    "superpowers": {
+      "id": "superpowers",
+      "providerKind": "meta-skill-package",
+      "allowedForLongTermAgentIdentity": true,
+      "concreteSubSkillBindingForbidden": true,
+      "notes": "May be referenced as a long-term provider package; concrete child skills are selected per run during Fetch."
+    },
+    "ecc": {
+      "id": "ecc",
+      "providerKind": "meta-skill-package",
+      "allowedForLongTermAgentIdentity": true,
+      "concreteSubSkillBindingForbidden": true,
+      "notes": "May be referenced as a long-term provider package; concrete child skills are selected per run during Fetch."
+    },
+    "findskill": {
+      "id": "findskill",
+      "providerKind": "meta-skill-package",
+      "allowedForLongTermAgentIdentity": true,
+      "concreteSubSkillBindingForbidden": true,
+      "notes": "May be referenced as a long-term provider package; concrete child skills are selected per run during Fetch."
+    }
+  },
+  "runtimeSelectedSkills": {
+    "selectedSkillScope": "run_only",
+    "persistencePolicy": "Runtime-selected concrete skills are scoped to the current run and must not be persisted into long-term agent identity."
+  },
+  "longTermAgentIdentityPolicy": {
+    "forbidConcreteSkillInLongTermAgentIdentity": true,
+    "allowedMetaSkillProviderIds": [
+      "meta-theory",
+      "agent-teams-playbook",
+      "superpowers",
+      "ecc",
+      "findskill"
+    ],
+    "forbiddenConcreteSkillPatterns": [
+      "provider/*",
+      "provider:child-skill",
+      "runtime-specific child skill id"
+    ]
+  },
+  "byCapabilityType": {
+    "agents": {
+      "repo:canonical:meta-artisan": {
+        "id": "meta-artisan",
+        "type": "agents",
+        "namespace": "canonical",
+        "path": "canonical/agents/meta-artisan.md",
+        "size": 21736,
+        "modified": "2026-06-03T19:03:51.022Z",
+        "layer": "meta",
+        "executionBlock": true
+      },
+      "repo:canonical:meta-chrysalis": {
+        "id": "meta-chrysalis",
+        "type": "agents",
+        "namespace": "canonical",
+        "path": "canonical/agents/meta-chrysalis.md",
+        "size": 32712,
+        "modified": "2026-05-28T18:47:28.789Z",
+        "layer": "meta",
+        "executionBlock": true
+      },
+      "repo:canonical:meta-conductor": {
+        "id": "meta-conductor",
+        "type": "agents",
+        "namespace": "canonical",
+        "path": "canonical/agents/meta-conductor.md",
+        "size": 61306,
+        "modified": "2026-06-01T13:14:30.060Z",
+        "layer": "meta",
+        "executionBlock": true
+      },
+      "repo:canonical:meta-genesis": {
+        "id": "meta-genesis",
+        "type": "agents",
+        "namespace": "canonical",
+        "path": "canonical/agents/meta-genesis.md",
+        "size": 25001,
+        "modified": "2026-06-03T19:03:51.022Z",
+        "layer": "meta",
+        "executionBlock": true
+      },
+      "repo:canonical:meta-librarian": {
+        "id": "meta-librarian",
+        "type": "agents",
+        "namespace": "canonical",
+        "path": "canonical/agents/meta-librarian.md",
+        "size": 25261,
+        "modified": "2026-06-03T19:03:51.023Z",
+        "layer": "meta",
+        "executionBlock": true
+      },
+      "repo:canonical:meta-prism": {
+        "id": "meta-prism",
+        "type": "agents",
+        "namespace": "canonical",
+        "path": "canonical/agents/meta-prism.md",
+        "size": 35738,
+        "modified": "2026-06-03T19:07:53.534Z",
+        "layer": "meta",
+        "executionBlock": true
+      },
+      "repo:canonical:meta-scout": {
+        "id": "meta-scout",
+        "type": "agents",
+        "namespace": "canonical",
+        "path": "canonical/agents/meta-scout.md",
+        "size": 21911,
+        "modified": "2026-05-28T18:47:28.784Z",
+        "layer": "meta",
+        "executionBlock": true
+      },
+      "repo:canonical:meta-sentinel": {
+        "id": "meta-sentinel",
+        "type": "agents",
+        "namespace": "canonical",
+        "path": "canonical/agents/meta-sentinel.md",
+        "size": 23260,
+        "modified": "2026-05-30T12:24:41.998Z",
+        "layer": "meta",
+        "executionBlock": true
+      },
+      "repo:canonical:meta-warden": {
+        "id": "meta-warden",
+        "type": "agents",
+        "namespace": "canonical",
+        "path": "canonical/agents/meta-warden.md",
+        "size": 42283,
+        "modified": "2026-06-03T19:03:51.025Z",
+        "layer": "meta",
+        "executionBlock": true
+      }
+    },
+    "skills": {
+      "repo:canonical:meta-theory": {
+        "id": "meta-theory",
+        "type": "skills",
+        "namespace": "canonical",
+        "path": "canonical/skills/meta-theory/SKILL.md",
+        "size": 40133,
+        "modified": "2026-06-11T17:13:45.444Z"
+      },
+      "repo:canonical:same-set-reusable-flow-for-project-file-inventor": {
+        "id": "same-set-reusable-flow-for-project-file-inventor",
+        "type": "skills",
+        "namespace": "canonical",
+        "path": "canonical/skills/same-set-reusable-flow-for-project-file-inventor/SKILL.md",
+        "size": 2975,
+        "modified": "2026-06-04T16:09:38.757Z"
+      },
+      "repo:canonical-reference:create-agent": {
+        "id": "create-agent",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/create-agent.md",
+        "relativePath": "create-agent.md",
+        "size": 33584,
+        "modified": "2026-06-08T18:31:58.766Z"
+      },
+      "repo:canonical-reference:dev-governance": {
+        "id": "dev-governance",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/dev-governance.md",
+        "relativePath": "dev-governance.md",
+        "size": 20050,
+        "modified": "2026-06-05T10:14:00.661Z"
+      },
+      "repo:canonical-reference:evolution-writeback": {
+        "id": "evolution-writeback",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/evolution-writeback.md",
+        "relativePath": "evolution-writeback.md",
+        "size": 2404,
+        "modified": "2026-05-28T18:46:12.846Z"
+      },
+      "repo:canonical-reference:intent-amplification": {
+        "id": "intent-amplification",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/intent-amplification.md",
+        "relativePath": "intent-amplification.md",
+        "size": 9323,
+        "modified": "2026-05-28T19:24:04.201Z"
+      },
+      "repo:canonical-reference:meta-theory": {
+        "id": "meta-theory",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/meta-theory.md",
+        "relativePath": "meta-theory.md",
+        "size": 20430,
+        "modified": "2026-05-28T18:46:52.049Z"
+      },
+      "repo:canonical-reference:owner-resolution": {
+        "id": "owner-resolution",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/owner-resolution.md",
+        "relativePath": "owner-resolution.md",
+        "size": 6591,
+        "modified": "2026-06-02T19:00:23.089Z"
+      },
+      "repo:canonical-reference:path-selection": {
+        "id": "path-selection",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/path-selection.md",
+        "relativePath": "path-selection.md",
+        "size": 3557,
+        "modified": "2026-06-01T13:14:30.059Z"
+      },
+      "repo:canonical-reference:planning-files": {
+        "id": "planning-files",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/planning-files.md",
+        "relativePath": "planning-files.md",
+        "size": 6033,
+        "modified": "2026-05-28T18:46:52.049Z"
+      },
+      "repo:canonical-reference:rhythm-orchestration": {
+        "id": "rhythm-orchestration",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/rhythm-orchestration.md",
+        "relativePath": "rhythm-orchestration.md",
+        "size": 11062,
+        "modified": "2026-05-28T18:46:52.050Z"
+      },
+      "repo:canonical-reference:runtime-claude": {
+        "id": "runtime-claude",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/runtime-claude.md",
+        "relativePath": "runtime-claude.md",
+        "size": 11644,
+        "modified": "2026-06-10T18:38:38.869Z"
+      },
+      "repo:canonical-reference:runtime-codex": {
+        "id": "runtime-codex",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/runtime-codex.md",
+        "relativePath": "runtime-codex.md",
+        "size": 14325,
+        "modified": "2026-06-10T18:38:38.871Z"
+      },
+      "repo:canonical-reference:spine-state": {
+        "id": "spine-state",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/spine-state.md",
+        "relativePath": "spine-state.md",
+        "size": 6389,
+        "modified": "2026-06-01T17:29:20.380Z"
+      },
+      "repo:canonical-reference:ten-step-governance": {
+        "id": "ten-step-governance",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/ten-step-governance.md",
+        "relativePath": "ten-step-governance.md",
+        "size": 13222,
+        "modified": "2026-05-28T18:46:52.052Z"
+      },
+      "repo:canonical-reference:verification-evidence": {
+        "id": "verification-evidence",
+        "type": "skills",
+        "namespace": "canonical-reference",
+        "path": "canonical/skills/meta-theory/references/verification-evidence.md",
+        "relativePath": "verification-evidence.md",
+        "size": 6829,
+        "modified": "2026-06-03T12:46:11.921Z"
+      }
+    },
+    "hooks": {
+      "repo:canonical-runtime-assets:activate-meta-theory-spine.mjs": {
+        "id": "activate-meta-theory-spine.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/shared/hooks/activate-meta-theory-spine.mjs",
+        "relativePath": "activate-meta-theory-spine.mjs",
+        "size": 2222,
+        "modified": "2026-06-10T14:37:45.511Z"
+      },
+      "repo:canonical-runtime-assets:hook-i18n.mjs": {
+        "id": "hook-i18n.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/shared/hooks/hook-i18n.mjs",
+        "relativePath": "hook-i18n.mjs",
+        "size": 6236,
+        "modified": "2026-06-08T16:55:58.960Z"
+      },
+      "repo:canonical-runtime-assets:meta-kim-memory-save.mjs": {
+        "id": "meta-kim-memory-save.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/shared/hooks/meta-kim-memory-save.mjs",
+        "relativePath": "meta-kim-memory-save.mjs",
+        "size": 30118,
+        "modified": "2026-06-09T16:32:07.875Z"
+      },
+      "repo:canonical-runtime-assets:skip-reminder.mjs": {
+        "id": "skip-reminder.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/shared/hooks/skip-reminder.mjs",
+        "relativePath": "skip-reminder.mjs",
+        "size": 6393,
+        "modified": "2026-06-12T07:05:47.609Z"
+      },
+      "repo:canonical-runtime-assets:spine-state.mjs": {
+        "id": "spine-state.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/spine-state.mjs",
+        "relativePath": "spine-state.mjs",
+        "size": 38396,
+        "modified": "2026-06-01T19:14:13.726Z"
+      },
+      "repo:canonical-runtime-assets:utils.mjs": {
+        "id": "utils.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/utils.mjs",
+        "relativePath": "utils.mjs",
+        "size": 1269,
+        "modified": "2026-04-18T14:43:12.667Z"
+      },
+      "repo:canonical-runtime-assets:bash-readonly-whitelist.mjs": {
+        "id": "bash-readonly-whitelist.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/bash-readonly-whitelist.mjs",
+        "relativePath": "bash-readonly-whitelist.mjs",
+        "size": 12795,
+        "modified": "2026-06-01T09:40:31.762Z"
+      },
+      "repo:canonical-runtime-assets:block-dangerous-bash.mjs": {
+        "id": "block-dangerous-bash.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/block-dangerous-bash.mjs",
+        "relativePath": "block-dangerous-bash.mjs",
+        "size": 773,
+        "modified": "2026-04-18T14:43:40.662Z"
+      },
+      "repo:canonical-runtime-assets:ecc-permission-cache-wrapper.mjs": {
+        "id": "ecc-permission-cache-wrapper.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/ecc-permission-cache-wrapper.mjs",
+        "relativePath": "ecc-permission-cache-wrapper.mjs",
+        "size": 3648,
+        "modified": "2026-05-26T02:39:29.858Z"
+      },
+      "repo:canonical-runtime-assets:enforce-agent-dispatch.mjs": {
+        "id": "enforce-agent-dispatch.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/enforce-agent-dispatch.mjs",
+        "relativePath": "enforce-agent-dispatch.mjs",
+        "size": 38993,
+        "modified": "2026-06-01T18:46:33.113Z"
+      },
+      "repo:canonical-runtime-assets:graphify-context.mjs": {
+        "id": "graphify-context.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/graphify-context.mjs",
+        "relativePath": "graphify-context.mjs",
+        "size": 1193,
+        "modified": "2026-06-09T09:10:10.468Z"
+      },
+      "repo:canonical-runtime-assets:post-console-log-warn.mjs": {
+        "id": "post-console-log-warn.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/post-console-log-warn.mjs",
+        "relativePath": "post-console-log-warn.mjs",
+        "size": 988,
+        "modified": "2026-04-18T14:43:47.394Z"
+      },
+      "repo:canonical-runtime-assets:post-format.mjs": {
+        "id": "post-format.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/post-format.mjs",
+        "relativePath": "post-format.mjs",
+        "size": 1020,
+        "modified": "2026-05-18T20:17:20.854Z"
+      },
+      "repo:canonical-runtime-assets:post-typecheck.mjs": {
+        "id": "post-typecheck.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/post-typecheck.mjs",
+        "relativePath": "post-typecheck.mjs",
+        "size": 947,
+        "modified": "2026-04-18T14:43:54.623Z"
+      },
+      "repo:canonical-runtime-assets:stop-compaction.mjs": {
+        "id": "stop-compaction.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/stop-compaction.mjs",
+        "relativePath": "stop-compaction.mjs",
+        "size": 10175,
+        "modified": "2026-05-28T08:56:04.442Z"
+      },
+      "repo:canonical-runtime-assets:stop-completion-guard.mjs": {
+        "id": "stop-completion-guard.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/stop-completion-guard.mjs",
+        "relativePath": "stop-completion-guard.mjs",
+        "size": 5003,
+        "modified": "2026-04-13T13:35:56.019Z"
+      },
+      "repo:canonical-runtime-assets:stop-console-log-audit.mjs": {
+        "id": "stop-console-log-audit.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/stop-console-log-audit.mjs",
+        "relativePath": "stop-console-log-audit.mjs",
+        "size": 1107,
+        "modified": "2026-05-16T14:06:24.573Z"
+      },
+      "repo:canonical-runtime-assets:stop-memory-save.mjs": {
+        "id": "stop-memory-save.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/stop-memory-save.mjs",
+        "relativePath": "stop-memory-save.mjs",
+        "size": 13406,
+        "modified": "2026-05-21T15:35:33.810Z"
+      },
+      "repo:canonical-runtime-assets:stop-save-progress.mjs": {
+        "id": "stop-save-progress.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/stop-save-progress.mjs",
+        "relativePath": "stop-save-progress.mjs",
+        "size": 6721,
+        "modified": "2026-05-18T19:23:40.003Z"
+      },
+      "repo:canonical-runtime-assets:stop-spine-cleanup.mjs": {
+        "id": "stop-spine-cleanup.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/stop-spine-cleanup.mjs",
+        "relativePath": "stop-spine-cleanup.mjs",
+        "size": 1528,
+        "modified": "2026-05-14T13:47:54.193Z"
+      },
+      "repo:canonical-runtime-assets:subagent-context.mjs": {
+        "id": "subagent-context.mjs",
+        "type": "hooks",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/hooks/subagent-context.mjs",
+        "relativePath": "subagent-context.mjs",
+        "size": 1446,
+        "modified": "2026-05-14T08:58:09.294Z"
+      }
+    },
+    "mcpServers": {
+      "repo:repo-mcp:meta-kim-runtime": {
+        "id": "meta-kim-runtime",
+        "type": "mcpServers",
+        "namespace": "repo-mcp",
+        "path": ".mcp.json",
+        "size": 220,
+        "modified": "2026-06-12T14:27:09.612Z"
+      }
+    },
+    "mcpTools": {
+      "repo:repo-mcp:meta-kim-runtime:list_meta_agents": {
+        "id": "meta-kim-runtime:list_meta_agents",
+        "type": "mcpTools",
+        "namespace": "repo-mcp",
+        "path": ".mcp.json",
+        "size": 220,
+        "modified": "2026-06-12T14:27:09.612Z"
+      },
+      "repo:repo-mcp:meta-kim-runtime:get_meta_agent": {
+        "id": "meta-kim-runtime:get_meta_agent",
+        "type": "mcpTools",
+        "namespace": "repo-mcp",
+        "path": ".mcp.json",
+        "size": 220,
+        "modified": "2026-06-12T14:27:09.612Z"
+      },
+      "repo:repo-mcp:meta-kim-runtime:get_meta_runtime_capabilities": {
+        "id": "meta-kim-runtime:get_meta_runtime_capabilities",
+        "type": "mcpTools",
+        "namespace": "repo-mcp",
+        "path": ".mcp.json",
+        "size": 220,
+        "modified": "2026-06-12T14:27:09.612Z"
+      }
+    },
+    "plugins": {
+      "manifest:plugin-marketplace:superpowers": {
+        "id": "superpowers",
+        "type": "plugins",
+        "namespace": "plugin-marketplace",
+        "path": "config/skills.json",
+        "runtimeTargets": [
+          "claude",
+          "codex",
+          "openclaw",
+          "cursor",
+          "opencode"
+        ],
+        "installMethod": "pluginMarketplace",
+        "providerRegistryId": "plugin-marketplace-superpowers",
+        "pluginIds": [
+          "superpowers@superpowers-marketplace",
+          "superpowers",
+          "superpowers"
+        ],
+        "evidence": "config/skills.json skills[id=superpowers]"
+      },
+      "manifest:plugin-marketplace:ecc": {
+        "id": "ecc",
+        "type": "plugins",
+        "namespace": "plugin-marketplace",
+        "path": "config/skills.json",
+        "runtimeTargets": [
+          "claude",
+          "codex",
+          "cursor",
+          "opencode",
+          "qwen",
+          "zed",
+          "gemini",
+          "codebuddy",
+          "antigravity",
+          "joycode"
+        ],
+        "installMethod": "upstreamCli",
+        "providerRegistryId": "plugin-marketplace-ecc",
+        "pluginIds": [
+          "ecc@ecc"
+        ],
+        "evidence": "config/skills.json skills[id=ecc]"
+      },
+      "manifest:plugin-bundle:planning-with-files": {
+        "id": "planning-with-files",
+        "type": "pluginBundles",
+        "namespace": "plugin-bundle",
+        "path": "config/skills.json",
+        "runtimeTargets": [
+          "claude",
+          "codex",
+          "openclaw",
+          "cursor"
+        ],
+        "installMethod": "subdirExtraction",
+        "providerRegistryId": "plugin-bundle-planning-with-files",
+        "pluginIds": [],
+        "evidence": "config/skills.json skills[id=planning-with-files]"
+      },
+      "manifest:plugin-marketplace:cli-anything": {
+        "id": "cli-anything",
+        "type": "plugins",
+        "namespace": "plugin-marketplace",
+        "path": "config/skills.json",
+        "runtimeTargets": [
+          "claude",
+          "codex",
+          "openclaw",
+          "cursor"
+        ],
+        "installMethod": "pluginMarketplace",
+        "providerRegistryId": "plugin-marketplace-cli-anything",
+        "pluginIds": [],
+        "evidence": "config/skills.json skills[id=cli-anything]"
+      }
+    },
+    "rules": {},
+    "prompts": {},
+    "commands": {
+      "repo:canonical-runtime-assets:meta-theory": {
+        "id": "meta-theory",
+        "type": "commands",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/codex/commands/meta-theory.md",
+        "relativePath": "meta-theory.md",
+        "size": 1977,
+        "modified": "2026-06-04T05:40:02.002Z"
+      },
+      "repo:canonical-runtime-assets:save-progress": {
+        "id": "save-progress",
+        "type": "commands",
+        "namespace": "canonical-runtime-assets",
+        "path": "canonical/runtime-assets/claude/commands/save-progress/SKILL.md",
+        "relativePath": "save-progress/SKILL.md",
+        "size": 3628,
+        "modified": "2026-05-24T17:16:41.812Z"
+      }
+    }
+  },
+  "governanceRules": {
+    "metaAgentDispatchRule": "Meta-agents (layer='meta') are the only durable public Meta_Kim owners for Critical, Fetch, Thinking, and Review. They MUST NOT perform implementation work directly; concrete implementation capability is recorded as run-scoped matchedCapabilities/capabilityBindings across skills, commands, MCP tools, runtime tools, file sets, or capability-index queries; legacy matchedSkills is compatibility evidence only.",
+    "fallbackBehavior": "Use a governance meta owner plus run-scoped matchedCapabilities/capabilityBindings, or block with capabilityGapPacket. Do not persist non-governance execution agents in the public repo.",
+    "layerClassification": "Meta-agents: id starts with 'meta-' in canonical namespace. In public Meta_Kim, all other agents are ignored as durable owners and may appear only as run-scoped capability evidence when explicitly discovered."
+  }
+}

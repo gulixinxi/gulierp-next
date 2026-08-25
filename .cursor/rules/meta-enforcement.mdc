@@ -1,0 +1,103 @@
+---
+description: Meta-agent execution boundary enforcement — meta-* agents must not perform direct execution work in Cursor
+globs:
+alwaysApply: true
+---
+
+<!-- Canonical source: canonical/runtime-assets/cursor/rules/meta-enforcement.mdc
+     Synced to .cursor/rules/meta-enforcement.mdc by `npm run meta:sync`.
+     Cursor's official Hooks surface supports real preToolUse hooks that can mechanically deny
+     tool calls (exit code 2 + stderr, or stdout JSON with
+     {"permission":"deny",...}, with failClosed:true for crash-default-deny).
+     The primary mechanical enforcement lives in
+     .cursor/hooks/enforce-agent-dispatch.mjs. This MDC rule is the
+     declarative backup that survives if the hook is misconfigured, disabled,
+     or running in a host where hooks are unavailable. -->
+
+# Meta-Agent Execution Boundary (Cursor Declarative Backup)
+
+Cursor's official Hooks surface **does** expose a real tool-call deny protocol via `preToolUse`
+hooks, equivalent in effect to Claude Code's
+`hookSpecificOutput.permissionDecision: "deny"`. A hook can deny a tool call
+by either:
+
+- exiting with code `2` and writing a deny reason to stderr, or
+- emitting stdout JSON
+  `{"permission": "deny", "user_message": "...", "agent_message": "..."}`
+
+When combined with `failClosed: true`, hook crashes default to deny rather
+than allow. The canonical mechanical enforcement now lives in
+`.cursor/hooks/enforce-agent-dispatch.mjs` (synced from
+`canonical/runtime-assets/cursor/hooks/`). See
+[Cursor Hooks docs](https://cursor.com/docs/hooks) for the wire protocol.
+
+**This MDC rule is the declarative backup.** It applies on every prompt
+(`alwaysApply: true`) and keeps the meta-agent boundary intact when the
+hook is misconfigured, disabled, unavailable in the active host, or otherwise
+unavailable. Hook-first, MDC-as-safety-net.
+
+## Hard rules (apply at every turn)
+
+1. **The nine meta-agents are governance-only.** Names: `meta-warden`,
+   `meta-conductor`, `meta-genesis`, `meta-artisan`, `meta-sentinel`,
+   `meta-librarian`, `meta-prism`, `meta-scout`, `meta-chrysalis`. Each one
+   carries `executionBlock=true` in its canonical definition.
+
+2. **Meta-agents do NOT touch execution tools.** If the user requests a
+   meta-agent to write code, run tests, edit files, debug, build, or perform
+   any direct execution task, **refuse** and instead:
+   - state which meta-agent boundary the request violates
+   - recommend the correct execution-layer agent (or open a
+     `capabilityGapPacket` if no owner exists)
+   - hand the actual work to that agent via Cursor's native agent invocation
+
+3. **The dispatcher (main thread) is also not the executor.** When the
+   `meta-theory` skill is active, the main thread plans, dispatches, reviews,
+   and synthesises only. It does not perform >3 sentences of execution-layer
+   analysis, code generation, or fixes on its own.
+
+4. **"Simple task" is not an excuse.** Cost of unnecessary dispatch
+   < cost of governance bypass. When in doubt, dispatch.
+
+## Why this rule exists
+
+The mechanical enforcement layer (`.cursor/hooks/enforce-agent-dispatch.mjs`)
+is the primary line of defence and aligns Cursor with Claude Code's
+PreToolUse deny behaviour. This MDC rule remains because:
+
+- hooks may be disabled, misconfigured, or unavailable in the active Cursor host;
+- a declarative rule that loads on every prompt cannot be bypassed by a
+  config edit;
+- defence-in-depth keeps the four-runtime governance behaviour aligned even
+  if one layer fails.
+
+Hook first, declarative rule second. Both layers enforce the same boundary.
+
+## Self-check (before any execution-layer tool call)
+
+Ask:
+
+- Is the active owner a `meta-*` agent? → If yes, STOP. Refuse and dispatch.
+- Am I the main thread and is `meta-theory` active? → If yes, STOP. Plan and
+  dispatch through Cursor's native agent surface.
+- Has a capability-matched execution-layer agent been chosen? → If no, STOP.
+  Discover or create one before touching execution tools.
+
+If any answer is "no" but the work continues, that is a recorded governance
+violation under the `AGENTS.md` Mechanical Enforcement contract and a Stage 6
+Meta-Review finding.
+
+## Cross-reference
+
+- `canonical/agents/meta-*.md` — canonical meta-agent definitions
+  (each with `executionBlock: true`)
+- `.cursor/hooks/enforce-agent-dispatch.mjs` — **primary mechanical
+  enforcement** on Cursor's official Hooks surface (synced from
+  `canonical/runtime-assets/cursor/hooks/`)
+- `canonical/runtime-assets/claude/hooks/enforce-agent-dispatch.mjs` —
+  the equivalent mechanical enforcement on Claude Code
+- `AGENTS.md` — current cross-runtime enforcement matrix and limits
+- `.cursor/rules/meta-theory-dispatch.mdc` — companion rule for the
+  general dispatch protocol (this rule narrows it to meta-agent boundary)
+- [Cursor Hooks docs](https://cursor.com/docs/hooks) — official
+  `preToolUse` wire protocol reference

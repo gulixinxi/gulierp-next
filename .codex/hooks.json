@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write|MultiEdit|NotebookEdit|Agent|spawn_agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .codex/hooks/enforce-agent-dispatch.mjs",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .codex/hooks/graphify-context.mjs"
+          }
+        ]
+      }
+    ],
+    "Skill": [
+      {
+        "matcher": "meta-theory",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .codex/hooks/activate-meta-theory-spine.mjs",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

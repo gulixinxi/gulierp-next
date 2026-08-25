@@ -1,0 +1,76 @@
+---
+description: Meta-theory dispatch entry and deep Fetch requirement for Cursor
+globs:
+alwaysApply: true
+---
+
+<!-- Canonical source: canonical/runtime-assets/cursor/rules/meta-theory-dispatch.mdc
+     Synced to .cursor/rules/meta-theory-dispatch.mdc by `npm run meta:sync`.
+     Cursor does not use Claude/Codex slash-command files as its primary entry.
+     This rule is the Cursor-native alwaysApply dispatch contract. -->
+
+# Meta-Theory Dispatch (Cursor)
+
+This repository treats ordinary durable natural-language work as the entry
+surface for Meta_Kim governance. In Cursor, the stable entry is this rule plus
+the project hooks in `.cursor/hooks.json`; do not wait for a Claude/Codex slash
+command file to appear.
+
+## Mandatory Entry Cases
+
+Use the governed Meta_Kim route when the prompt contains any of these shapes:
+
+- explicit `meta-theory`, `/meta-theory`, `元理论`, `critical and fetch thinking and review`
+- project / repo / codebase understanding, for example "what is this project",
+  "这个项目干啥", "这个项目怎么玩", "analyze this repo"
+- architecture, runtime, hook, MCP, capability, agent, skill, or tool routing
+- commercialization, market, competitor, pricing, customer, investor, growth,
+  strategy, roadmap, or current external-platform claims
+- any durable execution request that will edit, test, publish, install, sync,
+  release, or make a public-ready claim
+
+## Required Route
+
+When one of the entry cases matches, Cursor must run or faithfully follow the
+machine entry:
+
+```sh
+npm run meta:theory:run -- "<user request>"
+```
+
+If the command cannot run because dependencies, permissions, shell access, or
+runtime support are missing, stop before shallow analysis and record a blocker:
+`blocked_to_fetch` with the exact missing capability. Do not answer from a
+quick summary as if Fetch happened.
+
+## Deep Fetch Minimum
+
+Project-understanding and strategy tasks must inspect or explicitly account for
+all of these source classes before Thinking:
+
+- `README.md` / `README.zh-CN.md`
+- `AGENTS.md` and runtime-maintainer instructions
+- `package.json` scripts and executable commands
+- `canonical/agents/`, `canonical/skills/`, `canonical/runtime-assets/`
+- `config/contracts/`, `config/capability-index/`, runtime and OS matrices
+- `.cursor/`, `.claude/`, `.codex/`, and `openclaw/` runtime projections
+- MCP configs, heartbeat files, hooks, and dependency-project registry
+- Graphify: `graphify-out/GRAPH_REPORT.md` or `graphify-out/wiki/index.md` when present
+- prior run/evolution records when the task asks about history or learning
+
+For market, competitor, pricing, provider, version, platform, or current-world
+claims, Fetch must first prove an available retrieval path such as web search,
+URL fetch, browser, MCP provider, docs lookup, or a recorded local-only
+justification. If no retrieval path is available, return `blocked_to_fetch`
+instead of guessing.
+
+## Output Discipline
+
+The user-facing response can stay human and compact, but the run must leave
+auditable evidence: `fetchRecord.capabilitySearchPerformed = true`,
+`capabilityInventory`, `dispatchBoard`, `workerTaskPackets`, Review,
+Meta-Review, Verification, and Evolution writeback or `none-with-reason`.
+
+Cursor-specific rule: do not paste Claude Code hook payloads or Codex TOML into
+Cursor rules. Cursor uses `.cursor/rules/*.mdc`, `.cursor/hooks.json`,
+`.cursor/hooks/`, `.cursor/agents/*.md`, and `.cursor/mcp.json`.

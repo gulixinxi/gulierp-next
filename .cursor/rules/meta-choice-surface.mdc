@@ -1,0 +1,54 @@
+---
+description: Meta_Kim choice-surface fallback — stable Cursor trigger for blocking user decisions
+globs:
+alwaysApply: true
+---
+
+<!-- Canonical source: canonical/runtime-assets/cursor/rules/meta-choice-surface.mdc
+     Synced to .cursor/rules/meta-choice-surface.mdc by `npm run meta:sync`.
+     This rule is intentionally not a popup claim. Cursor hooks can guard
+     lifecycle/tool events, but Meta_Kim has no verified Cursor-native
+     AskUserQuestion/request_user_input equivalent for arbitrary multi-option
+     decisions. The stable trigger is alwaysApply project rules plus chat
+     decision cards; preToolUse failClosed remains the hard tool gate. -->
+
+# Meta_Kim Choice Surface (Cursor)
+
+When `meta-theory` is active in Cursor and a user decision would change route,
+scope, risk, acceptance, owner, permission, or non-goal, use this stable
+choice-surface route:
+
+1. Finish Critical/Fetch/Thinking evidence first when the decision is not a
+   Critical blocker.
+2. Render a short localized chat decision card with 2-4 meaningful options and
+   one recommended default.
+3. Stop and wait for the user's explicit reply before Execution.
+4. Record the choice surface as `conversation_fallback` unless a real
+   Cursor-native question surface is exposed in the active host.
+
+Do not call this a popup. Do not claim Cursor displayed a native modal. Cursor
+`preToolUse` hooks are for hard tool-call governance, and `beforeSubmitPrompt`
+hooks are for prompt-time adapters; neither is a verified arbitrary
+multi-option question UI for Meta_Kim.
+
+## Stable Cursor trigger
+
+- `alwaysApply: true` loads this rule on every Cursor prompt.
+- `.cursor/hooks.json` registers `preToolUse` with `failClosed: true` for
+  mechanical execution gating.
+- `.cursor/hooks.json` may register `beforeSubmitPrompt` adapters for memory or
+  prompt enhancement, but Meta_Kim must not depend on that event as the only
+  user-choice surface.
+
+## Decision Card Shape
+
+Use the user's language. Keep the card compact:
+
+- AI understanding: one sentence.
+- Recommended option: label it clearly.
+- Options: 2-4 options, each with the trade-off.
+- Wait state: ask the user to choose before continuing.
+
+If the user already gave an explicit branch-changing choice, record it and
+proceed. If the task is trivial or pure query, record an allowed skip rather
+than asking a ritual question.
