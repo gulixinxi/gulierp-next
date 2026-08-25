@@ -10,7 +10,7 @@ param(
     [string]$ExpectedDb = 'gulierp_g2_003_test',
     [switch]$SkipFrontend,
     [switch]$SkipBackend,
-    [string]$Dotnet = 'D:\guli\gulierp\.dotnet\dotnet.exe',
+    [string]$Dotnet = 'dotnet',
     [string]$Npm = 'npm'
 )
 
