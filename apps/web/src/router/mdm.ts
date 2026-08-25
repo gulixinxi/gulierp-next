@@ -50,6 +50,12 @@ export function installMdmRoutes(router: Router): void {
         component: () => import('../views/mdm/EmployeeList.vue'),
         meta: { title: '员工档案', module: 'mdm' },
       },
+      {
+        path: 'dictionaries',
+        name: 'mdm-dictionaries',
+        component: () => import('../views/mdm/DictionaryList.vue'),
+        meta: { title: '基础字典', module: 'mdm' },
+      },
       // ---- MDM-002: BusinessPartner / Warehouse / Location (real API) ----
       // Single reusable BusinessPartnerList component serves customers /
       // suppliers / all — route meta.defaultRole sets the INITIAL role filter

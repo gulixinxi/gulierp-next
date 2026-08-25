@@ -45,6 +45,7 @@ import {
   Goods,
   OfficeBuilding,
   ScaleToOriginal,
+  Tickets,
   UserFilled,
 } from '@element-plus/icons-vue';
 
@@ -93,6 +94,13 @@ const primaryModules: WorkbenchModule[] = [
     icon: UserFilled,
   },
   {
+    title: '基础字典',
+    description: '维护系统通用选项集、状态、分类等基础枚举数据',
+    route: '/mdm/dictionaries',
+    status: '真实 API',
+    icon: Tickets,
+  },
+  {
     title: '仓库',
     description: '维护公司范围内的仓库档案与地址信息',
     route: '/mdm/warehouses',
@@ -109,10 +117,6 @@ const primaryModules: WorkbenchModule[] = [
 ];
 
 const deferredModules = [
-  {
-    title: '基础字典',
-    reason: '未发现可直接接入的 CRUD API',
-  },
   {
     title: '编号规则',
     reason: '当前为 DocumentKernel 服务能力，管理页后置',
