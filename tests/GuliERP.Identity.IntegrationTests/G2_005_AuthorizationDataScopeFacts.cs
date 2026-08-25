@@ -534,7 +534,13 @@ public sealed class G2_005_AuthorizationDataScopeFacts
 
             foreach (var permission in Request.Headers["X-Test-Permission"])
             {
-                claims.Add(new("gulierp.permission", permission ?? string.Empty));
+                // GULIERP_PERMISSION_TEST_FIXTURE_CLAIMTYPE_FIX_001 (2026-08-24):
+                // Replace hardcoded "gulierp.permission" string with
+                // the canonical constant. The previous hardcode was
+                // a pre-existing fixture smell (no public constant
+                // indirection); the constant has been available since
+                // G2-005 commit `0ff04a0`.
+                claims.Add(new(GuliErpPermissionClaimTypes.Permission, permission ?? string.Empty));
             }
 
             var identity = new ClaimsIdentity(claims, SchemeName);

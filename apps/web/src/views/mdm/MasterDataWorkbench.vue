@@ -25,7 +25,7 @@
       </RouterLink>
     </div>
 
-    <section class="mdm-workbench__deferred" aria-label="后续接入模块">
+    <section v-if="deferredModules.length > 0" class="mdm-workbench__deferred" aria-label="后续接入模块">
       <h2>后续接入</h2>
       <div class="mdm-workbench__deferred-list">
         <div v-for="item in deferredModules" :key="item.title" class="mdm-workbench-deferred">
@@ -41,6 +41,7 @@
 import type { Component } from 'vue';
 import {
   Box,
+  Document,
   Files,
   Goods,
   OfficeBuilding,
@@ -55,6 +56,11 @@ interface WorkbenchModule {
   route: string;
   status: string;
   icon: Component;
+}
+
+interface DeferredModule {
+  title: string;
+  reason: string;
 }
 
 const primaryModules: WorkbenchModule[] = [
@@ -101,6 +107,13 @@ const primaryModules: WorkbenchModule[] = [
     icon: Tickets,
   },
   {
+    title: '编号规则',
+    description: '维护单据类型前缀、日期格式、流水长度与启停状态',
+    route: '/mdm/numbering-rules',
+    status: '真实 API',
+    icon: Document,
+  },
+  {
     title: '仓库',
     description: '维护公司范围内的仓库档案与地址信息',
     route: '/mdm/warehouses',
@@ -116,12 +129,7 @@ const primaryModules: WorkbenchModule[] = [
   },
 ];
 
-const deferredModules = [
-  {
-    title: '编号规则',
-    reason: '当前为 DocumentKernel 服务能力，管理页后置',
-  },
-];
+const deferredModules: DeferredModule[] = [];
 </script>
 
 <style scoped>

@@ -7,14 +7,14 @@ namespace GuliERP.Identity.Bootstrap.Tests;
 /// WEB-PREVIEW-002 — Static regression guards for the MDM
 /// authorization grant. The tests lock the contract:
 /// the bootstrap tool's --grant-mdm-operator mode MUST grant
-/// exactly the 12 MDM permission codes (6 read + 6 manage) that
+/// exactly the 14 MDM permission codes (7 read + 7 manage) that
 /// the runtime <c>PermissionAuthorizationHandler</c> reads from
 /// <c>RoleClaims</c> (ClaimType='gulierp.permission').
 ///
 /// <para>
-/// The 12 code strings are hard-coded here (instead of imported
+/// The 14 code strings are hard-coded here (instead of imported
 /// from <c>GuliERP.Mdm.Application</c>) so the bootstrap test
-/// project stays free of the MDM dependency. The same 12 strings
+/// project stays free of the MDM dependency. The same 14 strings
 /// are also defined in <c>GuliERP.Mdm.Application.MdmPermissions</c>;
 /// a refactor that renames an MDM permission MUST update both
 /// sides — the test below catches a mismatch by string comparison
@@ -31,43 +31,45 @@ namespace GuliERP.Identity.Bootstrap.Tests;
 public sealed class WebPreview002MdmGrantFacts
 {
     /// <summary>
-    /// The 12 MDM permission codes that the grant operation
+    /// The 14 MDM permission codes that the grant operation
     /// writes. MUST match <c>GuliERP.Mdm.Application.MdmPermissions</c>.
-    /// 6 read + 6 manage.
+    /// 7 read + 7 manage.
     /// </summary>
     private static readonly string[] ExpectedMdmPermissionCodes = new[]
     {
-        // 6 read
+        // 7 read
         "mdm.uom.read",
         "mdm.item-category.read",
         "mdm.item.read",
         "mdm.business-partner.read",
         "mdm.warehouse.read",
         "mdm.location.read",
-        // 6 manage
+        "mdm.dictionary.read",
+        // 7 manage
         "mdm.uom.manage",
         "mdm.item-category.manage",
         "mdm.item.manage",
         "mdm.business-partner.manage",
         "mdm.warehouse.manage",
         "mdm.location.manage",
+        "mdm.dictionary.manage",
     };
 
     [Fact]
-    public void Grant_Has_Twelve_Permissions_Six_Read_Six_Manage()
+    public void Grant_Has_Fourteen_Permissions_Seven_Read_Seven_Manage()
     {
-        Assert.Equal(12, ExpectedMdmPermissionCodes.Length);
+        Assert.Equal(14, ExpectedMdmPermissionCodes.Length);
 
-        // 6 read + 6 manage, distinct, and exactly one Read per entity +
+        // 7 read + 7 manage, distinct, and exactly one Read per entity +
         // exactly one Manage per entity (the canonical V1 split).
         var read  = ExpectedMdmPermissionCodes.Where(c => c.EndsWith(".read",   System.StringComparison.Ordinal)).ToList();
         var manage = ExpectedMdmPermissionCodes.Where(c => c.EndsWith(".manage", System.StringComparison.Ordinal)).ToList();
-        Assert.Equal(6, read.Count);
-        Assert.Equal(6, manage.Count);
-        Assert.Equal(12, ExpectedMdmPermissionCodes.Distinct().Count());
+        Assert.Equal(7, read.Count);
+        Assert.Equal(7, manage.Count);
+        Assert.Equal(14, ExpectedMdmPermissionCodes.Distinct().Count());
 
         // 1:1 entity mapping.
-        var entities = new[] { "uom", "item-category", "item", "business-partner", "warehouse", "location" };
+        var entities = new[] { "uom", "item-category", "item", "business-partner", "warehouse", "location", "dictionary" };
         foreach (var e in entities)
         {
             Assert.Contains($"mdm.{e}.read",   ExpectedMdmPermissionCodes);
@@ -78,7 +80,7 @@ public sealed class WebPreview002MdmGrantFacts
     [Fact]
     public void Grant_Excludes_PlatformAdmin_And_Wildcard()
     {
-        // The grant adds the 12 MDM codes and ONLY the 12. It MUST
+        // The grant adds the 14 MDM codes and ONLY the 14. It MUST
         // NOT add:
         //   * any "*" wildcard
         //   * "admin" / "platform_admin"
@@ -161,7 +163,7 @@ public sealed class WebPreview002MdmGrantFacts
     private static string ExtractMdmClaimsRegion(string src)
     {
         const string Start = "public static readonly EnterpriseBusinessRolePack MdmOperator";
-        const string End = "\"mdm.location.manage\",";
+        const string End = "\"mdm.dictionary.manage\",";
         var i = src.IndexOf(Start, System.StringComparison.Ordinal);
         if (i < 0) { return string.Empty; }
         var j = src.IndexOf(End, i, System.StringComparison.Ordinal);

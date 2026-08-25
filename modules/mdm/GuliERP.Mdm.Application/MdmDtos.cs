@@ -375,3 +375,45 @@ public sealed record UpdateDictionaryItemRequest(
 public sealed record ChangeDictionaryStatusRequest(
     MasterDataStatus Status,
     int ExpectedConcurrencyVersion);
+
+// ============================================================
+// G2-DOCNO-001-B1 — NumberingRule DTOs
+// ============================================================
+
+public sealed record NumberingRuleDto(
+    long Id,
+    string DocumentType,
+    string Prefix,
+    string DatePattern,
+    int SequenceLength,
+    NumberingRuleResetMode ResetMode,
+    MasterDataStatus Status,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    int ConcurrencyVersion);
+
+public sealed record NumberingRuleListQuery(
+    string? Keyword,
+    string? DocumentType,
+    MasterDataStatus? Status,
+    int Page,
+    int PageSize);
+
+public sealed record CreateNumberingRuleRequest(
+    string DocumentType,
+    string Prefix,
+    string DatePattern,
+    int SequenceLength,
+    NumberingRuleResetMode ResetMode);
+
+public sealed record UpdateNumberingRuleRequest(
+    string Prefix,
+    string DatePattern,
+    int SequenceLength,
+    NumberingRuleResetMode ResetMode,
+    MasterDataStatus Status,
+    int ExpectedConcurrencyVersion);
+
+public sealed record ChangeNumberingRuleStatusRequest(
+    MasterDataStatus Status,
+    int ExpectedConcurrencyVersion);

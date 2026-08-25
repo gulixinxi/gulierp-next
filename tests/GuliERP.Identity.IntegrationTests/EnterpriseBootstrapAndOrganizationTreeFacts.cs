@@ -271,6 +271,13 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         var systemAdmin = Assert.Single(roles, r => r.Code == "ERP_SYSTEM_ADMIN");
         var mdm = Assert.Single(roles, r => r.Code == EnterpriseBusinessRolePacks.MdmOperatorRoleCode);
         var sales = Assert.Single(roles, r => r.Code == EnterpriseBusinessRolePacks.SalesOperatorRoleCode);
+        // GULIERP_EMPLOYEE_PERMISSION_BOUNDARY_FIX_001 — STEP 4:
+        // The initial admin now also receives the
+        // `ERP_EMPLOYEE_OPERATOR` role pack (independent of
+        // ERP_SYSTEM_ADMIN; carries only the 2 Employee
+        // permissions, NOT the 8 frozen Identity
+        // administration permissions).
+        var employee = Assert.Single(roles, r => r.Code == EnterpriseBusinessRolePacks.EmployeeOperatorRoleCode);
 
         await AssertRolePermissionsAsync(
             db,
@@ -284,11 +291,19 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
             db,
             sales.Id,
             EnterpriseBusinessRolePacks.SalesOperator.Permissions);
+        // STEP 6-B: ERP_EMPLOYEE_OPERATOR exact 2 permissions.
+        await AssertRolePermissionsAsync(
+            db,
+            employee.Id,
+            EnterpriseBusinessRolePacks.EmployeeOperator.Permissions);
 
         var assignments = await db.UserRoleAssignments
             .Where(a => a.UserId == result.AdminUserId)
             .ToListAsync();
-        Assert.Equal(3, assignments.Count);
+        // 4 formal role packs (ERP_SYSTEM_ADMIN +
+        // ERP_MDM_OPERATOR + ERP_SALES_OPERATOR + ERP_EMPLOYEE_OPERATOR)
+        // for the initial admin.
+        Assert.Equal(4, assignments.Count);
         Assert.All(assignments, a =>
         {
             Assert.Equal(result.TenantId, a.TenantId);
@@ -298,6 +313,7 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         Assert.Contains(assignments, a => a.RoleId == systemAdmin.Id);
         Assert.Contains(assignments, a => a.RoleId == mdm.Id);
         Assert.Contains(assignments, a => a.RoleId == sales.Id);
+        Assert.Contains(assignments, a => a.RoleId == employee.Id);
     }
 
     [Fact]
@@ -320,9 +336,15 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
 
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         Assert.False(second.Created);
-        Assert.Equal(3, await db.Roles.CountAsync());
-        Assert.Equal(22, await db.RoleClaims.CountAsync(c => c.ClaimType == GuliErpPermissionClaimTypes.Permission));
-        Assert.Equal(3, await db.UserRoleAssignments.CountAsync());
+        // GULIERP_EMPLOYEE_ROLE_PACK_TEST_ALIGNMENT_001 (2026-08-24):
+        // The initial admin now receives 4 roles (1 system role +
+        // 3 business role packs: MDM, Sales, EmployeeOperator) and
+        // 24 effective permissions (8 + 12 + 2 + 2). The previous
+        // assertion (3 / 22 / 3) was the frozen contract for the
+        // pre-G2-EM-001B design.
+        Assert.Equal(4, await db.Roles.CountAsync());
+        Assert.Equal(24, await db.RoleClaims.CountAsync(c => c.ClaimType == GuliErpPermissionClaimTypes.Permission));
+        Assert.Equal(4, await db.UserRoleAssignments.CountAsync());
     }
 
     [Fact]
@@ -354,9 +376,12 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
         Assert.Equal(EnterpriseBusinessRolePacks.MdmOperator.Permissions.Count, first.Mdm.ClaimsCreated.Count);
         Assert.Equal(EnterpriseBusinessRolePacks.SalesOperator.Permissions.Count, first.Sales.ClaimsCreated.Count);
         Assert.True(second.Idempotent);
-        Assert.Equal(3, await db.Roles.CountAsync());
-        Assert.Equal(22, await db.RoleClaims.CountAsync(c => c.ClaimType == GuliErpPermissionClaimTypes.Permission));
-        Assert.Equal(3, await db.UserRoleAssignments.CountAsync());
+        // GULIERP_EMPLOYEE_ROLE_PACK_TEST_ALIGNMENT_001 (2026-08-24):
+        // 4 role packs (System + 3 business) and 24 effective
+        // permissions (8 + 12 + 2 + 2) post-G2-EM-001B.
+        Assert.Equal(4, await db.Roles.CountAsync());
+        Assert.Equal(24, await db.RoleClaims.CountAsync(c => c.ClaimType == GuliErpPermissionClaimTypes.Permission));
+        Assert.Equal(4, await db.UserRoleAssignments.CountAsync());
     }
 
     [Fact]
@@ -600,9 +625,16 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
                 "CorrectHorse!2026"));
 
         var db = sp.GetRequiredService<IdentityDbContext>();
+        // GULIERP_EMPLOYEE_ROLE_PACK_TEST_ALIGNMENT_001 (2026-08-24):
+        // The initial admin now gets 3 business role packs
+        // (MdmOperator + SalesOperator + EmployeeOperator). The
+        // helper removes all 3 so the post-removal state is just
+        // ERP_SYSTEM_ADMIN (the system role is NOT a business role
+        // pack and is preserved).
         var businessRoleIds = await db.Roles
             .Where(r => r.Code == EnterpriseBusinessRolePacks.MdmOperatorRoleCode
-                || r.Code == EnterpriseBusinessRolePacks.SalesOperatorRoleCode)
+                || r.Code == EnterpriseBusinessRolePacks.SalesOperatorRoleCode
+                || r.Code == EnterpriseBusinessRolePacks.EmployeeOperatorRoleCode)
             .Select(r => r.Id)
             .ToArrayAsync();
         db.UserRoleAssignments.RemoveRange(
@@ -613,8 +645,12 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
             db.Roles.Where(r => businessRoleIds.Contains(r.Id)));
         await db.SaveChangesAsync();
 
-        Assert.Single(await db.Roles.ToListAsync());
-        Assert.Single(await db.UserRoleAssignments.ToListAsync());
+        // After removing all 3 business role packs, only the
+        // ERP_SYSTEM_ADMIN role + its admin assignment remain
+        // (System is a SEPARATE role, NOT a business role pack,
+        // and is preserved by design).
+        Assert.Equal(1, await db.Roles.CountAsync());
+        Assert.Equal(1, await db.UserRoleAssignments.CountAsync());
         return result;
     }
 

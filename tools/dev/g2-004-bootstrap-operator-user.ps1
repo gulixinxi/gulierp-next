@@ -97,7 +97,7 @@ if (-not $ConnectionString) {
 $displayConn = ($ConnectionString -replace 'Password=[^;]+', 'Password=***')
 Write-Host "[G2-004] Using connection: $displayConn" -ForegroundColor Cyan
 
-# --- 0b. (-GrantMdmOperator mode only) Grant the 12 MDM permissions -------
+# --- 0b. (-GrantMdmOperator mode only) Grant the MDM permissions ----------
 # This is a NON-DESTRUCTIVE idempotent operation. It does not
 # touch the password, does not delete anything, and is safe to
 # re-run. Use this AFTER the operator user can log in but

@@ -26,4 +26,7 @@ public static class MdmPermissions
 
     public const string DictionaryRead = "mdm.dictionary.read";
     public const string DictionaryManage = "mdm.dictionary.manage";
+
+    public const string NumberingRuleRead = "mdm.numbering-rule.read";
+    public const string NumberingRuleManage = "mdm.numbering-rule.manage";
 }

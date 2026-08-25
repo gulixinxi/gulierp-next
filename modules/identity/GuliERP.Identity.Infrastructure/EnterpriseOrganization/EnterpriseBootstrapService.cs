@@ -8,6 +8,7 @@ using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Data.Common;
 
 namespace GuliERP.Identity.Infrastructure.EnterpriseOrganization;
@@ -24,13 +25,16 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
 
     private readonly IdentityDbContext _db;
     private readonly UserManager<GuliErpUser> _userManager;
+    private readonly ILogger<EnterpriseBootstrapService> _logger;
 
     public EnterpriseBootstrapService(
         IdentityDbContext db,
-        UserManager<GuliErpUser> userManager)
+        UserManager<GuliErpUser> userManager,
+        ILogger<EnterpriseBootstrapService> logger)
     {
         _db = db;
         _userManager = userManager;
+        _logger = logger;
     }
 
     public async Task<EnterpriseBootstrapResult> CreateEnterpriseBootstrapAsync(
@@ -231,6 +235,12 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
                 CompanyId = company.Id,
                 DepartmentId = rootOrg.Id,
                 UserId = adminUser.Id,
+                // GULIERP_EMPLOYEE_BOOTSTRAP_FIX_001 — the
+                // bootstrap admin's EmployeeCode is the frozen
+                // "EMP-SYSTEM" (per GULIERP_CODE_RULE_STANDARD_V1
+                // §4 + GULIERP_EMPLOYEE_MASTER_MODEL_V1 §3.1).
+                // This is a reserved code; operators cannot type
+                // it via the Employee write service.
                 EmployeeNo = BuildEmployeeNo(adminUserName),
                 Name = adminDisplayName,
                 Status = EmployeeStatus.Active,
@@ -240,6 +250,30 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
             };
             _db.Employees.Add(employee);
             created = true;
+        }
+        else
+        {
+            // GULIERP_EMPLOYEE_BOOTSTRAP_FIX_001 — idempotent
+            // dev-only fix-up: if the bootstrap admin's existing
+            // EmployeeNo is not the frozen "EMP-SYSTEM" (e.g.,
+            // a pre-fix row with EmployeeNo = "ADMIN"), normalize
+            // it to "EMP-SYSTEM". This is a no-op when the
+            // existing row already has the correct code.
+            // The fix runs on every bootstrap call but only when
+            // a wrong value is present, so it is idempotent and
+            // safe for re-bootstrap.
+            var expected = BuildEmployeeNo(adminUserName);
+            if (!string.Equals(employee.EmployeeNo, expected, StringComparison.Ordinal))
+            {
+                employee.EmployeeNo = expected;
+                employee.ModifiedAt = now;
+                employee.ModifiedBy = null;  // system-driven update
+                employee.ConcurrencyVersion += 1;
+                _logger.LogInformation(
+                    "Identity bootstrap normalized admin EmployeeNo from {Old} to {New} " +
+                    "for employeeId={EmployeeId}",
+                    employee.EmployeeNo, expected, employee.Id);
+            }
         }
         var companyMembershipCreated = false;
         if (!await _db.UserCompanyMemberships.AnyAsync(
@@ -536,11 +570,43 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
         return true;
     }
 
-    private static string BuildEmployeeNo(string adminUserName)
+    /// <summary>
+    /// GULIERP_EMPLOYEE_BOOTSTRAP_FIX_001 — the bootstrap admin's
+    /// EmployeeCode is the frozen <c>"EMP-SYSTEM"</c> constant per
+    /// <c>GULIERP_CODE_RULE_STANDARD_V1.md</c> §4 +
+    /// <c>GULIERP_EMPLOYEE_MASTER_MODEL_V1.md</c> §3.1. This is a
+    /// reserved code (in the Foundation
+    /// <see cref="GuliERP.Foundation.Validation.ReservedNameValidator"/>'s
+    /// 11-name V1 frozen set); operators cannot type it via the
+    /// <see cref="GuliERP.Identity.Application.Employee.IEmployeeWriteService"/>
+    /// write surface (the 4-step pipeline rejects it as
+    /// <c>identity_employee_code_reserved</c>).
+    ///
+    /// <para>
+    /// The bootstrap creates the row DIRECTLY (bypassing the write
+    /// service + the 4-step pipeline) because the bootstrap is a
+    /// system-seed operation, not an operator-typed code.
+    /// </para>
+    /// </summary>
+    /// <param name="adminUserName">The admin's UserName (unused
+    /// after the freeze; kept for backward compat with the prior
+    /// signature). Reserved for future traceability if the
+    /// constant needs to vary per-tenant.</param>
+    internal static string BuildEmployeeNo(string adminUserName)
     {
-        var code = NormalizeCode(adminUserName);
-        return code[..Math.Min(code.Length, 40)];
+        _ = adminUserName; // unused after the freeze
+        return BootstrapAdminEmployeeNo;
     }
+
+    /// <summary>
+    /// GULIERP_EMPLOYEE_BOOTSTRAP_FIX_001 — the frozen V1
+    /// EmployeeCode for the bootstrap admin. Mirrors the same
+    /// value in the Foundation
+    /// <see cref="GuliERP.Foundation.Validation.ReservedNameValidator"/>'s
+    /// reserved set (the bootstrap is the only sanctioned way
+    /// to create this row).
+    /// </summary>
+    private const string BootstrapAdminEmployeeNo = "EMP-SYSTEM";
 
     private static string NormalizeCode(string source)
     {

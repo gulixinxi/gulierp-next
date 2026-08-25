@@ -1908,7 +1908,7 @@ public static class Program
 
     /// <summary>
     /// WEB-PREVIEW-002 — Grant the WEB-PREVIEW-001A / G2-004 operator
-    /// test users the 12 MDM read + manage permissions they need to
+    /// test users the 14 MDM read + manage permissions they need to
     /// drive the 6 master-data SPA pages.
     ///
     /// <para>
@@ -1929,7 +1929,7 @@ public static class Program
     ///         a user-created role.</item>
     ///   <item>Adds 12 <c>IdentityRoleClaim</c> rows (ClaimType =
     ///         <c>gulierp.permission</c>, ClaimValue = each of the 12
-    ///         MDM permission codes: 6 read + 6 manage). Idempotent
+    ///         MDM permission codes: 7 read + 7 manage). Idempotent
     ///         (skips if claim already present).</item>
     ///   <item>Adds a single <c>UserRoleAssignment</c> row
     ///         (TenantId = user's tenant, CompanyId = NULL = Tenant-wide
@@ -2152,7 +2152,7 @@ public static class Program
             }
 
             // -------------------------------------------------------------
-            // 5. Add the 12 MDM permission claims (idempotent).
+            // 5. Add the MDM permission claims (idempotent).
             //    Identity stores claims in the standard
             //    IdentityRoleClaim<long> table — the same one the
             //    runtime PermissionAuthorizationHandler reads from.
@@ -2225,7 +2225,7 @@ public static class Program
                     "--grant-mdm-operator: UserRoleAssignment already present (idempotent).");
             }
 
-            // Total claims on the role (12 = 6 read + 6 manage).
+            // Total claims on the role (currently 14 = 7 read + 7 manage).
             var totalClaims = mdmPermissionCodes.Count;
 
             // -------------------------------------------------------------

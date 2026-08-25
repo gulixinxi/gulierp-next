@@ -493,6 +493,75 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
                     b.ToTable("gulierp_location", "mdm");
                 });
 
+            modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.NumberingRule", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseHiLo(b.Property<long>("Id"), "gulierp_hilo_sequence", "identity");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ConcurrencyVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("DatePattern")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("ResetMode")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SequenceLength")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("TenantId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("UpdatedBy")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_gulierp_numbering_rule_status");
+
+                    b.HasIndex("TenantId", "CompanyId")
+                        .HasDatabaseName("ix_gulierp_numbering_rule_tenant_company");
+
+                    b.HasIndex("TenantId", "CompanyId", "DocumentType")
+                        .IsUnique()
+                        .HasDatabaseName("ux_gulierp_numbering_rule_scope_document_type");
+
+                    b.ToTable("gulierp_numbering_rule", "mdm");
+                });
+
             modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.Uom", b =>
                 {
                     b.Property<long>("Id")

@@ -2,6 +2,7 @@ using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Application.Authorization;
 using GuliERP.Identity.Application.CompanySwitching;
 using GuliERP.Identity.Application.Directory;
+using GuliERP.Identity.Application.Employee;
 using GuliERP.Identity.Application.EnterpriseOrganization;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Infrastructure.Authorization;
@@ -153,6 +154,13 @@ public static class DependencyInjection
             AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityRoleAssign, GuliErpPermissions.IdentityRoleAssign);
             AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityCompanyRead, GuliErpPermissions.IdentityCompanyRead);
             AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityCompanySwitch, GuliErpPermissions.IdentityCompanySwitch);
+
+            // GULIERP_EMPLOYEE_MASTER_001_DOMAIN_IMPLEMENTATION —
+            // 2 new permission policies for the Employee write
+            // surface. The pattern matches IdentityOrganization /
+            // IdentityUser / IdentityRole.
+            AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityEmployeeRead, GuliErpPermissions.IdentityEmployeeRead);
+            AddPermissionPolicy(options, GuliErpAuthorizationPolicies.IdentityEmployeeManage, GuliErpPermissions.IdentityEmployeeManage);
         });
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
         services.AddScoped<IDataScopeAuthorizationService, DataScopeAuthorizationService>();
@@ -201,6 +209,15 @@ public static class DependencyInjection
         services.AddScoped<IOrganizationDirectoryService, OrganizationDirectoryService>();
         services.AddScoped<IUserDirectoryService, UserDirectoryService>();
         services.AddScoped<IEmployeeDirectoryService, EmployeeDirectoryService>();
+
+        // GULIERP_EMPLOYEE_MASTER_001_DOMAIN_IMPLEMENTATION —
+        // the V1 Employee write surface (Create / GetById /
+        // Update / ChangeStatus / ListByCompany). The existing
+        // IEmployeeDirectoryService above stays for the read
+        // endpoint (one-release shim per
+        // GULIERP_EMPLOYEE_MASTER_MODEL_V1.md §9.1).
+        services.AddScoped<IEmployeeWriteService, EmployeeSvc.EmployeeWriteService>();
+
         services.AddScoped<IEnterpriseOrganizationInitializer, EnterpriseOrganizationInitializer>();
         services.AddScoped<IEnterpriseBootstrapService, EnterpriseBootstrapService>();
         services.AddScoped<IOrganizationTreeService, OrganizationTreeService>();

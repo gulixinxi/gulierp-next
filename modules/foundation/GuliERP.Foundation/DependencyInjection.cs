@@ -1,4 +1,5 @@
 using GuliERP.Foundation.Kernel;
+using GuliERP.Foundation.Validation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,6 +32,11 @@ public static class DependencyInjection
 
         services.AddSingleton<IFoundationBoundary, FoundationBoundary>();
         services.AddSingleton<IRequestContextAccessor, RequestContextAccessor>();
+
+        // GULIERP_FOUNDATION_001_CODE_PIPELINE_PROMOTE — the V1
+        // frozen rule provider for the 4-step code pipeline.
+        // V1.5+ may add a per-Tenant rule provider (TBD).
+        services.AddSingleton<ICodeRuleProvider>(V1FrozenRuleProvider.Instance);
 
         services.AddDbContext<FoundationDbContext>(options =>
         {

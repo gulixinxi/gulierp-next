@@ -18,9 +18,16 @@ public sealed class MdmValidationExceptionTests
     [InlineData(MdmErrorCodes.ItemCategoryCycle)]
     [InlineData(MdmErrorCodes.ItemCategoryCrossTenant)]
     [InlineData(MdmErrorCodes.ValidationFailed)]
-    public void Codes_AreStable_UPPER_SNAKE_AndUnique(string code)
+    // GULIERP_MDM_001_CODE_PIPELINE — the 3 new error codes for
+    // the 4-step code validation pipeline. They are appended below
+    // so the stable-code contract covers them too.
+    [InlineData(MdmErrorCodes.CodeFormatInvalid)]
+    [InlineData(MdmErrorCodes.CodeReserved)]
+    [InlineData(MdmErrorCodes.CodeResemblesDocumentNumber)]
+    public void Codes_AreStable_LowerCase_Snake_AndUnique(string code)
     {
-        // Stable contract — must remain UPPER_SNAKE.
+        // Stable contract — must remain lower_snake (the actual MDM-001
+        // convention, despite the test class's name in older revisions).
         Assert.Matches("^[a-z][a-z0-9_]*$", code);
         // No trailing underscore, no leading digit.
         Assert.False(code.EndsWith('_'));

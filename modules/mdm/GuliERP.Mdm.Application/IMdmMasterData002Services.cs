@@ -97,3 +97,24 @@ public interface IMdmDictionaryService
     Task<DictionaryItemDto?> ChangeItemStatusAsync(
         long id, ChangeDictionaryStatusRequest request, CancellationToken ct = default);
 }
+
+/// <summary>
+/// NumberingRule management service. Tenant + Company-scoped MDM
+/// records only; DocumentKernel remains the generation engine.
+/// </summary>
+public interface INumberingRuleService
+{
+    Task<PagedResult<NumberingRuleDto>> ListAsync(
+        NumberingRuleListQuery query, CancellationToken ct = default);
+
+    Task<NumberingRuleDto?> GetByIdAsync(long id, CancellationToken ct = default);
+
+    Task<NumberingRuleDto> CreateAsync(
+        CreateNumberingRuleRequest request, CancellationToken ct = default);
+
+    Task<NumberingRuleDto?> UpdateAsync(
+        long id, UpdateNumberingRuleRequest request, CancellationToken ct = default);
+
+    Task<NumberingRuleDto?> ChangeStatusAsync(
+        long id, ChangeNumberingRuleStatusRequest request, CancellationToken ct = default);
+}

@@ -87,6 +87,7 @@ export const shellNavigation: ShellNavigationModule[] = [
           { id: 'list-mdm-items', label: '商品档案', icon: 'Goods', route: '/mdm/items', tabTitle: '商品档案' },
           { id: 'list-mdm-employees', label: '员工档案', icon: 'UserFilled', route: '/mdm/employees', tabTitle: '员工档案' },
           { id: 'list-mdm-dictionaries', label: '基础字典', icon: 'Tickets', route: '/mdm/dictionaries', tabTitle: '基础字典' },
+          { id: 'list-mdm-numbering-rules', label: '编号规则', icon: 'Document', route: '/mdm/numbering-rules', tabTitle: '编号规则' },
         ],
       },
     ],

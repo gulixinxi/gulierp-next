@@ -35,15 +35,19 @@ public sealed record EnterpriseRolePackProvisionResult(
 
 public sealed record EnterpriseBusinessRolePackProvisionResult(
     EnterpriseRolePackProvisionResult Mdm,
-    EnterpriseRolePackProvisionResult Sales)
+    EnterpriseRolePackProvisionResult Sales,
+    EnterpriseRolePackProvisionResult Employee)
 {
     public bool Idempotent =>
         !Mdm.RoleCreated
         && !Sales.RoleCreated
+        && !Employee.RoleCreated
         && Mdm.ClaimsCreated.Count == 0
         && Sales.ClaimsCreated.Count == 0
+        && Employee.ClaimsCreated.Count == 0
         && !Mdm.AssignmentCreated
-        && !Sales.AssignmentCreated;
+        && !Sales.AssignmentCreated
+        && !Employee.AssignmentCreated;
 }
 
 public sealed class EnterpriseBusinessRolePackProvisioner
@@ -76,8 +80,23 @@ public sealed class EnterpriseBusinessRolePackProvisioner
             EnterpriseBusinessRolePacks.SalesOperator,
             now,
             ct);
+        // GULIERP_EMPLOYEE_PERMISSION_BOUNDARY_FIX_001 (2026-08-24):
+        // The initial enterprise admin also receives the
+        // `ERP_EMPLOYEE_OPERATOR` role pack (2 permissions:
+        // identity.employee.read / .manage) so the admin can manage
+        // the Employee Master V1 surface out of the box. The role
+        // pack is independent of ERP_SYSTEM_ADMIN (which carries
+        // the frozen 8 Identity administration permissions) and
+        // independent of ERP_MDM_OPERATOR / ERP_SALES_OPERATOR.
+        var employee = await EnsureRolePackAsync(
+            tenantId,
+            companyId,
+            userId,
+            EnterpriseBusinessRolePacks.EmployeeOperator,
+            now,
+            ct);
 
-        return new EnterpriseBusinessRolePackProvisionResult(mdm, sales);
+        return new EnterpriseBusinessRolePackProvisionResult(mdm, sales, employee);
     }
 
     private async Task<EnterpriseRolePackProvisionResult> EnsureRolePackAsync(

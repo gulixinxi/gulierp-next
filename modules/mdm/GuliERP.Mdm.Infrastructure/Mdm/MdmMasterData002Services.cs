@@ -1,5 +1,7 @@
 using GuliERP.Foundation.Kernel;
+using GuliERP.Foundation.Validation;
 using GuliERP.Mdm.Application;
+using GuliERP.Mdm.Application.Validation;
 using GuliERP.Mdm.Domain.Entities;
 using GuliERP.Mdm.Domain.Enums;
 using GuliERP.Mdm.Infrastructure.Persistence;
@@ -120,6 +122,13 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
         var tax = ValidateOptionalText(request.TaxNumber, MaxTaxNumberLength, nameof(request.TaxNumber));
         var description = ValidateOptionalText(request.Description, MaxDescriptionLength, nameof(request.Description));
 
+        // GULIERP_MDM_001_CODE_PIPELINE — 4-step code validation
+        // (Steps 1, 2, 4). Step 3 (uniqueness) is the existing DB
+        // check below.
+        // GULIERP_FOUNDATION_001_CODE_PIPELINE_PROMOTE — BusinessPartner
+        // is Tenant-scoped (not Company-scoped), so companyId = null.
+        ThrowIfCodeInvalid(code, tenantId, companyId: null);
+
         var exists = await _db.BusinessPartners.AsNoTracking()
             .AnyAsync(bp => bp.TenantId == tenantId && bp.Code == code, ct);
         if (exists)
@@ -168,6 +177,10 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
     {
         ArgumentNullException.ThrowIfNull(request);
         var tenantId = RequireTenant();
+        // NOTE: UpdateBusinessPartnerRequest intentionally has no
+        // Code field — V1 codes are immutable on update. The
+        // validator therefore runs on Create only; Update does not
+        // change the code.
         var bp = await _db.BusinessPartners
             .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId, ct);
         if (bp is null) return null;
@@ -241,6 +254,42 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
                 MdmErrorCodes.ValidationFailed, $"{paramName} exceeds max length of {maxLength}.");
         }
         return trimmed.ToUpperInvariant();
+    }
+
+    /// <summary>
+    /// GULIERP_MDM_001_CODE_PIPELINE — run the 4-step code
+    /// validation pipeline (Steps 1, 2, 4). Step 3 (uniqueness) is
+    /// the DB's job and is checked separately. Throws
+    /// <see cref="MdmValidationException"/> on the first failure.
+    /// The code is expected to have been canonicalized (trim +
+    /// upper) by <see cref="CanonicalizeCode"/> before this is
+    /// called.
+    ///
+    /// <para>
+    /// GULIERP_FOUNDATION_001_CODE_PIPELINE_PROMOTE — the 3
+    /// static validators moved to
+    /// <c>GuliERP.Foundation.Validation</c>; this helper now
+    /// calls the <see cref="MasterDataCodeValidator"/> facade
+    /// with an MDM-namespaced
+    /// <see cref="GuliERP.Foundation.Validation.CodeValidationContext"/>
+    /// (built via
+    /// <c>CodeValidationContextExtensions.ForMmd</c>).
+    /// </para>
+    /// </summary>
+    internal static void ThrowIfCodeInvalid(
+        string code, long tenantId, long? companyId)
+    {
+        var context = CodeValidationContextExtensions.ForMdm(
+            entityScope: "MdmBusinessPartner_Or_Warehouse_Or_Location",
+            tenantId: tenantId,
+            companyId: companyId);
+
+        var result = MasterDataCodeValidator.Validate(code, context);
+        if (!result.IsValid)
+        {
+            throw new MdmValidationException(
+                result.Failure!.ErrorCode, result.Failure.Message);
+        }
     }
 
     internal static string ValidateRequiredText(string text, int maxLength, string paramName)
@@ -409,6 +458,15 @@ public sealed class MdmWarehouseService : IMdmWarehouseService
         var code = MdmBusinessPartnerService.CanonicalizeCode(request.Code, MaxCodeLength, nameof(request.Code));
         var name = MdmBusinessPartnerService.ValidateRequiredText(request.Name, MaxNameLength, nameof(request.Name));
 
+        // GULIERP_MDM_001_CODE_PIPELINE — 4-step code validation
+        // (Steps 1, 2, 4). Step 3 (uniqueness) is the existing DB
+        // check below. The helper lives on MdmBusinessPartnerService
+        // because the BusinessPartner service is the canonical
+        // owner of the static helpers shared by the 3 MDM-002 services.
+        // GULIERP_FOUNDATION_001_CODE_PIPELINE_PROMOTE — Warehouse
+        // is Tenant+Company-scoped, so pass both.
+        MdmBusinessPartnerService.ThrowIfCodeInvalid(code, tenantId, companyId);
+
         var exists = await _db.Warehouses.AsNoTracking()
             .AnyAsync(w => w.TenantId == tenantId && w.CompanyId == companyId && w.Code == code, ct);
         if (exists)
@@ -458,6 +516,10 @@ public sealed class MdmWarehouseService : IMdmWarehouseService
     {
         ArgumentNullException.ThrowIfNull(request);
         var (tenantId, companyId) = RequireScope();
+        // NOTE: UpdateWarehouseRequest intentionally has no Code
+        // field — V1 codes are immutable on update. The validator
+        // therefore runs on Create only; Update does not change
+        // the code.
         var w = await _db.Warehouses
             .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId && x.CompanyId == companyId, ct);
         if (w is null) return null;

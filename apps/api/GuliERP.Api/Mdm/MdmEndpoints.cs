@@ -46,6 +46,7 @@ public static class MdmEndpoints
         MapWarehouseEndpoints(group);
         MapLocationEndpoints(group);
         MapDictionaryEndpoints(group);
+        MapNumberingRuleEndpoints(group);
 
         return routes;
     }
@@ -681,6 +682,94 @@ public static class MdmEndpoints
                 }
             })
             .RequireAuthorization(MdmPolicies.DictionaryManage);
+    }
+
+    // ============================================================
+    // NumberingRule (tenant + company-scope, G2-DOCNO-001-B1)
+    // ============================================================
+
+    private static void MapNumberingRuleEndpoints(IEndpointRouteBuilder group)
+    {
+        var rules = group.MapGroup("/numbering-rules").WithTags("Mdm.NumberingRule");
+
+        rules.MapGet("", async (
+                [FromQuery] string? keyword,
+                [FromQuery] string? documentType,
+                [FromQuery] MasterDataStatus? status,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                INumberingRuleService svc,
+                CancellationToken ct) =>
+            {
+                var query = new NumberingRuleListQuery(
+                    keyword, documentType, status, page ?? 1, pageSize ?? 20);
+                return Results.Ok(await svc.ListAsync(query, ct));
+            })
+            .RequireAuthorization(MdmPolicies.NumberingRuleRead);
+
+        rules.MapGet("/{id:long}", async (
+                long id,
+                INumberingRuleService svc,
+                CancellationToken ct) =>
+            {
+                var rule = await svc.GetByIdAsync(id, ct);
+                return rule is null ? Results.NotFound() : Results.Ok(rule);
+            })
+            .RequireAuthorization(MdmPolicies.NumberingRuleRead);
+
+        rules.MapPost("", async (
+                [FromBody] CreateNumberingRuleRequest request,
+                INumberingRuleService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var created = await svc.CreateAsync(request, ct);
+                    return Results.Created(
+                        $"/api/v1/mdm/numbering-rules/{created.Id}", created);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.NumberingRuleManage);
+
+        rules.MapPut("/{id:long}", async (
+                long id,
+                [FromBody] UpdateNumberingRuleRequest request,
+                INumberingRuleService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var updated = await svc.UpdateAsync(id, request, ct);
+                    return updated is null ? Results.NotFound() : Results.Ok(updated);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.NumberingRuleManage);
+
+        rules.MapPost("/{id:long}/status", async (
+                long id,
+                [FromBody] ChangeNumberingRuleStatusRequest request,
+                INumberingRuleService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var updated = await svc.ChangeStatusAsync(id, request, ct);
+                    return updated is null ? Results.NotFound() : Results.Ok(updated);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.NumberingRuleManage);
     }
 
     private static IResult ValidationProblem(MdmValidationException ex) =>

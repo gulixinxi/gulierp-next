@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<IMdmWarehouseService, MdmWarehouseService>();
         services.AddScoped<IMdmLocationService, MdmLocationService>();
         services.AddScoped<IMdmDictionaryService, MdmDictionaryService>();
+        services.AddScoped<INumberingRuleService, NumberingRuleService>();
 
         // ----- Authorization policies (mirrors G2-005 pattern) -----
         services.AddAuthorization(options =>
@@ -132,6 +133,16 @@ public static class DependencyInjection
                 policy => policy
                     .RequireAuthenticatedUser()
                     .AddRequirements(new PermissionRequirement(MdmPermissions.DictionaryManage)));
+            options.AddPolicy(
+                MdmPolicies.NumberingRuleRead,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.NumberingRuleRead)));
+            options.AddPolicy(
+                MdmPolicies.NumberingRuleManage,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(MdmPermissions.NumberingRuleManage)));
         });
 
         return services;

@@ -106,7 +106,7 @@
 
 .EXAMPLE
     PS> .\provision-web-preview-user.ps1 -GrantMdmOperator
-    Adds the 12 MDM permission claims (6 read + 6 manage) to the
+    Adds the MDM permission claims (currently 14 = 7 read + 7 manage) to the
     ERP_MDM_OPERATOR role in the user's Tenant and grants that
     role to the user. Idempotent. Use this AFTER the user can log
     in but gets 403 on the 6 master-data SPA pages. No password
@@ -224,7 +224,7 @@ if ($Reset) {
     }
 }
 
-# --- 2c. (-GrantMdmOperator mode only) Grant the 12 MDM permissions -------
+# --- 2c. (-GrantMdmOperator mode only) Grant the MDM permissions ----------
 # This is a NON-DESTRUCTIVE operation: it does not touch the
 # password, does not delete any data, and is idempotent. It is
 # meant to be run AFTER the user can log in but receives 403 on

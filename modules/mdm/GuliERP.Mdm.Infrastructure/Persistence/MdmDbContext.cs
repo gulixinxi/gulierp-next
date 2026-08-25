@@ -77,6 +77,7 @@ public sealed class MdmDbContext : DbContext
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<DictionaryType> DictionaryTypes => Set<DictionaryType>();
     public DbSet<DictionaryItem> DictionaryItems => Set<DictionaryItem>();
+    public DbSet<NumberingRule> NumberingRules => Set<NumberingRule>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,6 +95,7 @@ public sealed class MdmDbContext : DbContext
         modelBuilder.Entity<Item>(b => b.HasQueryFilter(e => true));
         modelBuilder.Entity<DictionaryType>(b => b.HasQueryFilter(e => true));
         modelBuilder.Entity<DictionaryItem>(b => b.HasQueryFilter(e => true));
+        modelBuilder.Entity<NumberingRule>(b => b.HasQueryFilter(e => true));
 
         // ------------------------------------------------------------
         // Table names — explicit UPPER_SNAKE for the MDM tables.
@@ -106,6 +108,7 @@ public sealed class MdmDbContext : DbContext
         modelBuilder.Entity<Location>(b => b.ToTable("gulierp_location"));
         modelBuilder.Entity<DictionaryType>(b => b.ToTable("gulierp_dictionary_type"));
         modelBuilder.Entity<DictionaryItem>(b => b.ToTable("gulierp_dictionary_item"));
+        modelBuilder.Entity<NumberingRule>(b => b.ToTable("gulierp_numbering_rule"));
 
         // ------------------------------------------------------------
         // Apply the per-entity IEntityTypeConfiguration<T> classes.

@@ -90,3 +90,16 @@ public enum LocationType
     Zone = 3,
     Dock = 4,
 }
+
+/// <summary>
+/// Numbering rule reset mode for the MDM management projection.
+/// DocumentKernel V1 remains the numbering engine; this enum only
+/// describes the operator-managed MDM rule record.
+/// </summary>
+public enum NumberingRuleResetMode
+{
+    Daily = 1,
+    Monthly = 2,
+    Yearly = 3,
+    Never = 4,
+}

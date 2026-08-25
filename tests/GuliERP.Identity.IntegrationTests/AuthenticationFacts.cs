@@ -58,6 +58,18 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         {
             builder.UseSetting("ConnectionStrings:GuliERP", BadConnectionString);
             builder.UseEnvironment(env);
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<DbContextOptions<IdentityDbContext>>();
+                services.AddDbContext<IdentityDbContext>(options =>
+                {
+                    options.UseNpgsql(
+                        BadConnectionString,
+                        npg => npg.MigrationsHistoryTable(
+                            "__ef_migrations_history",
+                            IdentityDbContext.DefaultSchema));
+                });
+            });
         });
     }
 

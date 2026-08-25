@@ -118,4 +118,33 @@ public static class ErrorCodes
     /// user name, no host, no stack trace) per G2-002 ban list.
     /// </summary>
     public const string ServiceUnavailable = "service_unavailable";
+
+    // ----------------------------------------------------------------
+    // GULIERP_FOUNDATION_001_CODE_PIPELINE_PROMOTE — Foundation-level
+    // generic error codes for the 4-step code validation pipeline.
+    // These are the FALLBACK codes when a module does not provide
+    // a module-specific code in CodeValidationContext.Default.
+    // Module-specific codes (e.g. MdmErrorCodes.CodeFormatInvalid)
+    // are still owned by their respective modules.
+    // Per GULIERP_FOUNDATION_CODE_PIPELINE_MODEL_V1 §4.8.
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Generic code-pipeline Step 1 (format) failure. Used when
+    /// a module does not provide its own FormatInvalidErrorCode
+    /// in <see cref="Validation.ICodeValidationContext"/>.
+    /// </summary>
+    public const string CodeFormatInvalid = "code_format_invalid";
+
+    /// <summary>
+    /// Generic code-pipeline Step 2 (reserved-name) failure.
+    /// </summary>
+    public const string CodeReserved = "code_reserved";
+
+    /// <summary>
+    /// Generic code-pipeline Step 4 (document-number-similarity)
+    /// failure.
+    /// </summary>
+    public const string CodeResemblesDocumentNumber =
+        "code_resembles_document_number";
 }

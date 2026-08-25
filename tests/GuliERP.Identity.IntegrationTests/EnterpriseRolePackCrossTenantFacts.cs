@@ -144,12 +144,13 @@ public sealed class EnterpriseRolePackCrossTenantFacts
         Assert.Empty(second.Sales.CrossTenantNormalizedNameCollisions);
         // Database invariants for this isolated test: the
         // EnterpriseBusinessRolePackProvisioner (used directly here)
-        // provisions only the 2 business roles (MDM + Sales). The
-        // ERP_SYSTEM_ADMIN role is created by the full
-        // IEnterpriseBootstrapService.CreateEnterpriseBootstrapAsync
+        // provisions the 3 business roles (MDM + Sales +
+        // EmployeeOperator) per GULIERP_EMPLOYEE_ROLE_PACK_TEST_ALIGNMENT_001
+        // (2026-08-24). The ERP_SYSTEM_ADMIN role is created by
+        // the full IEnterpriseBootstrapService.CreateEnterpriseBootstrapAsync
         // path, which is exercised separately in
         // EnterpriseBootstrapAndOrganizationTreeFacts.
-        Assert.Equal(2, await db.Roles.CountAsync());
+        Assert.Equal(3, await db.Roles.CountAsync());
     }
 
     private static ServiceProvider BuildProvider()

@@ -34,6 +34,8 @@ public sealed class MdmAuthorizationRegressionFacts : IClassFixture<WebApplicati
         "mdm.warehouse.manage",
         "mdm.location.read",
         "mdm.location.manage",
+        "mdm.dictionary.read",
+        "mdm.dictionary.manage",
     };
 
     private readonly WebApplicationFactory<Program> _factory;

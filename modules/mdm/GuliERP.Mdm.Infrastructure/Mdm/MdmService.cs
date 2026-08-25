@@ -1,5 +1,7 @@
 using GuliERP.Foundation.Kernel;
+using GuliERP.Foundation.Validation;
 using GuliERP.Mdm.Application;
+using GuliERP.Mdm.Application.Validation;
 using GuliERP.Mdm.Domain.Entities;
 using GuliERP.Mdm.Domain.Enums;
 using GuliERP.Mdm.Infrastructure.Persistence;
@@ -365,6 +367,15 @@ public sealed class MdmService : IMdmService
         var code = CanonicalizeCode(request.Code, nameof(request.Code));
         var name = ValidateName(request.Name, nameof(request.Name));
 
+        // GULIERP_MDM_001_CODE_PIPELINE — 4-step code validation
+        // (Steps 1, 2, 4). Step 3 (uniqueness) is the existing DB
+        // check below. The App service canonicalizes (trim + upper)
+        // BEFORE calling the validators; the validators re-check
+        // defensively.
+        // GULIERP_FOUNDATION_001_CODE_PIPELINE_PROMOTE — Item is
+        // Tenant-scoped (not Company-scoped), so companyId = null.
+        ThrowIfCodeInvalid(code, tenantId, companyId: null);
+
         // BaseUom must exist (system-scope, no tenant check).
         var uomExists = await _db.Uoms.AsNoTracking()
             .AnyAsync(u => u.Id == request.BaseUomId, ct);
@@ -427,6 +438,11 @@ public sealed class MdmService : IMdmService
     {
         ArgumentNullException.ThrowIfNull(request);
         var tenantId = RequireTenant();
+        // NOTE: UpdateItemRequest intentionally has no Code field —
+        // V1 codes are immutable on update (per MDM-000 frozen §6
+        // + the design of UpdateXxxRequest DTOs). The validator
+        // therefore runs on Create only; Update does not change
+        // the code.
         var i = await _db.Items
             .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId, ct);
         if (i is null) return null;
@@ -574,6 +590,42 @@ public sealed class MdmService : IMdmService
 
     private static string? NullIfEmpty(string? s) =>
         string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+    /// <summary>
+    /// GULIERP_MDM_001_CODE_PIPELINE — run the 4-step code
+    /// validation pipeline (Steps 1, 2, 4). Step 3 (uniqueness) is
+    /// the DB's job and is checked separately. Throws
+    /// <see cref="MdmValidationException"/> on the first failure.
+    /// The code is expected to have been canonicalized (trim +
+    /// upper) by <see cref="CanonicalizeCode"/> before this is
+    /// called.
+    ///
+    /// <para>
+    /// GULIERP_FOUNDATION_001_CODE_PIPELINE_PROMOTE — the 3
+    /// static validators moved to
+    /// <c>GuliERP.Foundation.Validation</c>; this helper now
+    /// calls the <see cref="MasterDataCodeValidator"/> facade
+    /// with an MDM-namespaced
+    /// <see cref="GuliERP.Foundation.Validation.CodeValidationContext"/>
+    /// (built via
+    /// <c>CodeValidationContextExtensions.ForMmd</c>).
+    /// </para>
+    /// </summary>
+    internal static void ThrowIfCodeInvalid(string code, long tenantId, long? companyId)
+    {
+        var context = CodeValidationContextExtensions.ForMdm(
+            entityScope: "MdmItemCategory_Or_Item_Or_Uom",
+            tenantId: tenantId,
+            companyId: companyId);
+
+        var result = MasterDataCodeValidator.Validate(code, context);
+        if (!result.IsValid)
+        {
+            throw new MdmValidationException(
+                result.Failure!.ErrorCode,
+                result.Failure.Message);
+        }
+    }
 
     private static (int page, int pageSize) NormalizePaging(int page, int pageSize)
     {

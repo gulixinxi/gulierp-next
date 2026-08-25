@@ -27,4 +27,7 @@ public static class MdmPolicies
 
     public const string DictionaryRead = Prefix + MdmPermissions.DictionaryRead;
     public const string DictionaryManage = Prefix + MdmPermissions.DictionaryManage;
+
+    public const string NumberingRuleRead = Prefix + MdmPermissions.NumberingRuleRead;
+    public const string NumberingRuleManage = Prefix + MdmPermissions.NumberingRuleManage;
 }

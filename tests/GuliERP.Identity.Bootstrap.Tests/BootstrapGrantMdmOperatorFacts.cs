@@ -7,8 +7,8 @@ namespace GuliERP.Identity.Bootstrap.Tests;
 /// WEB-PREVIEW-002 — Tests for the <c>--grant-mdm-operator</c> mode of
 /// the bootstrap tool. The mode is a NON-DESTRUCTIVE idempotent
 /// operation: it ensures the <c>ERP_MDM_OPERATOR</c> role exists in
-/// the user's Tenant, adds 12 MDM permission claims
-/// (<c>mdm.uom.read</c> + 5 more pairs) to that role, and grants
+/// the user's Tenant, adds 14 MDM permission claims
+/// (<c>mdm.uom.read</c> + 6 more pairs) to that role, and grants
 /// the role to the user at Tenant-wide scope.
 ///
 /// <para>
