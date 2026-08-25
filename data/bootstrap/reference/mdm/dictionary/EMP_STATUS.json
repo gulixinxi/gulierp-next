@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "dictionary_type_code": "EMP_STATUS",
+    "default_item_code": "ES_ACTIVE",
+    "description": "员工状态 — Employee 在 HR 生命周期中的状态。注意与员工类型(emp-type)不同,本字典覆盖 4 值的在职/休假/停薪/离职全状态。"
+  },
+  "items": [
+    {
+      "canonical_code": "ES_ACTIVE",
+      "canonical_name_zh": "在职",
+      "canonical_name_en": "Active",
+      "is_default": true,
+      "sort_order": 1,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "ES_LEAVE",
+      "canonical_name_zh": "休假",
+      "canonical_name_en": "On Leave",
+      "is_default": false,
+      "sort_order": 2,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "ES_SUSPENDED",
+      "canonical_name_zh": "停薪留职",
+      "canonical_name_en": "Suspended (no pay)",
+      "is_default": false,
+      "sort_order": 3,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "ES_TERMINATED",
+      "canonical_name_zh": "离职",
+      "canonical_name_en": "Terminated",
+      "is_default": false,
+      "sort_order": 4,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    }
+  ]
+}

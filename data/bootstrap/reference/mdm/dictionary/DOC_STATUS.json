@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "dictionary_type_code": "DOC_STATUS",
+    "default_item_code": "DS_DRAFT",
+    "description": "单据状态 — 业务单据在生命周期中的状态机。当前 V1 覆盖 5 个核心状态,与 SalesOrder/PO/REC 共用。"
+  },
+  "items": [
+    {
+      "canonical_code": "DS_DRAFT",
+      "canonical_name_zh": "草稿",
+      "canonical_name_en": "Draft",
+      "is_default": true,
+      "sort_order": 1,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "DS_CONFIRMED",
+      "canonical_name_zh": "已确认",
+      "canonical_name_en": "Confirmed",
+      "is_default": false,
+      "sort_order": 2,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "DS_APPROVED",
+      "canonical_name_zh": "已审核",
+      "canonical_name_en": "Approved",
+      "is_default": false,
+      "sort_order": 3,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "DS_CLOSED",
+      "canonical_name_zh": "已关闭",
+      "canonical_name_en": "Closed",
+      "is_default": false,
+      "sort_order": 4,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "DS_CANCELLED",
+      "canonical_name_zh": "已取消",
+      "canonical_name_en": "Cancelled",
+      "is_default": false,
+      "sort_order": 5,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    }
+  ]
+}

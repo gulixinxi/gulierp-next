@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "dictionary_type_code": "ITEM_STATUS",
+    "default_item_code": "IS_ACTIVE",
+    "description": "商品状态 — 物料(Item)在其生命周期中的业务状态。注意与 MasterDataStatus(2 值系统枚举)不同,本字典是 4 值的业务状态。"
+  },
+  "items": [
+    {
+      "canonical_code": "IS_ACTIVE",
+      "canonical_name_zh": "在用",
+      "canonical_name_en": "Active",
+      "is_default": true,
+      "sort_order": 1,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "IS_INACTIVE",
+      "canonical_name_zh": "停用",
+      "canonical_name_en": "Inactive",
+      "is_default": false,
+      "sort_order": 2,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "IS_DISCONTINUED",
+      "canonical_name_zh": "停产",
+      "canonical_name_en": "Discontinued",
+      "is_default": false,
+      "sort_order": 3,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "IS_EOL",
+      "canonical_name_zh": "淘汰",
+      "canonical_name_en": "End-of-Life",
+      "is_default": false,
+      "sort_order": 4,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    }
+  ]
+}

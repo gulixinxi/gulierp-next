@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "dictionary_type_code": "CUST_TYPE",
+    "default_item_code": "CT_RETAIL",
+    "description": "客户类型 — 业务伙伴作为客户时的分类。当前 V1 覆盖 4 个核心类型,支持 B2C 零售到 B2B 企业的全场景。"
+  },
+  "items": [
+    {
+      "canonical_code": "CT_RETAIL",
+      "canonical_name_zh": "零售",
+      "canonical_name_en": "Retail",
+      "is_default": true,
+      "sort_order": 1,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "CT_WHOLESALE",
+      "canonical_name_zh": "批发",
+      "canonical_name_en": "Wholesale",
+      "is_default": false,
+      "sort_order": 2,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "CT_DISTRIBUTOR",
+      "canonical_name_zh": "经销",
+      "canonical_name_en": "Distributor",
+      "is_default": false,
+      "sort_order": 3,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "CT_ENTERPRISE",
+      "canonical_name_zh": "企业",
+      "canonical_name_en": "Enterprise (B2B)",
+      "is_default": false,
+      "sort_order": 4,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "dictionary_type_code": "ENT_TYPE",
+    "default_item_code": "ET_LLC",
+    "description": "企业类型 — 客户/供应商/合作伙伴的法人组织形式。V1 覆盖 5 个中国常见的企业类型,从个人独资到股份制企业。"
+  },
+  "items": [
+    {
+      "canonical_code": "ET_LLC",
+      "canonical_name_zh": "有限责任公司",
+      "canonical_name_en": "Limited Liability Company",
+      "is_default": true,
+      "sort_order": 1,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "ET_SOLE_PROP",
+      "canonical_name_zh": "个人独资企业",
+      "canonical_name_en": "Sole Proprietorship",
+      "is_default": false,
+      "sort_order": 2,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "ET_PARTNERSHIP",
+      "canonical_name_zh": "合伙企业",
+      "canonical_name_en": "Partnership",
+      "is_default": false,
+      "sort_order": 3,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "ET_CORPORATION",
+      "canonical_name_zh": "股份有限公司",
+      "canonical_name_en": "Corporation (Joint-stock)",
+      "is_default": false,
+      "sort_order": 4,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "ET_OTHER",
+      "canonical_name_zh": "其他",
+      "canonical_name_en": "Other (state-owned / foreign)",
+      "is_default": false,
+      "sort_order": 5,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    }
+  ]
+}

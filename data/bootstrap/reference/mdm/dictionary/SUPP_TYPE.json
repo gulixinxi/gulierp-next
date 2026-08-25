@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "dictionary_type_code": "SUPP_TYPE",
+    "default_item_code": "ST_MANUFACTURER",
+    "description": "供应商类型 — 业务伙伴作为供应商时的分类。当前 V1 覆盖 4 个核心类型,从生产商到纯服务商的全链路。"
+  },
+  "items": [
+    {
+      "canonical_code": "ST_MANUFACTURER",
+      "canonical_name_zh": "生产商",
+      "canonical_name_en": "Manufacturer",
+      "is_default": true,
+      "sort_order": 1,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "ST_WHOLESALER",
+      "canonical_name_zh": "批发商",
+      "canonical_name_en": "Wholesaler",
+      "is_default": false,
+      "sort_order": 2,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "ST_IMPORTER",
+      "canonical_name_zh": "进口商",
+      "canonical_name_en": "Importer",
+      "is_default": false,
+      "sort_order": 3,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "ST_SERVICE",
+      "canonical_name_zh": "服务商",
+      "canonical_name_en": "Service Provider",
+      "is_default": false,
+      "sort_order": 4,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    }
+  ]
+}

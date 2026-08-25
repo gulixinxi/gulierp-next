@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "dictionary_type_code": "PM_METHOD",
+    "default_item_code": "PM_CASH",
+    "description": "付款方式 — 客户/供应商在结算时使用的支付工具。本字典只覆盖方法(PM_*),账期(SM_*)见 SM_TERM。"
+  },
+  "items": [
+    {
+      "canonical_code": "PM_CASH",
+      "canonical_name_zh": "现金",
+      "canonical_name_en": "Cash",
+      "is_default": true,
+      "sort_order": 1,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "PM_BANK_TRANSFER",
+      "canonical_name_zh": "银行转账",
+      "canonical_name_en": "Bank Transfer",
+      "is_default": false,
+      "sort_order": 2,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "PM_CHECK",
+      "canonical_name_zh": "支票",
+      "canonical_name_en": "Check",
+      "is_default": false,
+      "sort_order": 3,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "PM_CREDIT_CARD",
+      "canonical_name_zh": "信用卡",
+      "canonical_name_en": "Credit Card",
+      "is_default": false,
+      "sort_order": 4,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "PM_ONLINE",
+      "canonical_name_zh": "在线支付",
+      "canonical_name_en": "Online (Alipay / WeChat)",
+      "is_default": false,
+      "sort_order": 5,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    }
+  ]
+}

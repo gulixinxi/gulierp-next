@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "dictionary_type_code": "SM_TERM",
+    "default_item_code": "SM_NET_30",
+    "description": "结算方式 — 应收/应付账款的账期。V1 覆盖 5 个核心账期,从 NET_30/60/90 到货到付款/预付全场景。"
+  },
+  "items": [
+    {
+      "canonical_code": "SM_NET_30",
+      "canonical_name_zh": "月结30天",
+      "canonical_name_en": "Net 30",
+      "is_default": true,
+      "sort_order": 1,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "SM_NET_60",
+      "canonical_name_zh": "月结60天",
+      "canonical_name_en": "Net 60",
+      "is_default": false,
+      "sort_order": 2,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "SM_NET_90",
+      "canonical_name_zh": "月结90天",
+      "canonical_name_en": "Net 90",
+      "is_default": false,
+      "sort_order": 3,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "SM_COD",
+      "canonical_name_zh": "货到付款",
+      "canonical_name_en": "Cash on Delivery",
+      "is_default": false,
+      "sort_order": 4,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    },
+    {
+      "canonical_code": "SM_PREPAY",
+      "canonical_name_zh": "预付",
+      "canonical_name_en": "Prepayment",
+      "is_default": false,
+      "sort_order": 5,
+      "seed_status": "SAFE_TO_SEED_SYSTEM"
+    }
+  ]
+}
