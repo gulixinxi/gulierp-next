@@ -63,3 +63,37 @@ public interface IMdmLocationService
     Task<LocationDto?> UpdateAsync(
         long id, UpdateLocationRequest request, CancellationToken ct = default);
 }
+
+/// <summary>
+/// Basic dictionary service. Tenant-scoped, flat option-set CRUD.
+/// </summary>
+public interface IMdmDictionaryService
+{
+    Task<PagedResult<DictionaryTypeDto>> ListTypesAsync(
+        ListQuery query, CancellationToken ct = default);
+
+    Task<DictionaryTypeDto?> GetTypeByIdAsync(long id, CancellationToken ct = default);
+
+    Task<DictionaryTypeDto> CreateTypeAsync(
+        CreateDictionaryTypeRequest request, CancellationToken ct = default);
+
+    Task<DictionaryTypeDto?> UpdateTypeAsync(
+        long id, UpdateDictionaryTypeRequest request, CancellationToken ct = default);
+
+    Task<DictionaryTypeDto?> ChangeTypeStatusAsync(
+        long id, ChangeDictionaryStatusRequest request, CancellationToken ct = default);
+
+    Task<PagedResult<DictionaryItemDto>> ListItemsAsync(
+        long typeId, ListQuery query, CancellationToken ct = default);
+
+    Task<DictionaryItemDto?> GetItemByIdAsync(long id, CancellationToken ct = default);
+
+    Task<DictionaryItemDto> CreateItemAsync(
+        long typeId, CreateDictionaryItemRequest request, CancellationToken ct = default);
+
+    Task<DictionaryItemDto?> UpdateItemAsync(
+        long id, UpdateDictionaryItemRequest request, CancellationToken ct = default);
+
+    Task<DictionaryItemDto?> ChangeItemStatusAsync(
+        long id, ChangeDictionaryStatusRequest request, CancellationToken ct = default);
+}

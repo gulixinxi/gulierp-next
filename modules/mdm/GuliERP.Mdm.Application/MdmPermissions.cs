@@ -23,4 +23,7 @@ public static class MdmPermissions
     public const string WarehouseManage = "mdm.warehouse.manage";
     public const string LocationRead = "mdm.location.read";
     public const string LocationManage = "mdm.location.manage";
+
+    public const string DictionaryRead = "mdm.dictionary.read";
+    public const string DictionaryManage = "mdm.dictionary.manage";
 }

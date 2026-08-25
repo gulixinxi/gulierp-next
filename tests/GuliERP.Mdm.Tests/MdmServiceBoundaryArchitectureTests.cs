@@ -85,6 +85,7 @@ public sealed class MdmServiceBoundaryArchitectureTests
     {
         "MdmService.cs",
         "MdmMasterData002Services.cs",
+        "MdmDictionaryService.cs",
         "MdmSeed.cs",
         "DependencyInjection.cs",
         "DesignTimeMdmDbContextFactory.cs",
@@ -95,6 +96,8 @@ public sealed class MdmServiceBoundaryArchitectureTests
         "BusinessPartnerConfiguration.cs",
         "WarehouseConfiguration.cs",
         "LocationConfiguration.cs",
+        "DictionaryTypeConfiguration.cs",
+        "DictionaryItemConfiguration.cs",
         "FoundationModelBoundaries.cs", // if present
         ".Designer.cs",                 // all migrations
         "MdmDbContextModelSnapshot.cs",

@@ -45,6 +45,7 @@ public static class MdmEndpoints
         MapBusinessPartnerEndpoints(group);
         MapWarehouseEndpoints(group);
         MapLocationEndpoints(group);
+        MapDictionaryEndpoints(group);
 
         return routes;
     }
@@ -507,6 +508,179 @@ public static class MdmEndpoints
                 }
             })
             .RequireAuthorization(MdmPolicies.LocationManage);
+    }
+
+    // ============================================================
+    // Dictionary (tenant-scope, G2-MDM-DICT-001B)
+    // ============================================================
+
+    private static void MapDictionaryEndpoints(IEndpointRouteBuilder group)
+    {
+        var types = group.MapGroup("/dictionary-types").WithTags("Mdm.Dictionary");
+        var items = group.MapGroup("/dictionary-items").WithTags("Mdm.Dictionary");
+
+        types.MapGet("", async (
+                [FromQuery] string? keyword,
+                [FromQuery] MasterDataStatus? status,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                var query = new ListQuery(keyword, status, page ?? 1, pageSize ?? 20);
+                return Results.Ok(await svc.ListTypesAsync(query, ct));
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryRead);
+
+        types.MapGet("/{id:long}", async (
+                long id,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                var type = await svc.GetTypeByIdAsync(id, ct);
+                return type is null ? Results.NotFound() : Results.Ok(type);
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryRead);
+
+        types.MapPost("", async (
+                [FromBody] CreateDictionaryTypeRequest request,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var created = await svc.CreateTypeAsync(request, ct);
+                    return Results.Created(
+                        $"/api/v1/mdm/dictionary-types/{created.Id}", created);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryManage);
+
+        types.MapPut("/{id:long}", async (
+                long id,
+                [FromBody] UpdateDictionaryTypeRequest request,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var updated = await svc.UpdateTypeAsync(id, request, ct);
+                    return updated is null ? Results.NotFound() : Results.Ok(updated);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryManage);
+
+        types.MapPatch("/{id:long}/status", async (
+                long id,
+                [FromBody] ChangeDictionaryStatusRequest request,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var updated = await svc.ChangeTypeStatusAsync(id, request, ct);
+                    return updated is null ? Results.NotFound() : Results.Ok(updated);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryManage);
+
+        types.MapGet("/{typeId:long}/items", async (
+                long typeId,
+                [FromQuery] string? keyword,
+                [FromQuery] MasterDataStatus? status,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var query = new ListQuery(keyword, status, page ?? 1, pageSize ?? 20);
+                    return Results.Ok(await svc.ListItemsAsync(typeId, query, ct));
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryRead);
+
+        types.MapPost("/{typeId:long}/items", async (
+                long typeId,
+                [FromBody] CreateDictionaryItemRequest request,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var created = await svc.CreateItemAsync(typeId, request, ct);
+                    return Results.Created(
+                        $"/api/v1/mdm/dictionary-items/{created.Id}", created);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryManage);
+
+        items.MapGet("/{id:long}", async (
+                long id,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                var item = await svc.GetItemByIdAsync(id, ct);
+                return item is null ? Results.NotFound() : Results.Ok(item);
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryRead);
+
+        items.MapPut("/{id:long}", async (
+                long id,
+                [FromBody] UpdateDictionaryItemRequest request,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var updated = await svc.UpdateItemAsync(id, request, ct);
+                    return updated is null ? Results.NotFound() : Results.Ok(updated);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryManage);
+
+        items.MapPatch("/{id:long}/status", async (
+                long id,
+                [FromBody] ChangeDictionaryStatusRequest request,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    var updated = await svc.ChangeItemStatusAsync(id, request, ct);
+                    return updated is null ? Results.NotFound() : Results.Ok(updated);
+                }
+                catch (MdmValidationException ex)
+                {
+                    return ValidationProblem(ex);
+                }
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryManage);
     }
 
     private static IResult ValidationProblem(MdmValidationException ex) =>

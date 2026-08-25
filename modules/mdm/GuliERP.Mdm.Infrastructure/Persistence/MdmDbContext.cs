@@ -75,6 +75,8 @@ public sealed class MdmDbContext : DbContext
     public DbSet<BusinessPartner> BusinessPartners => Set<BusinessPartner>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<Location> Locations => Set<Location>();
+    public DbSet<DictionaryType> DictionaryTypes => Set<DictionaryType>();
+    public DbSet<DictionaryItem> DictionaryItems => Set<DictionaryItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -90,6 +92,8 @@ public sealed class MdmDbContext : DbContext
         // ------------------------------------------------------------
         modelBuilder.Entity<ItemCategory>(b => b.HasQueryFilter(e => true));
         modelBuilder.Entity<Item>(b => b.HasQueryFilter(e => true));
+        modelBuilder.Entity<DictionaryType>(b => b.HasQueryFilter(e => true));
+        modelBuilder.Entity<DictionaryItem>(b => b.HasQueryFilter(e => true));
 
         // ------------------------------------------------------------
         // Table names — explicit UPPER_SNAKE for the MDM tables.
@@ -100,6 +104,8 @@ public sealed class MdmDbContext : DbContext
         modelBuilder.Entity<BusinessPartner>(b => b.ToTable("gulierp_business_partner"));
         modelBuilder.Entity<Warehouse>(b => b.ToTable("gulierp_warehouse"));
         modelBuilder.Entity<Location>(b => b.ToTable("gulierp_location"));
+        modelBuilder.Entity<DictionaryType>(b => b.ToTable("gulierp_dictionary_type"));
+        modelBuilder.Entity<DictionaryItem>(b => b.ToTable("gulierp_dictionary_item"));
 
         // ------------------------------------------------------------
         // Apply the per-entity IEntityTypeConfiguration<T> classes.

@@ -86,4 +86,51 @@ public static class MdmErrorCodes
     /// Warehouse is not visible to the caller.
     /// </summary>
     public const string LocationParentWarehouseCrossScope = "mdm_location_parent_warehouse_cross_scope";
+
+    /// <summary>
+    /// A DictionaryType operation referenced a type that does not
+    /// exist in the current Tenant.
+    /// </summary>
+    public const string DictionaryTypeNotFound = "mdm_dictionary_type_not_found";
+
+    /// <summary>
+    /// A request attempted to update or disable a system-owned
+    /// DictionaryType / DictionaryItem.
+    /// </summary>
+    public const string DictionarySystemRecordProtected =
+        "mdm_dictionary_system_record_protected";
+
+    // ============================================================
+    // MDM-001 / GULIERP_MDM_001_CODE_PIPELINE — new error codes for
+    // the 4-step code validation pipeline. Per
+    // GULIERP_CODE_PIPELINE_DESIGN_V1 §4.2. The V1 spec freezes
+    // these codes; adding a new check is a new design goal.
+    // ============================================================
+
+    /// <summary>
+    /// Step 1 (format) of the code pipeline failed. The code does
+    /// not match the V1 regex <c>^[A-Z][A-Z0-9_]{1,39}$</c> (length
+    /// 2..40). Filled by <see cref="GuliERP.Mdm.Application.Validation.FormatValidator"/>.
+    /// </summary>
+    public const string CodeFormatInvalid = "mdm_code_format_invalid";
+
+    /// <summary>
+    /// Step 2 (reserved name) of the code pipeline failed. The code
+    /// matches the V1 reserved-name set (SYSTEM / SYS / RESERVED /
+    /// EMP-SYSTEM / WH-DEFAULT / LOC-RECEIVING / LOC-SHIPPING /
+    /// ROLE_PLATFORM_ADMIN / ROLE_TENANT_ADMIN / ROLE_COMPANY_ADMIN
+    /// / ROLE_NORMAL_USER). Filled by
+    /// <see cref="GuliERP.Mdm.Application.Validation.ReservedNameValidator"/>.
+    /// </summary>
+    public const string CodeReserved = "mdm_code_reserved";
+
+    /// <summary>
+    /// Step 4 (no-document-number pattern) of the code pipeline
+    /// failed. The code either contains 8 consecutive digits or
+    /// starts with a document-type prefix (SO/PO/GR/GI/TR/SI/PI/MO/QI).
+    /// Filled by
+    /// <see cref="GuliERP.Mdm.Application.Validation.DocumentNumberSimilarityValidator"/>.
+    /// </summary>
+    public const string CodeResemblesDocumentNumber =
+        "mdm_code_resembles_document_number";
 }

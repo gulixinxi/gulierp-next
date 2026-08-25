@@ -24,4 +24,7 @@ public static class MdmPolicies
     public const string WarehouseManage = Prefix + MdmPermissions.WarehouseManage;
     public const string LocationRead = Prefix + MdmPermissions.LocationRead;
     public const string LocationManage = Prefix + MdmPermissions.LocationManage;
+
+    public const string DictionaryRead = Prefix + MdmPermissions.DictionaryRead;
+    public const string DictionaryManage = Prefix + MdmPermissions.DictionaryManage;
 }

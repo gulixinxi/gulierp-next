@@ -308,3 +308,70 @@ public sealed record LocationListQuery(
     MasterDataStatus? Status,
     int Page,
     int PageSize);
+
+// ============================================================
+// G2-MDM-DICT-001B — Dictionary DTOs
+// ============================================================
+
+public sealed record DictionaryTypeDto(
+    long Id,
+    string Code,
+    string Name,
+    string? Description,
+    MasterDataStatus Status,
+    int SortOrder,
+    bool IsSystem,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset ModifiedAt,
+    int ConcurrencyVersion);
+
+public sealed record CreateDictionaryTypeRequest(
+    string Code,
+    string Name,
+    string? Description,
+    int SortOrder,
+    bool IsSystem);
+
+public sealed record UpdateDictionaryTypeRequest(
+    string Name,
+    string? Description,
+    MasterDataStatus Status,
+    int SortOrder,
+    int ExpectedConcurrencyVersion);
+
+public sealed record DictionaryItemDto(
+    long Id,
+    long DictionaryTypeId,
+    string Code,
+    string Name,
+    string Value,
+    string? Description,
+    MasterDataStatus Status,
+    int SortOrder,
+    bool IsDefault,
+    bool IsSystem,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset ModifiedAt,
+    int ConcurrencyVersion);
+
+public sealed record CreateDictionaryItemRequest(
+    string Code,
+    string Name,
+    string Value,
+    string? Description,
+    int SortOrder,
+    bool IsDefault,
+    bool IsSystem);
+
+public sealed record UpdateDictionaryItemRequest(
+    string Name,
+    string Value,
+    string? Description,
+    MasterDataStatus Status,
+    int SortOrder,
+    bool IsDefault,
+    int ExpectedConcurrencyVersion);
+
+public sealed record ChangeDictionaryStatusRequest(
+    MasterDataStatus Status,
+    int ExpectedConcurrencyVersion);
