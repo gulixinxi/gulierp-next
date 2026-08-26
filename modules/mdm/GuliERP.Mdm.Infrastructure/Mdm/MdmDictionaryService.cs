@@ -75,6 +75,23 @@ public sealed class MdmDictionaryService : IMdmDictionaryService
         return type is null ? null : MapType(type);
     }
 
+    public async Task<DictionaryTypeDto?> GetTypeByCodeAsync(
+        string code, CancellationToken ct = default)
+    {
+        // G3-R1E facade: PaymentMethod and similar dictionaries are
+        // looked up by their stable application-facing code
+        // (PM_METHOD / SM_TERM / etc.). The seed contract stores
+        // codes UPPER, but we trim + uppercase defensively to keep
+        // the facade stable across callers.
+        if (string.IsNullOrWhiteSpace(code)) return null;
+        var tenantId = RequireTenant();
+        var normalized = code.Trim().ToUpperInvariant();
+        var type = await _db.DictionaryTypes.AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.TenantId == tenantId && x.Code == normalized, ct);
+        return type is null ? null : MapType(type);
+    }
+
     public async Task<DictionaryTypeDto> CreateTypeAsync(
         CreateDictionaryTypeRequest request, CancellationToken ct = default)
     {

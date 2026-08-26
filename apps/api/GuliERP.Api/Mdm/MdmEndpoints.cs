@@ -47,6 +47,8 @@ public static class MdmEndpoints
         MapLocationEndpoints(group);
         MapDictionaryEndpoints(group);
         MapNumberingRuleEndpoints(group);
+        // G3-R1E: PaymentMethod facade over the V1 Dictionary API.
+        MapPaymentMethodEndpoints(group);
 
         return routes;
     }
@@ -682,6 +684,75 @@ public static class MdmEndpoints
                 }
             })
             .RequireAuthorization(MdmPolicies.DictionaryManage);
+    }
+
+    // ============================================================
+    // G3-R1E — PaymentMethod facade over the V1 Dictionary API
+    //
+    // PaymentMethod is the 6th of 9 V1 system dictionaries
+    // (code = PM_METHOD). Rather than introducing a standalone
+    // PaymentMethod entity (which would require a new EF
+    // migration + a downstream SalesOrder model change), the
+    // facade resolves the PM_METHOD DictionaryType by code and
+    // proxies to the standard dictionary items endpoint. The
+    // items are seeded by `seed-mdm-dictionary --seed-path
+    // data/bootstrap/reference/mdm/dictionary` (idempotent;
+    // sentinel = PM_CASH). The facade is read-only (V1):
+    // write operations continue to flow through the standard
+    // /dictionary-types/{id}/items POST/PUT (which require
+    // MdmPolicies.DictionaryManage).
+    // ============================================================
+
+    private const string PaymentMethodTypeCode = "PM_METHOD";
+
+    private static void MapPaymentMethodEndpoints(IEndpointRouteBuilder group)
+    {
+        var pm = group.MapGroup("/payment-methods").WithTags("Mdm.PaymentMethod");
+
+        // GET /api/v1/mdm/payment-methods?keyword=...&status=...&page=1&pageSize=20
+        pm.MapGet("", async (
+                HttpContext http,
+                [FromQuery] string? keyword,
+                [FromQuery] MasterDataStatus? status,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                var type = await svc.GetTypeByCodeAsync(PaymentMethodTypeCode, ct);
+                if (type is null)
+                {
+                    // The PM_METHOD dictionary has not been seeded for this
+                    // tenant yet. Return an empty paged result with a 200
+                    // (consistent with the standard list endpoint) plus
+                    // a synthetic 'deferred' note via a response header
+                    // so the frontend can show a meaningful empty state.
+                    http.Response.Headers["X-PaymentMethod-Status"] = "deferred";
+                    var empty = new PagedResult<DictionaryItemDto>(
+                        Array.Empty<DictionaryItemDto>(), 1, pageSize ?? 20, 0);
+                    return Results.Ok(empty);
+                }
+                var query = new ListQuery(keyword, status, page ?? 1, pageSize ?? 20);
+                var items = await svc.ListItemsAsync(type.Id, query, ct);
+                http.Response.Headers["X-PaymentMethod-Status"] = "ok";
+                return Results.Ok(items);
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryRead);
+
+        // GET /api/v1/mdm/payment-methods/{id:long}
+        pm.MapGet("/{id:long}", async (
+                long id,
+                IMdmDictionaryService svc,
+                CancellationToken ct) =>
+            {
+                var type = await svc.GetTypeByCodeAsync(PaymentMethodTypeCode, ct);
+                if (type is null) return Results.NotFound();
+                var item = await svc.GetItemByIdAsync(id, ct);
+                // Defensive: the item must belong to the PM_METHOD type.
+                if (item is null || item.DictionaryTypeId != type.Id) return Results.NotFound();
+                return Results.Ok(item);
+            })
+            .RequireAuthorization(MdmPolicies.DictionaryRead);
     }
 
     // ============================================================

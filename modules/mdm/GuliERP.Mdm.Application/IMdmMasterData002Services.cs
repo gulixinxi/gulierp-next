@@ -74,6 +74,17 @@ public interface IMdmDictionaryService
 
     Task<DictionaryTypeDto?> GetTypeByIdAsync(long id, CancellationToken ct = default);
 
+    /// <summary>
+    /// G3-R1E facade: look up a DictionaryType by its stable
+    /// application-facing code (e.g. <c>PM_METHOD</c>,
+    /// <c>SM_TERM</c>). Returns <c>null</c> when the type is not
+    /// in the current tenant. Case-insensitive on the lookup
+    /// (codes are stored UPPER per the seed contract, but the
+    /// comparison is defensive).
+    /// </summary>
+    Task<DictionaryTypeDto?> GetTypeByCodeAsync(
+        string code, CancellationToken ct = default);
+
     Task<DictionaryTypeDto> CreateTypeAsync(
         CreateDictionaryTypeRequest request, CancellationToken ct = default);
 
