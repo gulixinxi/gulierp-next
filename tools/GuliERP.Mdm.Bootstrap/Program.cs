@@ -1127,6 +1127,12 @@ internal sealed class CliOptions
             Environment = env,
         };
     }
+
+    // G3-R1 NOTE: the new "seed-mdm reference" subcommand is added in
+    // a separate commit; for the G3-R1 acceptance run the loader is
+    // invoked via the operator evidence script
+    // (tools/dev/g3-r1-reference-seed-evidence.ps1) which builds a
+    // small dotnet test runner that calls ReferenceSeedService directly.
 }
 
 /// <summary>
