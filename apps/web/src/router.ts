@@ -4,6 +4,9 @@ import BootstrapStatus from './views/BootstrapStatus.vue';
 import SalesOrderList from './views/sales-order/SalesOrderList.vue';
 import SalesOrderEdit from './views/sales-order/SalesOrderEdit.vue';
 import SalesOrderDetail from './views/sales-order/SalesOrderDetail.vue';
+import PurchaseOrderList from './views/purchase/PurchaseOrderList.vue';
+import PurchaseOrderEdit from './views/purchase/PurchaseOrderEdit.vue';
+import PurchaseOrderDetail from './views/purchase/PurchaseOrderDetail.vue';
 import { installAuthRoutes, installAuthGuard } from './router/auth';
 import { installMdmRoutes } from './router/mdm';
 import { installSystemRoutes } from './router/system';
@@ -37,6 +40,35 @@ const routes: RouteRecordRaw[] = [
         path: 'sales-order/:id',
         name: 'SalesOrderDetail',
         component: SalesOrderDetail,
+        props: true
+      },
+      // G3-R2B: PurchaseOrder routes. Mirrors the G3-R2A
+      // SalesOrder route shape. The list uses the canonical
+      // /purchase/orders path so the navigation group's
+      // "采购订单" entry is the same as the menu item; the
+      // /purchase-orders/... path is the legacy tab-driven
+      // form/detail path (matches the SalesOrder /sales-order/...
+      // legacy path).
+      {
+        path: 'purchase/orders',
+        name: 'PurchaseOrderList',
+        component: PurchaseOrderList,
+        meta: { title: '采购订单', module: 'purchase' }
+      },
+      {
+        path: 'purchase-orders',
+        redirect: '/purchase/orders'
+      },
+      {
+        path: 'purchase-orders/:id/edit',
+        name: 'PurchaseOrderEdit',
+        component: PurchaseOrderEdit,
+        props: true
+      },
+      {
+        path: 'purchase-orders/:id',
+        name: 'PurchaseOrderDetail',
+        component: PurchaseOrderDetail,
         props: true
       }
     ]

@@ -129,7 +129,27 @@ export const shellNavigation: ShellNavigationModule[] = [
     label: '采购管理',
     shortLabel: '采购',
     icon: 'ShoppingCart',
-    groups: [{ label: '采购管理', items: [{ id: 'purchase-placeholder', label: '采购功能', icon: 'ShoppingCart', disabled: true, placeholder: '采购功能待开发' }] }],
+    groups: [
+      {
+        label: '采购单据',
+        items: [
+          // G3-R2B: 采购订单 is now real (vertical slice mirroring
+          // the G3-R2A SalesOrder page). Uses the PurchaseOrder
+          // context facade at /api/v1/purchase/orders/context/*
+          // for Supplier / Item / UOM / Warehouse / PaymentMethod
+          // dropdowns. ERP_PURCH_OPERATOR is the required role.
+          { id: 'list-purchase-order', label: '采购订单', icon: 'ShoppingCart', route: '/purchase/orders', tabTitle: '采购订单' },
+          { id: 'purchase-receipt', label: '收货单', icon: 'Box', disabled: true, placeholder: '收货单待开发' },
+          { id: 'purchase-invoice', label: '采购发票', icon: 'Money', disabled: true, placeholder: '采购发票待开发' },
+        ],
+      },
+      {
+        label: '采购报表',
+        items: [
+          { id: 'purchase-aging', label: '供应商账龄', icon: 'TrendCharts', disabled: true, placeholder: '供应商账龄待开发' },
+        ],
+      },
+    ],
   },
   {
     key: 'inventory',
