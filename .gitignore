@@ -31,6 +31,11 @@ artifacts/
 tests/**/TestResults/
 tests/_evidence_trx/
 
+# Raw governance / evidence extraction dumps (may contain internal IPs,
+# local paths, and bulky raw database extracts; intentionally not committed
+# — see the G3 git closeout 2026-08-26 for the audit trail).
+docs/governance/extracted/
+
 # Temporary quarantine / diagnostic scratch files.
 tools/.quarantine/
 modules/mdm/GuliERP.Mdm.Infrastructure/tools/.quarantine/
