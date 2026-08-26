@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>GuliERP.Purchase.Tests</RootNamespace>
+    <AssemblyName>GuliERP.Purchase.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\modules\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\..\modules\document-kernel\GuliERP.DocumentKernel.Application\GuliERP.DocumentKernel.Application.csproj" />
+    <ProjectReference Include="..\..\modules\mdm\GuliERP.Mdm.Domain\GuliERP.Mdm.Domain.csproj" />
+    <ProjectReference Include="..\..\modules\mdm\GuliERP.Mdm.Infrastructure\GuliERP.Mdm.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\purchase\GuliERP.Purchase.Application\GuliERP.Purchase.Application.csproj" />
+    <ProjectReference Include="..\..\modules\purchase\GuliERP.Purchase.Domain\GuliERP.Purchase.Domain.csproj" />
+    <ProjectReference Include="..\..\modules\purchase\GuliERP.Purchase.Infrastructure\GuliERP.Purchase.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

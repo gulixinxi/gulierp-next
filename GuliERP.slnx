@@ -44,6 +44,7 @@
     <Project Path="tests/GuliERP.Sales.Tests/GuliERP.Sales.Tests.csproj" />
     <Project Path="tests/GuliERP.DocumentKernel.IntegrationTests/GuliERP.DocumentKernel.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.DocumentKernel.Tests/GuliERP.DocumentKernel.Tests.csproj" />
+    <Project Path="tests/GuliERP.Purchase.Tests/GuliERP.Purchase.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/GuliERP.Identity.Bootstrap/GuliERP.Identity.Bootstrap.csproj" />
