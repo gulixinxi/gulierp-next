@@ -120,7 +120,7 @@ import { computed, h, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElTag } from 'element-plus';
 import { Search as SearchIcon, Plus, Filter, Setting, Download, Star, Document, Refresh } from '@element-plus/icons-vue';
-import { listBusinessPartners } from '../../api/mdm/business-partner';
+import { listSalesOrderCustomers } from '../../api/sales-order-context';
 import { useTabsStore } from '../../stores/tabs';
 import { useSalesOrderStore } from '../../stores/sales-order';
 import type { BusinessPartner } from '../../types/mdm';
@@ -174,8 +174,13 @@ async function load() {
 async function searchCustomers(keyword: string) {
   customerLoading.value = true;
   try {
-    const result = await listBusinessPartners({ keyword, role: 1, status: 1, page: 1, pageSize: 50 });
-    customers.value = result.items;
+    // G3-R2A: switch from /api/v1/mdm/business-partners (which
+    // requires MdmPolicies.BusinessPartnerRead that SALES_OPERATOR
+    // does not have) to the SalesOrder context facade endpoint at
+    // /api/v1/sales/orders/context/customers (which requires only
+    // SalesOrderRead — preserves the G3-R1C boundary contract).
+    const result = await listSalesOrderCustomers({ keyword, page: 1, pageSize: 50 });
+    customers.value = result.items as unknown as BusinessPartner[];
   } catch (err) {
     ElMessage.error((err as any)?.detail || (err as any)?.title || '客户搜索失败');
   } finally {

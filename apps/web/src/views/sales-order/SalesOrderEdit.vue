@@ -113,9 +113,10 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { ArrowLeft, Check, Delete, Document, Grid, Plus } from '@element-plus/icons-vue';
-import { listBusinessPartners } from '../../api/mdm/business-partner';
-import { listItems } from '../../api/mdm/item';
-import { listAllUomsActiveOnly } from '../../api/mdm/uom';
+// G3-R2A: switch from the standard MDM read APIs (which require
+// mdm.* perms) to the SalesOrder context facade (which requires
+// only SalesOrderRead — preserves the G3-R1C boundary contract).
+import { listSalesOrderCustomers, listSalesOrderItems, listSalesOrderUoms } from '../../api/sales-order-context';
 import { useSalesOrderStore } from '../../stores/sales-order';
 import { useTabsStore } from '../../stores/tabs';
 import type { BusinessPartner, Item, Uom } from '../../types/mdm';
@@ -187,8 +188,8 @@ function removeSelected() {
 async function searchCustomers(keyword: string) {
   customerLoading.value = true;
   try {
-    const result = await listBusinessPartners({ keyword, role: 1, status: 1, page: 1, pageSize: 50 });
-    customers.value = result.items;
+    const result = await listSalesOrderCustomers({ keyword, page: 1, pageSize: 50 });
+    customers.value = result.items as unknown as BusinessPartner[];
   } finally {
     customerLoading.value = false;
   }
@@ -196,11 +197,16 @@ async function searchCustomers(keyword: string) {
 async function searchItems(keyword: string) {
   itemLoading.value = true;
   try {
-    const result = await listItems({ keyword, status: 1, page: 1, pageSize: 50 });
-    items.value = result.items;
+    const result = await listSalesOrderItems({ keyword, page: 1, pageSize: 50 });
+    items.value = result.items as unknown as Item[];
   } finally {
     itemLoading.value = false;
   }
+}
+async function loadUoms() {
+  // UOMs are not bound to a search field; load all active UOMs once.
+  const result = await listSalesOrderUoms({ page: 1, pageSize: 200 });
+  uoms.value = result.items as unknown as Uom[];
 }
 function onItemChange(row: EditLine) {
   const item = items.value.find(x => x.id === row.itemId);
@@ -250,7 +256,9 @@ async function loadExisting() {
   form.lines = dto.lines.map(l => ({ clientId: String(l.id), itemId: l.itemId, uomId: l.uomId, uomName: `${l.uomNameSnapshot} (${l.uomCodeSnapshot})`, quantity: l.quantity, unitPrice: l.unitPrice, discountRate: l.discountRate, taxRate: l.taxRate, remarks: l.remarks }));
 }
 onMounted(async () => {
-  uoms.value = await listAllUomsActiveOnly();
+  // G3-R2A: load UOMs via the SalesOrder context facade instead
+  // of the standard mdm/uom endpoint.
+  await loadUoms();
   await Promise.all([searchCustomers(''), searchItems('')]);
   await loadExisting();
 });
