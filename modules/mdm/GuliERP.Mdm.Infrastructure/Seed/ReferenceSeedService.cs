@@ -107,6 +107,12 @@ public sealed class ReferenceSeedService : IReferenceSeedService
     // Per-call mutable state. Reset at the top of each LoadFromManifestAsync.
     private readonly List<string> _warnings = new();
 
+    // Dry-run flag: when true, SaveChanges is skipped (the rows are
+    // still staged in the ChangeTracker so the summary can report
+    // counts; the change is rolled back by the wrapping transaction
+    // in PG, or by ChangeTracker.Clear() in in-memory tests).
+    private bool _dryRunSkipSave;
+
     private readonly MdmDbContext _db;
     private readonly ILogger<ReferenceSeedService> _logger;
 
@@ -131,6 +137,77 @@ public sealed class ReferenceSeedService : IReferenceSeedService
             throw new ArgumentException("referenceRoot is required", nameof(referenceRoot));
         if (!Directory.Exists(referenceRoot))
             throw new DirectoryNotFoundException($"Reference root not found: {referenceRoot}");
+
+        // Dry-run: wrap everything in a transaction and roll back at the
+        // end. EF Core will collect the changes; the rollback undoes them.
+        // (We still call SaveChanges per dataset so the ChangeTracker
+        // can report inserted/existing counts via the generated IDs.)
+        //
+        // For providers that don't support transactions (e.g. the
+        // in-memory test provider), we fall back to a "detach Added at the
+        // end" approach so the dry-run contract still holds: no rows are
+        // persisted, even though the ChangeTracker shows them.
+        if (options.DryRun)
+        {
+            var providerName = _db.Database.ProviderName ?? string.Empty;
+            if (providerName.Contains("InMemory", StringComparison.OrdinalIgnoreCase))
+            {
+                // In-memory: SaveChanges is a no-op wrapper; we set
+                // _dryRunSkipSave = true and let the core loader do
+                // its work (Add() calls populate the ChangeTracker
+                // and the change-counter fields are still incremented
+                // for the summary). After the load we clear the
+                // ChangeTracker.
+                _dryRunSkipSave = true;
+                try
+                {
+                    return await LoadFromManifestCoreAsync(referenceRoot, tenantId, options, ct);
+                }
+                finally
+                {
+                    _dryRunSkipSave = false;
+                    _db.ChangeTracker.Clear();
+                }
+            }
+            await using var tx = await _db.Database.BeginTransactionAsync(ct);
+            var summary = await LoadFromManifestCoreAsync(referenceRoot, tenantId, options, ct);
+            await tx.RollbackAsync(ct);
+            return summary;
+        }
+        return await LoadFromManifestCoreAsync(referenceRoot, tenantId, options, ct);
+    }
+
+    /// <summary>
+    /// In-memory dry-run variant. Tracks the ChangeTracker adds,
+    /// invokes the core loader (which will fill the tracker), then
+    /// detaches every Added entity so the test assertion sees an
+    /// empty DB. This preserves the dry-run contract: no rows
+    /// persist past the call.
+    /// </summary>
+    private async Task<ReferenceSeedSummary> LoadFromManifestCoreDryRunInMemoryAsync(
+        string referenceRoot,
+        long tenantId,
+        ReferenceSeedOptions options,
+        CancellationToken ct)
+    {
+        var summary = await LoadFromManifestCoreAsync(referenceRoot, tenantId, options, ct);
+        // Detach every Added entity (and Unchanged) to leave the DB clean.
+        var addedEntries = _db.ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Added)
+            .ToList();
+        foreach (var entry in addedEntries)
+        {
+            entry.State = EntityState.Detached;
+        }
+        return summary;
+    }
+
+    private async Task<ReferenceSeedSummary> LoadFromManifestCoreAsync(
+        string referenceRoot,
+        long tenantId,
+        ReferenceSeedOptions options,
+        CancellationToken ct)
+    {
 
         var manifestPath = Path.Combine(referenceRoot, "manifest.json");
         if (!File.Exists(manifestPath))
@@ -229,11 +306,21 @@ public sealed class ReferenceSeedService : IReferenceSeedService
             }
 
             // ---- 2a. File-level gate -----------------------------------------
-            if (MustDeferFileLevel.Contains(seedStatus))
+            // Currency is the ONLY REFERENCE_ONLY file eligible for opt-in
+            // (per G3-R1B brief: opt-in is currency-scoped; semantic-data-type
+            // / ethnic-group / country remain hard-deferred).
+            bool currencyOptIn = datasetName == "currency"
+                && seedStatus == "REFERENCE_ONLY"
+                && (options.IncludeCurrency || options.IncludeReferenceOnly);
+
+            if (MustDeferFileLevel.Contains(seedStatus) && !currencyOptIn)
             {
                 var reason = seedStatus switch
                 {
-                    "REFERENCE_ONLY" => "REFERENCE_ONLY — defer per manifest.json::policy_enforcement::seeder_must_defer",
+                    "REFERENCE_ONLY" =>
+                        datasetName == "currency"
+                            ? "REFERENCE_ONLY — currency requires explicit --include-currency or --include-reference-only"
+                            : "REFERENCE_ONLY — defer per manifest.json::policy_enforcement::seeder_must_defer",
                     "INCOMPLETE_STANDARD_DATA" => $"INCOMPLETE_STANDARD_DATA — {dataset.ItemCount} items present (manifest notes mention incomplete coverage); defer",
                     "NEEDS_EXTERNAL_STANDARD_UPDATE" => "NEEDS_EXTERNAL_STANDARD_UPDATE — 0 items committed; defer",
                     _ => $"seedStatus={seedStatus} — defer",
@@ -307,7 +394,7 @@ public sealed class ReferenceSeedService : IReferenceSeedService
 
             if (target.Kind == DatasetKind.Uom)
             {
-                var r = LoadUom(payload, filePath, dataset, target, classification, options);
+                var r = LoadUom(payload, filePath, dataset, target, classification, options, currencyOptIn);
                 outcomes.Add(r.Outcome);
                 totalInserted += r.Outcome.ItemsInserted;
                 totalExisting += r.Outcome.ItemsExisting;
@@ -318,7 +405,7 @@ public sealed class ReferenceSeedService : IReferenceSeedService
             else // DatasetKind.Dictionary
             {
                 var r = LoadDictionary(payload, filePath, dataset, target, classification,
-                    tenantId, options, ct);
+                    tenantId, options, currencyOptIn, ct);
                 outcomes.Add(r.Outcome);
                 totalInserted += r.Outcome.ItemsInserted;
                 totalExisting += r.Outcome.ItemsExisting;
@@ -327,6 +414,20 @@ public sealed class ReferenceSeedService : IReferenceSeedService
                 totalFailed += r.Outcome.ItemsFailed;
                 if (r.DictTypeCreated) dictTypesCreated++;
                 else dictTypesExisting++;
+            }
+        }
+
+        // ---- Currency-specific summary (rolled up from per-dataset outcomes) ----
+        int currencyInserted = 0, currencyExisting = 0, currencySkipped = 0;
+        bool currencyOptInEnabled = false;
+        foreach (var d in outcomes)
+        {
+            if (d.Dataset == "currency" && d.OptInEnabled)
+            {
+                currencyOptInEnabled = true;
+                currencyInserted += d.ItemsInserted;
+                currencyExisting += d.ItemsExisting;
+                currencySkipped += d.ItemsSkipped;
             }
         }
 
@@ -340,6 +441,10 @@ public sealed class ReferenceSeedService : IReferenceSeedService
             TotalItemsOptIn = totalOptIn,
             DictionaryTypesCreated = dictTypesCreated,
             DictionaryTypesExisting = dictTypesExisting,
+            CurrencyItemsInserted = currencyInserted,
+            CurrencyItemsExisting = currencyExisting,
+            CurrencyItemsSkipped = currencySkipped,
+            CurrencyOptInEnabled = currencyOptInEnabled,
             Warnings = _warnings.ToArray(),
         };
 
@@ -362,7 +467,8 @@ public sealed class ReferenceSeedService : IReferenceSeedService
         ReferenceSeedManifestDataset dataset,
         DatasetTarget target,
         string classification,
-        ReferenceSeedOptions options)
+        ReferenceSeedOptions options,
+        bool currencyOptIn)
     {
         var items = payload.Items ?? new List<ReferenceSeedItem>();
         var sample = new List<string>();
@@ -372,6 +478,11 @@ public sealed class ReferenceSeedService : IReferenceSeedService
         foreach (var item in items)
         {
             var status = item.SeedStatus ?? "";
+            // Uom is the only system-scope target; currency opt-in
+            // does not apply to Uom (currency is Dictionary-scoped).
+            // The currencyOptIn parameter is accepted for signature
+            // uniformity but is intentionally ignored here.
+            _ = currencyOptIn;
             if (!MayAutoLoad.Contains(status))
             {
                 if (status == "PROPOSED" || status == "MIXED")
@@ -383,13 +494,12 @@ public sealed class ReferenceSeedService : IReferenceSeedService
                 continue;
             }
 
-            var code = item.CanonicalCode;
+            var code = item.ResolveCode();
             if (string.IsNullOrWhiteSpace(code))
             {
                 failed++;
                 continue;
             }
-            code = code.Trim().ToUpperInvariant();
 
             // Per-item idempotency
             var exists = _db.Uoms.Any(u => u.Code == code);
@@ -432,7 +542,7 @@ public sealed class ReferenceSeedService : IReferenceSeedService
             if (sample.Count < 5) sample.Add(code);
         }
 
-        _db.SaveChanges();
+        if (!_dryRunSkipSave) _db.SaveChanges();
 
         var outcome = new ReferenceSeedDatasetOutcome
         {
@@ -446,6 +556,7 @@ public sealed class ReferenceSeedService : IReferenceSeedService
             ItemsSkipped = skipped,
             ItemsOptIn = optIn,
             ItemsFailed = failed,
+            OptInEnabled = false,
             SampleInsertedCodes = sample,
         };
         return new LoadResult(outcome, DictTypeCreated: false);
@@ -462,6 +573,7 @@ public sealed class ReferenceSeedService : IReferenceSeedService
         string classification,
         long tenantId,
         ReferenceSeedOptions options,
+        bool currencyOptIn,
         CancellationToken ct)
     {
         var items = payload.Items ?? new List<ReferenceSeedItem>();
@@ -469,6 +581,7 @@ public sealed class ReferenceSeedService : IReferenceSeedService
 
         int inserted = 0, existing = 0, skipped = 0, optIn = 0, failed = 0;
         bool dictTypeCreated = false;
+        bool isCurrency = target.DictionaryTypeCode == "CURRENCY";
 
         // ---- Idempotency: lookup DictionaryType by Code (tenant-scoped) ----
         var dtCode = target.DictionaryTypeCode!;
@@ -494,7 +607,7 @@ public sealed class ReferenceSeedService : IReferenceSeedService
                 ConcurrencyVersion = 1,
             };
             _db.DictionaryTypes.Add(dictType);
-            _db.SaveChanges();
+            if (!_dryRunSkipSave) _db.SaveChanges();
             dictTypeCreated = true;
         }
         else
@@ -511,13 +624,26 @@ public sealed class ReferenceSeedService : IReferenceSeedService
         var existingSet = new HashSet<string>(existingItemCodes, StringComparer.Ordinal);
 
         // ---- Iterate items ---------------------------------------------------
+        // For currency, the per-item gate widens when currencyOptIn is true:
+        // items with seed_status = REFERENCE_ONLY are accepted (currency items
+        // are individually REFERENCE_ONLY). For other dictionaries, the
+        // gate is the default SAFE-only policy.
         foreach (var item in items)
         {
             var status = item.SeedStatus ?? "";
-            if (!MayAutoLoad.Contains(status))
+            bool eligible = MayAutoLoad.Contains(status)
+                || (isCurrency && currencyOptIn && status == "REFERENCE_ONLY");
+            if (!eligible)
             {
-                if (status == "PROPOSED" || status == "MIXED")
+                if (status == "PROPOSED" || status == "MIXED" ||
+                    (isCurrency && currencyOptIn && status == "REFERENCE_ONLY"))
                 {
+                    // Last branch: this is a currency REFERENCE_ONLY item,
+                    // but the file-level defer already ran (currencyOptIn=true).
+                    // The only way to hit this branch is if a future caller
+                    // passes currencyOptIn=false and the file-level defer
+                    // doesn't fire (it does, so this is dead code under the
+                    // current contract). Counted as opt-in for safety.
                     optIn++;
                     continue;
                 }
@@ -525,13 +651,12 @@ public sealed class ReferenceSeedService : IReferenceSeedService
                 continue;
             }
 
-            var code = item.CanonicalCode;
+            var code = item.ResolveCode();
             if (string.IsNullOrWhiteSpace(code))
             {
                 failed++;
                 continue;
             }
-            code = code.Trim().ToUpperInvariant();
 
             if (existingSet.Contains(code))
             {
@@ -560,7 +685,7 @@ public sealed class ReferenceSeedService : IReferenceSeedService
             if (sample.Count < 5) sample.Add(code);
         }
 
-        _db.SaveChanges();
+        if (!_dryRunSkipSave) _db.SaveChanges();
 
         var outcome = new ReferenceSeedDatasetOutcome
         {
@@ -574,6 +699,7 @@ public sealed class ReferenceSeedService : IReferenceSeedService
             ItemsSkipped = skipped,
             ItemsOptIn = optIn,
             ItemsFailed = failed,
+            OptInEnabled = isCurrency && currencyOptIn,
             SampleInsertedCodes = sample,
         };
         return new LoadResult(outcome, dictTypeCreated);

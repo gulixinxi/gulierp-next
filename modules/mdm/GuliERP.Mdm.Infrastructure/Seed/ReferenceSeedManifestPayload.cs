@@ -130,4 +130,24 @@ internal sealed class ReferenceSeedItem
 
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
+
+    // Currency-specific: ISO 4217 code (canonical source-of-truth for
+    // currency seed; per the reference data file notes, ISO 4217 is
+    // the public standard, not extracted from any source DB).
+    [JsonPropertyName("iso_4217_code")]
+    public string? Iso4217Code { get; set; }
+
+    /// <summary>
+    /// Resolve the effective code for this item. Prefers
+    /// <c>canonical_code</c>; falls back to <c>iso_4217_code</c> for
+    /// currency seed files. Returns the trimmed UPPER form, or
+    /// <c>null</c> if no code is present.
+    /// </summary>
+    public string? ResolveCode()
+    {
+        var code = !string.IsNullOrWhiteSpace(CanonicalCode)
+            ? CanonicalCode
+            : Iso4217Code;
+        return string.IsNullOrWhiteSpace(code) ? null : code.Trim().ToUpperInvariant();
+    }
 }

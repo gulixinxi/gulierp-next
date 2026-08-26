@@ -73,15 +73,71 @@ public interface IReferenceSeedService
 
 /// <summary>
 /// Options for <see cref="IReferenceSeedService.LoadFromManifestAsync"/>.
+///
+/// <para>
+/// <b>Policy gate (per <c>manifest.json::policy_enforcement</c>)</b>:
+/// <list type="bullet">
+///   <item>Default: only items with
+///         <c>seed_status ∈ {SAFE_TO_SEED_SYSTEM, SAFE_TO_SEED_TENANT_TEMPLATE}</c>
+///         are loaded. MIXED files load only their per-item SAFE rows.</item>
+///   <item><see cref="IncludeOptIn"/>: also load items with
+///         <c>seed_status = PROPOSED</c> or per-item PROPOSED in MIXED
+///         files. <b>OFF by default</b> (must be explicit opt-in).</item>
+///   <item><see cref="IncludeReferenceOnly"/>: also allow loading
+///         <c>system/currency.json</c> (file-level
+///         <c>seed_status = REFERENCE_ONLY</c>). Does NOT affect
+///         semantic-data-type, ethnic-group, country (which are
+///         NEEDS_EXTERNAL_STANDARD_UPDATE / INCOMPLETE_STANDARD_DATA
+///         and remain deferred by a separate hard rule). <b>OFF by default</b>.</item>
+///   <item><see cref="IncludeCurrency"/>: convenience flag equivalent
+///         to <see cref="IncludeReferenceOnly"/>. Kept separate for
+///         CLI ergonomics. <b>OFF by default</b>.</item>
+/// </list>
+/// </para>
+///
+/// <para>
+/// <b>Hard rules that are NOT bypassed by any flag</b>:
+/// <list type="bullet">
+///   <item><c>country.json</c> (NEEDS_EXTERNAL_STANDARD_UPDATE, 0 items) — always SKIPPED.</item>
+///   <item><c>ethnic-group.json</c> (INCOMPLETE_STANDARD_DATA) — always SKIPPED.</item>
+///   <item><c>semantic-data-type.json</c> (PROPOSED) — loaded only when
+///         <see cref="IncludeOptIn"/> is true; never bypasses the
+///         per-item gate.</item>
+/// </list>
+/// </para>
 /// </summary>
 public sealed class ReferenceSeedOptions
 {
     /// <summary>
-    /// When <c>true</c>, PROPOSED / MIXED items whose individual
-    /// <c>seed_status</c> is <c>PROPOSED</c> are also loaded. The
-    /// default is <c>false</c> — they are SKIPPED with reason
-    /// "OPT_IN_REQUIRED". This is the policy-enforcement gate
-    /// required by <c>manifest.json</c>.
+    /// When <c>true</c>, PROPOSED items (per-item <c>seed_status</c>
+    /// is <c>PROPOSED</c>) are also loaded. Default is <c>false</c>
+    /// — they are SKIPPED with reason "OPT_IN_REQUIRED".
     /// </summary>
     public bool IncludeOptIn { get; init; }
+
+    /// <summary>
+    /// When <c>true</c>, allow loading
+    /// <c>system/currency.json</c> (file-level
+    /// <c>seed_status = REFERENCE_ONLY</c>). Only items with
+    /// per-item <c>seed_status = REFERENCE_ONLY</c> are loaded.
+    /// Does NOT enable semantic-data-type / ethnic-group / country.
+    /// OFF by default.
+    /// </summary>
+    public bool IncludeReferenceOnly { get; init; }
+
+    /// <summary>
+    /// Convenience alias for <see cref="IncludeReferenceOnly"/>,
+    /// scoped to <c>currency.json</c> only. OFF by default.
+    /// </summary>
+    public bool IncludeCurrency { get; init; }
+
+    /// <summary>
+    /// When <c>true</c>, no database writes are performed. The
+    /// loader parses every file, applies every gate, and emits a
+    /// <see cref="ReferenceSeedSummary"/> as if it were a real run,
+    /// but rolls back all <c>INSERT</c> statements at the end.
+    /// Useful for CI / acceptance tests / CLI preview.
+    /// OFF by default.
+    /// </summary>
+    public bool DryRun { get; init; }
 }

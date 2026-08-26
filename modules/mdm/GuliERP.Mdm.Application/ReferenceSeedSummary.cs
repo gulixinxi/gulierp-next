@@ -40,6 +40,27 @@ public sealed class ReferenceSeedSummary
     /// <summary>Number of <c>DictionaryType</c> rows already present.</summary>
     public int DictionaryTypesExisting { get; init; }
 
+    /// <summary>
+    /// Currency-specific counts. When
+    /// <see cref="ReferenceSeedOptions.IncludeCurrency"/> is
+    /// <c>false</c>, <see cref="CurrencyItemsInserted"/> and
+    /// <see cref="CurrencyItemsExisting"/> are both 0 and
+    /// <see cref="CurrencyOptInEnabled"/> is <c>false</c>.
+    /// </summary>
+    public int CurrencyItemsInserted { get; init; }
+
+    /// <summary>Currency items that already existed (idempotent skip).</summary>
+    public int CurrencyItemsExisting { get; init; }
+
+    /// <summary>Currency items skipped (per-item policy).</summary>
+    public int CurrencyItemsSkipped { get; init; }
+
+    /// <summary>
+    /// <c>true</c> if the loader was invoked with
+    /// <see cref="ReferenceSeedOptions.IncludeCurrency"/> = true.
+    /// </summary>
+    public bool CurrencyOptInEnabled { get; init; }
+
     /// <summary>Any non-fatal warnings emitted during the run.</summary>
     public IReadOnlyList<string> Warnings { get; init; } = Array.Empty<string>();
 
@@ -89,6 +110,13 @@ public sealed record ReferenceSeedDatasetOutcome
 
     /// <summary>Items where the target table (Uom / Dictionary) had an error.</summary>
     public int ItemsFailed { get; init; }
+
+    /// <summary>
+    /// <c>true</c> if the dataset is the <c>currency</c> dataset
+    /// and the loader was invoked with
+    /// <see cref="ReferenceSeedOptions.IncludeCurrency"/> = true.
+    /// </summary>
+    public bool OptInEnabled { get; init; }
 
     /// <summary>
     /// Sample of the inserted codes (max 5). Useful for
