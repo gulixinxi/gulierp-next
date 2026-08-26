@@ -101,6 +101,7 @@ public sealed class MdmServiceBoundaryArchitectureTests
         "MdmDictionarySeedService.cs",
         "MdmNumberingRuleSeedService.cs",
         "MdmMasterDataSeedService.cs",
+        "ReferenceSeedService.cs",  // G3-R1: reference bootstrap seed loader
         "DependencyInjection.cs",
         "DesignTimeMdmDbContextFactory.cs",
         "MdmDbContext.cs",
