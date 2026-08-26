@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>GuliERP.Purchase.Application</RootNamespace>
+    <AssemblyName>GuliERP.Purchase.Application</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\..\identity\GuliERP.Identity.Application\GuliERP.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\mdm\GuliERP.Mdm.Application\GuliERP.Mdm.Application.csproj" />
+    <ProjectReference Include="..\GuliERP.Purchase.Domain\GuliERP.Purchase.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

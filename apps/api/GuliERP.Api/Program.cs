@@ -3,6 +3,7 @@ using GuliERP.Api.Authentication;
 using GuliERP.Api.Kernel;
 using GuliERP.Api.Mdm;
 using GuliERP.Api.Organization;
+using GuliERP.Api.Purchase;
 using GuliERP.Api.Sales;
 using GuliERP.DocumentKernel.Infrastructure;
 using GuliERP.Foundation;
@@ -10,6 +11,7 @@ using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Infrastructure;
 using GuliERP.Identity.Infrastructure.Authentication;
 using GuliERP.Mdm.Infrastructure;
+using GuliERP.Purchase.Infrastructure;
 using GuliERP.Sales.Infrastructure;
 using TestValidationRequest = GuliERP.Api.Kernel.TestEndpoints.TestValidationRequest;
 using Microsoft.EntityFrameworkCore;
@@ -139,6 +141,13 @@ builder.Services.AddGuliErpDocumentKernel(connectionString);
 //     data for customer/item/UOM references. No seed data and no mock
 //     fallback are registered.
 builder.Services.AddGuliErpSales(connectionString);
+
+// --- 4f. PURCHASE-001 services (real Purchase Order vertical slice) ---
+//     Mirrors the SalesOrder pattern: Document Kernel for OrderNo
+//     generation, MDM master data for supplier/item/UOM references,
+//     and the G3-R2B ERP_PURCH_OPERATOR role pack for authorization.
+//     No seed data and no mock fallback are registered.
+builder.Services.AddGuliErpPurchase(connectionString);
 
 // --- 5. ProblemDetails + Exception Handler (G2-002 §8) ---
 //     Native ASP.NET Core 10 IExceptionHandler chain. The Foundation
@@ -318,6 +327,7 @@ app.MapGuliErpAuthEndpoints();
 app.MapMdmEndpoints();
 app.MapGuliErpOrganizationEndpoints();
 app.MapSalesOrderEndpoints();
+app.MapPurchaseOrderEndpoints();
 
 // --- 11b. G2-002R2 test-only endpoints (Environment-gated) ---
 //     These two endpoints exist ONLY to let the Foundation Kernel

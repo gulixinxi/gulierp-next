@@ -27,6 +27,11 @@
     <Project Path="modules/sales/GuliERP.Sales.Application/GuliERP.Sales.Application.csproj" />
     <Project Path="modules/sales/GuliERP.Sales.Infrastructure/GuliERP.Sales.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/modules/purchase/">
+    <Project Path="modules/purchase/GuliERP.Purchase.Domain/GuliERP.Purchase.Domain.csproj" />
+    <Project Path="modules/purchase/GuliERP.Purchase.Application/GuliERP.Purchase.Application.csproj" />
+    <Project Path="modules/purchase/GuliERP.Purchase.Infrastructure/GuliERP.Purchase.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GuliERP.Foundation.IntegrationTests/GuliERP.Foundation.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.Foundation.Tests/GuliERP.Foundation.Tests.csproj" />

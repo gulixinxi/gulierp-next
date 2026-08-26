@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>GuliERP.Purchase.Infrastructure</RootNamespace>
+    <AssemblyName>GuliERP.Purchase.Infrastructure</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\document-kernel\GuliERP.DocumentKernel.Application\GuliERP.DocumentKernel.Application.csproj" />
+    <ProjectReference Include="..\..\document-kernel\GuliERP.DocumentKernel.Infrastructure\GuliERP.DocumentKernel.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\..\identity\GuliERP.Identity.Infrastructure\GuliERP.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\mdm\GuliERP.Mdm.Application\GuliERP.Mdm.Application.csproj" />
+    <ProjectReference Include="..\..\mdm\GuliERP.Mdm.Infrastructure\GuliERP.Mdm.Infrastructure.csproj" />
+    <ProjectReference Include="..\GuliERP.Purchase.Application\GuliERP.Purchase.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>
