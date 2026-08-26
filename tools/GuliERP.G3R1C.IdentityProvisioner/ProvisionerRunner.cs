@@ -82,10 +82,17 @@ internal sealed class ProvisionerRunner
                 // 2. Ensure user exists + has the right password.
                 var user = await EnsureUserAsync(tenantId, userName, displayName, password, rec);
 
-                // 3. Remove any extra role assignments (single-role constraint).
+                // 3. Ensure user is a member of the company. Without a
+                //    UserCompanyMembership, ICurrentCompany is null and
+                //    the runtime PermissionAuthorizationHandler filters
+                //    out all role assignments (because they are
+                //    CompanyId-scoped, and `null == X` is false).
+                await EnsureCompanyMembershipAsync(tenantId, companyId, user.Id, rec);
+
+                // 4. Remove any extra role assignments (single-role constraint).
                 await RemoveExtraRoleAssignmentsAsync(tenantId, user.Id, role.Id, rec);
 
-                // 4. Ensure exactly one active assignment to the target role.
+                // 5. Ensure exactly one active assignment to the target role.
                 await EnsureSingleRoleAssignmentAsync(tenantId, companyId, user.Id, role.Id, rec);
 
                 rec.Success = true;
@@ -103,6 +110,58 @@ internal sealed class ProvisionerRunner
 
         summary.AllSucceeded = summary.Users.All(u => u.Success);
         return summary;
+    }
+
+    private async Task EnsureCompanyMembershipAsync(
+        long tenantId,
+        long companyId,
+        long userId,
+        UserProvisionRecord rec)
+    {
+        // The user must be a member of the target company so that
+        // ICurrentCompany resolves to it. Without this, the runtime
+        // PermissionAuthorizationHandler filters out all CompanyId-scoped
+        // role assignments.
+        var existing = await _db.UserCompanyMemberships
+            .FirstOrDefaultAsync(m => m.TenantId == tenantId
+                && m.CompanyId == companyId
+                && m.UserId == userId);
+
+        if (existing is null)
+        {
+            _db.UserCompanyMemberships.Add(new UserCompanyMembership
+            {
+                TenantId = tenantId,
+                CompanyId = companyId,
+                UserId = userId,
+                IsDefault = true,
+                JoinedAt = DateTimeOffset.UtcNow,
+                Status = MembershipStatus.Active,
+                CreatedAt = DateTimeOffset.UtcNow,
+                ModifiedAt = DateTimeOffset.UtcNow,
+                ConcurrencyVersion = 1,
+            });
+            await _db.SaveChangesAsync();
+            rec.CompanyMembershipCreated = true;
+        }
+        else
+        {
+            rec.CompanyMembershipExisted = true;
+            if (existing.Status != MembershipStatus.Active)
+            {
+                existing.Status = MembershipStatus.Active;
+                existing.ModifiedAt = DateTimeOffset.UtcNow;
+                await _db.SaveChangesAsync();
+                rec.CompanyMembershipReactivated = true;
+            }
+            if (!existing.IsDefault)
+            {
+                existing.IsDefault = true;
+                existing.ModifiedAt = DateTimeOffset.UtcNow;
+                await _db.SaveChangesAsync();
+                rec.CompanyMembershipSetDefault = true;
+            }
+        }
     }
 
     private async Task<GuliErpRole> EnsureRoleAsync(

@@ -8,7 +8,6 @@ using GuliERP.Identity.Infrastructure.EnterpriseOrganization;
 using GuliERP.Identity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -71,30 +70,52 @@ public static class Program
     public static async Task<int> Main(string[] args)
     {
         // ---- 1. Load config from env (mandatory for this tool) ----
-        var config = new ConfigurationBuilder()
-            .AddEnvironmentVariables()
-            .Build();
-
-        var connStr = config["ConnectionStrings__GuliERP"];
+        // Read directly via Environment.GetEnvironmentVariable to
+        // bypass any IConfiguration quirks (some hosts / .NET
+        // runtimes on Windows do not surface `__` (double
+        // underscore) env vars to IConfiguration).
+        var connStr = Environment.GetEnvironmentVariable("ConnectionStrings__GuliERP");
         if (string.IsNullOrWhiteSpace(connStr))
         {
             Console.Error.WriteLine("ERROR: environment variable 'ConnectionStrings__GuliERP' is not set.");
             Console.Error.WriteLine("       Set it to the PostgreSQL connection string of the dev/test DB.");
+            Console.Error.WriteLine("       (Direct env var read via Environment.GetEnvironmentVariable.)");
+            // Diagnostic: enumerate all env vars matching the GULIERP prefix
+            // so the operator can see what IS visible to the .NET process.
+            var seen = new SortedSet<string>(StringComparer.Ordinal);
+            foreach (System.Collections.DictionaryEntry e in Environment.GetEnvironmentVariables())
+            {
+                var k = e.Key?.ToString() ?? string.Empty;
+                if (k.StartsWith("GULIERP_", StringComparison.Ordinal) ||
+                    k.StartsWith("ConnectionStrings_", StringComparison.Ordinal))
+                {
+                    seen.Add(k);
+                }
+            }
+            if (seen.Count > 0)
+            {
+                Console.Error.WriteLine($"       Visible env vars (GULIERP_* / ConnectionStrings_*): {string.Join(", ", seen)}");
+            } else {
+                Console.Error.WriteLine("       No GULIERP_* / ConnectionStrings_* env vars visible to the .NET process.");
+                Console.Error.WriteLine("       This usually means the env var was set in a parent shell that did not propagate to this process.");
+            }
             return 1;
         }
 
         // Optional env vars for tenant / company scoping (defaults match
         // the G3-R1B report's standard GULI tenant).
-        var tenantCode = config["GULIERP_G3R1C_TENANT_CODE"] ?? "GULI";
-        var companyCode = config["GULIERP_G3R1C_COMPANY_CODE"] ?? "GULI001";
+        var tenantCode = Environment.GetEnvironmentVariable("GULIERP_G3R1C_TENANT_CODE");
+        if (string.IsNullOrWhiteSpace(tenantCode)) { tenantCode = "GULI"; }
+        var companyCode = Environment.GetEnvironmentVariable("GULIERP_G3R1C_COMPANY_CODE");
+        if (string.IsNullOrWhiteSpace(companyCode)) { companyCode = "GULI001"; }
 
         // ---- 2. Read 4 passwords (all required) ----
         var passwords = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["g3r1c_sys_admin"]          = config["GULIERP_G3R1C_SYS_ADMIN_PASS"]         ?? string.Empty,
-            ["g3r1c_mdm_operator"]      = config["GULIERP_G3R1C_MDM_OPERATOR_PASS"]      ?? string.Empty,
-            ["g3r1c_employee_operator"] = config["GULIERP_G3R1C_EMPLOYEE_OPERATOR_PASS"] ?? string.Empty,
-            ["g3r1c_sales_operator"]    = config["GULIERP_G3R1C_SALES_OPERATOR_PASS"]    ?? string.Empty,
+            ["g3r1c_sys_admin"]          = Environment.GetEnvironmentVariable("GULIERP_G3R1C_SYS_ADMIN_PASS")         ?? string.Empty,
+            ["g3r1c_mdm_operator"]      = Environment.GetEnvironmentVariable("GULIERP_G3R1C_MDM_OPERATOR_PASS")      ?? string.Empty,
+            ["g3r1c_employee_operator"] = Environment.GetEnvironmentVariable("GULIERP_G3R1C_EMPLOYEE_OPERATOR_PASS") ?? string.Empty,
+            ["g3r1c_sales_operator"]    = Environment.GetEnvironmentVariable("GULIERP_G3R1C_SALES_OPERATOR_PASS")    ?? string.Empty,
         };
         foreach (var (user, pass) in passwords)
         {

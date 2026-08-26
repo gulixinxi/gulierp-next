@@ -69,4 +69,16 @@ internal sealed class UserProvisionRecord
 
     [JsonPropertyName("extraClaimsKept")]
     public List<string>? ExtraClaimsKept { get; set; }
+
+    [JsonPropertyName("companyMembershipCreated")]
+    public bool CompanyMembershipCreated { get; set; }
+
+    [JsonPropertyName("companyMembershipExisted")]
+    public bool CompanyMembershipExisted { get; set; }
+
+    [JsonPropertyName("companyMembershipReactivated")]
+    public bool CompanyMembershipReactivated { get; set; }
+
+    [JsonPropertyName("companyMembershipSetDefault")]
+    public bool CompanyMembershipSetDefault { get; set; }
 }
