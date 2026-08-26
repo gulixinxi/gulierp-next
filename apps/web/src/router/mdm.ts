@@ -97,6 +97,15 @@ export function installMdmRoutes(router: Router): void {
         component: () => import('../views/mdm/LocationList.vue'),
         meta: { title: '库位', module: 'mdm' },
       },
+      // ---- G3-R1E: PaymentMethod facade over the V1 Dictionary API
+      // Read-only view. Write operations go through the
+      // standard Dictionary page (/mdm/dictionaries).
+      {
+        path: 'payment-methods',
+        name: 'mdm-payment-methods',
+        component: () => import('../views/mdm/PaymentMethodList.vue'),
+        meta: { title: '付款方式', module: 'mdm' },
+      },
     ],
   });
 }

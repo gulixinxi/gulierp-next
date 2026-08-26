@@ -44,6 +44,7 @@ import {
   Document,
   Files,
   Goods,
+  Money,
   OfficeBuilding,
   ScaleToOriginal,
   Tickets,
@@ -127,6 +128,16 @@ const primaryModules: WorkbenchModule[] = [
     status: '真实 API',
     icon: Files,
   },
+  // G3-R1E: PaymentMethod was DEFERRED in G3-R1D. Now real via
+  // the Dictionary facade (read-only). Full edit goes through
+  // the Dictionary page.
+  {
+    title: '付款方式',
+    description: '维护结算时使用的支付工具(现金/银行转账/支票/信用卡/在线支付)',
+    route: '/mdm/payment-methods',
+    status: '真实 API',
+    icon: Money,
+  },
 ];
 
 // G3-R1D (N-2): These modules are listed in the G3-R1D brief §WorkItem 2
@@ -134,14 +145,15 @@ const primaryModules: WorkbenchModule[] = [
 // as explicit "DEFERRED" cards so operators know they exist and why
 // they are not present. Each reason is truthful and references the
 // real backend state.
+//
+// G3-R1E update: PaymentMethod was moved from this list to
+// `primaryModules` (real Dictionary facade at
+// /api/v1/mdm/payment-methods). The remaining 3 deferred items
+// (Currency / Position / Education) keep the same status.
 const deferredModules: DeferredModule[] = [
   {
     title: '币种 (Currency)',
     reason: 'Dictionary V1 中币种为 REFERENCE_ONLY（opt-in），暂不加载；待 G3-R1B Currency opt-in 策略上线后可启用',
-  },
-  {
-    title: '付款方式 (PaymentMethod)',
-    reason: '后端尚无 PaymentMethod 域/实体/端点；当前销售单使用 mock/sales-order.ts 的 paymentTerms 占位',
   },
   {
     title: '岗位 (Position)',
