@@ -248,20 +248,23 @@ Select-String -Path <candidate files> -Pattern \
 ### 8.3 Credential scan on G3-R1C files specifically
 
 ```bash
-Select-String -Path tools/GuliERP.G3R1C.IdentityProvisioner/*.cs, \
-                    tools/dev/g3-r1c-*.ps1, \
-                    docs/verification/G3_R1C_*.md, \
-                    tests/GuliERP.Identity.Tests/ErpSystemAdminPackBoundaryFacts.cs \
-  -Pattern "SysAdminP@|MdmOper@|Employee0p@|Sales0p@|gulidata123|zihan2012M" \
-  -CaseSensitive:$false
-# Result: 0 hits against any G3-R1C file. The only remaining
-# matches are in this report (describing the scan pattern),
-# NOT real credentials.
+# Scan for the 4 known test-user password prefixes (P0/P1/P2/P3)
+# and the legacy credentials. The exact password values are not
+# reproduced in this report (per §8.4 below); the scan pattern
+# uses just the first 8-10 chars of each (which is enough to
+# uniquely identify a match without leaking the full secret).
+# Pattern is documented in §8.4 history but values are not
+# inline here.
+#
+# Result: 0 hits against any G3-R1C file.
+# The only remaining matches were in the scan-pattern code
+# blocks themselves (now removed) and in the §8.4
+# credential-rectification history (now redacted).
 ```
 
 ### 8.4 Credential-rectification history
 
-The 71e19c0 commit of `tools/dev/g3-r1c-ensure-role-test-users.ps1` accidentally included 4 real-looking passwords (`SysAdminP@ssw0rd2026!`, `MdmOper@torP@ss2026!`, `Employee0pP@ss2026!`, `Sales0pP@ss2026!`) in the USAGE example block. These were the same passwords the operator used during the live provisioning run, so they technically counted as 'real credentials' per the G3-R1C brief.
+The 71e19c0 commit of `tools/dev/g3-r1c-ensure-role-test-users.ps1` accidentally included 4 real-looking passwords in the USAGE example block. These were the same passwords the operator used during the live provisioning run, so they technically counted as 'real credentials' per the G3-R1C brief. (The actual values are not reproduced here; see the G3-R1B report §11 redaction marker for the pattern.)
 
 **Resolution per brief policy '私有库历史不改写，但当前 HEAD 和新增提交必须无真实凭据':** The 71e19c0 commit was NOT amended (history preserved). The 8a9196a commit replaces the 4 example values with `<REDACTED-by-GitCloseout-2026-08-26 — set a 12+char mixed password>` placeholders, matching the redaction pattern used in the G3-R1B report. The current HEAD is clean.
 
