@@ -56,6 +56,11 @@ public static class DependencyInjection
         services.AddScoped<IMdmNumberingRuleSeedService, MdmNumberingRuleSeedService>();
         // G3_MDM_MASTERDATA_V1_SEED_B1: masterdata seed service
         services.AddScoped<IMdmMasterDataSeedService, MdmMasterDataSeedService>();
+        // G3-R1: reference bootstrap seed loader (manifest-driven;
+        // reads data/bootstrap/reference/manifest.json + system/ +
+        // tenant-template/ JSON files; idempotent; honors
+        // manifest.json::policy_enforcement).
+        services.AddScoped<IReferenceSeedService, ReferenceSeedService>();
 
         // ----- Authorization policies (mirrors G2-005 pattern) -----
         services.AddAuthorization(options =>
