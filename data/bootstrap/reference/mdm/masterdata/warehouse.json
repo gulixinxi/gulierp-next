@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "schema_version": 3,
+    "seed_type": "MDM_WAREHOUSE",
+    "scope": "TENANT_TEMPLATE",
+    "idempotency_strategy": "natural_key",
+    "natural_key": ["TenantId", "CompanyId", "Code"],
+    "expected_count": 1,
+    "default_seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "seed_status_at_file_level": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "description_zh": "MDM 仓库 — V1 默认 1 个主仓。PlantId 留空(Plant 是 skeleton,per GULIERP_MASTER_DATA_MODEL_V1 §2.3)。",
+    "description_en": "MDM Warehouse — V1 default 1 main warehouse. PlantId is null (Plant is skeleton, per GULIERP_MASTER_DATA_MODEL_V1 §2.3)."
+  },
+  "items": [
+    {
+      "canonical_code": "WH_MAIN",
+      "name": "主仓库",
+      "plant_id": null,
+      "type": "Physical",
+      "address_line_1": "示例路 1 号",
+      "address_line_2": null,
+      "city": "示例市",
+      "region": "示例省",
+      "postal_code": "100000",
+      "country_code": "CN",
+      "status": "Active",
+      "description_zh": "主仓库 — Physical 类型,PlantId 留空",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    }
+  ]
+}

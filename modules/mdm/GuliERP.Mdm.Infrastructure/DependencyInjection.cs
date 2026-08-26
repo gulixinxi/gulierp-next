@@ -52,6 +52,10 @@ public static class DependencyInjection
         services.AddScoped<IMdmLocationService, MdmLocationService>();
         services.AddScoped<IMdmDictionaryService, MdmDictionaryService>();
         services.AddScoped<INumberingRuleService, NumberingRuleService>();
+        // G3_NUMBERING_RULE_V1_SEED_B1: numbering-rule seed service
+        services.AddScoped<IMdmNumberingRuleSeedService, MdmNumberingRuleSeedService>();
+        // G3_MDM_MASTERDATA_V1_SEED_B1: masterdata seed service
+        services.AddScoped<IMdmMasterDataSeedService, MdmMasterDataSeedService>();
 
         // ----- Authorization policies (mirrors G2-005 pattern) -----
         services.AddAuthorization(options =>

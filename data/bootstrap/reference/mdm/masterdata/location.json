@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "schema_version": 3,
+    "seed_type": "MDM_LOCATION",
+    "scope": "TENANT_TEMPLATE",
+    "idempotency_strategy": "natural_key",
+    "natural_key": ["TenantId", "CompanyId", "WarehouseId", "Code"],
+    "expected_count": 4,
+    "default_seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "seed_status_at_file_level": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "description_zh": "MDM 货位 — V1 默认 4 个(2 Dock + 2 Bin),全在 WH_MAIN 下。",
+    "description_en": "MDM Location — V1 default 4 (2 Dock + 2 Bin), all under WH_MAIN."
+  },
+  "items": [
+    {
+      "canonical_code": "LOC_RECEIVING",
+      "name": "收货区",
+      "warehouse_code": "WH_MAIN",
+      "type": "Dock",
+      "aisle": "A",
+      "bay": "01",
+      "shelf": null,
+      "status": "Active",
+      "description_zh": "收货区 — Dock 类型",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "LOC_SHIPPING",
+      "name": "发货区",
+      "warehouse_code": "WH_MAIN",
+      "type": "Dock",
+      "aisle": "A",
+      "bay": "02",
+      "shelf": null,
+      "status": "Active",
+      "description_zh": "发货区 — Dock 类型",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "LOC_BIN_01",
+      "name": "货架 A-01-01",
+      "warehouse_code": "WH_MAIN",
+      "type": "Bin",
+      "aisle": "A",
+      "bay": "01",
+      "shelf": "01",
+      "status": "Active",
+      "description_zh": "货架 A-01-01 — Bin 类型",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "LOC_BIN_02",
+      "name": "货架 A-01-02",
+      "warehouse_code": "WH_MAIN",
+      "type": "Bin",
+      "aisle": "A",
+      "bay": "01",
+      "shelf": "02",
+      "status": "Active",
+      "description_zh": "货架 A-01-02 — Bin 类型",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    }
+  ]
+}

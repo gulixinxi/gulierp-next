@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "schema_version": 3,
+    "seed_type": "MDM_NUMBERING_RULE",
+    "scope": "PLANNED_V1_5",
+    "idempotency_strategy": "natural_key",
+    "natural_key": ["TenantId", "CompanyId", "DocumentType"],
+    "expected_count": 4,
+    "default_seed_status": "PLANNED_V1_5",
+    "seed_status_at_file_level": "PLANNED_V1_5",
+    "description_zh": "MDM 编号规则 — V1.5 规划默认 4 条(PAY/REC/INV/RTN)。DocumentKernel V1 引擎不识别,调用 GenerateAsync 会抛 UnknownDocumentTypeException。仅在 --include-planned 标志下才会被 seed;V1 默认跳过(打 log)。",
+    "description_en": "MDM Numbering Rule — V1.5 planned defaults 4 rules. DocumentKernel V1 engine does not recognize these; calling GenerateAsync throws UnknownDocumentTypeException. Only seeded with --include-planned flag; V1 default skips (logged)."
+  },
+  "items": [
+    {
+      "document_type": "PAYMENT",
+      "prefix": "PAY",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 6,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "付款单 — V1.5+ 规划;V1 不支持",
+      "description_en": "Payment — V1.5+ planned; not supported in V1",
+      "seed_status": "PLANNED_V1_5",
+      "engine_known": false,
+      "engine_ref": null
+    },
+    {
+      "document_type": "RECEIPT",
+      "prefix": "REC",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 6,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "收款单 — V1.5+ 规划;V1 不支持",
+      "description_en": "Receipt — V1.5+ planned; not supported in V1",
+      "seed_status": "PLANNED_V1_5",
+      "engine_known": false,
+      "engine_ref": null
+    },
+    {
+      "document_type": "INVOICE",
+      "prefix": "INV",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 6,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "发票 — V1.5+ 规划;V1 不支持",
+      "description_en": "Invoice — V1.5+ planned; not supported in V1",
+      "seed_status": "PLANNED_V1_5",
+      "engine_known": false,
+      "engine_ref": null
+    },
+    {
+      "document_type": "RETURN",
+      "prefix": "RTN",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 6,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "退货单 — V1.5+ 规划;V1 不支持",
+      "description_en": "Return — V1.5+ planned; not supported in V1",
+      "seed_status": "PLANNED_V1_5",
+      "engine_known": false,
+      "engine_ref": null
+    }
+  ]
+}

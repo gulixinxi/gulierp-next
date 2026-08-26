@@ -169,4 +169,109 @@ public static class MdmErrorCodes
     /// </summary>
     public const string DictionarySeedSentinelMismatch =
         "mdm_dictionary_seed_sentinel_mismatch";
+
+    // ============================================================
+    // G3_NUMBERING_RULE_V1_SEED_B1  seed error codes.
+    // Filled by MdmNumberingRuleSeedService (B1 implementation).
+    // Per docs/governance/G3_NUMBERING_RULE_V1_IMPLEMENTATION_PLAN_REVISED.md
+    // 4.7, the seed enforces: valid JSON, meta present + correct scope,
+    // no duplicate document_type, prefix A-Z only + 1-16 chars,
+    // reset_mode in the 4-value enum.
+    // ============================================================
+
+    /// <summary>
+    /// The numbering-rule seed JSON file is not valid JSON (parse
+    /// error). Filled by MdmNumberingRuleSeedService.
+    /// </summary>
+    public const string NumberingSeedJsonInvalid =
+        "mdm_numbering_seed_json_invalid";
+
+    /// <summary>
+    /// The numbering-rule seed JSON file is missing a required
+    /// <c>meta</c> field (scope, seed_type, etc.) or the
+    /// <c>items</c> array. Filled by MdmNumberingRuleSeedService.
+    /// </summary>
+    public const string NumberingSeedMetaMissing =
+        "mdm_numbering_seed_meta_missing";
+
+    /// <summary>
+    /// The numbering-rule seed's <c>meta.scope</c> is not one of
+    /// the 3 known V1 values (DOCUMENT_V1 / MASTER_V1 / PLANNED_V1_5).
+    /// Filled by MdmNumberingRuleSeedService.
+    /// </summary>
+    public const string NumberingSeedScopeMismatch =
+        "mdm_numbering_seed_scope_mismatch";
+
+    /// <summary>
+    /// The numbering-rule seed's <c>items</c> array contains the
+    /// same <c>document_type</c> 2+ times. Filled by
+    /// MdmNumberingRuleSeedService.
+    /// </summary>
+    public const string NumberingSeedDuplicateDocumentType =
+        "mdm_numbering_seed_duplicate_document_type";
+
+    /// <summary>
+    /// The numbering-rule seed's <c>prefix</c> field is empty,
+    /// longer than 16 chars, or contains non-A-Z characters.
+    /// Filled by MdmNumberingRuleSeedService.
+    /// </summary>
+    public const string NumberingSeedInvalidPrefix =
+        "mdm_numbering_seed_invalid_prefix";
+
+    /// <summary>
+    /// The numbering-rule seed's <c>reset_mode</c> is not one of
+    /// the 4 enum values (Daily / Monthly / Yearly / Never).
+    /// Filled by MdmNumberingRuleSeedService.
+    /// </summary>
+    public const string NumberingSeedInvalidResetMode =
+        "mdm_numbering_seed_invalid_reset_mode";
+
+    // ============================================================
+    // G3_MDM_MASTERDATA_V1_SEED_B1  masterdata seed error codes.
+    // Filled by MdmMasterDataSeedService (B1 implementation).
+    // Per docs/governance/G3_MDM_MASTERDATA_V1_SEED_PLAN.md  4.7, the
+    // seed enforces: valid JSON, meta scope, no duplicate canonical_code,
+    // all required FKs (Uom / ItemCategory / Warehouse) exist.
+    // ============================================================
+
+    /// <summary>
+    /// The master-data seed JSON file is not valid JSON (parse
+    /// error). Filled by MdmMasterDataSeedService.
+    /// </summary>
+    public const string MasterDataSeedJsonInvalid =
+        "mdm_masterdata_seed_json_invalid";
+
+    /// <summary>
+    /// The master-data seed's <c>meta.scope</c> is not the expected
+    /// value for the file (e.g., item.json is TENANT_TEMPLATE; uom.json
+    /// would be SYSTEM but is not handled by this service).
+    /// Filled by MdmMasterDataSeedService.
+    /// </summary>
+    public const string MasterDataSeedScopeMismatch =
+        "mdm_masterdata_seed_scope_mismatch";
+
+    /// <summary>
+    /// A master-data seed item references a code (e.g.,
+    /// <c>base_uom_code</c>, <c>category_code</c>, <c>warehouse_code</c>)
+    /// that does not exist in the corresponding catalog. Filled by
+    /// MdmMasterDataSeedService.
+    /// </summary>
+    public const string MasterDataSeedFkMissing =
+        "mdm_masterdata_seed_fk_missing";
+
+    /// <summary>
+    /// The master-data seed's <c>items</c> array contains the same
+    /// <c>canonical_code</c> 2+ times. Filled by
+    /// MdmMasterDataSeedService.
+    /// </summary>
+    public const string MasterDataSeedDuplicateCode =
+        "mdm_masterdata_seed_duplicate_code";
+
+    /// <summary>
+    /// The ItemCategory parent chain would form a cycle (e.g.,
+    /// child→parent→child). Per V1 contract cycles are forbidden.
+    /// Filled by MdmMasterDataSeedService.
+    /// </summary>
+    public const string MasterDataSeedCycleDetected =
+        "mdm_masterdata_seed_cycle_detected";
 }

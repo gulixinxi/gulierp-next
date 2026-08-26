@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "schema_version": 3,
+    "seed_type": "MDM_NUMBERING_RULE",
+    "scope": "MASTER_V1",
+    "idempotency_strategy": "natural_key",
+    "natural_key": ["TenantId", "CompanyId", "DocumentType"],
+    "expected_count": 6,
+    "default_seed_status": "SAFE_TO_SEED_V1",
+    "seed_status_at_file_level": "SAFE_TO_SEED_V1",
+    "description_zh": "MDM 编号规则 — V1 主数据默认 6 条(CUS/SUP/ITEM/WH/LOC/EMP)。V1 主数据代码由 operator 手动输入;本表为 V1.5+ 自动编码引擎的占位与 operator 可视化。",
+    "description_en": "MDM Numbering Rule — V1 master-data defaults 6 rules. V1 master-data codes are operator-typed; this table is the V1.5+ auto-coding engine placeholder + operator visibility."
+  },
+  "items": [
+    {
+      "document_type": "CUS",
+      "prefix": "C",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 4,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "客户代码 — V1.5+ 自动编码占位;V1 由 operator 手动输入",
+      "description_en": "Customer Code — V1.5+ auto-code placeholder; V1 is operator-typed",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": false,
+      "engine_ref": null
+    },
+    {
+      "document_type": "SUP",
+      "prefix": "S",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 4,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "供应商代码 — V1.5+ 自动编码占位;V1 由 operator 手动输入",
+      "description_en": "Supplier Code — V1.5+ auto-code placeholder; V1 is operator-typed",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": false,
+      "engine_ref": null
+    },
+    {
+      "document_type": "ITEM",
+      "prefix": "I",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 4,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "物料代码 — V1.5+ 自动编码占位;V1 由 operator 手动输入",
+      "description_en": "Item Code — V1.5+ auto-code placeholder; V1 is operator-typed",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": false,
+      "engine_ref": null
+    },
+    {
+      "document_type": "WH",
+      "prefix": "WH",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 3,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "仓库代码 — V1.5+ 自动编码占位;V1 由 operator 手动输入",
+      "description_en": "Warehouse Code — V1.5+ auto-code placeholder; V1 is operator-typed",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": false,
+      "engine_ref": null
+    },
+    {
+      "document_type": "LOC",
+      "prefix": "LOC",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 4,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "货位代码 — V1.5+ 自动编码占位;V1 由 operator 手动输入",
+      "description_en": "Location Code — V1.5+ auto-code placeholder; V1 is operator-typed",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": false,
+      "engine_ref": null
+    },
+    {
+      "document_type": "EMP",
+      "prefix": "EMP",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 4,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "员工工号 — V1.5+ 自动编码占位;V1 由 operator 手动输入",
+      "description_en": "Employee No — V1.5+ auto-code placeholder; V1 is operator-typed",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": false,
+      "engine_ref": null
+    }
+  ]
+}

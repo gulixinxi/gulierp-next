@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "schema_version": 3,
+    "seed_type": "MDM_ITEM_CATEGORY",
+    "scope": "TENANT_TEMPLATE",
+    "idempotency_strategy": "natural_key",
+    "natural_key": ["TenantId", "Code"],
+    "expected_count": 8,
+    "default_seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "seed_status_at_file_level": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "description_zh": "MDM 物料分类 — V1 简单 2 层树(5 根 + 3 子)。",
+    "description_en": "MDM Item Category — V1 simple 2-level tree (5 roots + 3 children)."
+  },
+  "items": [
+    {
+      "canonical_code": "CAT_RAW_MATERIAL",
+      "name": "原材料",
+      "description_zh": "原材料(根)",
+      "parent_code": null,
+      "sort_order": 10,
+      "status": "Active",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "CAT_STEEL",
+      "name": "钢材",
+      "description_zh": "钢材(原材料子分类)",
+      "parent_code": "CAT_RAW_MATERIAL",
+      "sort_order": 11,
+      "status": "Active",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "CAT_PLASTIC",
+      "name": "塑料",
+      "description_zh": "塑料(原材料子分类)",
+      "parent_code": "CAT_RAW_MATERIAL",
+      "sort_order": 12,
+      "status": "Active",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "CAT_SEMI_FINISHED",
+      "name": "半成品",
+      "description_zh": "半成品(根)",
+      "parent_code": null,
+      "sort_order": 20,
+      "status": "Active",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "CAT_FINISHED_GOOD",
+      "name": "成品",
+      "description_zh": "成品(根)",
+      "parent_code": null,
+      "sort_order": 30,
+      "status": "Active",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "CAT_SERVICE",
+      "name": "服务",
+      "description_zh": "服务类(根)",
+      "parent_code": null,
+      "sort_order": 40,
+      "status": "Active",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "CAT_OFFICE_SUPPLY",
+      "name": "办公用品",
+      "description_zh": "办公用品(根)",
+      "parent_code": null,
+      "sort_order": 50,
+      "status": "Active",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "CAT_FURNITURE",
+      "name": "家具",
+      "description_zh": "家具(根)",
+      "parent_code": null,
+      "sort_order": 60,
+      "status": "Active",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    }
+  ]
+}

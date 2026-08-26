@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "schema_version": 3,
+    "seed_type": "MDM_ITEM",
+    "scope": "TENANT_TEMPLATE",
+    "idempotency_strategy": "natural_key",
+    "natural_key": ["TenantId", "Code"],
+    "expected_count": 8,
+    "default_seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "seed_status_at_file_level": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "description_zh": "MDM 物料 — V1 默认 8 个示例 SKU,跨 4 个分类。",
+    "description_en": "MDM Item — V1 default 8 sample SKUs spanning 4 categories.",
+    "required_fks": [
+      { "item_field": "base_uom_code", "ref_entity": "UOM", "ref_field": "Code" },
+      { "item_field": "category_code", "ref_entity": "ITEM_CATEGORY", "ref_field": "Code" }
+    ]
+  },
+  "items": [
+    {
+      "canonical_code": "ITEM_RAW_STEEL",
+      "name": "钢板",
+      "specification": "1m x 1m, 厚 5mm",
+      "category_code": "CAT_STEEL",
+      "base_uom_code": "KGM",
+      "item_nature": "Material",
+      "status": "Active",
+      "description_zh": "钢板 — 5mm 厚 1 平方米",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "ITEM_PART_A",
+      "name": "A 部件",
+      "specification": "半成品",
+      "category_code": "CAT_SEMI_FINISHED",
+      "base_uom_code": "PCS",
+      "item_nature": "SemiFinished",
+      "status": "Active",
+      "description_zh": "A 部件 — 半成品",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "ITEM_WIDGET_FINISHED",
+      "name": "成品小配件",
+      "specification": "标准件",
+      "category_code": "CAT_FINISHED_GOOD",
+      "base_uom_code": "PCS",
+      "item_nature": "FinishedGood",
+      "status": "Active",
+      "description_zh": "成品小配件",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "ITEM_DESK_120",
+      "name": "办公桌 120cm",
+      "specification": "120cm x 60cm, 简约款",
+      "category_code": "CAT_FURNITURE",
+      "base_uom_code": "PCS",
+      "item_nature": "FinishedGood",
+      "status": "Active",
+      "description_zh": "办公桌 120cm — 简约款",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "ITEM_CHAIR_001",
+      "name": "办公椅",
+      "specification": "可调节高度",
+      "category_code": "CAT_FURNITURE",
+      "base_uom_code": "PCS",
+      "item_nature": "FinishedGood",
+      "status": "Active",
+      "description_zh": "办公椅 — 可调节高度",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "ITEM_PAPER_A4",
+      "name": "A4 复印纸",
+      "specification": "70g, 500 张/包",
+      "category_code": "CAT_OFFICE_SUPPLY",
+      "base_uom_code": "PCS",
+      "item_nature": "Material",
+      "status": "Active",
+      "description_zh": "A4 复印纸 70g",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "ITEM_PEN_BLACK",
+      "name": "签字笔(黑)",
+      "specification": "0.5mm",
+      "category_code": "CAT_OFFICE_SUPPLY",
+      "base_uom_code": "PCS",
+      "item_nature": "Material",
+      "status": "Active",
+      "description_zh": "签字笔(黑) 0.5mm",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "ITEM_SERVICE_INSTALL",
+      "name": "上门安装服务",
+      "specification": "1 次",
+      "category_code": "CAT_SERVICE",
+      "base_uom_code": "PCS",
+      "item_nature": "Service",
+      "status": "Active",
+      "description_zh": "上门安装服务 — 每次 (用 PCS 作 V1 unit,V1.5+ 可改 TIM/HUR)",
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    }
+  ]
+}

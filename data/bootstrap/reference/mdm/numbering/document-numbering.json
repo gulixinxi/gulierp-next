@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "schema_version": 3,
+    "seed_type": "MDM_NUMBERING_RULE",
+    "scope": "DOCUMENT_V1",
+    "idempotency_strategy": "natural_key",
+    "natural_key": ["TenantId", "CompanyId", "DocumentType"],
+    "expected_count": 8,
+    "default_seed_status": "SAFE_TO_SEED_V1",
+    "seed_status_at_file_level": "SAFE_TO_SEED_V1",
+    "description_zh": "MDM 编号规则 — V1 文档默认 8 条。与 DocumentKernel 引擎 frozen 8 个 profile 1:1 对齐(SO/PO/GR/SH/GI/TO/AD/PC)。",
+    "description_en": "MDM Numbering Rule — V1 document defaults 8 rules. 1:1 aligned with DocumentKernel engine's 8 frozen profiles (SO/PO/GR/SH/GI/TO/AD/PC)."
+  },
+  "items": [
+    {
+      "document_type": "SALESORDER",
+      "prefix": "SO",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 6,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "销售订单 — Daily 重置, 6 位流水号",
+      "description_en": "Sales Order — Daily reset, 6-digit sequence",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": true,
+      "engine_ref": "DocumentType.SalesOrder"
+    },
+    {
+      "document_type": "PURCHASEORDER",
+      "prefix": "PO",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 6,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "采购订单 — Daily 重置, 6 位流水号",
+      "description_en": "Purchase Order — Daily reset, 6-digit sequence",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": true,
+      "engine_ref": "DocumentType.PurchaseOrder"
+    },
+    {
+      "document_type": "GOODSRECEIPT",
+      "prefix": "GR",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 6,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "收货单 — Daily 重置, 6 位流水号",
+      "description_en": "Goods Receipt — Daily reset, 6-digit sequence",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": true,
+      "engine_ref": "DocumentType.GoodsReceipt"
+    },
+    {
+      "document_type": "SHIPMENT",
+      "prefix": "SH",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 6,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "发(出)货单 — Daily 重置, 6 位流水号",
+      "description_en": "Shipment — Daily reset, 6-digit sequence",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": true,
+      "engine_ref": "DocumentType.Shipment"
+    },
+    {
+      "document_type": "GOODSISSUE",
+      "prefix": "GI",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 6,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "发货(出库)单 — Daily 重置, 6 位流水号",
+      "description_en": "Goods Issue — Daily reset, 6-digit sequence",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": true,
+      "engine_ref": "DocumentType.GoodsIssue"
+    },
+    {
+      "document_type": "INVENTORYTRANSFER",
+      "prefix": "TO",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 6,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "库存调拨单 — Daily 重置, 6 位流水号",
+      "description_en": "Inventory Transfer — Daily reset, 6-digit sequence",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": true,
+      "engine_ref": "DocumentType.InventoryTransfer"
+    },
+    {
+      "document_type": "INVENTORYADJUSTMENT",
+      "prefix": "AD",
+      "date_pattern": "YYYYMMDD",
+      "sequence_length": 6,
+      "reset_mode": "Daily",
+      "status": "Active",
+      "description_zh": "库存调整单 — Daily 重置, 6 位流水号",
+      "description_en": "Inventory Adjustment — Daily reset, 6-digit sequence",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": true,
+      "engine_ref": "DocumentType.InventoryAdjustment"
+    },
+    {
+      "document_type": "PRODUCTIONORDER",
+      "prefix": "PC",
+      "date_pattern": "YYYYMM",
+      "sequence_length": 6,
+      "reset_mode": "Monthly",
+      "status": "Active",
+      "description_zh": "生产订单 — Monthly 重置, 6 位流水号 (YYYYMM 期间)",
+      "description_en": "Production Order — Monthly reset, 6-digit sequence (YYYYMM period)",
+      "seed_status": "SAFE_TO_SEED_V1",
+      "engine_known": true,
+      "engine_ref": "DocumentType.ProductionOrder"
+    }
+  ]
+}
