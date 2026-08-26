@@ -31,8 +31,49 @@ function Get-HarnessDefaults {
     [CmdletBinding()]
     [OutputType([pscustomobject])]
     param()
+    # G3_DEV_DOTNET_RESOLVER_CLEANUP_001: safe dotnet resolver (G3_DEV_DOTNET_RESOLVER_CLEANUP_FIX_001).
+    # - Default to system dotnet (PATH lookup).
+    # - Allow GULIERP_DOTNET to override: either a full path to dotnet.exe
+    #   OR a name resolvable via PATH (e.g., "dotnet").
+    # - Hard-prohibit the old vendored D:\guli\gulierp\.dotnet\*.
+    # - If resolution fails (e.g., self-test without dotnet on PATH),
+    #   fall back to 'dotnet' so module load does not fail; the actual
+    #   .NET 10 SDK + path validation is enforced at the CALL SITE
+    #   (mdm-001-final-acceptance.ps1 / mdm-001-operator-evidence.ps1)
+    #   so the harness stays pure-logic and self-testable.
+    $dotnetDefault = 'dotnet'
+    try {
+        $resolvedDotnet = if ($env:GULIERP_DOTNET) {
+            if (Test-Path -LiteralPath $env:GULIERP_DOTNET) {
+                $env:GULIERP_DOTNET
+            }
+            else {
+                try {
+                    (Get-Command -Name $env:GULIERP_DOTNET -ErrorAction Stop).Source
+                }
+                catch {
+                    $null
+                }
+            }
+        }
+        else {
+            try {
+                (Get-Command -Name dotnet -ErrorAction Stop).Source
+            }
+            catch {
+                $null
+            }
+        }
+        if ($resolvedDotnet -and ($resolvedDotnet -notlike 'D:\guli\gulierp\.dotnet\*')) {
+            $dotnetDefault = $resolvedDotnet
+        }
+    }
+    catch {
+        # No dotnet on PATH; the harness remains loadable. The
+        # main scripts validate at run time.
+    }
     return [pscustomobject]@{
-        Dotnet           = 'D:\guli\gulierp\.dotnet\dotnet.exe'
+        Dotnet           = $dotnetDefault
         PgHost           = '192.168.2.228'
         PgPort           = '5432'
         PgDatabase       = 'gulierp_g2_003_test'

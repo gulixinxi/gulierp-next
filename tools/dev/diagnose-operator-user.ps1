@@ -82,9 +82,37 @@ if (-not $MARKER_OK) {
     throw "SAFETY: userName must start with one of: $($ACCEPTED_MARKERS -join ', '). Got '$UserName'."
 }
 
-$DOTNET = 'D:\guli\gulierp\.dotnet\dotnet.exe'
-if (-not (Test-Path $DOTNET)) {
-    throw "Requires D:\guli\gulierp\.dotnet\dotnet.exe. Not found."
+# G3_DEV_DOTNET_RESOLVER_CLEANUP_001: safe dotnet resolver (G3_DEV_DOTNET_RESOLVER_CLEANUP_FIX_001).
+# - Default to system dotnet (PATH lookup).
+# - Allow GULIERP_DOTNET to override: either a full path to dotnet.exe
+#   OR a name resolvable via PATH (e.g., "dotnet").
+# - Hard-prohibit the old vendored D:\guli\gulierp\.dotnet\*.
+# - Validate the resolved dotnet is .NET 10 SDK.
+$DOTNET = if ($env:GULIERP_DOTNET) {
+    if (Test-Path -LiteralPath $env:GULIERP_DOTNET) {
+        $env:GULIERP_DOTNET
+    }
+    else {
+        try {
+            (Get-Command -Name $env:GULIERP_DOTNET -ErrorAction Stop).Source
+        }
+        catch {
+            throw "GULIERP_DOTNET is set to '$env:GULIERP_DOTNET' but it is neither a valid file path nor a command resolvable via PATH."
+        }
+    }
+}
+else {
+    (Get-Command -Name dotnet -ErrorAction Stop).Source
+}
+if ($DOTNET -like 'D:\guli\gulierp\.dotnet\*') {
+    throw "Old vendored dotnet is forbidden: $DOTNET (use system dotnet or set GULIERP_DOTNET)."
+}
+if (-not (Test-Path -LiteralPath $DOTNET)) {
+    throw "diagnose-operator-user requires a .NET 10 SDK on PATH (or set GULIERP_DOTNET). Not found: $DOTNET."
+}
+$_dotnetVersion = (& $DOTNET --version).Trim()
+if ($_dotnetVersion -notmatch '^10\.') {
+    throw "GuliERP Next requires .NET 10 SDK. Current: $_dotnetVersion ($DOTNET)."
 }
 
 $BOOTSTRAP_PROJECT = Join-Path $PSScriptRoot '..\GuliERP.Identity.Bootstrap\GuliERP.Identity.Bootstrap.csproj'
@@ -155,12 +183,13 @@ $psi.CreateNoWindow = $true
 $proc = New-Object System.Diagnostics.Process
 $proc.StartInfo = $psi
 
-$stdoutTask = $proc.StandardOutput.ReadToEndAsync()
-$stderrTask = $proc.StandardError.ReadToEndAsync()
 $started = $proc.Start()
 if (-not $started) {
     throw 'Failed to start diagnose process.'
 }
+
+$stdoutTask = $proc.StandardOutput.ReadToEndAsync()
+$stderrTask = $proc.StandardError.ReadToEndAsync()
 
 if ($VerifyPassword) {
     $proc.StandardInput.WriteLine($plainPwd)
