@@ -31,7 +31,7 @@ confirmed (`counter.LastValue=2`, `LastGeneratedDocumentNo=SO-20260825-000002`, 
 | `GET /health/live` | ✅ **200 OK** |
 | `GET /health/ready` | ✅ **200 OK** (foundation-db check healthy) |
 | `GET /api/v1/auth/csrf` | ✅ **200 OK** |
-| `POST /api/v1/auth/login` (`admin / zihan2012M!@`) | ✅ **200 OK** |
+| `POST /api/v1/auth/login` (`admin / <REDACTED-GULIERP-ADMIN-PASSWORD-2026-08-26>`) | ✅ **200 OK** |
 | `GET /api/v1/auth/me` | ✅ **200 OK** (userName=admin, tenantCode=GULI, companyCode=GULI001) |
 | `POST /api/v1/sales/orders` (SO#1) | ✅ **201 Created** → `SO-20260825-000001` |
 | `POST /api/v1/sales/orders` (SO#2) | ✅ **201 Created** → `SO-20260825-000002` (no more `NpgsqlOperationInProgressException`) |
@@ -108,7 +108,7 @@ regenerates `obj/project.assets.json` for the two affected projects.
 ## 2. API Process Startup
 
 ```powershell
-$env:ConnectionStrings__GuliERP = "Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=gulidata123;Include Error Detail=true;Pooling=true;Maximum Pool Size=50"
+$env:ConnectionStrings__GuliERP = "Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=<REDACTED-POSTGRES-PASSWORD-2026-08-26>;Include Error Detail=true;Pooling=true;Maximum Pool Size=50"
 $env:ASPNETCORE_ENVIRONMENT = "Production"
 $env:ASPNETCORE_URLS = "http://127.0.0.1:5000"
 Start-Process dotnet apps\api\GuliERP.Api\bin\Release\net10.0\GuliERP.Api.dll
@@ -133,7 +133,7 @@ Start-Process dotnet apps\api\GuliERP.Api\bin\Release\net10.0\GuliERP.Api.dll
 | 1. Health live | `GET /health/live` | **200** `{"status":"Healthy","totalDurationMs":23.04,...}` |
 | 2. Health ready | `GET /health/ready` | **200** `{"status":"Healthy","totalDurationMs":284.67,...}` (foundation-db check healthy) |
 | 3. CSRF | `GET /api/v1/auth/csrf` | **200** `{"requestToken":"CfDJ8EFPCIErGN1Biz6FxJByPDMSzT1g4UcRME7LeCm3FIO--..."}` |
-| 4. Login | `POST /api/v1/auth/login` (body `{"userName":"admin","password":"zihan2012M!@"}`) | **200** |
+| 4. Login | `POST /api/v1/auth/login` (body `{"userName":"admin","password":"<REDACTED-GULIERP-ADMIN-PASSWORD-2026-08-26>"}`) | **200** |
 | 5. Me | `GET /api/v1/auth/me` | **200** `{"userName":"admin","tenantCode":"GULI","companyCode":"GULI001",...}` |
 
 Identity confirmed: `userId=83727350616817894`, `tenantId=83727350616817890` (GULI),

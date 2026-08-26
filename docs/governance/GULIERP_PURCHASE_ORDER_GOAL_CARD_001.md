@@ -228,8 +228,8 @@ Codex cannot run Operator PG tests (no PGPASSWORD in agent session).
 Human runs Operator tests on `gulierp_g2_003_test`:
 
 ```bash
-$env:PGPASSWORD = "gulidata123"
-$env:ConnectionStrings__GuliERP = "Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=gulidata123;Include Error Detail=true;Pooling=false"
+$env:PGPASSWORD = "<REDACTED-POSTGRES-PASSWORD-2026-08-26>"
+$env:ConnectionStrings__GuliERP = "Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=<REDACTED-POSTGRES-PASSWORD-2026-08-26>;Include Error Detail=true;Pooling=false"
 
 cd D:\guli\projects\gulierp-next
 dotnet test tests/GuliERP.Purchase.IntegrationTests -c Release --no-build --logger "trx;LogFileName=GULIERP_PURCHASE_ORDER_001.trx"

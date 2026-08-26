@@ -96,7 +96,7 @@
 | Health live | `GET /health/live` | **200** |
 | Health ready | `GET /health/ready` | **200** |
 | CSRF | `GET /api/v1/auth/csrf` | **200** |
-| Login (admin / `zihan2012M!@`) | `POST /api/v1/auth/login` | **200** |
+| Login (admin / `<REDACTED-GULIERP-ADMIN-PASSWORD-2026-08-26>`) | `POST /api/v1/auth/login` | **200** |
 | `/auth/me` | `GET /api/v1/auth/me` | **200** (`userName=admin, tenantCode=GULI, companyCode=GULI001`) |
 | List companies | `GET /api/v1/organization/companies` | **200** (picked `id=83727350616817891 code=GULI001`) |
 

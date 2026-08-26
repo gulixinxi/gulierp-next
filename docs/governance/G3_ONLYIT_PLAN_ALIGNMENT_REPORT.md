@@ -91,7 +91,7 @@ file-system move (loses history). Both are explicit user actions.
 | System | Tech | Source | Status | Role in GuliERP |
 |---|---|---|---|---|
 | **onlyit** | Borland Delphi 2007/2009 + Access MDB | `D:\guli\oit_setup\db\演示信息.mdb` (13.97 MB, 641 tables) | Legacy production ERP, no mobile | **V1.5+ Enterprise Template Source** (master data, dictionaries, geography, wage) |
-| **dev** | SQL Server 2012 + low-code (仿 SAP) | `192.168.2.28:1433` `database=dev` `sa/zihan2012M!` (live) | Low-code platform, has 15 `JU_AutoCode` auto-code rules | **V1 Numbering Rule Source** (the 8 frozen V1 doc types + 3 NEW V1.5+ types) |
+| **dev** | SQL Server 2012 + low-code (仿 SAP) | `192.168.2.28:1433` `database=dev` `sa/<REDACTED-SQLSERVER-SA-PASSWORD-2026-08-26>` (live) | Low-code platform, has 15 `JU_AutoCode` auto-code rules | **V1 Numbering Rule Source** (the 8 frozen V1 doc types + 3 NEW V1.5+ types) |
 | **GuliERP V1** | .NET 10 + PostgreSQL + Vue 3 | Live: `gulierp_*` tables in PG at 192.168.2.228:5432 | Shipped (B1 era + G3 today) | **V1 baseline** (current production; 9 dict types, 42 items, 14 numbering rules, 28 masterdata rows in GULI tenant) |
 
 ### 3.2 Data flow diagram (V1 → V1.5+)

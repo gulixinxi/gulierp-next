@@ -622,8 +622,8 @@ chore(mdm): add V1 system dictionary seed JSON (B2 data)
 cd D:\guli\projects\gulierp-next
 
 # 1. Start API
-$env:PGPASSWORD = "gulidata123"
-$env:ConnectionStrings__GuliERP = "Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=gulidata123;Include Error Detail=true;Pooling=false"
+$env:PGPASSWORD = "<REDACTED-POSTGRES-PASSWORD-2026-08-26>"
+$env:ConnectionStrings__GuliERP = "Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=<REDACTED-POSTGRES-PASSWORD-2026-08-26>;Include Error Detail=true;Pooling=false"
 $env:ASPNETCORE_ENVIRONMENT = "Development"
 
 # 2. Run unit tests
