@@ -44,3 +44,4 @@ modules/mdm/GuliERP.Mdm.Infrastructure/tools/.quarantine/
 tools/discovery/**/__pycache__/
 tools/discovery/**/*.pyc
 tools/discovery/**/_*.log
+tools/discovery/**/_*.py
