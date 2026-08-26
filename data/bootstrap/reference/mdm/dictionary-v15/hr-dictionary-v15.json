@@ -1,0 +1,2698 @@
+{
+  "meta": {
+    "schema_version": 1,
+    "seed_type": "MDM_DICTIONARY_V15",
+    "source": "onlyit_demo_mdb",
+    "source_db": "演示信息.mdb (D:/guli/oit_setup/db/)",
+    "extraction_date": "2026-08-26",
+    "extraction_tool": "access_parser 1.x (Python)",
+    "scope": "V15",
+    "idempotency_strategy": "natural_key (TenantId, DictType, Code)",
+    "draft_status": "DRAFT - requires operator review before seed activation",
+    "format": "GuliERP MDM V1.5+ dictionary seed draft",
+    "domain": "6.人事考勤",
+    "item_count": 268
+  },
+  "items": [
+    {
+      "canonical_code": "EMP_DEPT_KIND_A",
+      "original_dict_id": "emp_dept_kind",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "管理类",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_DEPT_KIND_B",
+      "original_dict_id": "emp_dept_kind",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "财务类",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_DEPT_KIND_C",
+      "original_dict_id": "emp_dept_kind",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "生产类",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_DEPT_KIND_D",
+      "original_dict_id": "emp_dept_kind",
+      "original_class": "emp",
+      "original_code": "D",
+      "name_zh": "销售类",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CORP_KIND_A",
+      "original_dict_id": "emp_corp_kind",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "国企",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CORP_KIND_B",
+      "original_dict_id": "emp_corp_kind",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "私企",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CORP_KIND_C",
+      "original_dict_id": "emp_corp_kind",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "外企",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_INSURANCE_GROUP_A",
+      "original_dict_id": "emp_insurance_group",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "养老分组",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_INSURANCE_GROUP_B",
+      "original_dict_id": "emp_insurance_group",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "社会分组",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_STATE_A",
+      "original_dict_id": "emp_state",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "试用期",
+      "note": "A对应试用期，程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_STATE_B",
+      "original_dict_id": "emp_state",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "合同期",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_STATE_F",
+      "original_dict_id": "emp_state",
+      "original_class": "emp",
+      "original_code": "F",
+      "name_zh": "已离职",
+      "note": "F对应离职，程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_STATE_H",
+      "original_dict_id": "emp_state",
+      "original_class": "emp",
+      "original_code": "H",
+      "name_zh": "已退休",
+      "note": "H对应退休，程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_STATE_A,B",
+      "original_dict_id": "emp_state",
+      "original_class": "emp",
+      "original_code": "A,B",
+      "name_zh": "在职",
+      "note": "这是组合码，除了离职退休的都选上",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CARD_GROUP_A",
+      "original_dict_id": "emp_card_group",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "普通证件",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CARD_GROUP_B",
+      "original_dict_id": "emp_card_group",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "特别证件",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_EMPLOY_TYPE_A",
+      "original_dict_id": "emp_employ_type",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "合同制",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_EMPLOY_TYPE_B",
+      "original_dict_id": "emp_employ_type",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "在编",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_EMPLOY_TYPE_C",
+      "original_dict_id": "emp_employ_type",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "借用",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_AGE_20",
+      "original_dict_id": "emp_age",
+      "original_class": "emp",
+      "original_code": "20",
+      "name_zh": "<=20",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_AGE_25",
+      "original_dict_id": "emp_age",
+      "original_class": "emp",
+      "original_code": "25",
+      "name_zh": "<=25",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_AGE_30",
+      "original_dict_id": "emp_age",
+      "original_class": "emp",
+      "original_code": "30",
+      "name_zh": "<=30",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_AGE_35",
+      "original_dict_id": "emp_age",
+      "original_class": "emp",
+      "original_code": "35",
+      "name_zh": "<=35",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_AGE_40",
+      "original_dict_id": "emp_age",
+      "original_class": "emp",
+      "original_code": "40",
+      "name_zh": "<=40",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_AGE_45",
+      "original_dict_id": "emp_age",
+      "original_class": "emp",
+      "original_code": "45",
+      "name_zh": "<=45",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_AGE_50",
+      "original_dict_id": "emp_age",
+      "original_class": "emp",
+      "original_code": "50",
+      "name_zh": "<=50",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_AGE_55",
+      "original_dict_id": "emp_age",
+      "original_class": "emp",
+      "original_code": "55",
+      "name_zh": "<=55",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_AGE_90",
+      "original_dict_id": "emp_age",
+      "original_class": "emp",
+      "original_code": "90",
+      "name_zh": ">55",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WORK_AGE_0.03",
+      "original_dict_id": "emp_work_age",
+      "original_class": "emp",
+      "original_code": "0.03",
+      "name_zh": "<=3个月",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WORK_AGE_0.06",
+      "original_dict_id": "emp_work_age",
+      "original_class": "emp",
+      "original_code": "0.06",
+      "name_zh": "<=6个月",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WORK_AGE_1",
+      "original_dict_id": "emp_work_age",
+      "original_class": "emp",
+      "original_code": "1",
+      "name_zh": "<=1年",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WORK_AGE_3",
+      "original_dict_id": "emp_work_age",
+      "original_class": "emp",
+      "original_code": "3",
+      "name_zh": "<=3年",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WORK_AGE_5",
+      "original_dict_id": "emp_work_age",
+      "original_class": "emp",
+      "original_code": "5",
+      "name_zh": "<=5年",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WORK_AGE_10",
+      "original_dict_id": "emp_work_age",
+      "original_class": "emp",
+      "original_code": "10",
+      "name_zh": "<=10年",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WORK_AGE_20",
+      "original_dict_id": "emp_work_age",
+      "original_class": "emp",
+      "original_code": "20",
+      "name_zh": "<=20年",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WORK_AGE_30",
+      "original_dict_id": "emp_work_age",
+      "original_class": "emp",
+      "original_code": "30",
+      "name_zh": "<=30年",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WORK_AGE_100",
+      "original_dict_id": "emp_work_age",
+      "original_class": "emp",
+      "original_code": "100",
+      "name_zh": ">30年",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CROSS_GROUP_A",
+      "original_dict_id": "emp_cross_group",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "主管",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CROSS_GROUP_B",
+      "original_dict_id": "emp_cross_group",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "经理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CROSS_GROUP_C",
+      "original_dict_id": "emp_cross_group",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "员工",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_POLITY_TYPE_A",
+      "original_dict_id": "emp_polity_type",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "群众",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_POLITY_TYPE_B",
+      "original_dict_id": "emp_polity_type",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "团员",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_POLITY_TYPE_C",
+      "original_dict_id": "emp_polity_type",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "中国共产党",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_POLITY_TYPE_D",
+      "original_dict_id": "emp_polity_type",
+      "original_class": "emp",
+      "original_code": "D",
+      "name_zh": "其它",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WAGE_BANK_A",
+      "original_dict_id": "emp_wage_bank",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "工商银行",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WAGE_BANK_B",
+      "original_dict_id": "emp_wage_bank",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "建设银行",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WAGE_TYPE_A",
+      "original_dict_id": "emp_wage_type",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "合同制类",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_WAGE_TYPE_B",
+      "original_dict_id": "emp_wage_type",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "在编职工类",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_NATION_TYPE_A",
+      "original_dict_id": "emp_nation_type",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "汉族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_NATION_TYPE_B",
+      "original_dict_id": "emp_nation_type",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "回族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_NATION_TYPE_C",
+      "original_dict_id": "emp_nation_type",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "藏族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_NATION_TYPE_D",
+      "original_dict_id": "emp_nation_type",
+      "original_class": "emp",
+      "original_code": "D",
+      "name_zh": "维吾尔族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_NATION_TYPE_E",
+      "original_dict_id": "emp_nation_type",
+      "original_class": "emp",
+      "original_code": "E",
+      "name_zh": "蒙古族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_NATION_TYPE_F",
+      "original_dict_id": "emp_nation_type",
+      "original_class": "emp",
+      "original_code": "F",
+      "name_zh": "苗族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_NATION_TYPE_G",
+      "original_dict_id": "emp_nation_type",
+      "original_class": "emp",
+      "original_code": "G",
+      "name_zh": "白族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_NATION_TYPE_H",
+      "original_dict_id": "emp_nation_type",
+      "original_class": "emp",
+      "original_code": "H",
+      "name_zh": "其他",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_TECHNICAL_TYPE_-",
+      "original_dict_id": "emp_technical_type",
+      "original_class": "emp",
+      "original_code": "-",
+      "name_zh": "无",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_TECHNICAL_TYPE_A",
+      "original_dict_id": "emp_technical_type",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "技工",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_TECHNICAL_TYPE_B",
+      "original_dict_id": "emp_technical_type",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "工程师",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_TECHNICAL_TYPE_C",
+      "original_dict_id": "emp_technical_type",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "高级工程师",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CULTURE_DEGREE_A",
+      "original_dict_id": "emp_culture_degree",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "高中以下",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CULTURE_DEGREE_B",
+      "original_dict_id": "emp_culture_degree",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "高中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CULTURE_DEGREE_C",
+      "original_dict_id": "emp_culture_degree",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "中专",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CULTURE_DEGREE_D",
+      "original_dict_id": "emp_culture_degree",
+      "original_class": "emp",
+      "original_code": "D",
+      "name_zh": "大专",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CULTURE_DEGREE_E",
+      "original_dict_id": "emp_culture_degree",
+      "original_class": "emp",
+      "original_code": "E",
+      "name_zh": "本科",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CULTURE_DEGREE_F",
+      "original_dict_id": "emp_culture_degree",
+      "original_class": "emp",
+      "original_code": "F",
+      "name_zh": "硕士",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CULTURE_DEGREE_G",
+      "original_dict_id": "emp_culture_degree",
+      "original_class": "emp",
+      "original_code": "G",
+      "name_zh": "博士",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CULTURE_LEVEL_A",
+      "original_dict_id": "emp_culture_level",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "无",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CULTURE_LEVEL_B",
+      "original_dict_id": "emp_culture_level",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "学士",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CULTURE_LEVEL_C",
+      "original_dict_id": "emp_culture_level",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "硕士",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CULTURE_LEVEL_D",
+      "original_dict_id": "emp_culture_level",
+      "original_class": "emp",
+      "original_code": "D",
+      "name_zh": "博士",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_SPECIALTY_001",
+      "original_dict_id": "emp_specialty",
+      "original_class": "emp",
+      "original_code": "001",
+      "name_zh": "英语专业",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_NOTICE_STATE_A",
+      "original_dict_id": "emp_notice_state",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "关注中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_NOTICE_STATE_B",
+      "original_dict_id": "emp_notice_state",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "不再关注",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_RESIDENCE_TYPE_A",
+      "original_dict_id": "emp_residence_type",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "城镇",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_RESIDENCE_TYPE_B",
+      "original_dict_id": "emp_residence_type",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "农村",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_RESIDENCE_TYPE_C",
+      "original_dict_id": "emp_residence_type",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "其他",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CONTRACT_STATE_A",
+      "original_dict_id": "emp_contract_state",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "未生效",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CONTRACT_STATE_B",
+      "original_dict_id": "emp_contract_state",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "已生效",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CONTRACT_STATE_C",
+      "original_dict_id": "emp_contract_state",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "已失效",
+      "note": "C对应已失效，程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CONTRACT_STATE_D",
+      "original_dict_id": "emp_contract_state",
+      "original_class": "emp",
+      "original_code": "D",
+      "name_zh": "已终止",
+      "note": "D对应已终止，程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_DESC_TYPE_A",
+      "original_dict_id": "emp_desc_type",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "工作经历",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "DOT_TRUNCATE_MODE_A",
+      "original_dict_id": "dot_truncate_mode",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "四舍五入",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "DOT_TRUNCATE_MODE_B",
+      "original_dict_id": "dot_truncate_mode",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "直接截断",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "DOT_TRUNCATE_MODE_C",
+      "original_dict_id": "dot_truncate_mode",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "向上进位",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_FILE_TYPE_pict",
+      "original_dict_id": "emp_file_type",
+      "original_class": "emp",
+      "original_code": "pict",
+      "name_zh": "照片文件",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_FILE_TYPE_other",
+      "original_dict_id": "emp_file_type",
+      "original_class": "emp",
+      "original_code": "other",
+      "name_zh": "其他文件",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CARD_STATE_A",
+      "original_dict_id": "emp_card_state",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "有效",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_CARD_STATE_B",
+      "original_dict_id": "emp_card_state",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "失效",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_EMPLOY_FROM_A",
+      "original_dict_id": "emp_employ_from",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "现场招聘",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_EMPLOY_FROM_B",
+      "original_dict_id": "emp_employ_from",
+      "original_class": "emp",
+      "original_code": "B",
+      "name_zh": "网上招聘",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_EMPLOY_FROM_C",
+      "original_dict_id": "emp_employ_from",
+      "original_class": "emp",
+      "original_code": "C",
+      "name_zh": "报刊招聘",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_EMPLOY_FROM_D",
+      "original_dict_id": "emp_employ_from",
+      "original_class": "emp",
+      "original_code": "D",
+      "name_zh": "职工推荐",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_EMPLOY_FROM_E",
+      "original_dict_id": "emp_employ_from",
+      "original_class": "emp",
+      "original_code": "E",
+      "name_zh": "其他",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_EMPLOY_FROM_S",
+      "original_dict_id": "emp_employ_from",
+      "original_class": "emp",
+      "original_code": "S",
+      "name_zh": "网上自投简历",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_LEAVE_CHAT_TYPE_A",
+      "original_dict_id": "emp_leave_chat_type",
+      "original_class": "emp",
+      "original_code": "A",
+      "name_zh": "了解访谈",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_ID_READER_TYPE_001",
+      "original_dict_id": "emp_id_reader_type",
+      "original_class": "emp",
+      "original_code": "001",
+      "name_zh": "华视电子CVR-100 1.0",
+      "note": "系统参数，类型码和名称不要改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_ID_READER_TYPE_003",
+      "original_dict_id": "emp_id_reader_type",
+      "original_class": "emp",
+      "original_code": "003",
+      "name_zh": "华视电子CVR-100 3.0",
+      "note": "系统参数，类型码和名称不要改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_ID_READER_TYPE_004",
+      "original_dict_id": "emp_id_reader_type",
+      "original_class": "emp",
+      "original_code": "004",
+      "name_zh": "精伦读卡器",
+      "note": "系统参数，类型码和名称不要改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_ID_READER_TYPE_005",
+      "original_dict_id": "emp_id_reader_type",
+      "original_class": "emp",
+      "original_code": "005",
+      "name_zh": "神思读卡器",
+      "note": "系统参数，类型码和名称不要改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_ID_READER_TYPE_006",
+      "original_dict_id": "emp_id_reader_type",
+      "original_class": "emp",
+      "original_code": "006",
+      "name_zh": "普天读卡器",
+      "note": "系统参数，类型码和名称不要改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMP_ID_READER_TYPE_007",
+      "original_dict_id": "emp_id_reader_type",
+      "original_class": "emp",
+      "original_code": "007",
+      "name_zh": "国腾读卡器",
+      "note": "系统参数，类型码和名称不要改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_XLS_REP_FILE_TYPE_A",
+      "original_dict_id": "hrm_xls_rep_file_type",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "月统计",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_TRACE_METHOD_A",
+      "original_dict_id": "hrm_trace_method",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "电话联系",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_TRACE_METHOD_B",
+      "original_dict_id": "hrm_trace_method",
+      "original_class": "hrm",
+      "original_code": "B",
+      "name_zh": "即时消息方式",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_TRACE_METHOD_C",
+      "original_dict_id": "hrm_trace_method",
+      "original_class": "hrm",
+      "original_code": "C",
+      "name_zh": "通信方式",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_TRACE_METHOD_D",
+      "original_dict_id": "hrm_trace_method",
+      "original_class": "hrm",
+      "original_code": "D",
+      "name_zh": "其他方式",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_GET_METHOD_A",
+      "original_dict_id": "hrm_skill_get_method",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "自学",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_GET_METHOD_B",
+      "original_dict_id": "hrm_skill_get_method",
+      "original_class": "hrm",
+      "original_code": "B",
+      "name_zh": "单位培训",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_TYPE_A",
+      "original_dict_id": "hrm_skill_person_type",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "管理型",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_TYPE_B",
+      "original_dict_id": "hrm_skill_person_type",
+      "original_class": "hrm",
+      "original_code": "B",
+      "name_zh": "销售型",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_TYPE_C",
+      "original_dict_id": "hrm_skill_person_type",
+      "original_class": "hrm",
+      "original_code": "C",
+      "name_zh": "技术型",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_TYPE_D",
+      "original_dict_id": "hrm_skill_person_type",
+      "original_class": "hrm",
+      "original_code": "D",
+      "name_zh": "美术设计",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_TYPE_E",
+      "original_dict_id": "hrm_skill_person_type",
+      "original_class": "hrm",
+      "original_code": "E",
+      "name_zh": "其他类型",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_STATE_A",
+      "original_dict_id": "hrm_skill_person_state",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "在别公司任职",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_STATE_B",
+      "original_dict_id": "hrm_skill_person_state",
+      "original_class": "hrm",
+      "original_code": "B",
+      "name_zh": "待业中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_STATE_C",
+      "original_dict_id": "hrm_skill_person_state",
+      "original_class": "hrm",
+      "original_code": "C",
+      "name_zh": "改行了",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_ABILITY_LEVEL_A",
+      "original_dict_id": "hrm_ability_level",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "高级",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_ABILITY_LEVEL_B",
+      "original_dict_id": "hrm_ability_level",
+      "original_class": "hrm",
+      "original_code": "B",
+      "name_zh": "中级",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_ABILITY_LEVEL_C",
+      "original_dict_id": "hrm_ability_level",
+      "original_class": "hrm",
+      "original_code": "C",
+      "name_zh": "一般",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_INFO_FROM_A",
+      "original_dict_id": "hrm_skill_person_info_from",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "现场招聘",
+      "note": "建议和员工卡片中的招聘来源保持一致",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_INFO_FROM_B",
+      "original_dict_id": "hrm_skill_person_info_from",
+      "original_class": "hrm",
+      "original_code": "B",
+      "name_zh": "网上招聘",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_INFO_FROM_C",
+      "original_dict_id": "hrm_skill_person_info_from",
+      "original_class": "hrm",
+      "original_code": "C",
+      "name_zh": "报刊招聘",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_INFO_FROM_D",
+      "original_dict_id": "hrm_skill_person_info_from",
+      "original_class": "hrm",
+      "original_code": "D",
+      "name_zh": "职工推荐",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_INFO_FROM_E",
+      "original_dict_id": "hrm_skill_person_info_from",
+      "original_class": "hrm",
+      "original_code": "E",
+      "name_zh": "其他",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_SKILL_PERSON_INFO_FROM_S",
+      "original_dict_id": "hrm_skill_person_info_from",
+      "original_class": "hrm",
+      "original_code": "S",
+      "name_zh": "网上自投简历",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_FEE_TYPE_A",
+      "original_dict_id": "hrm_fee_type",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "业务费用",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_FEE_TYPE_B",
+      "original_dict_id": "hrm_fee_type",
+      "original_class": "hrm",
+      "original_code": "B",
+      "name_zh": "其他费用",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_BODY_EXAM_RESULT_A",
+      "original_dict_id": "hrm_body_exam_result",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "合格",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_BODY_EXAM_RESULT_B",
+      "original_dict_id": "hrm_body_exam_result",
+      "original_class": "hrm",
+      "original_code": "B",
+      "name_zh": "不合格",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_BODY_EXAM_RESULT_C",
+      "original_dict_id": "hrm_body_exam_result",
+      "original_class": "hrm",
+      "original_code": "C",
+      "name_zh": "待确定",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_FILE_TRUST_ORG_A",
+      "original_dict_id": "hrm_file_trust_org",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "本地档案管理中心",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_FILE_TRUST_ORG_B",
+      "original_dict_id": "hrm_file_trust_org",
+      "original_class": "hrm",
+      "original_code": "B",
+      "name_zh": "本地人才管理中心",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_FILE_TRUST_TYPE_A",
+      "original_dict_id": "hrm_file_trust_type",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "工人",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_FILE_TRUST_TYPE_B",
+      "original_dict_id": "hrm_file_trust_type",
+      "original_class": "hrm",
+      "original_code": "B",
+      "name_zh": "学生",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_FILE_TRUST_TYPE_C",
+      "original_dict_id": "hrm_file_trust_type",
+      "original_class": "hrm",
+      "original_code": "C",
+      "name_zh": "干部",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_FILE_TRUST_STATE_A",
+      "original_dict_id": "hrm_file_trust_state",
+      "original_class": "hrm",
+      "original_code": "A",
+      "name_zh": "正常存档",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_FILE_TRUST_STATE_B",
+      "original_dict_id": "hrm_file_trust_state",
+      "original_class": "hrm",
+      "original_code": "B",
+      "name_zh": "已转出",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HRM_FILE_TRUST_STATE_C",
+      "original_dict_id": "hrm_file_trust_state",
+      "original_class": "hrm",
+      "original_code": "C",
+      "name_zh": "已借出",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_AMOUNT_TYPE_A",
+      "original_dict_id": "wage_amount_type",
+      "original_class": "wage",
+      "original_code": "A",
+      "name_zh": "元",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_AMOUNT_TYPE_B",
+      "original_dict_id": "wage_amount_type",
+      "original_class": "wage",
+      "original_code": "B",
+      "name_zh": "分",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_WORK_SUBJECT_TYPE_A",
+      "original_dict_id": "wage_work_subject_type",
+      "original_class": "wage.work",
+      "original_code": "A",
+      "name_zh": "计件工序",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_WORK_SUBJECT_TYPE_B",
+      "original_dict_id": "wage_work_subject_type",
+      "original_class": "wage.work",
+      "original_code": "B",
+      "name_zh": "计时工序",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_WORK_PRODUCT_1001",
+      "original_dict_id": "wage_work_product",
+      "original_class": "wage.work",
+      "original_code": "1001",
+      "name_zh": "小熊玩具",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_WORK_PRODUCT_1002",
+      "original_dict_id": "wage_work_product",
+      "original_class": "wage.work",
+      "original_code": "1002",
+      "name_zh": "文具盒",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_WORK_ORDER_NO_1001",
+      "original_dict_id": "wage_work_order_no",
+      "original_class": "wage.work",
+      "original_code": "1001",
+      "name_zh": "AFD20080303",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_WORK_ORDER_NO_1002",
+      "original_dict_id": "wage_work_order_no",
+      "original_class": "wage.work",
+      "original_code": "1002",
+      "name_zh": "AFD20081212",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_WORK_CLASS_A",
+      "original_dict_id": "wage_work_class",
+      "original_class": "wage.work",
+      "original_code": "A",
+      "name_zh": "早班",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_WORK_CLASS_B",
+      "original_dict_id": "wage_work_class",
+      "original_class": "wage.work",
+      "original_code": "B",
+      "name_zh": "中班",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_WORK_CLASS_C",
+      "original_dict_id": "wage_work_class",
+      "original_class": "wage.work",
+      "original_code": "C",
+      "name_zh": "晚班",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "IO_FLAG_I",
+      "original_dict_id": "io_flag",
+      "original_class": "wage",
+      "original_code": "I",
+      "name_zh": "存",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "IO_FLAG_O",
+      "original_dict_id": "io_flag",
+      "original_class": "wage",
+      "original_code": "O",
+      "name_zh": "支取",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_EMP_BANK_IO_NOTE_I_A",
+      "original_dict_id": "wage_emp_bank_io_note_i",
+      "original_class": "wage",
+      "original_code": "A",
+      "name_zh": "员工存备注",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "WAGE_EMP_BANK_IO_NOTE_O_A",
+      "original_dict_id": "wage_emp_bank_io_note_o",
+      "original_class": "wage",
+      "original_code": "A",
+      "name_zh": "员工支备注",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REST_DURATION_A",
+      "original_dict_id": "timer_rest_duration",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "1130-1330,1730-1900",
+      "note": "可以多个时间段，中间用逗号分割",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_BANK_IO_TYPE_A",
+      "original_dict_id": "timer_bank_io_type",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "加班",
+      "note": "A固定为加班，系统有特殊处理,请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_BANK_IO_TYPE_B",
+      "original_dict_id": "timer_bank_io_type",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "调休",
+      "note": "B固定为调休，系统有特殊处理,请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_BANK_IO_TYPE_C",
+      "original_dict_id": "timer_bank_io_type",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "请假",
+      "note": "C固定为请假，系统有特殊处理,请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_CLASS_TYPE_A",
+      "original_dict_id": "timer_class_type",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "正常班次",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_CLASS_TYPE_B",
+      "original_dict_id": "timer_class_type",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "周末班次",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_CLASS_TYPE_C",
+      "original_dict_id": "timer_class_type",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "节假日班次",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_IO_FLAG_I",
+      "original_dict_id": "timer_rec_io_flag",
+      "original_class": "timer",
+      "original_code": "I",
+      "name_zh": "进",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_IO_FLAG_O",
+      "original_dict_id": "timer_rec_io_flag",
+      "original_class": "timer",
+      "original_code": "O",
+      "name_zh": "出",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_IO_FLAG_A",
+      "original_dict_id": "timer_rec_io_flag",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "自动判断",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_IO_FLAG_X",
+      "original_dict_id": "timer_rec_io_flag",
+      "original_class": "timer",
+      "original_code": "X",
+      "name_zh": "不参与考勤数据处理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_ORIGINAL_REC_STATE_A",
+      "original_dict_id": "timer_original_rec_state",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "未处理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_ORIGINAL_REC_STATE_B",
+      "original_dict_id": "timer_original_rec_state",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "已经处理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_ORIGINAL_REC_STATE_C",
+      "original_dict_id": "timer_original_rec_state",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "作废",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_ERROR_CODE_A",
+      "original_dict_id": "timer_error_code",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "无效编号",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_ERROR_CODE_B",
+      "original_dict_id": "timer_error_code",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "找不到班次",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_ERROR_CODE_C",
+      "original_dict_id": "timer_error_code",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "重复丢弃记录",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_ERRAND_TYPE_A",
+      "original_dict_id": "timer_errand_type",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "业务扩展",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_ERRAND_TYPE_B",
+      "original_dict_id": "timer_errand_type",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "工程实施",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_ERRAND_BY_METHOD_A",
+      "original_dict_id": "timer_errand_by_method",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "火车",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_ERRAND_BY_METHOD_B",
+      "original_dict_id": "timer_errand_by_method",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "飞机",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_ERRAND_BY_METHOD_C",
+      "original_dict_id": "timer_errand_by_method",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "汽车",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_LEAVE_TYPE_A",
+      "original_dict_id": "timer_leave_type",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "事假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_LEAVE_TYPE_B",
+      "original_dict_id": "timer_leave_type",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "休假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_LEAVE_TYPE_C",
+      "original_dict_id": "timer_leave_type",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "病假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_LEAVE_TYPE_D",
+      "original_dict_id": "timer_leave_type",
+      "original_class": "timer",
+      "original_code": "D",
+      "name_zh": "婚假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_LEAVE_TYPE_E",
+      "original_dict_id": "timer_leave_type",
+      "original_class": "timer",
+      "original_code": "E",
+      "name_zh": "产假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_LEAVE_TYPE_T",
+      "original_dict_id": "timer_leave_type",
+      "original_class": "timer",
+      "original_code": "T",
+      "name_zh": "支取时间银行",
+      "note": "T对应支取时间银行，程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_OUT_TYPE_A",
+      "original_dict_id": "timer_out_type",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "采购",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_OUT_TYPE_B",
+      "original_dict_id": "timer_out_type",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "送货",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_OUT_TYPE_C",
+      "original_dict_id": "timer_out_type",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "开会",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_PROCESS_RESULT_A",
+      "original_dict_id": "timer_rec_process_result",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "迟到",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_PROCESS_RESULT_B",
+      "original_dict_id": "timer_rec_process_result",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "早退",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_PROCESS_RESULT_C",
+      "original_dict_id": "timer_rec_process_result",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "缺勤",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_PROCESS_RESULT_D",
+      "original_dict_id": "timer_rec_process_result",
+      "original_class": "timer",
+      "original_code": "D",
+      "name_zh": "加班",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_PROCESS_RESULT_E",
+      "original_dict_id": "timer_rec_process_result",
+      "original_class": "timer",
+      "original_code": "E",
+      "name_zh": "请假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_PROCESS_RESULT_F",
+      "original_dict_id": "timer_rec_process_result",
+      "original_class": "timer",
+      "original_code": "F",
+      "name_zh": "出差",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_PROCESS_RESULT_G",
+      "original_dict_id": "timer_rec_process_result",
+      "original_class": "timer",
+      "original_code": "G",
+      "name_zh": "调休",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_PROCESS_RESULT_H",
+      "original_dict_id": "timer_rec_process_result",
+      "original_class": "timer",
+      "original_code": "H",
+      "name_zh": "停工放假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_PROCESS_RESULT_A,B,C,D",
+      "original_dict_id": "timer_rec_process_result",
+      "original_class": "timer",
+      "original_code": "A,B,C,D",
+      "name_zh": "异常记录",
+      "note": "这是组合码",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REST_TYPE_A",
+      "original_dict_id": "timer_rest_type",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "年假调休",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REST_TYPE_B",
+      "original_dict_id": "timer_rest_type",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "加班调休",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_HOLIDAY_20260101",
+      "original_dict_id": "timer_holiday",
+      "original_class": "timer",
+      "original_code": "20260101",
+      "name_zh": "元旦",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_HOLIDAY_20260501",
+      "original_dict_id": "timer_holiday",
+      "original_class": "timer",
+      "original_code": "20260501",
+      "name_zh": "劳动节",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_HOLIDAY_20261001",
+      "original_dict_id": "timer_holiday",
+      "original_class": "timer",
+      "original_code": "20261001",
+      "name_zh": "国庆",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_ADD_CAUSE_A",
+      "original_dict_id": "timer_rec_add_cause",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "忘打卡",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_REC_ADD_CAUSE_B",
+      "original_dict_id": "timer_rec_add_cause",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "外出",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_CYCLE_TYPE_A",
+      "original_dict_id": "timer_cycle_type",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "周",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_CYCLE_TYPE_B",
+      "original_dict_id": "timer_cycle_type",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "天",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_CYCLE_TYPE_C",
+      "original_dict_id": "timer_cycle_type",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "月",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_RESULT_DEF_STAT_UNIT_H",
+      "original_dict_id": "timer_result_def_stat_unit",
+      "original_class": "timer",
+      "original_code": "H",
+      "name_zh": "时",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_RESULT_DEF_STAT_UNIT_M",
+      "original_dict_id": "timer_result_def_stat_unit",
+      "original_class": "timer",
+      "original_code": "M",
+      "name_zh": "分",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_RESULT_DEF_STAT_UNIT_D",
+      "original_dict_id": "timer_result_def_stat_unit",
+      "original_class": "timer",
+      "original_code": "D",
+      "name_zh": "天",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_RESULT_DEF_STAT_UNIT_-",
+      "original_dict_id": "timer_result_def_stat_unit",
+      "original_class": "timer",
+      "original_code": "-",
+      "name_zh": "无",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_OVERTIME_BENEFIT_STATE_-",
+      "original_dict_id": "timer_overtime_benefit_state",
+      "original_class": "timer",
+      "original_code": "-",
+      "name_zh": "未处理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_OVERTIME_BENEFIT_STATE_A",
+      "original_dict_id": "timer_overtime_benefit_state",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "已调休",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_OVERTIME_BENEFIT_STATE_B",
+      "original_dict_id": "timer_overtime_benefit_state",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "支付加班工资",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_OVERTIME_BENEFIT_STATE_C",
+      "original_dict_id": "timer_overtime_benefit_state",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "不补偿",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_OVERTIME_BENEFIT_STATE_T",
+      "original_dict_id": "timer_overtime_benefit_state",
+      "original_class": "timer",
+      "original_code": "T",
+      "name_zh": "存入时间银行",
+      "note": "T对应转时间银行，程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_OFF_WORK_TYPE_A",
+      "original_dict_id": "timer_off_work_type",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "淡季放假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_MEAL_TIME_A",
+      "original_dict_id": "timer_meal_time",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "早餐时间",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_MEAL_TIME_B",
+      "original_dict_id": "timer_meal_time",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "午餐时间",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_SCAN_WORD_001",
+      "original_dict_id": "timer_scan_word",
+      "original_class": "timer",
+      "original_code": "001",
+      "name_zh": "为人守厚道,凡事必用心",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_SCAN_WORD_002",
+      "original_dict_id": "timer_scan_word",
+      "original_class": "timer",
+      "original_code": "002",
+      "name_zh": "心善语言诚,天助事业成",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_SCAN_WORD_003",
+      "original_dict_id": "timer_scan_word",
+      "original_class": "timer",
+      "original_code": "003",
+      "name_zh": "团队共作战,人人出业绩",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_NEED_CARD_Y",
+      "original_dict_id": "timer_need_card",
+      "original_class": "timer",
+      "original_code": "Y",
+      "name_zh": "必须要",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_NEED_CARD_N",
+      "original_dict_id": "timer_need_card",
+      "original_class": "timer",
+      "original_code": "N",
+      "name_zh": "非必须",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_NEED_CARD_C",
+      "original_dict_id": "timer_need_card",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "参考",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_PROCESS_STATE_A",
+      "original_dict_id": "timer_process_state",
+      "original_class": "timer",
+      "original_code": "A",
+      "name_zh": "待处理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_PROCESS_STATE_B",
+      "original_dict_id": "timer_process_state",
+      "original_class": "timer",
+      "original_code": "B",
+      "name_zh": "处理中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TIMER_PROCESS_STATE_C",
+      "original_dict_id": "timer_process_state",
+      "original_class": "timer",
+      "original_code": "C",
+      "name_zh": "处理完毕",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_CLASS_TYPE_A",
+      "original_dict_id": "train_class_type",
+      "original_class": "train",
+      "original_code": "A",
+      "name_zh": "经营管理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_CLASS_TYPE_B",
+      "original_dict_id": "train_class_type",
+      "original_class": "train",
+      "original_code": "B",
+      "name_zh": "人力资源",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_CLASS_TYPE_C",
+      "original_dict_id": "train_class_type",
+      "original_class": "train",
+      "original_code": "C",
+      "name_zh": "销售市场",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_CLASS_TYPE_D",
+      "original_dict_id": "train_class_type",
+      "original_class": "train",
+      "original_code": "D",
+      "name_zh": "供应管理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_CLASS_TYPE_E",
+      "original_dict_id": "train_class_type",
+      "original_class": "train",
+      "original_code": "E",
+      "name_zh": "生产管理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_CLASS_TYPE_F",
+      "original_dict_id": "train_class_type",
+      "original_class": "train",
+      "original_code": "F",
+      "name_zh": "财务管理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_SERVICE_CLASS_A",
+      "original_dict_id": "train_service_class",
+      "original_class": "train",
+      "original_code": "A",
+      "name_zh": "经营管理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_SERVICE_CLASS_B",
+      "original_dict_id": "train_service_class",
+      "original_class": "train",
+      "original_code": "B",
+      "name_zh": "人力资源",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_SERVICE_CLASS_C",
+      "original_dict_id": "train_service_class",
+      "original_class": "train",
+      "original_code": "C",
+      "name_zh": "销售市场",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_SERVICE_CLASS_D",
+      "original_dict_id": "train_service_class",
+      "original_class": "train",
+      "original_code": "D",
+      "name_zh": "供应管理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_SERVICE_CLASS_E",
+      "original_dict_id": "train_service_class",
+      "original_class": "train",
+      "original_code": "E",
+      "name_zh": "生产管理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_SERVICE_CLASS_F",
+      "original_dict_id": "train_service_class",
+      "original_class": "train",
+      "original_code": "F",
+      "name_zh": "财务管理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_SERVICE_TYPE_A",
+      "original_dict_id": "train_service_type",
+      "original_class": "train",
+      "original_code": "A",
+      "name_zh": "内部培训",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_SERVICE_TYPE_B",
+      "original_dict_id": "train_service_type",
+      "original_class": "train",
+      "original_code": "B",
+      "name_zh": "委外培训",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_METHOD_A",
+      "original_dict_id": "train_method",
+      "original_class": "train",
+      "original_code": "A",
+      "name_zh": "脱产培训",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_METHOD_B",
+      "original_dict_id": "train_method",
+      "original_class": "train",
+      "original_code": "B",
+      "name_zh": "内部培训",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_TYPE_001",
+      "original_dict_id": "train_type",
+      "original_class": "train",
+      "original_code": "001",
+      "name_zh": "人力资源培训",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_TYPE_002",
+      "original_dict_id": "train_type",
+      "original_class": "train",
+      "original_code": "002",
+      "name_zh": "财务培训",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_EFFECT_A",
+      "original_dict_id": "train_effect",
+      "original_class": "train",
+      "original_code": "A",
+      "name_zh": "很差",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_EFFECT_B",
+      "original_dict_id": "train_effect",
+      "original_class": "train",
+      "original_code": "B",
+      "name_zh": "差",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_EFFECT_C",
+      "original_dict_id": "train_effect",
+      "original_class": "train",
+      "original_code": "C",
+      "name_zh": "一般",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_EFFECT_D",
+      "original_dict_id": "train_effect",
+      "original_class": "train",
+      "original_code": "D",
+      "name_zh": "好",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_EFFECT_E",
+      "original_dict_id": "train_effect",
+      "original_class": "train",
+      "original_code": "E",
+      "name_zh": "很好",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_CORP_ORGANIZE_001",
+      "original_dict_id": "train_corp_organize",
+      "original_class": "train",
+      "original_code": "001",
+      "name_zh": "单位A",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_CORP_ORGANIZE_002",
+      "original_dict_id": "train_corp_organize",
+      "original_class": "train",
+      "original_code": "002",
+      "name_zh": "单位B",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_CORP_OPERATE_001",
+      "original_dict_id": "train_corp_operate",
+      "original_class": "train",
+      "original_code": "001",
+      "name_zh": "培训机构A",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_CORP_OPERATE_002",
+      "original_dict_id": "train_corp_operate",
+      "original_class": "train",
+      "original_code": "002",
+      "name_zh": "培训机构B",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_SIGNUP_TYPE_A",
+      "original_dict_id": "train_signup_type",
+      "original_class": "train",
+      "original_code": "A",
+      "name_zh": "现场报名",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_SIGNUP_TYPE_B",
+      "original_dict_id": "train_signup_type",
+      "original_class": "train",
+      "original_code": "B",
+      "name_zh": "电话报名",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_SIGNUP_TYPE_C",
+      "original_dict_id": "train_signup_type",
+      "original_class": "train",
+      "original_code": "C",
+      "name_zh": "网上报名",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_TEACHER_TYPE_A",
+      "original_dict_id": "train_teacher_type",
+      "original_class": "train",
+      "original_code": "A",
+      "name_zh": "管理类",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_TEACHER_TYPE_B",
+      "original_dict_id": "train_teacher_type",
+      "original_class": "train",
+      "original_code": "B",
+      "name_zh": "技术类",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_TEACHER_TYPE_C",
+      "original_dict_id": "train_teacher_type",
+      "original_class": "train",
+      "original_code": "C",
+      "name_zh": "营销类",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_TEACHER_STATE_A",
+      "original_dict_id": "train_teacher_state",
+      "original_class": "train",
+      "original_code": "A",
+      "name_zh": "正常",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_TEACHER_STATE_B",
+      "original_dict_id": "train_teacher_state",
+      "original_class": "train",
+      "original_code": "B",
+      "name_zh": "终止",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_PRIORITY_A",
+      "original_dict_id": "train_priority",
+      "original_class": "train",
+      "original_code": "A",
+      "name_zh": "特急",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_PRIORITY_B",
+      "original_dict_id": "train_priority",
+      "original_class": "train",
+      "original_code": "B",
+      "name_zh": "急",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_PRIORITY_C",
+      "original_dict_id": "train_priority",
+      "original_class": "train",
+      "original_code": "C",
+      "name_zh": "普通",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_PRIORITY_D",
+      "original_dict_id": "train_priority",
+      "original_class": "train",
+      "original_code": "D",
+      "name_zh": "不急",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_PRIORITY_E",
+      "original_dict_id": "train_priority",
+      "original_class": "train",
+      "original_code": "E",
+      "name_zh": "最低",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_DEMAND_STATE_A",
+      "original_dict_id": "train_demand_state",
+      "original_class": "train",
+      "original_code": "A",
+      "name_zh": "未完成",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_DEMAND_STATE_B",
+      "original_dict_id": "train_demand_state",
+      "original_class": "train",
+      "original_code": "B",
+      "name_zh": "已完成",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TRAIN_DEMAND_STATE_C",
+      "original_dict_id": "train_demand_state",
+      "original_class": "train",
+      "original_code": "C",
+      "name_zh": "已取消",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    }
+  ]
+}

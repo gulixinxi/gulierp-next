@@ -1,0 +1,2218 @@
+{
+  "meta": {
+    "schema_version": 1,
+    "seed_type": "MDM_DICTIONARY_V15",
+    "source": "onlyit_demo_mdb",
+    "source_db": "演示信息.mdb (D:/guli/oit_setup/db/)",
+    "extraction_date": "2026-08-26",
+    "extraction_tool": "access_parser 1.x (Python)",
+    "scope": "V15",
+    "idempotency_strategy": "natural_key (TenantId, DictType, Code)",
+    "draft_status": "DRAFT - requires operator review before seed activation",
+    "format": "GuliERP MDM V1.5+ dictionary seed draft",
+    "domain": "4.生产制造",
+    "item_count": 220
+  },
+  "items": [
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_L",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "L",
+      "name_zh": "设为审核中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_M",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "M",
+      "name_zh": "审核-拒绝",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_N",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "N",
+      "name_zh": "发回修改",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_O",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "O",
+      "name_zh": "已审单修正",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_P",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "P",
+      "name_zh": "清理删除",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_Q",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "Q",
+      "name_zh": "手工设置引用完成标志",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_R",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "R",
+      "name_zh": "手工去掉引用完成标志",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_DATE_LMT_TYPE_A",
+      "original_dict_id": "voucher_date_lmt_type",
+      "original_class": "pdu",
+      "original_code": "A",
+      "name_zh": "早于具体日期的不允许操作",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_DATE_LMT_TYPE_B",
+      "original_dict_id": "voucher_date_lmt_type",
+      "original_class": "pdu",
+      "original_code": "B",
+      "name_zh": "早于当天的不允许操作",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_DATE_LMT_TYPE_C",
+      "original_dict_id": "voucher_date_lmt_type",
+      "original_class": "pdu",
+      "original_code": "C",
+      "name_zh": "早于具体天数的不允许操作",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_DATE_LMT_TYPE_D",
+      "original_dict_id": "voucher_date_lmt_type",
+      "original_class": "pdu",
+      "original_code": "D",
+      "name_zh": "早于当月的不允许操作",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_DATE_LMT_TYPE_E",
+      "original_dict_id": "voucher_date_lmt_type",
+      "original_class": "pdu",
+      "original_code": "E",
+      "name_zh": "受控于会计账期，封账不允许操作",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_DATE_LMT_TYPE_F",
+      "original_dict_id": "voucher_date_lmt_type",
+      "original_class": "pdu",
+      "original_code": "F",
+      "name_zh": "只能操作当日单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_DATE_LMT_TYPE_G",
+      "original_dict_id": "voucher_date_lmt_type",
+      "original_class": "pdu",
+      "original_code": "G",
+      "name_zh": "只能操作当月单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_DATE_LMT_TYPE_-",
+      "original_dict_id": "voucher_date_lmt_type",
+      "original_class": "pdu",
+      "original_code": "-",
+      "name_zh": "不限制",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "FS_OBJ_TYPE_emp",
+      "original_dict_id": "fs_obj_type",
+      "original_class": "pdu",
+      "original_code": "emp",
+      "name_zh": "员工",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "FS_OBJ_TYPE_eba",
+      "original_dict_id": "fs_obj_type",
+      "original_class": "pdu",
+      "original_code": "eba",
+      "name_zh": "客户",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "FS_OBJ_TYPE_sup",
+      "original_dict_id": "fs_obj_type",
+      "original_class": "pdu",
+      "original_code": "sup",
+      "name_zh": "供应商",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "FS_OBJ_TYPE_res",
+      "original_dict_id": "fs_obj_type",
+      "original_class": "pdu",
+      "original_code": "res",
+      "name_zh": "产品",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "FS_OBJ_TYPE_asset",
+      "original_dict_id": "fs_obj_type",
+      "original_class": "pdu",
+      "original_code": "asset",
+      "name_zh": "资产",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "FS_OBJ_TYPE_voucher",
+      "original_dict_id": "fs_obj_type",
+      "original_class": "pdu",
+      "original_code": "voucher",
+      "name_zh": "单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_PRICE_TYPE_A",
+      "original_dict_id": "vr_price_type",
+      "original_class": "pdu",
+      "original_code": "A",
+      "name_zh": "参考进价",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_PRICE_TYPE_B",
+      "original_dict_id": "vr_price_type",
+      "original_class": "pdu",
+      "original_code": "B",
+      "name_zh": "参考售价",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_PRICE_TYPE_C",
+      "original_dict_id": "vr_price_type",
+      "original_class": "pdu",
+      "original_code": "C",
+      "name_zh": "最高进价",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_PRICE_TYPE_D",
+      "original_dict_id": "vr_price_type",
+      "original_class": "pdu",
+      "original_code": "D",
+      "name_zh": "最低售价",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_PRICE_TYPE_E",
+      "original_dict_id": "vr_price_type",
+      "original_class": "pdu",
+      "original_code": "E",
+      "name_zh": "平均进价",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_PRICE_TYPE_F",
+      "original_dict_id": "vr_price_type",
+      "original_class": "pdu",
+      "original_code": "F",
+      "name_zh": "实际成本",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_PRICE_TYPE_G",
+      "original_dict_id": "vr_price_type",
+      "original_class": "pdu",
+      "original_code": "G",
+      "name_zh": "估算成本",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "HTTP_URI_MAP_testpath",
+      "original_dict_id": "http_uri_map",
+      "original_class": "pdu",
+      "original_code": "testpath",
+      "name_zh": "d:\\mapfile",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "APP_USER_TAB_TYPE_001",
+      "original_dict_id": "app_user_tab_type",
+      "original_class": "pdu",
+      "original_code": "001",
+      "name_zh": "仓库",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "APP_USER_TAB_TYPE_002",
+      "original_dict_id": "app_user_tab_type",
+      "original_class": "pdu",
+      "original_code": "002",
+      "name_zh": "人事",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EBA_SUP_TYPE_A",
+      "original_dict_id": "eba_sup_type",
+      "original_class": "pdu",
+      "original_code": "A",
+      "name_zh": "客户",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EBA_SUP_TYPE_B",
+      "original_dict_id": "eba_sup_type",
+      "original_class": "pdu",
+      "original_code": "B",
+      "name_zh": "供应商",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "APP_POST_001001",
+      "original_dict_id": "app_post",
+      "original_class": "pdu",
+      "original_code": "001001",
+      "name_zh": "销售员工",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "APP_POST_001002",
+      "original_dict_id": "app_post",
+      "original_class": "pdu",
+      "original_code": "001002",
+      "name_zh": "销售经理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "APP_POST_002001",
+      "original_dict_id": "app_post",
+      "original_class": "pdu",
+      "original_code": "002001",
+      "name_zh": "采购经理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "APP_POST_003001",
+      "original_dict_id": "app_post",
+      "original_class": "pdu",
+      "original_code": "003001",
+      "name_zh": "仓管员",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "SEX_A",
+      "original_dict_id": "sex",
+      "original_class": "pdu",
+      "original_code": "A",
+      "name_zh": "男",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "SEX_B",
+      "original_dict_id": "sex",
+      "original_class": "pdu",
+      "original_code": "B",
+      "name_zh": "女",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "BOOL_Y",
+      "original_dict_id": "bool",
+      "original_class": "pdu",
+      "original_code": "Y",
+      "name_zh": "是",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "BOOL_N",
+      "original_dict_id": "bool",
+      "original_class": "pdu",
+      "original_code": "N",
+      "name_zh": "否",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MARRIAGE_FLAG_A",
+      "original_dict_id": "marriage_flag",
+      "original_class": "pdu",
+      "original_code": "A",
+      "name_zh": "未婚",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MARRIAGE_FLAG_B",
+      "original_dict_id": "marriage_flag",
+      "original_class": "pdu",
+      "original_code": "B",
+      "name_zh": "已婚",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MARRIAGE_FLAG_C",
+      "original_dict_id": "marriage_flag",
+      "original_class": "pdu",
+      "original_code": "C",
+      "name_zh": "离异",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MARRIAGE_FLAG_D",
+      "original_dict_id": "marriage_flag",
+      "original_class": "pdu",
+      "original_code": "D",
+      "name_zh": "不详",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MARRIAGE_FLAG_E",
+      "original_dict_id": "marriage_flag",
+      "original_class": "pdu",
+      "original_code": "E",
+      "name_zh": "已婚已育",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OBJ_REC_CFLAG_A",
+      "original_dict_id": "obj_rec_cflag",
+      "original_class": "pdu",
+      "original_code": "A",
+      "name_zh": "未审定",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OBJ_REC_CFLAG_B",
+      "original_dict_id": "obj_rec_cflag",
+      "original_class": "pdu",
+      "original_code": "B",
+      "name_zh": "已审定",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "YES_NO_Y",
+      "original_dict_id": "yes_no",
+      "original_class": "pdu",
+      "original_code": "Y",
+      "name_zh": "是",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "YES_NO_N",
+      "original_dict_id": "yes_no",
+      "original_class": "pdu",
+      "original_code": "N",
+      "name_zh": "否",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "NUMBER_SIGN_A",
+      "original_dict_id": "number_sign",
+      "original_class": "pdu",
+      "original_code": "A",
+      "name_zh": ">0",
+      "note": "不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "NUMBER_SIGN_B",
+      "original_dict_id": "number_sign",
+      "original_class": "pdu",
+      "original_code": "B",
+      "name_zh": "=0",
+      "note": "不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "NUMBER_SIGN_C",
+      "original_dict_id": "number_sign",
+      "original_class": "pdu",
+      "original_code": "C",
+      "name_zh": "<0",
+      "note": "不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_ITEM_STATE_A",
+      "original_dict_id": "voucher_item_state",
+      "original_class": "pdu",
+      "original_code": "A",
+      "name_zh": "待审核",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_ITEM_STATE_B",
+      "original_dict_id": "voucher_item_state",
+      "original_class": "pdu",
+      "original_code": "B",
+      "name_zh": "已审核",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_ITEM_STATE_C",
+      "original_dict_id": "voucher_item_state",
+      "original_class": "pdu",
+      "original_code": "C",
+      "name_zh": "已完成",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_ITEM_STATE_D",
+      "original_dict_id": "voucher_item_state",
+      "original_class": "pdu",
+      "original_code": "D",
+      "name_zh": "已作废",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_STATE_A",
+      "original_dict_id": "voucher_state",
+      "original_class": "pdu",
+      "original_code": "A",
+      "name_zh": "待审核",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_STATE_B",
+      "original_dict_id": "voucher_state",
+      "original_class": "pdu",
+      "original_code": "B",
+      "name_zh": "已审核",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_STATE_C",
+      "original_dict_id": "voucher_state",
+      "original_class": "pdu",
+      "original_code": "C",
+      "name_zh": "已完成",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_STATE_D",
+      "original_dict_id": "voucher_state",
+      "original_class": "pdu",
+      "original_code": "D",
+      "name_zh": "已作废",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_STATE_F",
+      "original_dict_id": "voucher_state",
+      "original_class": "pdu",
+      "original_code": "F",
+      "name_zh": "等待审核",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_STATE_G",
+      "original_dict_id": "voucher_state",
+      "original_class": "pdu",
+      "original_code": "G",
+      "name_zh": "正在审核",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ATTR_VAL_TYPE_S",
+      "original_dict_id": "attr_val_type",
+      "original_class": "pdu",
+      "original_code": "S",
+      "name_zh": "字符型",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ATTR_VAL_TYPE_I",
+      "original_dict_id": "attr_val_type",
+      "original_class": "pdu",
+      "original_code": "I",
+      "name_zh": "整型",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ATTR_VAL_TYPE_F",
+      "original_dict_id": "attr_val_type",
+      "original_class": "pdu",
+      "original_code": "F",
+      "name_zh": "浮点数",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ATTR_VAL_TYPE_4",
+      "original_dict_id": "attr_val_type",
+      "original_class": "pdu",
+      "original_code": "4",
+      "name_zh": "字典型",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ATTR_VAL_TYPE_D",
+      "original_dict_id": "attr_val_type",
+      "original_class": "pdu",
+      "original_code": "D",
+      "name_zh": "日期",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ATTR_VAL_TYPE_3",
+      "original_dict_id": "attr_val_type",
+      "original_class": "pdu",
+      "original_code": "3",
+      "name_zh": "密码",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ATTR_VAL_TYPE_8",
+      "original_dict_id": "attr_val_type",
+      "original_class": "pdu",
+      "original_code": "8",
+      "name_zh": "可多选字典型",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_A",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "A",
+      "name_zh": "保存",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_B",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "B",
+      "name_zh": "审核",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_C",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "C",
+      "name_zh": "设置完成",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_D",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "D",
+      "name_zh": "反完成",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_E",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "E",
+      "name_zh": "反审核",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_F",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "F",
+      "name_zh": "删除",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_G",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "G",
+      "name_zh": "作废",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_H",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "H",
+      "name_zh": "反作废",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_I",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "I",
+      "name_zh": "打印",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_J",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "J",
+      "name_zh": "送审",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_OPER_TYPE_K",
+      "original_dict_id": "voucher_oper_type",
+      "original_class": "pdu",
+      "original_code": "K",
+      "name_zh": "取消送审",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_oa_seal_use",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "oa_seal_use",
+      "name_zh": "公章使用记录报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_INSPECT_KIND_A",
+      "original_dict_id": "tbx_inspect_kind",
+      "original_class": "inspect",
+      "original_code": "A",
+      "name_zh": "卫生",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_INSPECT_KIND_B",
+      "original_dict_id": "tbx_inspect_kind",
+      "original_class": "inspect",
+      "original_code": "B",
+      "name_zh": "消防",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_INSPECT_KIND_C",
+      "original_dict_id": "tbx_inspect_kind",
+      "original_class": "inspect",
+      "original_code": "C",
+      "name_zh": "设备",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_INSPECT_RESULT_CODE_A",
+      "original_dict_id": "tbx_inspect_result_code",
+      "original_class": "inspect",
+      "original_code": "A",
+      "name_zh": "优秀",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_INSPECT_RESULT_CODE_B",
+      "original_dict_id": "tbx_inspect_result_code",
+      "original_class": "inspect",
+      "original_code": "B",
+      "name_zh": "良好",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_INSPECT_RESULT_CODE_C",
+      "original_dict_id": "tbx_inspect_result_code",
+      "original_class": "inspect",
+      "original_code": "C",
+      "name_zh": "一般",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_INSPECT_RESULT_CODE_D",
+      "original_dict_id": "tbx_inspect_result_code",
+      "original_class": "inspect",
+      "original_code": "D",
+      "name_zh": "及格",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_INSPECT_RESULT_CODE_E",
+      "original_dict_id": "tbx_inspect_result_code",
+      "original_class": "inspect",
+      "original_code": "E",
+      "name_zh": "差",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_INSPECT_RESULT_OPTION_A",
+      "original_dict_id": "tbx_inspect_result_option",
+      "original_class": "inspect",
+      "original_code": "A",
+      "name_zh": "优秀,一般,差",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eqs_rep",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eqs_rep",
+      "name_zh": "调查问卷",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_res_cost_rep",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "res_cost_rep",
+      "name_zh": "成本核算报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_GROUP_eba",
+      "original_dict_id": "voucher_group",
+      "original_class": "pdu",
+      "original_code": "eba",
+      "name_zh": "销售类单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.eba",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.eba",
+      "name_zh": "客户报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.res_day_sell",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.res_day_sell",
+      "name_zh": "销售产品日报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.res_month_sell",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.res_month_sell",
+      "name_zh": "销售产品月报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.vr_day_sell",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.vr_day_sell",
+      "name_zh": "销售单据日报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.vr_month_sell",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.vr_month_sell",
+      "name_zh": "销售单据月报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.sell",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.sell",
+      "name_zh": "销售产品统计",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.eba_vr",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.eba_vr",
+      "name_zh": "销售单据统计",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.business",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.business",
+      "name_zh": "业务发展分析",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.item",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.item",
+      "name_zh": "销售类单据明细",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.voucher",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.voucher",
+      "name_zh": "销售类单据列表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.mem_card",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.mem_card",
+      "name_zh": "会员管理报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.eba_price",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.eba_price",
+      "name_zh": "价格体系报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eba_rep.expire",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eba_rep.expire",
+      "name_zh": "展期业务",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_GROUP_sup",
+      "original_dict_id": "voucher_group",
+      "original_class": "pdu",
+      "original_code": "sup",
+      "name_zh": "采购类单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_sup_rep.sup",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "sup_rep.sup",
+      "name_zh": "供应报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_sup_rep.buy",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "sup_rep.buy",
+      "name_zh": "采购产品报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_sup_rep.io_day",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "sup_rep.io_day",
+      "name_zh": "采购产品日报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_sup_rep.io_month",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "sup_rep.io_month",
+      "name_zh": "采购产品月报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_sup_rep.io_total",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "sup_rep.io_total",
+      "name_zh": "采购产品汇总",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_sup_rep.item",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "sup_rep.item",
+      "name_zh": "采购类单据明细",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_sup_rep.voucher",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "sup_rep.voucher",
+      "name_zh": "采购类单据列表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_sup_rep.sup_price",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "sup_rep.sup_price",
+      "name_zh": "供应商报价",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_sup_rep.amount_day",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "sup_rep.amount_day",
+      "name_zh": "采购金额日报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_sup_rep.amount_month",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "sup_rep.amount_month",
+      "name_zh": "采购金额月报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_sup_rep.amount_total",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "sup_rep.amount_total",
+      "name_zh": "采购金额汇总",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_GROUP_mio",
+      "original_dict_id": "voucher_group",
+      "original_class": "pdu",
+      "original_code": "mio",
+      "name_zh": "现金银行单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_mio_rep.base",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "mio_rep.base",
+      "name_zh": "资金账户报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_mio_rep.day",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "mio_rep.day",
+      "name_zh": "收支日报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_mio_rep.month",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "mio_rep.month",
+      "name_zh": "收支月报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_mio_rep.budget",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "mio_rep.budget",
+      "name_zh": "预算报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_mio_rep.voucher",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "mio_rep.voucher",
+      "name_zh": "收支单据列表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_mio_rep.item",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "mio_rep.item",
+      "name_zh": "收支单据明细",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_GROUP_ebm",
+      "original_dict_id": "voucher_group",
+      "original_class": "pdu",
+      "original_code": "ebm",
+      "name_zh": "往来款单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_ebm_rep.recv",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "ebm_rep.recv",
+      "name_zh": "客户往来报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_ebm_rep.recv.brand",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "ebm_rep.recv.brand",
+      "name_zh": "客户品牌报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_ebm_rep.pay",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "ebm_rep.pay",
+      "name_zh": "供应商往来报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_ebm_rep.pay.brand",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "ebm_rep.pay.brand",
+      "name_zh": "供应商品牌报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_ebm_rep.voucher",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "ebm_rep.voucher",
+      "name_zh": "往来单据列表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_ebm_rep.item",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "ebm_rep.item",
+      "name_zh": "往来单据明细",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_ebm",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "ebm",
+      "name_zh": "往来款管理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_GROUP_evm",
+      "original_dict_id": "voucher_group",
+      "original_class": "pdu",
+      "original_code": "evm",
+      "name_zh": "会计类单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_evm_rep.base",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "evm_rep.base",
+      "name_zh": "财务管理报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_evm_rep.ass",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "evm_rep.ass",
+      "name_zh": "财务核算报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_evm_rep.cash",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "evm_rep.cash",
+      "name_zh": "现金流量报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_GROUP_edt",
+      "original_dict_id": "voucher_group",
+      "original_class": "pdu",
+      "original_code": "edt",
+      "name_zh": "仓库类单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_edt_rep.res",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "edt_rep.res",
+      "name_zh": "仓库存量报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_edt_rep.io",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "edt_rep.io",
+      "name_zh": "库存进出报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_edt_rep.item",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "edt_rep.item",
+      "name_zh": "库存单据明细",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_edt_rep.voucher",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "edt_rep.voucher",
+      "name_zh": "库存单据列表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_edt_rep.io_day",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "edt_rep.io_day",
+      "name_zh": "进出分类日报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_edt_rep.io_month",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "edt_rep.io_month",
+      "name_zh": "进出分类月报",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_edt_rep.io_total",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "edt_rep.io_total",
+      "name_zh": "进出分类汇总",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_edt_rep.vir",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "edt_rep.vir",
+      "name_zh": "虚拟库存报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_edt_rep.emp",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "edt_rep.emp",
+      "name_zh": "员工产品借用",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_edt_rep.eba",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "edt_rep.eba",
+      "name_zh": "企业产品借用",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_crm_rep.eba",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "crm_rep.eba",
+      "name_zh": "客户服务报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_crm_rep.chance",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "crm_rep.chance",
+      "name_zh": "商业机会报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_crm_rep.fee",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "crm_rep.fee",
+      "name_zh": "费用管理报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_crm_rep.repair",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "crm_rep.repair",
+      "name_zh": "维修管理报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_crm_rep.clew",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "crm_rep.clew",
+      "name_zh": "客户线索报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_GROUP_emf",
+      "original_dict_id": "voucher_group",
+      "original_class": "pdu",
+      "original_code": "emf",
+      "name_zh": "生产类单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emf_rep.item",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emf_rep.item",
+      "name_zh": "生产单据明细",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emf_rep.voucher",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emf_rep.voucher",
+      "name_zh": "生产单据列表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emf_rep.base",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emf_rep.base",
+      "name_zh": "生产报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emf_rep.emf_res",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emf_rep.emf_res",
+      "name_zh": "生产用品报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_ROUTE_FILE_TYPE_pict",
+      "original_dict_id": "emf_route_file_type",
+      "original_class": "emf",
+      "original_code": "pict",
+      "name_zh": "图片",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_ROUTE_FILE_TYPE_manual",
+      "original_dict_id": "emf_route_file_type",
+      "original_class": "emf",
+      "original_code": "manual",
+      "name_zh": "说明书",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_ROUTE_PROCESS_FILE_TYPE_pict",
+      "original_dict_id": "emf_route_process_file_type",
+      "original_class": "emf",
+      "original_code": "pict",
+      "name_zh": "图片",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_ROUTE_PROCESS_FILE_TYPE_manual",
+      "original_dict_id": "emf_route_process_file_type",
+      "original_class": "emf",
+      "original_code": "manual",
+      "name_zh": "说明书",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_TASK_STATE_A",
+      "original_dict_id": "emf_task_state",
+      "original_class": "emf",
+      "original_code": "A",
+      "name_zh": "计划中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_TASK_STATE_B",
+      "original_dict_id": "emf_task_state",
+      "original_class": "emf",
+      "original_code": "B",
+      "name_zh": "执行中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_TASK_STATE_D",
+      "original_dict_id": "emf_task_state",
+      "original_class": "emf",
+      "original_code": "D",
+      "name_zh": "生产结束",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_TASK_STATE_E",
+      "original_dict_id": "emf_task_state",
+      "original_class": "emf",
+      "original_code": "E",
+      "name_zh": "取消",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_TASK_STATE_F",
+      "original_dict_id": "emf_task_state",
+      "original_class": "emf",
+      "original_code": "F",
+      "name_zh": "下达待执行",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_TASK_STATE_G",
+      "original_dict_id": "emf_task_state",
+      "original_class": "emf",
+      "original_code": "G",
+      "name_zh": "确认结束",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_ROUTE_STATE_A",
+      "original_dict_id": "emf_route_state",
+      "original_class": "emf",
+      "original_code": "A",
+      "name_zh": "草稿",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_ROUTE_STATE_B",
+      "original_dict_id": "emf_route_state",
+      "original_class": "emf",
+      "original_code": "B",
+      "name_zh": "有效",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EMF_ROUTE_STATE_C",
+      "original_dict_id": "emf_route_state",
+      "original_class": "emf",
+      "original_code": "C",
+      "name_zh": "停用",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_GROUP_qm",
+      "original_dict_id": "voucher_group",
+      "original_class": "pdu",
+      "original_code": "qm",
+      "name_zh": "质检类单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "QM_KIND_A",
+      "original_dict_id": "qm_kind",
+      "original_class": "qm",
+      "original_code": "A",
+      "name_zh": "质检",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "QM_KIND_B",
+      "original_dict_id": "qm_kind",
+      "original_class": "qm",
+      "original_code": "B",
+      "name_zh": "客户QC终检",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "QM_KIND_E",
+      "original_dict_id": "qm_kind",
+      "original_class": "qm",
+      "original_code": "E",
+      "name_zh": "其他",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "QM_UNIT_TYPE_A",
+      "original_dict_id": "qm_unit_type",
+      "original_class": "qm",
+      "original_code": "A",
+      "name_zh": "厘米CM",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "QM_UNIT_TYPE_B",
+      "original_dict_id": "qm_unit_type",
+      "original_class": "qm",
+      "original_code": "B",
+      "name_zh": "克g",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "QM_DEGREE_A",
+      "original_dict_id": "qm_degree",
+      "original_class": "qm",
+      "original_code": "A",
+      "name_zh": "一级精度",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "QM_DEGREE_B",
+      "original_dict_id": "qm_degree",
+      "original_class": "qm",
+      "original_code": "B",
+      "name_zh": "二级精度",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "QM_DEGREE_C",
+      "original_dict_id": "qm_degree",
+      "original_class": "qm",
+      "original_code": "C",
+      "name_zh": "三级精度",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_qm_rep",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "qm_rep",
+      "name_zh": "质检报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_qm_rep.item",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "qm_rep.item",
+      "name_zh": "质检单据明细",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_qm_rep.voucher",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "qm_rep.voucher",
+      "name_zh": "质检单据列表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_GROUP_emp",
+      "original_dict_id": "voucher_group",
+      "original_class": "pdu",
+      "original_code": "emp",
+      "name_zh": "人事类单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emp_rep.dept",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emp_rep.dept",
+      "name_zh": "部门岗位工龄",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emp_rep.emp",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emp_rep.emp",
+      "name_zh": "基本人事报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emp_rep.ext",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emp_rep.ext",
+      "name_zh": "人事扩展报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emp_rep.move",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emp_rep.move",
+      "name_zh": "人事变动报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emp_rep.insurance",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emp_rep.insurance",
+      "name_zh": "保险报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emp_rep.prize",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emp_rep.prize",
+      "name_zh": "奖励报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emp_rep.punishment",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emp_rep.punishment",
+      "name_zh": "处罚报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emp_rep.res_draw",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emp_rep.res_draw",
+      "name_zh": "物品领用报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emp_rep.welfare",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emp_rep.welfare",
+      "name_zh": "员工福利报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_emp_rep.dorm",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "emp_rep.dorm",
+      "name_zh": "宿舍管理报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_hrm_rep.hrm",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "hrm_rep.hrm",
+      "name_zh": "人力资源报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_wage_rep.wage.company",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "wage_rep.wage.company",
+      "name_zh": "工资公司报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_wage_rep.wage.dept",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "wage_rep.wage.dept",
+      "name_zh": "工资部门报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_wage_rep.wage.emp",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "wage_rep.wage.emp",
+      "name_zh": "工资员工报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_wage_rep.wage.file_dept_emp",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "wage_rep.wage.file_dept_emp",
+      "name_zh": "工资员工-档案部门报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_wage_rep.bank",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "wage_rep.bank",
+      "name_zh": "员工存支报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_wage_rep.work",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "wage_rep.work",
+      "name_zh": "计件报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_GROUP_wage",
+      "original_dict_id": "voucher_group",
+      "original_class": "pdu",
+      "original_code": "wage",
+      "name_zh": "工资类单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VOUCHER_GROUP_timer",
+      "original_dict_id": "voucher_group",
+      "original_class": "pdu",
+      "original_code": "timer",
+      "name_zh": "考勤类单据",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_timer_rep.timer",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "timer_rep.timer",
+      "name_zh": "考勤报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_timer_rep.office",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "timer_rep.office",
+      "name_zh": "管理报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eas_rep",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eas_rep",
+      "name_zh": "绩效报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eas_rep.eas.emp",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eas_rep.eas.emp",
+      "name_zh": "考核报表-员工",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eas_rep.eas.dept",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eas_rep.eas.dept",
+      "name_zh": "考核报表-部门",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eas_rep.eas.comp",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eas_rep.eas.comp",
+      "name_zh": "考核报表-分公司",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eas_rep.eas.all",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eas_rep.eas.all",
+      "name_zh": "考核报表-总公司",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_eas_rep.add_up",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "eas_rep.add_up",
+      "name_zh": "累计分报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_train_rep.train",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "train_rep.train",
+      "name_zh": "培训报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_car_rep.car",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "car_rep.car",
+      "name_zh": "车管报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_asset_rep.asset",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "asset_rep.asset",
+      "name_zh": "基本资产报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_asset_rep.depre",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "asset_rep.depre",
+      "name_zh": "资产账务报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_asset_rep.load",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "asset_rep.load",
+      "name_zh": "资产工作量表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_asset_rep.draw",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "asset_rep.draw",
+      "name_zh": "资产领用报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_asset_rep.examine",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "asset_rep.examine",
+      "name_zh": "资产检修报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "GRID_REP_GROUP_asset_rep.hire",
+      "original_dict_id": "grid_rep_group",
+      "original_class": "pdu",
+      "original_code": "asset_rep.hire",
+      "name_zh": "资产租借报表",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    }
+  ]
+}

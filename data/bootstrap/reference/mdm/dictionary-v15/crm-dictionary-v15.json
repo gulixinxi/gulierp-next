@@ -1,0 +1,788 @@
+{
+  "meta": {
+    "schema_version": 1,
+    "seed_type": "MDM_DICTIONARY_V15",
+    "source": "onlyit_demo_mdb",
+    "source_db": "演示信息.mdb (D:/guli/oit_setup/db/)",
+    "extraction_date": "2026-08-26",
+    "extraction_tool": "access_parser 1.x (Python)",
+    "scope": "V15",
+    "idempotency_strategy": "natural_key (TenantId, DictType, Code)",
+    "draft_status": "DRAFT - requires operator review before seed activation",
+    "format": "GuliERP MDM V1.5+ dictionary seed draft",
+    "domain": "1.CRM销售",
+    "item_count": 77
+  },
+  "items": [
+    {
+      "canonical_code": "CRM_CHANCE_STATE_A",
+      "original_dict_id": "crm_chance_state",
+      "original_class": "crm",
+      "original_code": "A",
+      "name_zh": "考察需求",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_CHANCE_STATE_B",
+      "original_dict_id": "crm_chance_state",
+      "original_class": "crm",
+      "original_code": "B",
+      "name_zh": "建议/出价",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_CHANCE_STATE_C",
+      "original_dict_id": "crm_chance_state",
+      "original_class": "crm",
+      "original_code": "C",
+      "name_zh": "长期跟踪",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_CHANCE_STATE_H",
+      "original_dict_id": "crm_chance_state",
+      "original_class": "crm",
+      "original_code": "H",
+      "name_zh": "谈成结束",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_CHANCE_STATE_I",
+      "original_dict_id": "crm_chance_state",
+      "original_class": "crm",
+      "original_code": "I",
+      "name_zh": "未成结束",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_CHANCE_STATE_A,B,C",
+      "original_dict_id": "crm_chance_state",
+      "original_class": "crm",
+      "original_code": "A,B,C",
+      "name_zh": "未结束",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_RIVAL_A",
+      "original_dict_id": "crm_rival",
+      "original_class": "crm",
+      "original_code": "A",
+      "name_zh": "同行一",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_RIVAL_B",
+      "original_dict_id": "crm_rival",
+      "original_class": "crm",
+      "original_code": "B",
+      "name_zh": "同行二",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_RIVAL_GRADE_001",
+      "original_dict_id": "crm_rival_grade",
+      "original_class": "crm",
+      "original_code": "001",
+      "name_zh": "当前对手",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_RIVAL_GRADE_002",
+      "original_dict_id": "crm_rival_grade",
+      "original_class": "crm",
+      "original_code": "002",
+      "name_zh": "未来对手",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_RIVAL_GRADE_003",
+      "original_dict_id": "crm_rival_grade",
+      "original_class": "crm",
+      "original_code": "003",
+      "name_zh": "非同级参考型",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_EVENT_TYPE_A",
+      "original_dict_id": "crm_event_type",
+      "original_class": "crm",
+      "original_code": "A",
+      "name_zh": "投诉",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_EVENT_TYPE_B",
+      "original_dict_id": "crm_event_type",
+      "original_class": "crm",
+      "original_code": "B",
+      "name_zh": "咨询",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_EVENT_TYPE_C",
+      "original_dict_id": "crm_event_type",
+      "original_class": "crm",
+      "original_code": "C",
+      "name_zh": "建议",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_EVENT_TYPE_D",
+      "original_dict_id": "crm_event_type",
+      "original_class": "crm",
+      "original_code": "D",
+      "name_zh": "表扬",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_EVENT_STATE_A",
+      "original_dict_id": "crm_event_state",
+      "original_class": "crm",
+      "original_code": "A",
+      "name_zh": "未处理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_EVENT_STATE_B",
+      "original_dict_id": "crm_event_state",
+      "original_class": "crm",
+      "original_code": "B",
+      "name_zh": "处理中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_EVENT_STATE_F",
+      "original_dict_id": "crm_event_state",
+      "original_class": "crm",
+      "original_code": "F",
+      "name_zh": "处理完毕",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_EVENT_APPROVE_GRADE_A",
+      "original_dict_id": "crm_event_approve_grade",
+      "original_class": "crm",
+      "original_code": "A",
+      "name_zh": "很满意",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_EVENT_APPROVE_GRADE_B",
+      "original_dict_id": "crm_event_approve_grade",
+      "original_class": "crm",
+      "original_code": "B",
+      "name_zh": "满意",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_EVENT_APPROVE_GRADE_C",
+      "original_dict_id": "crm_event_approve_grade",
+      "original_class": "crm",
+      "original_code": "C",
+      "name_zh": "不满意",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_REPAIR_METHOD_A",
+      "original_dict_id": "crm_repair_method",
+      "original_class": "crm.repair",
+      "original_code": "A",
+      "name_zh": "常规检测维护",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_REPAIR_METHOD_B",
+      "original_dict_id": "crm_repair_method",
+      "original_class": "crm.repair",
+      "original_code": "B",
+      "name_zh": "大修",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_REPAIR_METHOD_C",
+      "original_dict_id": "crm_repair_method",
+      "original_class": "crm.repair",
+      "original_code": "C",
+      "name_zh": "小修",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TROUBLE_TYPE_A",
+      "original_dict_id": "crm_trouble_type",
+      "original_class": "crm.repair",
+      "original_code": "A",
+      "name_zh": "常规",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TROUBLE_TYPE_B",
+      "original_dict_id": "crm_trouble_type",
+      "original_class": "crm.repair",
+      "original_code": "B",
+      "name_zh": "损坏",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TROUBLE_TYPE_C",
+      "original_dict_id": "crm_trouble_type",
+      "original_class": "crm.repair",
+      "original_code": "C",
+      "name_zh": "断电",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_REPAIR_STATE_A",
+      "original_dict_id": "crm_repair_state",
+      "original_class": "crm.repair",
+      "original_code": "A",
+      "name_zh": "维修中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_REPAIR_STATE_B",
+      "original_dict_id": "crm_repair_state",
+      "original_class": "crm.repair",
+      "original_code": "B",
+      "name_zh": "维修完毕",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_REPAIR_STATE_C",
+      "original_dict_id": "crm_repair_state",
+      "original_class": "crm.repair",
+      "original_code": "C",
+      "name_zh": "已经取走",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_REPAIR_STATE_D",
+      "original_dict_id": "crm_repair_state",
+      "original_class": "crm.repair",
+      "original_code": "D",
+      "name_zh": "待修",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_REPAIR_STATE_A,B,D",
+      "original_dict_id": "crm_repair_state",
+      "original_class": "crm.repair",
+      "original_code": "A,B,D",
+      "name_zh": "未结束",
+      "note": "这是组合码，除了已经取走的都选上",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_FEE_TYPE_A",
+      "original_dict_id": "crm_fee_type",
+      "original_class": "crm",
+      "original_code": "A",
+      "name_zh": "业务费用",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_FEE_TYPE_B",
+      "original_dict_id": "crm_fee_type",
+      "original_class": "crm",
+      "original_code": "B",
+      "name_zh": "其他费用",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TOUCH_PURPOSE_A",
+      "original_dict_id": "crm_touch_purpose",
+      "original_class": "crm",
+      "original_code": "A",
+      "name_zh": "售后访谈",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TOUCH_PURPOSE_B",
+      "original_dict_id": "crm_touch_purpose",
+      "original_class": "crm",
+      "original_code": "B",
+      "name_zh": "需求访谈",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TOUCH_PURPOSE_C",
+      "original_dict_id": "crm_touch_purpose",
+      "original_class": "crm",
+      "original_code": "C",
+      "name_zh": "了解项目意见",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TOUCH_PURPOSE_D",
+      "original_dict_id": "crm_touch_purpose",
+      "original_class": "crm",
+      "original_code": "D",
+      "name_zh": "售前访谈",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TOUCH_TYPE_A",
+      "original_dict_id": "crm_touch_type",
+      "original_class": "crm",
+      "original_code": "A",
+      "name_zh": "电话",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TOUCH_TYPE_B",
+      "original_dict_id": "crm_touch_type",
+      "original_class": "crm",
+      "original_code": "B",
+      "name_zh": "会面",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TOUCH_TYPE_C",
+      "original_dict_id": "crm_touch_type",
+      "original_class": "crm",
+      "original_code": "C",
+      "name_zh": "事务",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TOUCH_STATE_A",
+      "original_dict_id": "crm_touch_state",
+      "original_class": "crm",
+      "original_code": "A",
+      "name_zh": "未联系",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_TOUCH_STATE_B",
+      "original_dict_id": "crm_touch_state",
+      "original_class": "crm",
+      "original_code": "B",
+      "name_zh": "已联系",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_CLEW_STATE_A",
+      "original_dict_id": "crm_clew_state",
+      "original_class": "crm",
+      "original_code": "A",
+      "name_zh": "跟踪中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_CLEW_STATE_B",
+      "original_dict_id": "crm_clew_state",
+      "original_class": "crm",
+      "original_code": "B",
+      "name_zh": "成为客户",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_CLEW_STATE_C",
+      "original_dict_id": "crm_clew_state",
+      "original_class": "crm",
+      "original_code": "C",
+      "name_zh": "放弃",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CRM_CLEW_STATE_D",
+      "original_dict_id": "crm_clew_state",
+      "original_class": "crm",
+      "original_code": "D",
+      "name_zh": "后续观察",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_STATE_A",
+      "original_dict_id": "rival_state",
+      "original_class": "rival",
+      "original_code": "A",
+      "name_zh": "正常",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_STATE_F",
+      "original_dict_id": "rival_state",
+      "original_class": "rival",
+      "original_code": "F",
+      "name_zh": "注销",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_GRADE_A",
+      "original_dict_id": "rival_grade",
+      "original_class": "rival",
+      "original_code": "A",
+      "name_zh": "非常激烈",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_GRADE_B",
+      "original_dict_id": "rival_grade",
+      "original_class": "rival",
+      "original_code": "B",
+      "name_zh": "激烈",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_GRADE_C",
+      "original_dict_id": "rival_grade",
+      "original_class": "rival",
+      "original_code": "C",
+      "name_zh": "一般",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_GRADE_D",
+      "original_dict_id": "rival_grade",
+      "original_class": "rival",
+      "original_code": "D",
+      "name_zh": "微弱",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_PRODUCT_GROUP_A",
+      "original_dict_id": "rival_product_group",
+      "original_class": "rival",
+      "original_code": "A",
+      "name_zh": "产品分组A",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_PRODUCT_GROUP_B",
+      "original_dict_id": "rival_product_group",
+      "original_class": "rival",
+      "original_code": "B",
+      "name_zh": "产品分组B",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_GRADE_A",
+      "original_dict_id": "rival_res_grade",
+      "original_class": "rival",
+      "original_code": "A",
+      "name_zh": "非常激烈",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_GRADE_B",
+      "original_dict_id": "rival_res_grade",
+      "original_class": "rival",
+      "original_code": "B",
+      "name_zh": "激烈",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_GRADE_C",
+      "original_dict_id": "rival_res_grade",
+      "original_class": "rival",
+      "original_code": "C",
+      "name_zh": "一般",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_GRADE_D",
+      "original_dict_id": "rival_res_grade",
+      "original_class": "rival",
+      "original_code": "D",
+      "name_zh": "微弱",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_STATE_A",
+      "original_dict_id": "rival_res_state",
+      "original_class": "rival",
+      "original_code": "A",
+      "name_zh": "未来竞争",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_STATE_B",
+      "original_dict_id": "rival_res_state",
+      "original_class": "rival",
+      "original_code": "B",
+      "name_zh": "正在竞争",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_STATE_C",
+      "original_dict_id": "rival_res_state",
+      "original_class": "rival",
+      "original_code": "C",
+      "name_zh": "不竞争",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_STATE_D",
+      "original_dict_id": "rival_res_state",
+      "original_class": "rival",
+      "original_code": "D",
+      "name_zh": "协作",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_DESC_TYPE_A",
+      "original_dict_id": "rival_desc_type",
+      "original_class": "rival",
+      "original_code": "A",
+      "name_zh": "优势信息",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_DESC_TYPE_B",
+      "original_dict_id": "rival_desc_type",
+      "original_class": "rival",
+      "original_code": "B",
+      "name_zh": "劣势信息",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_DESC_TYPE_C",
+      "original_dict_id": "rival_desc_type",
+      "original_class": "rival",
+      "original_code": "C",
+      "name_zh": "市场定位",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_DESC_TYPE_D",
+      "original_dict_id": "rival_desc_type",
+      "original_class": "rival",
+      "original_code": "D",
+      "name_zh": "优势客户群",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_DESC_TYPE_E",
+      "original_dict_id": "rival_desc_type",
+      "original_class": "rival",
+      "original_code": "E",
+      "name_zh": "渠道能力",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_DESC_TYPE_F",
+      "original_dict_id": "rival_desc_type",
+      "original_class": "rival",
+      "original_code": "F",
+      "name_zh": "政府关系",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_DESC_TYPE_G",
+      "original_dict_id": "rival_desc_type",
+      "original_class": "rival",
+      "original_code": "G",
+      "name_zh": "研发能力",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_DESC_TYPE_H",
+      "original_dict_id": "rival_desc_type",
+      "original_class": "rival",
+      "original_code": "H",
+      "name_zh": "竞争策略",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_DESC_TYPE_A",
+      "original_dict_id": "rival_res_desc_type",
+      "original_class": "rival",
+      "original_code": "A",
+      "name_zh": "优势信息",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_DESC_TYPE_B",
+      "original_dict_id": "rival_res_desc_type",
+      "original_class": "rival",
+      "original_code": "B",
+      "name_zh": "劣势信息",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_FILE_TYPE_doc",
+      "original_dict_id": "rival_file_type",
+      "original_class": "rival",
+      "original_code": "doc",
+      "name_zh": "介绍资料",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_FILE_TYPE_manual",
+      "original_dict_id": "rival_res_file_type",
+      "original_class": "rival",
+      "original_code": "manual",
+      "name_zh": "使用手册",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_FILE_TYPE_doc",
+      "original_dict_id": "rival_res_file_type",
+      "original_class": "rival",
+      "original_code": "doc",
+      "name_zh": "产品说明",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "RIVAL_RES_FILE_TYPE_other",
+      "original_dict_id": "rival_res_file_type",
+      "original_class": "rival",
+      "original_code": "other",
+      "name_zh": "其他文件",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    }
+  ]
+}

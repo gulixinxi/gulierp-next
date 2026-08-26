@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "schema_version": 1,
+    "seed_type": "MDM_DICTIONARY_V15",
+    "source": "onlyit_demo_mdb",
+    "source_db": "演示信息.mdb (D:/guli/oit_setup/db/)",
+    "extraction_date": "2026-08-26",
+    "extraction_tool": "access_parser 1.x (Python)",
+    "scope": "V15",
+    "idempotency_strategy": "natural_key (TenantId, DictType, Code)",
+    "draft_status": "DRAFT - requires operator review before seed activation",
+    "format": "GuliERP MDM V1.5+ dictionary seed draft",
+    "domain": "3.仓库库存",
+    "item_count": 8
+  },
+  "items": [
+    {
+      "canonical_code": "VR_REF_FMT_OPT_TYPE_A",
+      "original_dict_id": "vr_ref_fmt_opt_type",
+      "original_class": "vr",
+      "original_code": "A",
+      "name_zh": "所有单据统一",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_REF_FMT_OPT_TYPE_B",
+      "original_dict_id": "vr_ref_fmt_opt_type",
+      "original_class": "vr",
+      "original_code": "B",
+      "name_zh": "绑定下级单据类别",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_REF_FMT_OPT_TYPE_C",
+      "original_dict_id": "vr_ref_fmt_opt_type",
+      "original_class": "vr",
+      "original_code": "C",
+      "name_zh": "绑定下级+上级单据类别",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_RES_TYPE_A",
+      "original_dict_id": "vr_res_type",
+      "original_class": "vr",
+      "original_code": "A",
+      "name_zh": "所有",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_RES_TYPE_B",
+      "original_dict_id": "vr_res_type",
+      "original_class": "vr",
+      "original_code": "B",
+      "name_zh": "明细物资",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_RES_TYPE_C",
+      "original_dict_id": "vr_res_type",
+      "original_class": "vr",
+      "original_code": "C",
+      "name_zh": "主物资",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_COST_VOUCHER_TYPE_GE",
+      "original_dict_id": "vr_cost_voucher_type",
+      "original_class": "vr",
+      "original_code": "GE",
+      "name_zh": "组装单",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "VR_COST_VOUCHER_TYPE_MC",
+      "original_dict_id": "vr_cost_voucher_type",
+      "original_class": "vr",
+      "original_code": "MC",
+      "name_zh": "生产单",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    }
+  ]
+}

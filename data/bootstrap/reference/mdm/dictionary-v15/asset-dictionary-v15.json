@@ -1,0 +1,1028 @@
+{
+  "meta": {
+    "schema_version": 1,
+    "seed_type": "MDM_DICTIONARY_V15",
+    "source": "onlyit_demo_mdb",
+    "source_db": "演示信息.mdb (D:/guli/oit_setup/db/)",
+    "extraction_date": "2026-08-26",
+    "extraction_tool": "access_parser 1.x (Python)",
+    "scope": "V15",
+    "idempotency_strategy": "natural_key (TenantId, DictType, Code)",
+    "draft_status": "DRAFT - requires operator review before seed activation",
+    "format": "GuliERP MDM V1.5+ dictionary seed draft",
+    "domain": "8.资产管理",
+    "item_count": 101
+  },
+  "items": [
+    {
+      "canonical_code": "EAS_GRADE_A",
+      "original_dict_id": "eas_grade",
+      "original_class": "eas",
+      "original_code": "A",
+      "name_zh": "A级",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_GRADE_B",
+      "original_dict_id": "eas_grade",
+      "original_class": "eas",
+      "original_code": "B",
+      "name_zh": "B级",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_GRADE_C",
+      "original_dict_id": "eas_grade",
+      "original_class": "eas",
+      "original_code": "C",
+      "name_zh": "C级",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_GRADE_D",
+      "original_dict_id": "eas_grade",
+      "original_class": "eas",
+      "original_code": "D",
+      "name_zh": "D级",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_ITEM_KIND_A",
+      "original_dict_id": "eas_item_kind",
+      "original_class": "eas",
+      "original_code": "A",
+      "name_zh": "财务方面",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_ITEM_KIND_B",
+      "original_dict_id": "eas_item_kind",
+      "original_class": "eas",
+      "original_code": "B",
+      "name_zh": "顾客方面",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_ITEM_KIND_C",
+      "original_dict_id": "eas_item_kind",
+      "original_class": "eas",
+      "original_code": "C",
+      "name_zh": "内部营运流程方面",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_ITEM_KIND_D",
+      "original_dict_id": "eas_item_kind",
+      "original_class": "eas",
+      "original_code": "D",
+      "name_zh": "学习与成长方面",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_PROCESS_STATE_A",
+      "original_dict_id": "eas_process_state",
+      "original_class": "eas",
+      "original_code": "A",
+      "name_zh": "计划制订中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_PROCESS_STATE_B",
+      "original_dict_id": "eas_process_state",
+      "original_class": "eas",
+      "original_code": "B",
+      "name_zh": "进行已完成/待审",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_PROCESS_STATE_C",
+      "original_dict_id": "eas_process_state",
+      "original_class": "eas",
+      "original_code": "C",
+      "name_zh": "计划已审/考核中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_PROCESS_STATE_D",
+      "original_dict_id": "eas_process_state",
+      "original_class": "eas",
+      "original_code": "D",
+      "name_zh": "考核完成/待确认",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_PROCESS_STATE_E",
+      "original_dict_id": "eas_process_state",
+      "original_class": "eas",
+      "original_code": "E",
+      "name_zh": "考核确认",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_GROUP_STATE_A",
+      "original_dict_id": "eas_group_state",
+      "original_class": "eas",
+      "original_code": "A",
+      "name_zh": "进行中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_GROUP_STATE_B",
+      "original_dict_id": "eas_group_state",
+      "original_class": "eas",
+      "original_code": "B",
+      "name_zh": "评分已经结束",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_GROUP_STATE_C",
+      "original_dict_id": "eas_group_state",
+      "original_class": "eas",
+      "original_code": "C",
+      "name_zh": "未开始",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_SET_STATE_A",
+      "original_dict_id": "eas_set_state",
+      "original_class": "eas",
+      "original_code": "A",
+      "name_zh": "正常",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EAS_SET_STATE_B",
+      "original_dict_id": "eas_set_state",
+      "original_class": "eas",
+      "original_code": "B",
+      "name_zh": "归档",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_TARGET_A",
+      "original_dict_id": "asses_target",
+      "original_class": "eas",
+      "original_code": "A",
+      "name_zh": "分公司",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_TARGET_B",
+      "original_dict_id": "asses_target",
+      "original_class": "eas",
+      "original_code": "B",
+      "name_zh": "部门",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_TARGET_C",
+      "original_dict_id": "asses_target",
+      "original_class": "eas",
+      "original_code": "C",
+      "name_zh": "员工",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_TARGET_D",
+      "original_dict_id": "asses_target",
+      "original_class": "eas",
+      "original_code": "D",
+      "name_zh": "总公司",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_ITEM_GET_METHOD_A",
+      "original_dict_id": "asses_item_get_method",
+      "original_class": "eas",
+      "original_code": "A",
+      "name_zh": "录入",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_ITEM_GET_METHOD_B",
+      "original_dict_id": "asses_item_get_method",
+      "original_class": "eas",
+      "original_code": "B",
+      "name_zh": "计算",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_ITEM_GET_METHOD_C",
+      "original_dict_id": "asses_item_get_method",
+      "original_class": "eas",
+      "original_code": "C",
+      "name_zh": "考评",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ITEM_UNIT_A",
+      "original_dict_id": "item_unit",
+      "original_class": "eas",
+      "original_code": "A",
+      "name_zh": "元",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ITEM_UNIT_B",
+      "original_dict_id": "item_unit",
+      "original_class": "eas",
+      "original_code": "B",
+      "name_zh": "百分比",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ITEM_UNIT_C",
+      "original_dict_id": "item_unit",
+      "original_class": "eas",
+      "original_code": "C",
+      "name_zh": "个",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_GROUP_TYPE_A",
+      "original_dict_id": "asses_group_type",
+      "original_class": "eas",
+      "original_code": "A",
+      "name_zh": "年度",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_GROUP_TYPE_B",
+      "original_dict_id": "asses_group_type",
+      "original_class": "eas",
+      "original_code": "B",
+      "name_zh": "季度",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_GROUP_TYPE_C",
+      "original_dict_id": "asses_group_type",
+      "original_class": "eas",
+      "original_code": "C",
+      "name_zh": "月度",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_GROUP_TYPE_D",
+      "original_dict_id": "asses_group_type",
+      "original_class": "eas",
+      "original_code": "D",
+      "name_zh": "旬",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSES_GROUP_TYPE_E",
+      "original_dict_id": "asses_group_type",
+      "original_class": "eas",
+      "original_code": "E",
+      "name_zh": "周",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSESS_TARGET_TYPE_A",
+      "original_dict_id": "assess_target_type",
+      "original_class": "eas",
+      "original_code": "A",
+      "name_zh": "企业",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSESS_TARGET_TYPE_B",
+      "original_dict_id": "assess_target_type",
+      "original_class": "eas",
+      "original_code": "B",
+      "name_zh": "部门",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSESS_TARGET_TYPE_C",
+      "original_dict_id": "assess_target_type",
+      "original_class": "eas",
+      "original_code": "C",
+      "name_zh": "员工",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSESS_TARGET_TYPE_D",
+      "original_dict_id": "assess_target_type",
+      "original_class": "eas",
+      "original_code": "D",
+      "name_zh": "总公司",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_FILE_TYPE_pict",
+      "original_dict_id": "asset_file_type",
+      "original_class": "asset",
+      "original_code": "pict",
+      "name_zh": "图片",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_FILE_TYPE_manual",
+      "original_dict_id": "asset_file_type",
+      "original_class": "asset",
+      "original_code": "manual",
+      "name_zh": "说明书",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_FILE_TYPE_other",
+      "original_dict_id": "asset_file_type",
+      "original_class": "asset",
+      "original_code": "other",
+      "name_zh": "其他文件",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_PLACE_01",
+      "original_dict_id": "asset_place",
+      "original_class": "asset",
+      "original_code": "01",
+      "name_zh": "总部",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_EXAMINE_CAUSE_A",
+      "original_dict_id": "asset_examine_cause",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "自动损坏",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_EXAMINE_CAUSE_B",
+      "original_dict_id": "asset_examine_cause",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "人为损坏",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_EXAMINE_CAUSE_C",
+      "original_dict_id": "asset_examine_cause",
+      "original_class": "asset",
+      "original_code": "C",
+      "name_zh": "其他原因",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_EXAMINE_STATE_A",
+      "original_dict_id": "asset_examine_state",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "计划中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_EXAMINE_STATE_B",
+      "original_dict_id": "asset_examine_state",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "检测中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_EXAMINE_STATE_C",
+      "original_dict_id": "asset_examine_state",
+      "original_class": "asset",
+      "original_code": "C",
+      "name_zh": "待维修",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_EXAMINE_STATE_D",
+      "original_dict_id": "asset_examine_state",
+      "original_class": "asset",
+      "original_code": "D",
+      "name_zh": "结束",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_EXAMINE_STATE_A,B,C",
+      "original_dict_id": "asset_examine_state",
+      "original_class": "asset",
+      "original_code": "A,B,C",
+      "name_zh": "进行中",
+      "note": "这是组合码，除了结束的都选上",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_DEPRE_METHOD_A",
+      "original_dict_id": "asset_depre_method",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "不计提折旧",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_DEPRE_METHOD_B",
+      "original_dict_id": "asset_depre_method",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "平均年限法",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_DEPRE_METHOD_D",
+      "original_dict_id": "asset_depre_method",
+      "original_class": "asset",
+      "original_code": "D",
+      "name_zh": "工作量法",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_DEPRE_METHOD_E",
+      "original_dict_id": "asset_depre_method",
+      "original_class": "asset",
+      "original_code": "E",
+      "name_zh": "双倍余额递减法",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_DEPRE_METHOD_F",
+      "original_dict_id": "asset_depre_method",
+      "original_class": "asset",
+      "original_code": "F",
+      "name_zh": "年数总和法",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_CHG_TYPE_A",
+      "original_dict_id": "asset_chg_type",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "新增/入账",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_CHG_TYPE_B",
+      "original_dict_id": "asset_chg_type",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "参数调整",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_CHG_TYPE_C",
+      "original_dict_id": "asset_chg_type",
+      "original_class": "asset",
+      "original_code": "C",
+      "name_zh": "清理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_CHG_TYPE_D",
+      "original_dict_id": "asset_chg_type",
+      "original_class": "asset",
+      "original_code": "D",
+      "name_zh": "减值",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_CHG_TYPE_E",
+      "original_dict_id": "asset_chg_type",
+      "original_class": "asset",
+      "original_code": "E",
+      "name_zh": "增值",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_USE_STATE_A",
+      "original_dict_id": "asset_use_state",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "未启用",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_USE_STATE_B",
+      "original_dict_id": "asset_use_state",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "出借",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_USE_STATE_C",
+      "original_dict_id": "asset_use_state",
+      "original_class": "asset",
+      "original_code": "C",
+      "name_zh": "空闲中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_USE_STATE_D",
+      "original_dict_id": "asset_use_state",
+      "original_class": "asset",
+      "original_code": "D",
+      "name_zh": "维修中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_USE_STATE_E",
+      "original_dict_id": "asset_use_state",
+      "original_class": "asset",
+      "original_code": "E",
+      "name_zh": "报废",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_USE_STATE_F",
+      "original_dict_id": "asset_use_state",
+      "original_class": "asset",
+      "original_code": "F",
+      "name_zh": "使用中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_USE_STATE_X",
+      "original_dict_id": "asset_use_state",
+      "original_class": "asset",
+      "original_code": "X",
+      "name_zh": "已注销",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_STATE_A",
+      "original_dict_id": "asset_state",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "正常",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_STATE_B",
+      "original_dict_id": "asset_state",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "已清理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_UNIT_TYPE_A",
+      "original_dict_id": "asset_unit_type",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "个",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_UNIT_TYPE_B",
+      "original_dict_id": "asset_unit_type",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "件",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_UNIT_TYPE_C",
+      "original_dict_id": "asset_unit_type",
+      "original_class": "asset",
+      "original_code": "C",
+      "name_zh": "条",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_UNIT_TYPE_D",
+      "original_dict_id": "asset_unit_type",
+      "original_class": "asset",
+      "original_code": "D",
+      "name_zh": "套",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_KIND_A",
+      "original_dict_id": "asset_kind",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "销售类",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_KIND_B",
+      "original_dict_id": "asset_kind",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "采购类",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_KIND_C",
+      "original_dict_id": "asset_kind",
+      "original_class": "asset",
+      "original_code": "C",
+      "name_zh": "自制成品",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_KIND_D",
+      "original_dict_id": "asset_kind",
+      "original_class": "asset",
+      "original_code": "D",
+      "name_zh": "半成品",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_KIND_E",
+      "original_dict_id": "asset_kind",
+      "original_class": "asset",
+      "original_code": "E",
+      "name_zh": "原材料",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_ADD_METHOD_A",
+      "original_dict_id": "asset_add_method",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "购入",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_ADD_METHOD_B",
+      "original_dict_id": "asset_add_method",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "自行建造",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_ADD_METHOD_C",
+      "original_dict_id": "asset_add_method",
+      "original_class": "asset",
+      "original_code": "C",
+      "name_zh": "投资者投入",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_ADD_METHOD_D",
+      "original_dict_id": "asset_add_method",
+      "original_class": "asset",
+      "original_code": "D",
+      "name_zh": "融资租入",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_ADD_METHOD_E",
+      "original_dict_id": "asset_add_method",
+      "original_class": "asset",
+      "original_code": "E",
+      "name_zh": "接收捐赠",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_ADD_METHOD_F",
+      "original_dict_id": "asset_add_method",
+      "original_class": "asset",
+      "original_code": "F",
+      "name_zh": "盘盈",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_REDUCE_METHOD_A",
+      "original_dict_id": "asset_reduce_method",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "出售",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_REDUCE_METHOD_B",
+      "original_dict_id": "asset_reduce_method",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "盘亏",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_REDUCE_METHOD_C",
+      "original_dict_id": "asset_reduce_method",
+      "original_class": "asset",
+      "original_code": "C",
+      "name_zh": "损毁报废",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_REDUCE_METHOD_D",
+      "original_dict_id": "asset_reduce_method",
+      "original_class": "asset",
+      "original_code": "D",
+      "name_zh": "捐赠",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_REDUCE_METHOD_E",
+      "original_dict_id": "asset_reduce_method",
+      "original_class": "asset",
+      "original_code": "E",
+      "name_zh": "丢失",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_LOAD_UNIT_TYPE_A",
+      "original_dict_id": "asset_load_unit_type",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "小时",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_LOAD_UNIT_TYPE_B",
+      "original_dict_id": "asset_load_unit_type",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "月",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_LOAD_UNIT_TYPE_C",
+      "original_dict_id": "asset_load_unit_type",
+      "original_class": "asset",
+      "original_code": "C",
+      "name_zh": "天",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_LOAD_UNIT_TYPE_D",
+      "original_dict_id": "asset_load_unit_type",
+      "original_class": "asset",
+      "original_code": "D",
+      "name_zh": "年",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_DRAW_STATE_A",
+      "original_dict_id": "asset_draw_state",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "未归还",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_DRAW_STATE_B",
+      "original_dict_id": "asset_draw_state",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "已归还",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_DRAW_STATE_C",
+      "original_dict_id": "asset_draw_state",
+      "original_class": "asset",
+      "original_code": "C",
+      "name_zh": "已赔偿",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_EXAMINE_TYPE_A",
+      "original_dict_id": "asset_examine_type",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "常规检测维护",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_EXAMINE_TYPE_B",
+      "original_dict_id": "asset_examine_type",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "大修",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_HIRE_STATE_A",
+      "original_dict_id": "asset_hire_state",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "未归还",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_HIRE_STATE_B",
+      "original_dict_id": "asset_hire_state",
+      "original_class": "asset",
+      "original_code": "B",
+      "name_zh": "已归还",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_HIRE_STATE_C",
+      "original_dict_id": "asset_hire_state",
+      "original_class": "asset",
+      "original_code": "C",
+      "name_zh": "已赔偿",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "ASSET_MOVE_TYPE_A",
+      "original_dict_id": "asset_move_type",
+      "original_class": "asset",
+      "original_code": "A",
+      "name_zh": "调拨",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    }
+  ]
+}

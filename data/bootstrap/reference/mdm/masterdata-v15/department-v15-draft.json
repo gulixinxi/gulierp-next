@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "schema_version": 1,
+    "source": "onlyit_demo_mdb",
+    "source_db": "演示信息.mdb (D:/guli/oit_setup/db/)",
+    "extraction_date": "2026-08-26",
+    "extraction_tool": "access_parser 1.x (Python)",
+    "draft_status": "DRAFT - requires operator review before seed activation",
+    "format": "GuliERP MDM V1.5+ masterdata seed draft",
+    "notes": [
+      "All Chinese strings are properly UTF-8 encoded (PowerShell console display may show garbled but file content is correct).",
+      "Items marked needs_manual_review=true are either orphan records or fields with suspected data quality issues."
+    ],
+    "entity": "MdmDepartment",
+    "item_count": 3
+  },
+  "items": [
+    {
+      "canonical_code": "16",
+      "name_zh": "生产部",
+      "parent_dept_code": null,
+      "company_id": "01",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "14",
+      "name_zh": "销售部",
+      "parent_dept_code": null,
+      "company_id": "01",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "21",
+      "name_zh": "零售部",
+      "parent_dept_code": null,
+      "company_id": "01",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    }
+  ]
+}

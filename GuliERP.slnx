@@ -33,6 +33,7 @@
     <Project Path="tests/GuliERP.Identity.Bootstrap.Tests/GuliERP.Identity.Bootstrap.Tests.csproj" />
     <Project Path="tests/GuliERP.Identity.IntegrationTests/GuliERP.Identity.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.Identity.Tests/GuliERP.Identity.Tests.csproj" />
+    <Project Path="tests/GuliERP.Mdm.Bootstrap.Tests/GuliERP.Mdm.Bootstrap.Tests.csproj" />
     <Project Path="tests/GuliERP.Mdm.IntegrationTests/GuliERP.Mdm.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.Mdm.Tests/GuliERP.Mdm.Tests.csproj" />
     <Project Path="tests/GuliERP.Sales.Tests/GuliERP.Sales.Tests.csproj" />

@@ -1,0 +1,2398 @@
+{
+  "meta": {
+    "schema_version": 1,
+    "seed_type": "MDM_DICTIONARY_V15",
+    "source": "onlyit_demo_mdb",
+    "source_db": "演示信息.mdb (D:/guli/oit_setup/db/)",
+    "extraction_date": "2026-08-26",
+    "extraction_tool": "access_parser 1.x (Python)",
+    "scope": "V15",
+    "idempotency_strategy": "natural_key (TenantId, DictType, Code)",
+    "draft_status": "DRAFT - requires operator review before seed activation",
+    "format": "GuliERP MDM V1.5+ dictionary seed draft",
+    "domain": "7.OA秘书",
+    "item_count": 238
+  },
+  "items": [
+    {
+      "canonical_code": "MUP_USER_STATE_A",
+      "original_dict_id": "mup_user_state",
+      "original_class": "mup",
+      "original_code": "A",
+      "name_zh": "正常",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_STATE_B",
+      "original_dict_id": "mup_user_state",
+      "original_class": "mup",
+      "original_code": "B",
+      "name_zh": "已经停用",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_PWD_DEGREE_A",
+      "original_dict_id": "mup_pwd_degree",
+      "original_class": "mup",
+      "original_code": "A",
+      "name_zh": "不限制",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_PWD_DEGREE_B",
+      "original_dict_id": "mup_pwd_degree",
+      "original_class": "mup",
+      "original_code": "B",
+      "name_zh": "至少4位长度",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OPER_TYPE_A",
+      "original_dict_id": "mup_obj_log_oper_type",
+      "original_class": "mup",
+      "original_code": "A",
+      "name_zh": "创建或修改",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OPER_TYPE_B",
+      "original_dict_id": "mup_obj_log_oper_type",
+      "original_class": "mup",
+      "original_code": "B",
+      "name_zh": "删除",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OPER_TYPE_C",
+      "original_dict_id": "mup_obj_log_oper_type",
+      "original_class": "mup",
+      "original_code": "C",
+      "name_zh": "拖动",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OPER_TYPE_D",
+      "original_dict_id": "mup_obj_log_oper_type",
+      "original_class": "mup",
+      "original_code": "D",
+      "name_zh": "改为别的编号",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OPER_TYPE_E",
+      "original_dict_id": "mup_obj_log_oper_type",
+      "original_class": "mup",
+      "original_code": "E",
+      "name_zh": "合并编号",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OPER_TYPE_F",
+      "original_dict_id": "mup_obj_log_oper_type",
+      "original_class": "mup",
+      "original_code": "F",
+      "name_zh": "从别的编号改入",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OPER_TYPE_G",
+      "original_dict_id": "mup_obj_log_oper_type",
+      "original_class": "mup",
+      "original_code": "G",
+      "name_zh": "审定",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OPER_TYPE_H",
+      "original_dict_id": "mup_obj_log_oper_type",
+      "original_class": "mup",
+      "original_code": "H",
+      "name_zh": "反审定",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OBJ_eba",
+      "original_dict_id": "mup_obj_log_obj",
+      "original_class": "mup",
+      "original_code": "eba",
+      "name_zh": "客户",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OBJ_sup",
+      "original_dict_id": "mup_obj_log_obj",
+      "original_class": "mup",
+      "original_code": "sup",
+      "name_zh": "供应商",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OBJ_res",
+      "original_dict_id": "mup_obj_log_obj",
+      "original_class": "mup",
+      "original_code": "res",
+      "name_zh": "产品",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OBJ_res_bom",
+      "original_dict_id": "mup_obj_log_obj",
+      "original_class": "mup",
+      "original_code": "res_bom",
+      "name_zh": "BOM",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OBJ_asset",
+      "original_dict_id": "mup_obj_log_obj",
+      "original_class": "mup",
+      "original_code": "asset",
+      "name_zh": "资产",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OBJ_pm_project",
+      "original_dict_id": "mup_obj_log_obj",
+      "original_class": "mup",
+      "original_code": "pm_project",
+      "name_zh": "项目",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OBJ_evm_subject",
+      "original_dict_id": "mup_obj_log_obj",
+      "original_class": "mup",
+      "original_code": "evm_subject",
+      "name_zh": "会计科目",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OBJ_emf_route",
+      "original_dict_id": "mup_obj_log_obj",
+      "original_class": "mup",
+      "original_code": "emf_route",
+      "name_zh": "工艺流程",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OBJ_emp_dorm",
+      "original_dict_id": "mup_obj_log_obj",
+      "original_class": "mup",
+      "original_code": "emp_dorm",
+      "name_zh": "宿舍",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_DEF_OBJ_u0001",
+      "original_dict_id": "mup_user_def_obj",
+      "original_class": "mup",
+      "original_code": "u0001",
+      "name_zh": "自定义0001",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_DEF_OBJ_u0002",
+      "original_dict_id": "mup_user_def_obj",
+      "original_class": "mup",
+      "original_code": "u0002",
+      "name_zh": "自定义0002",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_DEF_OBJ_u0003",
+      "original_dict_id": "mup_user_def_obj",
+      "original_class": "mup",
+      "original_code": "u0003",
+      "name_zh": "自定义0003",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_DEF_OBJ_u0004",
+      "original_dict_id": "mup_user_def_obj",
+      "original_class": "mup",
+      "original_code": "u0004",
+      "name_zh": "自定义0004",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_DEF_OBJ_u0005",
+      "original_dict_id": "mup_user_def_obj",
+      "original_class": "mup",
+      "original_code": "u0005",
+      "name_zh": "自定义0005",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_DEF_OBJ_u0006",
+      "original_dict_id": "mup_user_def_obj",
+      "original_class": "mup",
+      "original_code": "u0006",
+      "name_zh": "自定义0006",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_DEF_OBJ_u0007",
+      "original_dict_id": "mup_user_def_obj",
+      "original_class": "mup",
+      "original_code": "u0007",
+      "name_zh": "自定义0007",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_DEF_OBJ_u0008",
+      "original_dict_id": "mup_user_def_obj",
+      "original_class": "mup",
+      "original_code": "u0008",
+      "name_zh": "自定义0008",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_DRIVER_1001",
+      "original_dict_id": "car_driver",
+      "original_class": "car",
+      "original_code": "1001",
+      "name_zh": "王科",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_DEF_OBJ_u0009",
+      "original_dict_id": "mup_user_def_obj",
+      "original_class": "mup",
+      "original_code": "u0009",
+      "name_zh": "自定义0009",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_DEF_OBJ_u0010",
+      "original_dict_id": "mup_user_def_obj",
+      "original_class": "mup",
+      "original_code": "u0010",
+      "name_zh": "自定义0010",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_USER_RELA_TYPE_A",
+      "original_dict_id": "mup_user_rela_type",
+      "original_class": "mup",
+      "original_code": "A",
+      "name_zh": "操作员是相关操作员的上级",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_DS_TYPE_A",
+      "original_dict_id": "rep_ds_type",
+      "original_class": "rep",
+      "original_code": "A",
+      "name_zh": "扩展查询",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_DS_TYPE_B",
+      "original_dict_id": "rep_ds_type",
+      "original_class": "rep",
+      "original_code": "B",
+      "name_zh": "扩展统计",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "UNIT_PRINT_OPT_A",
+      "original_dict_id": "unit_print_opt",
+      "original_class": "rep",
+      "original_code": "A",
+      "name_zh": "始终打印",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "UNIT_PRINT_OPT_B",
+      "original_dict_id": "unit_print_opt",
+      "original_class": "rep",
+      "original_code": "B",
+      "name_zh": "套打不打",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "UNIT_PRINT_OPT_C",
+      "original_dict_id": "unit_print_opt",
+      "original_class": "rep",
+      "original_code": "C",
+      "name_zh": "套打时不打边框",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "UNIT_PRINT_OPT_D",
+      "original_dict_id": "unit_print_opt",
+      "original_class": "rep",
+      "original_code": "D",
+      "name_zh": "始终不打印",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "UNIT_PRINT_OPT_E",
+      "original_dict_id": "unit_print_opt",
+      "original_class": "rep",
+      "original_code": "E",
+      "name_zh": "图章打印模式",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_PRINT_MODE_A",
+      "original_dict_id": "rep_print_mode",
+      "original_class": "rep",
+      "original_code": "A",
+      "name_zh": "完整打印",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_PRINT_MODE_B",
+      "original_dict_id": "rep_print_mode",
+      "original_class": "rep",
+      "original_code": "B",
+      "name_zh": "套打",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "PRINT_TEMP_PUB_IMAGE_TYPE_logo",
+      "original_dict_id": "print_temp_pub_image_type",
+      "original_class": "rep",
+      "original_code": "logo",
+      "name_zh": "Logo图片",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "PRINT_TEMP_PUB_IMAGE_TYPE_corp",
+      "original_dict_id": "print_temp_pub_image_type",
+      "original_class": "rep",
+      "original_code": "corp",
+      "name_zh": "公司图片",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_ANALYSIS_NUM_CAL_MODE_A",
+      "original_dict_id": "rep_analysis_num_cal_mode",
+      "original_class": "rep",
+      "original_code": "A",
+      "name_zh": "记录数",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_ANALYSIS_NUM_CAL_MODE_B",
+      "original_dict_id": "rep_analysis_num_cal_mode",
+      "original_class": "rep",
+      "original_code": "B",
+      "name_zh": "求和",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_ANALYSIS_NUM_CAL_MODE_C",
+      "original_dict_id": "rep_analysis_num_cal_mode",
+      "original_class": "rep",
+      "original_code": "C",
+      "name_zh": "最大值",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_ANALYSIS_NUM_CAL_MODE_D",
+      "original_dict_id": "rep_analysis_num_cal_mode",
+      "original_class": "rep",
+      "original_code": "D",
+      "name_zh": "最小值",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_ANALYSIS_NUM_CAL_MODE_E",
+      "original_dict_id": "rep_analysis_num_cal_mode",
+      "original_class": "rep",
+      "original_code": "E",
+      "name_zh": "平均值",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_ANALYSIS_NUM_CAL_MODE_F",
+      "original_dict_id": "rep_analysis_num_cal_mode",
+      "original_class": "rep",
+      "original_code": "F",
+      "name_zh": "取值",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_BOARD_SHOW_MODE_A",
+      "original_dict_id": "rep_board_show_mode",
+      "original_class": "rep",
+      "original_code": "A",
+      "name_zh": "显示表格方式",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_BOARD_SHOW_MODE_B",
+      "original_dict_id": "rep_board_show_mode",
+      "original_class": "rep",
+      "original_code": "B",
+      "name_zh": "显示图表方式",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_SIGN_DEF_TYPE_A",
+      "original_dict_id": "oa_sign_def_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "培训",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_SIGN_DEF_TYPE_B",
+      "original_dict_id": "oa_sign_def_type",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "会议",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_STATE_A",
+      "original_dict_id": "tbx_sms_state",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "等待发送",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_STATE_B",
+      "original_dict_id": "tbx_sms_state",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "发送完毕",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_STATE_C",
+      "original_dict_id": "tbx_sms_state",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "发送失败",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_STATE_D",
+      "original_dict_id": "tbx_sms_state",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "超出期限",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_manual",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "manual",
+      "name_zh": "手工发送",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_ebs_v",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "ebs_v",
+      "name_zh": "单据操作通知",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_emp_birthday",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "emp_birthday",
+      "name_zh": "员工生日",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_app_emp_birthday",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "app_emp_birthday",
+      "name_zh": "业务员生日",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_eba_card_birthday",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "eba_card_birthday",
+      "name_zh": "客户联系人生日",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_sup_card_birthday",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "sup_card_birthday",
+      "name_zh": "供应商联系人生日",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_tbx_card_birthday",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "tbx_card_birthday",
+      "name_zh": "个人名片生日",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_hrm_employ_interview",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "hrm_employ_interview",
+      "name_zh": "应聘面试",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_hrm_employ_accept",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "hrm_employ_accept",
+      "name_zh": "应聘录取",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_mem_card_usage_a",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "mem_card_usage_a",
+      "name_zh": "会员卡充值",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_mem_card_usage_b",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "mem_card_usage_b",
+      "name_zh": "会员卡消费",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_eba_mem_card_birthday",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "eba_mem_card_birthday",
+      "name_zh": "会员生日",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TEMP_TARGET_TYPE_A",
+      "original_dict_id": "tbx_sms_temp_target_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "员工",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TEMP_TARGET_TYPE_B",
+      "original_dict_id": "tbx_sms_temp_target_type",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "客户",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TEMP_TARGET_TYPE_C",
+      "original_dict_id": "tbx_sms_temp_target_type",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "供应商",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TEMP_TARGET_TYPE_D",
+      "original_dict_id": "tbx_sms_temp_target_type",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "私人名片",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TEMP_TARGET_TYPE_E",
+      "original_dict_id": "tbx_sms_temp_target_type",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "业务员",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TYPE_wage",
+      "original_dict_id": "tbx_sms_type",
+      "original_class": "tbx",
+      "original_code": "wage",
+      "name_zh": "工资短信",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TEMP_TARGET_TYPE_F",
+      "original_dict_id": "tbx_sms_temp_target_type",
+      "original_class": "tbx",
+      "original_code": "F",
+      "name_zh": "客户联系人",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TEMP_TARGET_TYPE_G",
+      "original_dict_id": "tbx_sms_temp_target_type",
+      "original_class": "tbx",
+      "original_code": "G",
+      "name_zh": "供应商联系人",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TEMP_TARGET_TYPE_H",
+      "original_dict_id": "tbx_sms_temp_target_type",
+      "original_class": "tbx",
+      "original_code": "H",
+      "name_zh": "客户线索",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TEMP_TARGET_TYPE_I",
+      "original_dict_id": "tbx_sms_temp_target_type",
+      "original_class": "tbx",
+      "original_code": "I",
+      "name_zh": "会员卡",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TEMP_TARGET_TYPE_J",
+      "original_dict_id": "tbx_sms_temp_target_type",
+      "original_class": "tbx",
+      "original_code": "J",
+      "name_zh": "应聘员工",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SMS_TEMP_TARGET_TYPE_-",
+      "original_dict_id": "tbx_sms_temp_target_type",
+      "original_class": "tbx",
+      "original_code": "-",
+      "name_zh": "其他",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_INFORM_STATE_A",
+      "original_dict_id": "tbx_inform_state",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "拟定中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_INFORM_STATE_B",
+      "original_dict_id": "tbx_inform_state",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "正式稿",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_PLAN_TYPE_A",
+      "original_dict_id": "tbx_plan_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "周计划",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_PLAN_TYPE_B",
+      "original_dict_id": "tbx_plan_type",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "月计划",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_PLAN_TYPE_C",
+      "original_dict_id": "tbx_plan_type",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "季度计划",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_PLAN_TYPE_D",
+      "original_dict_id": "tbx_plan_type",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "年计划",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_PLAN_TYPE_E",
+      "original_dict_id": "tbx_plan_type",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "自定义计划",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_NATION_TYPE_A",
+      "original_dict_id": "tbx_man_nation_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "汉族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_NATION_TYPE_B",
+      "original_dict_id": "tbx_man_nation_type",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "回族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_NATION_TYPE_C",
+      "original_dict_id": "tbx_man_nation_type",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "藏族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_NATION_TYPE_D",
+      "original_dict_id": "tbx_man_nation_type",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "维吾尔族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_NATION_TYPE_E",
+      "original_dict_id": "tbx_man_nation_type",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "蒙古族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_NATION_TYPE_F",
+      "original_dict_id": "tbx_man_nation_type",
+      "original_class": "tbx",
+      "original_code": "F",
+      "name_zh": "苗族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_NATION_TYPE_G",
+      "original_dict_id": "tbx_man_nation_type",
+      "original_class": "tbx",
+      "original_code": "G",
+      "name_zh": "白族",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_DEPT_POST_A",
+      "original_dict_id": "tbx_man_dept_post",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "经理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_DEPT_POST_B",
+      "original_dict_id": "tbx_man_dept_post",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "科长",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_DEPT_POST_C",
+      "original_dict_id": "tbx_man_dept_post",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "处长",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_DEPT_POST_D",
+      "original_dict_id": "tbx_man_dept_post",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "科员",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_DEPT_A",
+      "original_dict_id": "tbx_man_dept",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "销售科",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_DEPT_B",
+      "original_dict_id": "tbx_man_dept",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "采购科",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_DEPT_C",
+      "original_dict_id": "tbx_man_dept",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "人事科",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_DEPT_D",
+      "original_dict_id": "tbx_man_dept",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "财务科",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_DEPT_E",
+      "original_dict_id": "tbx_man_dept",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "生产科",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_DEPT_F",
+      "original_dict_id": "tbx_man_dept",
+      "original_class": "tbx",
+      "original_code": "F",
+      "name_zh": "总经办",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_CULTURE_DEGREE_A",
+      "original_dict_id": "tbx_man_culture_degree",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "高中以下",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_CULTURE_DEGREE_B",
+      "original_dict_id": "tbx_man_culture_degree",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "高中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_CULTURE_DEGREE_C",
+      "original_dict_id": "tbx_man_culture_degree",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "中专",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_CULTURE_DEGREE_D",
+      "original_dict_id": "tbx_man_culture_degree",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "大专",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_CULTURE_DEGREE_E",
+      "original_dict_id": "tbx_man_culture_degree",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "本科",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_CULTURE_DEGREE_F",
+      "original_dict_id": "tbx_man_culture_degree",
+      "original_class": "tbx",
+      "original_code": "F",
+      "name_zh": "硕士",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MAN_CULTURE_DEGREE_G",
+      "original_dict_id": "tbx_man_culture_degree",
+      "original_class": "tbx",
+      "original_code": "G",
+      "name_zh": "博士",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_LEAVE_TYPE_A",
+      "original_dict_id": "oa_leave_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "事假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_LEAVE_TYPE_B",
+      "original_dict_id": "oa_leave_type",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "休假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_LEAVE_TYPE_C",
+      "original_dict_id": "oa_leave_type",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "病假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_LEAVE_TYPE_D",
+      "original_dict_id": "oa_leave_type",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "婚假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_LEAVE_TYPE_E",
+      "original_dict_id": "oa_leave_type",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "产假",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_ERRAND_TYPE_A",
+      "original_dict_id": "oa_errand_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "业务扩展",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_ERRAND_TYPE_B",
+      "original_dict_id": "oa_errand_type",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "工程实施",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_ERRAND_BY_METHOD_A",
+      "original_dict_id": "oa_errand_by_method",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "火车",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_ERRAND_BY_METHOD_B",
+      "original_dict_id": "oa_errand_by_method",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "飞机",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_ERRAND_BY_METHOD_C",
+      "original_dict_id": "oa_errand_by_method",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "汽车",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_USER_GET_METHOD_A",
+      "original_dict_id": "oa_user_get_method",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "直接上级",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_USER_GET_METHOD_B",
+      "original_dict_id": "oa_user_get_method",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "指定用户",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_USER_GET_METHOD_C",
+      "original_dict_id": "oa_user_get_method",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "关联员工部门",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_USER_GET_METHOD_D",
+      "original_dict_id": "oa_user_get_method",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "关联员工公司",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_USER_GET_METHOD_E",
+      "original_dict_id": "oa_user_get_method",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "关联操作员部门",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_USER_GET_METHOD_F",
+      "original_dict_id": "oa_user_get_method",
+      "original_class": "tbx",
+      "original_code": "F",
+      "name_zh": "关联操作员公司",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_FLOW_USER_GET_METHOD_-",
+      "original_dict_id": "oa_flow_user_get_method",
+      "original_class": "tbx",
+      "original_code": "-",
+      "name_zh": "不关联",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_FLOW_USER_GET_METHOD_C",
+      "original_dict_id": "oa_flow_user_get_method",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "关联员工部门",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_FLOW_USER_GET_METHOD_D",
+      "original_dict_id": "oa_flow_user_get_method",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "关联员工公司",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_FLOW_USER_GET_METHOD_E",
+      "original_dict_id": "oa_flow_user_get_method",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "关联操作员部门",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_FLOW_USER_GET_METHOD_F",
+      "original_dict_id": "oa_flow_user_get_method",
+      "original_class": "tbx",
+      "original_code": "F",
+      "name_zh": "关联操作员公司",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_STATE_A",
+      "original_dict_id": "oa_request_state",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "拟定中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_STATE_B",
+      "original_dict_id": "oa_request_state",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "已提交处理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_STATE_C",
+      "original_dict_id": "oa_request_state",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "处理中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_STATE_D",
+      "original_dict_id": "oa_request_state",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "批准/完成",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_STATE_E",
+      "original_dict_id": "oa_request_state",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "驳回/取消",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_STATE_F",
+      "original_dict_id": "oa_request_state",
+      "original_class": "tbx",
+      "original_code": "F",
+      "name_zh": "发回重新修正",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_STATE_A,B,C,F",
+      "original_dict_id": "oa_request_state",
+      "original_class": "tbx",
+      "original_code": "A,B,C,F",
+      "name_zh": "未结束",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_FLOW_TYPE_A",
+      "original_dict_id": "oa_request_flow_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "抄送",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_FLOW_TYPE_B",
+      "original_dict_id": "oa_request_flow_type",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "会审",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_FLOW_TYPE_C",
+      "original_dict_id": "oa_request_flow_type",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "一级审核",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_FLOW_TYPE_D",
+      "original_dict_id": "oa_request_flow_type",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "二级审核",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_FLOW_STATE_A",
+      "original_dict_id": "oa_request_flow_state",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "未处理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_FLOW_STATE_C",
+      "original_dict_id": "oa_request_flow_state",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "处理中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_FLOW_STATE_D",
+      "original_dict_id": "oa_request_flow_state",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "批准/同意",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_FLOW_STATE_E",
+      "original_dict_id": "oa_request_flow_state",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "驳回/取消",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_FLOW_STATE_F",
+      "original_dict_id": "oa_request_flow_state",
+      "original_class": "tbx",
+      "original_code": "F",
+      "name_zh": "发回重新修正",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_DESC_TYPE_A",
+      "original_dict_id": "oa_request_desc_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "特别说明",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_REQUEST_DESC_CHECK_TYPE_A",
+      "original_dict_id": "oa_request_desc_check_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "特别说明",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_SEAL_TYPE_A",
+      "original_dict_id": "oa_seal_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "财务章",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_SEAL_TYPE_B",
+      "original_dict_id": "oa_seal_type",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "合同章",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "OA_SEAL_USE_TYPE_A",
+      "original_dict_id": "oa_seal_use_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "签订销售合同",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SHORTCUT_GROUP_A",
+      "original_dict_id": "tbx_shortcut_group",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "业务",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SHORTCUT_GROUP_B",
+      "original_dict_id": "tbx_shortcut_group",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "程序",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SHORTCUT_GROUP_C",
+      "original_dict_id": "tbx_shortcut_group",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "文件",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SHORTCUT_GROUP_D",
+      "original_dict_id": "tbx_shortcut_group",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "办公",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SHORTCUT_GROUP_E",
+      "original_dict_id": "tbx_shortcut_group",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "报表",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SHORTCUT_TYPE_A",
+      "original_dict_id": "tbx_shortcut_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "系统功能",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SHORTCUT_TYPE_B",
+      "original_dict_id": "tbx_shortcut_type",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "本地文件及程序",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SHORTCUT_TYPE_C",
+      "original_dict_id": "tbx_shortcut_type",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "其他（手工输入）",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SHORTCUT_TYPE_D",
+      "original_dict_id": "tbx_shortcut_type",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "系统报表",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_SHORTCUT_TYPE_E",
+      "original_dict_id": "tbx_shortcut_type",
+      "original_class": "tbx",
+      "original_code": "E",
+      "name_zh": "脚本报表",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MEET_STATE_A",
+      "original_dict_id": "tbx_meet_state",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "进行中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MEET_STATE_B",
+      "original_dict_id": "tbx_meet_state",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "休息",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_MEET_STATE_C",
+      "original_dict_id": "tbx_meet_state",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "结束",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_NEWS_STATE_A",
+      "original_dict_id": "tbx_news_state",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "拟订中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_NEWS_STATE_B",
+      "original_dict_id": "tbx_news_state",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "正式发布",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_NEWS_STATE_C",
+      "original_dict_id": "tbx_news_state",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "归档",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_DAILY_TYPE_A",
+      "original_dict_id": "tbx_daily_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "未完成",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_DAILY_TYPE_B",
+      "original_dict_id": "tbx_daily_type",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "已完成",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_DAILY_TYPE_C",
+      "original_dict_id": "tbx_daily_type",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "处理中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_DAILY_TYPE_D",
+      "original_dict_id": "tbx_daily_type",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "普通备注",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_TASK_STATE_G",
+      "original_dict_id": "tbx_task_state",
+      "original_class": "tbx",
+      "original_code": "G",
+      "name_zh": "拟定中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_TASK_STATE_A",
+      "original_dict_id": "tbx_task_state",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "已发布/待执行",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_TASK_STATE_B",
+      "original_dict_id": "tbx_task_state",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "执行中",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_TASK_STATE_C",
+      "original_dict_id": "tbx_task_state",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "已完成/待审",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_TASK_STATE_D",
+      "original_dict_id": "tbx_task_state",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "确认完成",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_TASK_STATE_F",
+      "original_dict_id": "tbx_task_state",
+      "original_class": "tbx",
+      "original_code": "F",
+      "name_zh": "已作废",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_TASK_STATE_G,A,B,C",
+      "original_dict_id": "tbx_task_state",
+      "original_class": "tbx",
+      "original_code": "G,A,B,C",
+      "name_zh": "未结束",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TBX_TASK_TYPE_A",
+      "original_dict_id": "tbx_task_type",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "常规任务",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TASK_EVALUATE_GRADE_A",
+      "original_dict_id": "task_evaluate_grade",
+      "original_class": "tbx",
+      "original_code": "A",
+      "name_zh": "差",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TASK_EVALUATE_GRADE_B",
+      "original_dict_id": "task_evaluate_grade",
+      "original_class": "tbx",
+      "original_code": "B",
+      "name_zh": "一般",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TASK_EVALUATE_GRADE_C",
+      "original_dict_id": "task_evaluate_grade",
+      "original_class": "tbx",
+      "original_code": "C",
+      "name_zh": "优秀",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "TASK_EVALUATE_GRADE_D",
+      "original_dict_id": "task_evaluate_grade",
+      "original_class": "tbx",
+      "original_code": "D",
+      "name_zh": "非常优秀",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_LB_OPER_TYPE_A",
+      "original_dict_id": "edt_lb_oper_type",
+      "original_class": "edt",
+      "original_code": "A",
+      "name_zh": "打单",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_LB_OPER_TYPE_B",
+      "original_dict_id": "edt_lb_oper_type",
+      "original_class": "edt",
+      "original_code": "B",
+      "name_zh": "包装完毕",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_LB_OPER_TYPE_C",
+      "original_dict_id": "edt_lb_oper_type",
+      "original_class": "edt",
+      "original_code": "C",
+      "name_zh": "揽收成功",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_LB_OPER_TYPE_D",
+      "original_dict_id": "edt_lb_oper_type",
+      "original_class": "edt",
+      "original_code": "D",
+      "name_zh": "签收完毕",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_RES_AGE_10",
+      "original_dict_id": "edt_res_age",
+      "original_class": "edt",
+      "original_code": "10",
+      "name_zh": "10天及以下",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_RES_AGE_20",
+      "original_dict_id": "edt_res_age",
+      "original_class": "edt",
+      "original_code": "20",
+      "name_zh": "20天",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_RES_AGE_30",
+      "original_dict_id": "edt_res_age",
+      "original_class": "edt",
+      "original_code": "30",
+      "name_zh": "30天",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_RES_AGE_60",
+      "original_dict_id": "edt_res_age",
+      "original_class": "edt",
+      "original_code": "60",
+      "name_zh": "60天",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_RES_AGE_90",
+      "original_dict_id": "edt_res_age",
+      "original_class": "edt",
+      "original_code": "90",
+      "name_zh": "90天及以上",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_REP_ZERO_IO_FLAG_A",
+      "original_dict_id": "edt_rep_zero_io_flag",
+      "original_class": "edt",
+      "original_code": "A",
+      "name_zh": "包含所有",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_REP_ZERO_IO_FLAG_B",
+      "original_dict_id": "edt_rep_zero_io_flag",
+      "original_class": "edt",
+      "original_code": "B",
+      "name_zh": "有过进出",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_REP_ZERO_IO_FLAG_C",
+      "original_dict_id": "edt_rep_zero_io_flag",
+      "original_class": "edt",
+      "original_code": "C",
+      "name_zh": "有进有出",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_REP_ZERO_IO_FLAG_D",
+      "original_dict_id": "edt_rep_zero_io_flag",
+      "original_class": "edt",
+      "original_code": "D",
+      "name_zh": "没有进出",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_REP_ZERO_IO_FLAG_E",
+      "original_dict_id": "edt_rep_zero_io_flag",
+      "original_class": "edt",
+      "original_code": "E",
+      "name_zh": "有进没出",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_REP_ZERO_IO_FLAG_F",
+      "original_dict_id": "edt_rep_zero_io_flag",
+      "original_class": "edt",
+      "original_code": "F",
+      "name_zh": "有出没进",
+      "note": "程序中有特殊判断，请不要修改",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_IO_FLAG_I",
+      "original_dict_id": "edt_io_flag",
+      "original_class": "edt",
+      "original_code": "I",
+      "name_zh": "入库",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_IO_FLAG_O",
+      "original_dict_id": "edt_io_flag",
+      "original_class": "edt",
+      "original_code": "O",
+      "name_zh": "出库",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_RES_COSTING_A",
+      "original_dict_id": "edt_res_costing",
+      "original_class": "edt",
+      "original_code": "A",
+      "name_zh": "移动加权平均法",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_RES_COSTING_B",
+      "original_dict_id": "edt_res_costing",
+      "original_class": "edt",
+      "original_code": "B",
+      "name_zh": "先进先出法",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_RES_COSTING_C",
+      "original_dict_id": "edt_res_costing",
+      "original_class": "edt",
+      "original_code": "C",
+      "name_zh": "加权平均法",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_PLAN_TYPE_A",
+      "original_dict_id": "edt_plan_type",
+      "original_class": "edt",
+      "original_code": "A",
+      "name_zh": "生产计算计划",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_PLAN_TYPE_B",
+      "original_dict_id": "edt_plan_type",
+      "original_class": "edt",
+      "original_code": "B",
+      "name_zh": "采购计算计划",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_SCAN_SET_TYPE_A",
+      "original_dict_id": "edt_scan_set_type",
+      "original_class": "edt",
+      "original_code": "A",
+      "name_zh": "产品编码+批次编号+库位",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_VIR_GROUP_A",
+      "original_dict_id": "edt_vir_group",
+      "original_class": "edt",
+      "original_code": "A",
+      "name_zh": "销售环节",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_VIR_GROUP_B",
+      "original_dict_id": "edt_vir_group",
+      "original_class": "edt",
+      "original_code": "B",
+      "name_zh": "采购环节",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_VIR_GROUP_C",
+      "original_dict_id": "edt_vir_group",
+      "original_class": "edt",
+      "original_code": "C",
+      "name_zh": "生产环节",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_VIR_GROUP_D",
+      "original_dict_id": "edt_vir_group",
+      "original_class": "edt",
+      "original_code": "D",
+      "name_zh": "外协环节",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_VIR_GROUP_E",
+      "original_dict_id": "edt_vir_group",
+      "original_class": "edt",
+      "original_code": "E",
+      "name_zh": "需求分析环节",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_ANALYSIS_V_TYPE_EXT_*A",
+      "original_dict_id": "edt_analysis_v_type_ext",
+      "original_class": "edt",
+      "original_code": "*A",
+      "name_zh": "期初",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "EDT_ANALYSIS_V_TYPE_EXT_*B",
+      "original_dict_id": "edt_analysis_v_type_ext",
+      "original_class": "edt",
+      "original_code": "*B",
+      "name_zh": "期末",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_BOARD_QUERY_SYS_emf_task_board",
+      "original_dict_id": "rep_board_query_sys",
+      "original_class": "rep",
+      "original_code": "emf_task_board",
+      "name_zh": "生产任务",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "REP_BOARD_QUERY_SYS_emf_io_board",
+      "original_dict_id": "rep_board_query_sys",
+      "original_class": "rep",
+      "original_code": "emf_io_board",
+      "name_zh": "产出单",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "MUP_OBJ_LOG_OBJ_emp",
+      "original_dict_id": "mup_obj_log_obj",
+      "original_class": "mup",
+      "original_code": "emp",
+      "name_zh": "员工卡片",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_PLACE_gs",
+      "original_dict_id": "car_place",
+      "original_class": "car",
+      "original_code": "gs",
+      "name_zh": "公司",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_CARD_STATE_A",
+      "original_dict_id": "car_card_state",
+      "original_class": "car",
+      "original_code": "A",
+      "name_zh": "空闲",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_CARD_STATE_B",
+      "original_dict_id": "car_card_state",
+      "original_class": "car",
+      "original_code": "B",
+      "name_zh": "繁忙",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_CARD_STATE_C",
+      "original_dict_id": "car_card_state",
+      "original_class": "car",
+      "original_code": "C",
+      "name_zh": "维修",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_CARD_STATE_D",
+      "original_dict_id": "car_card_state",
+      "original_class": "car",
+      "original_code": "D",
+      "name_zh": "报废",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_FEE_TYPE_A",
+      "original_dict_id": "car_fee_type",
+      "original_class": "car",
+      "original_code": "A",
+      "name_zh": "路费",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_FEE_TYPE_B",
+      "original_dict_id": "car_fee_type",
+      "original_class": "car",
+      "original_code": "B",
+      "name_zh": "保养费",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_CRIME_TYPE_A",
+      "original_dict_id": "car_crime_type",
+      "original_class": "car",
+      "original_code": "A",
+      "name_zh": "超速",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_CRIME_TYPE_B",
+      "original_dict_id": "car_crime_type",
+      "original_class": "car",
+      "original_code": "B",
+      "name_zh": "违停",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_CRIME_TYPE_X",
+      "original_dict_id": "car_crime_type",
+      "original_class": "car",
+      "original_code": "X",
+      "name_zh": "其他",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_OWNER_TYPE_A",
+      "original_dict_id": "car_owner_type",
+      "original_class": "car",
+      "original_code": "A",
+      "name_zh": "公司员工",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_OWNER_TYPE_B",
+      "original_dict_id": "car_owner_type",
+      "original_class": "car",
+      "original_code": "B",
+      "name_zh": "其他",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_TYPE_A",
+      "original_dict_id": "car_type",
+      "original_class": "car",
+      "original_code": "A",
+      "name_zh": "货车",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_TYPE_B",
+      "original_dict_id": "car_type",
+      "original_class": "car",
+      "original_code": "B",
+      "name_zh": "轿车",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_CRIME_STATE_A",
+      "original_dict_id": "car_crime_state",
+      "original_class": "car",
+      "original_code": "A",
+      "name_zh": "未处理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_CRIME_STATE_B",
+      "original_dict_id": "car_crime_state",
+      "original_class": "car",
+      "original_code": "B",
+      "name_zh": "已处理",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_INSURANCE_COMP_A",
+      "original_dict_id": "car_insurance_comp",
+      "original_class": "car",
+      "original_code": "A",
+      "name_zh": "人保",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    },
+    {
+      "canonical_code": "CAR_INSURANCE_COMP_B",
+      "original_dict_id": "car_insurance_comp",
+      "original_class": "car",
+      "original_code": "B",
+      "name_zh": "太平洋保险",
+      "note": "",
+      "needs_manual_review": false,
+      "source": "onlyit_demo"
+    }
+  ]
+}
