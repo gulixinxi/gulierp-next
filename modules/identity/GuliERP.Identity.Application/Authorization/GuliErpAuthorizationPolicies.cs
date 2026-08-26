@@ -26,4 +26,3 @@ public static class GuliErpAuthorizationPolicies
 
     public static string ForPermission(string permissionCode) => Prefix + permissionCode;
 }
-
