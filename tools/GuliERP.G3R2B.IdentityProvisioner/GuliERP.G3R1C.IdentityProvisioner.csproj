@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    This file is a vestigial leftover from the initial Copy-Item
+    from the G3-R1C provisioner directory. It is NOT loaded by
+    the solution (GuliERP.slnx only references
+    GuliERP.G3R2B.IdentityProvisioner.csproj). It is kept here
+    so a future git-rm does not create a noisy deleted-file diff;
+    the G3-R2B file is the canonical csproj for this project.
+  -->
+</Project>

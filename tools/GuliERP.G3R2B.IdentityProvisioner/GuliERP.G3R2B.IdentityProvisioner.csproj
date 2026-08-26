@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>GuliERP.G3R2B.IdentityProvisioner</RootNamespace>
+    <AssemblyName>gulierp-g3r2b-identity-provisioner</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <!--
+      G3-R2B dev-only Identity test-user provisioner (single-user scope).
+      Per the G3-R1C brief there is no public HTTP API for Identity user
+      creation. This tool creates ONLY the g3r2b_purch_operator user with
+      the ERP_PURCH_OPERATOR role (the 5th single-role test user for the
+      G3-R2B purchase-order permission matrix).
+
+      The other 4 users (g3r1c_sys_admin / g3r1c_mdm_operator /
+      g3r1c_employee_operator / g3r1c_sales_operator) are managed by
+      tools/GuliERP.G3R1C.IdentityProvisioner. Run that tool FIRST.
+
+      This tool NEVER ships to production. It is restricted to dev / test
+      databases. The username created uses the `g3r2b_` prefix so a future
+      cleanup script can target it without touching production users.
+    -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\modules\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\..\modules\identity\GuliERP.Identity.Application\GuliERP.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\modules\identity\GuliERP.Identity.Domain\GuliERP.Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\modules\identity\GuliERP.Identity.Infrastructure\GuliERP.Identity.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.11" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,214 @@
+#requires -Version 5.1
+<#
+G3-R2B dev-only operator helper to ensure the 5th dedicated
+single-role test user for the 5-role permission matrix runtime
+verification.
+
+The 5 users (after this script):
+  - g3r1c_sys_admin           - ERP_SYSTEM_ADMIN        (8 identity perms)
+  - g3r1c_mdm_operator        - ERP_MDM_OPERATOR        (16 mdm perms)
+  - g3r1c_employee_operator   - ERP_EMPLOYEE_OPERATOR   (2 identity.employee perms)
+  - g3r1c_sales_operator      - ERP_SALES_OPERATOR      (2 sales perms)
+  - g3r2b_purch_operator      - ERP_PURCH_OPERATOR      (2 purchase perms) <- NEW
+
+Run g3-r1c-ensure-role-test-users.ps1 FIRST to create the 4
+G3-R1C users. This script only adds the 5th.
+
+ENVIRONMENT VARIABLES (required):
+  ConnectionStrings__GuliERP                    PostgreSQL connection string
+  GULIERP_G3R2B_PURCH_OPERATOR_PASS            >= 12 chars, mixed case + digit + non-alnum
+
+ENVIRONMENT VARIABLES (optional, default shown):
+  GULIERP_G3R2B_TENANT_CODE                    GULI
+  GULIERP_G3R2B_COMPANY_CODE                   GULI001
+
+OUTPUT:
+  Console log + JSON summary between ---JSON-BEGIN--- / ---JSON-END---
+  Final exit code:
+    0 = success
+    1 = missing env var
+    3 = tenant/company not found
+    4 = Identity operation failed
+    5 = unexpected exception
+
+SAFETY:
+  - This script is DEV-ONLY. It does NOT touch production users.
+  - The created user has the `g3r2b_` prefix so a future cleanup
+    script can target it without touching prod users.
+  - Passwords are NEVER echoed. They are read from env vars only.
+
+USAGE:
+  $env:ConnectionStrings__GuliERP = "Host=...;Database=...;Username=...;Password=...;Include Error Detail=true"
+  $env:GULIERP_G3R2B_PURCH_OPERATOR_PASS = "<REDACTED-by-GitCloseout-2026-08-26 - set a 12+char mixed password>"
+
+  pwsh tools/dev/g3-r2b-ensure-purch-test-user.ps1
+#>
+
+[CmdletBinding()]
+param()
+
+$ErrorActionPreference = 'Stop'
+
+function Write-Section { param([string]$Title)
+    Write-Host ''
+    Write-Host ('=' * 70) -ForegroundColor Cyan
+    Write-Host "  $Title" -ForegroundColor Cyan
+    Write-Host ('=' * 70) -ForegroundColor Cyan
+}
+function Write-OK      { param([string]$Message) Write-Host "  PASS  $Message" -ForegroundColor Green }
+function Write-Block   { param([string]$Message) Write-Host "  BLOCK $Message" -ForegroundColor Yellow }
+function Write-Err     { param([string]$Message) Write-Host "  FAIL  $Message" -ForegroundColor Red; $script:HardFailed++ }
+
+$script:HardFailed = 0
+
+# ---- 1. Validate env vars (do NOT echo values) ----
+Write-Section 'G3-R2B ensure purchase test user - preflight'
+
+$requiredEnv = @(
+    'ConnectionStrings__GuliERP',
+    'GULIERP_G3R2B_PURCH_OPERATOR_PASS'
+)
+
+$missing = @()
+foreach ($name in $requiredEnv) {
+    $v = [System.Environment]::GetEnvironmentVariable($name)
+    if ([string]::IsNullOrEmpty($v)) {
+        $missing += $name
+    }
+}
+if ($missing.Count -gt 0) {
+    Write-Host ''
+    Write-Host 'ERROR: missing required environment variables:' -ForegroundColor Red
+    foreach ($m in $missing) {
+        Write-Host "  - $m" -ForegroundColor Red
+    }
+    Write-Host ''
+    Write-Host 'Set them in the current shell before running this script.' -ForegroundColor Yellow
+    Write-Host 'Example (do not commit these values):' -ForegroundColor Yellow
+    Write-Host '  $env:ConnectionStrings__GuliERP = "Host=...;Database=...;Username=...;Password=...;Include Error Detail=true"' -ForegroundColor Yellow
+    Write-Host '  $env:GULIERP_G3R2B_PURCH_OPERATOR_PASS = "..."' -ForegroundColor Yellow
+    Write-Host ''
+    Write-Host 'Password must satisfy the Identity policy:' -ForegroundColor Yellow
+    Write-Host '  - minimum 12 characters' -ForegroundColor Yellow
+    Write-Host '  - at least 1 digit, 1 uppercase, 1 lowercase' -ForegroundColor Yellow
+    Write-Host '  - at least 1 non-alphanumeric character' -ForegroundColor Yellow
+    Write-Host '  - at least 4 unique characters' -ForegroundColor Yellow
+    exit 1
+}
+
+$passLen = [System.Environment]::GetEnvironmentVariable('GULIERP_G3R2B_PURCH_OPERATOR_PASS').Length
+if ($passLen -lt 12) {
+    Write-Host "ERROR: GULIERP_G3R2B_PURCH_OPERATOR_PASS is shorter than 12 characters (got $passLen)." -ForegroundColor Red
+    exit 1
+}
+
+$connStr = [System.Environment]::GetEnvironmentVariable('ConnectionStrings__GuliERP')
+$masked = ($connStr -replace '(?i)(password\s*=\s*)([^;"]+)', '$1<REDACTED>')
+Write-OK "ConnectionStrings__GuliERP = $masked"
+Write-OK "GULIERP_G3R2B_PURCH_OPERATOR_PASS = (set, not echoed; length=$passLen)"
+
+$tenantCode = [System.Environment]::GetEnvironmentVariable('GULIERP_G3R2B_TENANT_CODE')
+if ([string]::IsNullOrEmpty($tenantCode)) {
+    $tenantCode = 'GULI'
+    $env:GULIERP_G3R2B_TENANT_CODE = $tenantCode
+}
+$companyCode = [System.Environment]::GetEnvironmentVariable('GULIERP_G3R2B_COMPANY_CODE')
+if ([string]::IsNullOrEmpty($companyCode)) {
+    $companyCode = 'GULI001'
+    $env:GULIERP_G3R2B_COMPANY_CODE = $companyCode
+}
+Write-OK "Tenant/Company: $tenantCode / $companyCode"
+
+# ---- 2. Invoke the provisioner ----
+Write-Section 'Running provisioner (tools/GuliERP.G3R2B.IdentityProvisioner)'
+
+$repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
+$proj = Join-Path $repoRoot 'tools/GuliERP.G3R2B.IdentityProvisioner/GuliERP.G3R2B.IdentityProvisioner.csproj'
+if (-not (Test-Path $proj)) {
+    Write-Host "ERROR: project file not found: $proj" -ForegroundColor Red
+    exit 5
+}
+
+$stdoutFile = [System.IO.Path]::GetTempFileName()
+try {
+    $dll = Join-Path $repoRoot 'tools/GuliERP.G3R2B.IdentityProvisioner/bin/Debug/net10.0/gulierp-g3r2b-identity-provisioner.dll'
+    if (-not (Test-Path $dll)) {
+        Write-Host "ERROR: provisioner dll not found: $dll" -ForegroundColor Red
+        Write-Host "  Build it first: dotnet build tools/GuliERP.G3R2B.IdentityProvisioner" -ForegroundColor Red
+        exit 5
+    }
+    & dotnet "$dll" 2>&1 | Tee-Object -FilePath $stdoutFile | Out-Host
+    $exitCode = $LASTEXITCODE
+} catch {
+    Write-Host "ERROR: dotnet exec failed: $($_.Exception.Message)" -ForegroundColor Red
+    exit 5
+}
+
+# ---- 3. Parse JSON summary ----
+Write-Section 'Provisioner summary'
+$stdout = Get-Content $stdoutFile -Raw
+$jsonStart = $stdout.IndexOf('---JSON-BEGIN---')
+$jsonEnd   = $stdout.IndexOf('---JSON-END---')
+if ($jsonStart -lt 0 -or $jsonEnd -lt 0) {
+    Write-Host "ERROR: provisioner did not emit a JSON summary." -ForegroundColor Red
+    Write-Host "  exit code = $exitCode" -ForegroundColor Red
+    exit 5
+}
+$json = $stdout.Substring($jsonStart + '---JSON-BEGIN---'.Length, $jsonEnd - $jsonStart - '---JSON-BEGIN---'.Length).Trim()
+try {
+    $summary = $json | ConvertFrom-Json
+} catch {
+    Write-Host "ERROR: failed to parse provisioner JSON:" -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    Write-Host '--- raw JSON ---' -ForegroundColor Yellow
+    Write-Host $json -ForegroundColor Yellow
+    exit 5
+}
+
+Write-Host ("  TenantId   = {0}" -f $summary.tenantId) -ForegroundColor Cyan
+Write-Host ("  CompanyId  = {0}" -f $summary.companyId) -ForegroundColor Cyan
+Write-Host ("  AllSucceeded = {0}" -f $summary.allSucceeded) -ForegroundColor $(if ($summary.allSucceeded) {'Green'} else {'Red'})
+Write-Host ''
+Write-Host '  Per-user:' -ForegroundColor Cyan
+foreach ($u in $summary.users) {
+    $status = if ($u.success) {'PASS'} else {'FAIL'}
+    $color  = if ($u.success) {'Green'} else {'Red'}
+    Write-Host ("    [{0}] {1,-22} role={2,-22} expectedPerms={3,2}" -f $status, $u.userName, $u.roleCode, $u.expectedPermissionCount) -ForegroundColor $color
+    if ($u.userCreated)   { Write-Host "         - user created" -ForegroundColor DarkGray }
+    if ($u.userExisted)   { Write-Host "         - user existed" -ForegroundColor DarkGray }
+    if ($u.passwordReset) { Write-Host "         - password reset" -ForegroundColor DarkGray }
+    if ($u.roleCreated)   { Write-Host "         - role created" -ForegroundColor DarkGray }
+    if ($u.roleExisted)   { Write-Host "         - role existed" -ForegroundColor DarkGray }
+    if ($u.roleClaimsAdded -gt 0) {
+        Write-Host "         - role claims added: $($u.roleClaimsAdded)" -ForegroundColor DarkGray
+    }
+    if ($u.assignmentCreated)         { Write-Host "         - role assignment created" -ForegroundColor DarkGray }
+    if ($u.assignmentAlreadyExisted)  { Write-Host "         - role assignment already existed" -ForegroundColor DarkGray }
+    if ($u.extraRoleAssignmentsRemoved -and $u.extraRoleAssignmentsRemoved.Count -gt 0) {
+        Write-Host "         - extra role assignments REVOKED (ids: $($u.extraRoleAssignmentsRemoved -join ','))" -ForegroundColor Yellow
+    }
+    if ($u.extraClaimsKept -and $u.extraClaimsKept.Count -gt 0) {
+        Write-Host "         - extra claims KEPT (out-of-source): $($u.extraClaimsKept -join ',')" -ForegroundColor Yellow
+    }
+    if (-not $u.success -and $u.error) {
+        Write-Host "         - ERROR: $($u.error)" -ForegroundColor Red
+    }
+}
+
+# ---- 4. Final ----
+Write-Section 'Final'
+if ($summary.allSucceeded -and $exitCode -eq 0) {
+    Write-OK '1 dedicated single-role test user (g3r2b_purch_operator) is ready.'
+    Write-Host ''
+    Write-Host 'NEXT STEP: run the G3-R2B purchase order runtime evidence:' -ForegroundColor Cyan
+    Write-Host '  pwsh tools/dev/g3-r2b-purchaseorder-runtime-evidence.ps1' -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host 'Set the G3-R2B password as env var (plus GULIERP_TEST_BASE_URL if not default).' -ForegroundColor Cyan
+    Write-Host 'The env var name the evidence script expects:' -ForegroundColor Cyan
+    Write-Host '  GULIERP_G3R2B_PURCH_OPERATOR_USER (= g3r2b_purch_operator)' -ForegroundColor Cyan
+    Write-Host '  GULIERP_G3R2B_PURCH_OPERATOR_PASS' -ForegroundColor Cyan
+    exit 0
+} else {
+    Write-Err "Provisioner reported failure (allSucceeded=$($summary.allSucceeded), exitCode=$exitCode)"
+    exit 4
+}
