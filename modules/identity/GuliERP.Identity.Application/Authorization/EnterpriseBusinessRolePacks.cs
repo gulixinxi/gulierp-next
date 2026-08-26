@@ -34,6 +34,51 @@ public static class EnterpriseBusinessRolePacks
     //     admin assignment is present (does not duplicate).
     public const string EmployeeOperatorRoleCode = "ERP_EMPLOYEE_OPERATOR";
 
+    // GULIERP_SYSTEM_ADMIN_PACK_BOUNDARY_001 (G3-R1C, 2026-08-26):
+    // The ERP_SYSTEM_ADMIN role pack is now ALSO exposed as an
+    // `EnterpriseBusinessRolePack` record (parallel to MdmOperator /
+    // SalesOperator / EmployeeOperator) so the boundary contract has
+    // a single discoverable surface. The source of truth for the
+    // permission list is STILL `GuliErpPermissions.EnterpriseSystemAdminPermissions`
+    // (the frozen 8-permission array used by the bootstrap service);
+    // this record REFERENCES that array (no perms are duplicated).
+    //
+    // Boundary contract — locked by ErpSystemAdminPackBoundaryFacts:
+    //   1. ERP_SYSTEM_ADMIN contains EXACTLY 8 identity administration
+    //      permissions (Organization R/M, User R/M, Role R/Assign,
+    //      Company R/Switch). No more, no less.
+    //   2. ERP_SYSTEM_ADMIN does NOT contain any `mdm.*` permission.
+    //   3. ERP_SYSTEM_ADMIN does NOT contain any `sales.*` permission.
+    //   4. ERP_SYSTEM_ADMIN does NOT contain any `identity.employee.*`
+    //      permission (those are reserved for the EmployeeOperator pack).
+    //   5. `InitialAdminRolePacks` does NOT include SystemAdmin.
+    //      The bootstrap assigns SystemAdmin to the admin user via a
+    //      SEPARATE call (`EnsureSystemAdminRoleAsync` +
+    //      `EnsureRoleAssignmentAsync`). The fact that the admin user
+    //      ends up with 4 role assignments is a bootstrap-service
+    //      design choice, NOT a property of the SystemAdmin pack.
+    //   6. The Mdm / Sales / Employee operator packs remain
+    //      independent from the SystemAdmin pack (no overlapping
+    //      permissions).
+    //
+    // This is a "feat" only in the sense that a new public
+    // discoverable surface is added. No existing production code
+    // path changes. The bootstrap service continues to read
+    // `GuliErpPermissions.EnterpriseSystemAdminPermissions`
+    // directly and to use its own private const for the
+    // role name (which now matches the public constants below).
+    public const string SystemAdminRoleCode = "ERP_SYSTEM_ADMIN";
+    public const string SystemAdminRoleName = "Enterprise System Admin";
+
+    public static readonly EnterpriseBusinessRolePack SystemAdmin = new(
+        SystemAdminRoleCode,
+        SystemAdminRoleName,
+        "Tenant/company-scoped enterprise administrator. Read + manage access to " +
+        "organization, user, role and company switching. Does NOT include any " +
+        "mdm.*, identity.employee.* or sales.* permissions (those are dedicated " +
+        "operator packs: MdmOperator, EmployeeOperator, SalesOperator).",
+        GuliErpPermissions.EnterpriseSystemAdminPermissions);
+
     public static readonly EnterpriseBusinessRolePack MdmOperator = new(
         MdmOperatorRoleCode,
         "ERP MDM Operator",
@@ -78,6 +123,19 @@ public static class EnterpriseBusinessRolePacks
             "identity.employee.manage",
         });
 
+    /// <summary>
+    /// The 3 operator packs (NOT including <see cref="SystemAdmin"/>)
+    /// that the bootstrap service assigns to the first enterprise
+    /// admin in addition to the SystemAdmin role. This is a
+    /// <b>bootstrap-service decision</b>, not a property of any
+    /// individual pack. The admin user ends up with 4 role
+    /// assignments because the bootstrap calls
+    /// <c>EnsureInitialAdminBusinessRolePackAsync</c> (3 operator
+    /// packs) AND <c>EnsureSystemAdminRoleAsync</c> +
+    /// <c>EnsureRoleAssignmentAsync</c> (1 SystemAdmin role).
+    /// A dedicated single-role test user for SystemAdmin (see
+    /// G3-R1C) gets only the SystemAdmin role.
+    /// </summary>
     public static readonly EnterpriseBusinessRolePack[] InitialAdminRolePacks =
     {
         MdmOperator,

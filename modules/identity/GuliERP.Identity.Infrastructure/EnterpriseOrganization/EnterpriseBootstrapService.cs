@@ -19,8 +19,14 @@ public sealed class EnterpriseBootstrapService : IEnterpriseBootstrapService
     private const string DefaultPlantName = "主工厂";
     private const string RootOrgCode = "ROOT";
     private const string RootOrgName = "公司";
-    private const string SystemAdminRoleCode = "ERP_SYSTEM_ADMIN";
-    private const string SystemAdminRoleName = "Enterprise System Admin";
+    // GULIERP_SYSTEM_ADMIN_PACK_BOUNDARY_001 (G3-R1C, 2026-08-26):
+    // The role code / name are now sourced from the public
+    // EnterpriseBusinessRolePacks constants (single source of truth,
+    // parallel to MdmOperatorRoleCode / SalesOperatorRoleCode /
+    // EmployeeOperatorRoleCode). The behavior is identical because
+    // both constants resolve to the same string.
+    private const string SystemAdminRoleCode = EnterpriseBusinessRolePacks.SystemAdminRoleCode;
+    private const string SystemAdminRoleName = EnterpriseBusinessRolePacks.SystemAdminRoleName;
     private const string RequiredOrganizationMigration = "20260822090000_G2EnterpriseOrganizationFoundation";
 
     private readonly IdentityDbContext _db;
