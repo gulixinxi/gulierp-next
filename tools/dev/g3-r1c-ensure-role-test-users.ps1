@@ -39,10 +39,10 @@ SAFETY:
 USAGE:
   # Set env vars (do not commit these values):
   $env:ConnectionStrings__GuliERP = "Host=...;Database=...;Username=...;Password=...;Include Error Detail=true"
-  $env:GULIERP_G3R1C_SYS_ADMIN_PASS         = "SysAdminP@ssw0rd2026!"
-  $env:GULIERP_G3R1C_MDM_OPERATOR_PASS      = "MdmOper@torP@ss2026!"
-  $env:GULIERP_G3R1C_EMPLOYEE_OPERATOR_PASS = "Employee0pP@ss2026!"
-  $env:GULIERP_G3R1C_SALES_OPERATOR_PASS    = "Sales0pP@ss2026!"
+  $env:GULIERP_G3R1C_SYS_ADMIN_PASS         = "<REDACTED-by-GitCloseout-2026-08-26 — set a 12+char mixed password>"
+  $env:GULIERP_G3R1C_MDM_OPERATOR_PASS      = "<REDACTED-by-GitCloseout-2026-08-26 — set a 12+char mixed password>"
+  $env:GULIERP_G3R1C_EMPLOYEE_OPERATOR_PASS = "<REDACTED-by-GitCloseout-2026-08-26 — set a 12+char mixed password>"
+  $env:GULIERP_G3R1C_SALES_OPERATOR_PASS    = "<REDACTED-by-GitCloseout-2026-08-26 — set a 12+char mixed password>"
 
   # Run:
   pwsh tools/dev/g3-r1c-ensure-role-test-users.ps1
@@ -156,10 +156,18 @@ try {
     # Note: we deliberately do NOT pass the connection string on
     # the command line (would be visible in `ps`). The provisioner
     # reads from env (ConnectionStrings__GuliERP).
-    & dotnet run --project "$proj" --no-build --configuration Debug 2>&1 | Tee-Object -FilePath $stdoutFile | Out-Host
+    # Use `dotnet exec` directly to avoid `dotnet run` env-var quirks
+    # observed in PowerShell 5.1/7.x on Windows.
+    $dll = Join-Path $repoRoot 'tools/GuliERP.G3R1C.IdentityProvisioner/bin/Debug/net10.0/gulierp-g3r1c-identity-provisioner.dll'
+    if (-not (Test-Path $dll)) {
+        Write-Host "ERROR: provisioner dll not found: $dll" -ForegroundColor Red
+        Write-Host "  Build it first: dotnet build tools/GuliERP.G3R1C.IdentityProvisioner" -ForegroundColor Red
+        exit 5
+    }
+    & dotnet "$dll" 2>&1 | Tee-Object -FilePath $stdoutFile | Out-Host
     $exitCode = $LASTEXITCODE
 } catch {
-    Write-Host "ERROR: dotnet run failed: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "ERROR: dotnet exec failed: $($_.Exception.Message)" -ForegroundColor Red
     exit 5
 }
 
