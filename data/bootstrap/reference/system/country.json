@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "source_systems": [],
+    "extraction_time": "2026-08-20T11:00:48+08:00",
+    "notes": [
+      "DEV 数据库没有独立的 Country/City/Province 表。",
+      "行政区划是会变化的数据(GB/T 2260 每年更新)。",
+      "GuliERP V1 不应将行政区划 commit 到 Git。Seed 应在 runtime 通过 authoritative source 加载(国家统计局 / 民政部)。",
+      "本文件仅作为 manifest + canonical schema 示范;不包含实际数据。"
+    ],
+    "classification": "NEEDS_EXTERNAL_STANDARD_UPDATE",
+    "external_sources_required": [
+      "国家统计局: http://www.stats.gov.cn/sj/tjbz/qhdm/ (GB/T 2260 行政区划代码)",
+      "民政部: https://www.mca.gov.cn/article/sj/xzqh/ (行政区划)",
+      "ISO 3166-1 (Country codes)"
+    ],
+    "seed_status_at_file_level": "NEEDS_EXTERNAL_STANDARD_UPDATE",
+    "item_count": 0
+  },
+  "items": [],
+  "schema_template": {
+    "iso_3166_1_alpha_2": "string",
+    "iso_3166_1_alpha_3": "string",
+    "iso_3166_1_numeric": "string",
+    "name_zh": "string",
+    "name_en": "string",
+    "parent_iso_3166_1_alpha_2": "string|optional (for subdivisions)",
+    "level": "COUNTRY|STATE_PROVINCE|CITY|COUNTY",
+    "gb_t_2260_code": "string|optional (for PRC subdivisions)",
+    "is_active": "bool",
+    "valid_from": "date|optional",
+    "valid_to": "date|optional"
+  }
+}

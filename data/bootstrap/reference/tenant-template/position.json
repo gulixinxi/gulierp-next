@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "source_systems": [
+      {
+        "system": "DEV",
+        "dictionary_code": 3523,
+        "items_count": 4
+      }
+    ],
+    "extraction_time": "2026-08-20T11:00:48+08:00",
+    "notes": [
+      "Position (岗位) is the company-internal role/job position. DEV 岗位 dictionary (RecordID=3523) has 4 items: 总经理/经理/科员/操作员.",
+      "Occupation (职业) is a different concept — it is the worker's professional classification (e.g. 工程师/教师/医生).",
+      "OCCUPATION_SOURCE_NOT_FOUND: this seed is for Position ONLY. A future Goal should add Occupation seed from GB/T 8561-2001 职业分类与代码 or similar.",
+      "Position here is preserved as tenant_template (each tenant can override; default is the 4 DEV items)."
+    ],
+    "classification": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "seed_status_at_file_level": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "occupation_source_status": "OCCUPATION_SOURCE_NOT_FOUND"
+  },
+  "items": [
+    {
+      "canonical_code": "POS_GM",
+      "canonical_name_zh": "总经理",
+      "level_order": 4,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "总经理"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "POS_MANAGER",
+      "canonical_name_zh": "经理",
+      "level_order": 3,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "经理"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "POS_CLERK",
+      "canonical_name_zh": "科员",
+      "level_order": 2,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "科员"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "POS_OPERATOR",
+      "canonical_name_zh": "操作员",
+      "level_order": 1,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "操作员"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE",
+      "source_system_label": "DEV"
+    }
+  ]
+}

@@ -1,0 +1,617 @@
+{
+  "meta": {
+    "source_systems": [
+      {
+        "system": "GB_T_3304",
+        "note": "中国 56 个民族,公共标准,非从源数据库提取。"
+      }
+    ],
+    "extraction_time": "2026-08-20T11:00:48+08:00",
+    "notes": [
+      "GB/T 3304-1991《世界各国和地区名称代码》提供中国 56 个民族的代码。",
+      "本表为 V1 系统级 seed,无 tenant 覆盖。",
+      "DEV 数据库未发现独立的民族表。"
+    ],
+    "classification": "SAFE_TO_SEED_SYSTEM",
+    "seed_status_at_file_level": "INCOMPLETE_STANDARD_DATA",
+    "items_safe_to_seed_system": 0,
+    "items_proposed": 42,
+    "completeness": {
+      "expected_count": 56,
+      "current_count": 42,
+      "missing_count": 14,
+      "standard": "GB/T 3304-1991 (中国各民族名称代码)",
+      "note": "V1 has 42 of 56 ethnic groups. The 14 missing are smaller minorities (e.g. 珞巴族, 基诺族, 门巴族, 塔塔尔族 etc. — some are present, some need re-extraction). Until the standard is fully matched, classification is INCOMPLETE_STANDARD_DATA — not SAFE_TO_SEED_SYSTEM."
+    }
+  },
+  "items": [
+    {
+      "gb_3304_code": "HA",
+      "name_zh": "汉族",
+      "name_en": "Han",
+      "population_share_pct": 91.11,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "HA"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "ZA",
+      "name_zh": "壮族",
+      "name_en": "Zhuang",
+      "population_share_pct": 1.27,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "ZA"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "MH",
+      "name_zh": "满族",
+      "name_en": "Manchu",
+      "population_share_pct": 0.82,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "MH"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "HU",
+      "name_zh": "回族",
+      "name_en": "Hui",
+      "population_share_pct": 0.79,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "HU"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "MI",
+      "name_zh": "苗族",
+      "name_en": "Miao",
+      "population_share_pct": 0.72,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "MI"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "UY",
+      "name_zh": "维吾尔族",
+      "name_en": "Uygur",
+      "population_share_pct": 0.75,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "UY"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "TJ",
+      "name_zh": "土家族",
+      "name_en": "Tujia",
+      "population_share_pct": 0.66,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "TJ"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "YI",
+      "name_zh": "彝族",
+      "name_en": "Yi",
+      "population_share_pct": 0.65,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "YI"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "MC",
+      "name_zh": "蒙古族",
+      "name_en": "Mongol",
+      "population_share_pct": 0.47,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "MC"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "TB",
+      "name_zh": "藏族",
+      "name_en": "Tibetan",
+      "population_share_pct": 0.44,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "TB"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "BO",
+      "name_zh": "布依族",
+      "name_en": "Buyei",
+      "population_share_pct": 0.21,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "BO"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "DJ",
+      "name_zh": "侗族",
+      "name_en": "Dong",
+      "population_share_pct": 0.22,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "DJ"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "YA",
+      "name_zh": "瑶族",
+      "name_en": "Yao",
+      "population_share_pct": 0.21,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "YA"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "KO",
+      "name_zh": "朝鲜族",
+      "name_en": "Korean",
+      "population_share_pct": 0.15,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "KO"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "BA",
+      "name_zh": "白族",
+      "name_en": "Bai",
+      "population_share_pct": 0.16,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "BA"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "HN",
+      "name_zh": "哈尼族",
+      "name_en": "Hani",
+      "population_share_pct": 0.15,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "HN"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "KK",
+      "name_zh": "哈萨克族",
+      "name_en": "Kazak",
+      "population_share_pct": 0.11,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "KK"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "LI",
+      "name_zh": "黎族",
+      "name_en": "Li",
+      "population_share_pct": 0.12,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "LI"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "DA",
+      "name_zh": "傣族",
+      "name_en": "Dai",
+      "population_share_pct": 0.1,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "DA"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "SH",
+      "name_zh": "畲族",
+      "name_en": "She",
+      "population_share_pct": 0.06,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "SH"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "LS",
+      "name_zh": "傈僳族",
+      "name_en": "Lisu",
+      "population_share_pct": 0.06,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "LS"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "GL",
+      "name_zh": "仡佬族",
+      "name_en": "Gelao",
+      "population_share_pct": 0.04,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "GL"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "ML",
+      "name_zh": "毛南族",
+      "name_en": "Maonan",
+      "population_share_pct": 0.01,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "ML"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "XB",
+      "name_zh": "锡伯族",
+      "name_en": "Xibe",
+      "population_share_pct": 0.02,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "XB"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "MIAO",
+      "name_zh": "仫佬族",
+      "name_en": "Mulao",
+      "population_share_pct": 0.02,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "MIAO"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "KG",
+      "name_zh": "柯尔克孜族",
+      "name_en": "Kirgiz",
+      "population_share_pct": 0.01,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "KG"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "TAJ",
+      "name_zh": "塔吉克族",
+      "name_en": "Tajik",
+      "population_share_pct": 0.004,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "TAJ"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "NU",
+      "name_zh": "怒族",
+      "name_en": "Nu",
+      "population_share_pct": 0.003,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "NU"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "UZ",
+      "name_zh": "乌孜别克族",
+      "name_en": "Uzbek",
+      "population_share_pct": 0.01,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "UZ"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "RS",
+      "name_zh": "俄罗斯族",
+      "name_en": "Russian",
+      "population_share_pct": 0.001,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "RS"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "EW",
+      "name_zh": "鄂温克族",
+      "name_en": "Ewenki",
+      "population_share_pct": 0.003,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "EW"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "DE",
+      "name_zh": "德昂族",
+      "name_en": "Deang",
+      "population_share_pct": 0.002,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "DE"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "BN",
+      "name_zh": "保安族",
+      "name_en": "Bonan",
+      "population_share_pct": 0.002,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "BN"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "YUG",
+      "name_zh": "裕固族",
+      "name_en": "Yugur",
+      "population_share_pct": 0.001,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "YUG"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "GI",
+      "name_zh": "京族",
+      "name_en": "Gin",
+      "population_share_pct": 0.003,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "GI"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "TA",
+      "name_zh": "塔塔尔族",
+      "name_en": "Tatar",
+      "population_share_pct": 0.0006,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "TA"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "DR",
+      "name_zh": "独龙族",
+      "name_en": "Drung",
+      "population_share_pct": 0.0007,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "DR"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "OR",
+      "name_zh": "鄂伦春族",
+      "name_en": "Oroqen",
+      "population_share_pct": 0.001,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "OR"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "HE",
+      "name_zh": "赫哲族",
+      "name_en": "Hezhen",
+      "population_share_pct": 0.0005,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "HE"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "MN",
+      "name_zh": "门巴族",
+      "name_en": "Monba",
+      "population_share_pct": 0.001,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "MN"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "LO",
+      "name_zh": "珞巴族",
+      "name_en": "Lhoba",
+      "population_share_pct": 0.0003,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "LO"
+        }
+      ]
+    },
+    {
+      "gb_3304_code": "JB",
+      "name_zh": "基诺族",
+      "name_en": "Jinuo",
+      "population_share_pct": 0.002,
+      "seed_status": "INCOMPLETE_STANDARD_DATA",
+      "source_system_label": "GB_T_3304_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_3304_PUBLIC_STANDARD",
+          "source_name": "JB"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,379 @@
+{
+  "meta": {
+    "extraction_time": "2026-08-20T11:00:48+08:00",
+    "policy": "Every canonical item has provenance. Decisions: REUSE (verbatim from source) | ADAPT (rename/normalize) | MERGE (consolidate multi-source) | REJECT (source tech debt) | PROPOSED (no source — design from scratch).",
+    "gating": "No item is FROZEN until MDM-000 implementation Gate PROPOSED→ACCEPTED."
+  },
+  "source_availability": {
+    "DEV": "EXTRACTED (via existing reverse-engineering JSON dumps; PARTIAL 5/18 JU_DataType, FULL 28/121 dictionaries)",
+    "ONLYIT": "NOT_AVAILABLE_AS_SEPARATE_SOURCE (the existing dev DB is Onlyit-derived; no separate Onlyit corpus was discoverable in this session. Documented honestly.)",
+    "VOL": "REFERENCE_ONLY (docs/research/vol-pro/ contains 22 documents covering VOL Dictionary pattern; no specific DataType/Decimal table; Sys_Dictionary shape documented for pattern reference only)."
+  },
+  "mappings": [
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "本",
+      "source_name": "本",
+      "canonical_code": "BENG",
+      "canonical_name": "本",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "本 (book/copy) is generic Chinese count unit; preserved as discrete UOM."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "套",
+      "source_name": "套",
+      "canonical_code": "TAO",
+      "canonical_name": "套",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "套 (set) is generic Chinese count unit."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "张",
+      "source_name": "张",
+      "canonical_code": "ZHANG",
+      "canonical_name": "张",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "张 (sheet) is generic Chinese count unit."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "台",
+      "source_name": "台",
+      "canonical_code": "TAI",
+      "canonical_name": "台",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "台 (machine) is generic Chinese count unit."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "个",
+      "source_name": "个",
+      "canonical_code": "GE",
+      "canonical_name": "个",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "个 (piece) is generic Chinese count unit."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "PCS",
+      "source_name": "PCS",
+      "canonical_description": "通用产品个数，片、只、张",
+      "canonical_code": "PCS",
+      "canonical_name": "件",
+      "decision": "ADAPT",
+      "target_scope": "SYSTEM",
+      "reason": "DEV PCS description 通用产品个数,片/只/张; canonicalized to 件 for cleaner i18n. UN/CEFACT PCS code preserved."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "EA",
+      "source_name": "EA",
+      "canonical_description": "通用物料个数，片、只、张",
+      "canonical_code": "EA",
+      "canonical_name": "个",
+      "decision": "ADAPT",
+      "target_scope": "SYSTEM",
+      "reason": "DEV EA description 通用散件,个/片/只/张; canonicalized to 个. UN/CEFACT EA code preserved."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "t",
+      "source_name": "吨",
+      "canonical_code": "TNE",
+      "canonical_name": "吨",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "SI tonne. UN/CEFACT TNE code used."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "kg",
+      "source_name": "千克",
+      "canonical_code": "KGM",
+      "canonical_name": "千克",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "SI kilogram. UN/CEFACT KGM code used."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "g",
+      "source_name": "克",
+      "canonical_code": "GRM",
+      "canonical_name": "克",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "SI gram. UN/CEFACT GRM code used."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "m",
+      "source_name": "米",
+      "canonical_code": "MTR",
+      "canonical_name": "米",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "SI meter. UN/CEFACT MTR code used."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "m2",
+      "source_name": "平方米",
+      "canonical_code": "MTK",
+      "canonical_name": "平方米",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "SI square meter. UN/CEFACT MTK code used."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表s",
+      "source_code": "m3",
+      "source_name": "立方米",
+      "canonical_code": "MTQ",
+      "canonical_name": "立方米",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "SI cubic meter. UN/CEFACT MTQ code used."
+    },
+    {
+      "source": "DEV",
+      "source_table": "JU_DataType",
+      "source_code": "4",
+      "source_name": "小数",
+      "canonical_code": "AMOUNT",
+      "canonical_name": "金额",
+      "decision": "ADAPT",
+      "target_scope": "SYSTEM",
+      "reason": "DEV DataTypeID=4 MatchPattern=金额/汇率/总计/小数. GuliERP scale=4 (HALF_EVEN) for cross-currency aggregation; DEV uses precision=2."
+    },
+    {
+      "source": "DEV",
+      "source_table": "JU_DataType",
+      "source_code": "4",
+      "source_name": "小数",
+      "canonical_code": "UNIT_PRICE",
+      "canonical_name": "单价",
+      "decision": "PROPOSED",
+      "target_scope": "SYSTEM",
+      "reason": "No separate DEV row. GuliERP V1 should distinguish 单价 (precision 6) from AMOUNT (precision 4) for tax calculations."
+    },
+    {
+      "source": "DEV",
+      "source_table": "JU_DataType",
+      "source_code": "4",
+      "source_name": "小数",
+      "canonical_code": "COST",
+      "canonical_name": "成本",
+      "decision": "PROPOSED",
+      "target_scope": "SYSTEM",
+      "reason": "No separate DEV row. Manufacturing costing needs 4-6 decimal places."
+    },
+    {
+      "source": "DEV",
+      "source_table": "JU_DataType",
+      "source_code": "3",
+      "source_name": "整数",
+      "canonical_code": "INTEGER",
+      "canonical_name": "整数",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "DEV DataTypeID=3 BaseType=3 BaseLength=32. Default=0. Direct reuse."
+    },
+    {
+      "source": "DEV",
+      "source_table": "JU_DataType",
+      "source_code": "2",
+      "source_name": "字符",
+      "canonical_code": "TEXT",
+      "canonical_name": "文本",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "DEV DataTypeID=2 BaseType=1 BaseLength=128. Generic text."
+    },
+    {
+      "source": "DEV",
+      "source_table": "JU_DataType",
+      "source_code": "5",
+      "source_name": "时间",
+      "canonical_code": "DATETIME",
+      "canonical_name": "日期时间",
+      "decision": "ADAPT",
+      "target_scope": "SYSTEM",
+      "reason": "DEV DataTypeID=5 BaseType=4. GuliERP uses DateTimeOffset (timestamptz) for tenant TZ safety."
+    },
+    {
+      "source": "DEV",
+      "source_table": "JU_DataType",
+      "source_code": "6",
+      "source_name": "图像",
+      "canonical_code": "BINARY_ATTACHMENT",
+      "canonical_name": "附件/二进制",
+      "decision": "REJECT",
+      "target_scope": "SYSTEM",
+      "reason": "DEV image column is anti-pattern. GuliERP uses Attachment entity + object store. Do NOT copy DEV image column behavior."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "15",
+      "source_name": "单位",
+      "canonical_code": "DICT_UOM",
+      "canonical_name": "单位",
+      "decision": "REUSE",
+      "target_scope": "SYSTEM",
+      "reason": "13 UOM items extracted (本/套/张/台/个/PCS/EA/t/kg/g/m/m2/m3). See uom.json."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "98",
+      "source_name": "商品属性",
+      "canonical_code": "DICT_ITEM_TYPE",
+      "canonical_name": "商品类型",
+      "decision": "ADAPT",
+      "target_scope": "SYSTEM",
+      "reason": "DEV 4 items (自制/外购/委外加工/客供). GuliERP V1 may use Item.IsManufactured/IsPurchased flags instead of dictionary; dictionary kept as fallback."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "2749",
+      "source_name": "物料级别",
+      "canonical_code": "DICT_ITEM_GRADE",
+      "canonical_name": "物料级别",
+      "decision": "ADAPT",
+      "target_scope": "SYSTEM",
+      "reason": "DEV 3 items (A/B/C). Can be tenant-configurable; canonicalized to ITEM_GRADE for clarity."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "2859",
+      "source_name": "商品分类",
+      "canonical_code": "DICT_ITEM_CATEGORY",
+      "canonical_name": "商品分类",
+      "decision": "ADAPT",
+      "target_scope": "SYSTEM",
+      "reason": "DEV 5 items (电器/车辆/蔬菜/肉类/海鲜). Sample data is general. Real GuliERP needs full category tree per tenant."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "2940",
+      "source_name": "职位",
+      "canonical_code": "DICT_OCCUPATION",
+      "canonical_name": "职位",
+      "decision": "REUSE",
+      "target_scope": "TENANT_TEMPLATE",
+      "reason": "DEV 0 items in 字典表s; placeholder. Real GuliERP needs GB/T 8561-2001 occupation codes or custom."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "3052",
+      "source_name": "付款方式",
+      "canonical_code": "DICT_PAYMENT",
+      "canonical_name": "付款方式",
+      "decision": "ADAPT",
+      "target_scope": "TENANT_TEMPLATE",
+      "reason": "5 items, see payment-method.json. Should split into PaymentMethod + PaymentTerm in V1."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "2943",
+      "source_name": "学历",
+      "canonical_code": "DICT_EDUCATION",
+      "canonical_name": "学历",
+      "decision": "ADAPT",
+      "target_scope": "SYSTEM",
+      "reason": "6 items in DEV. Expanded to 9 (GB/T 4658) in education.json."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "63",
+      "source_name": "工序",
+      "canonical_code": "DICT_PROCESS",
+      "canonical_name": "工序",
+      "decision": "REUSE",
+      "target_scope": "TENANT_TEMPLATE",
+      "reason": "DEV 4 items (焊接/喷漆/组装/包装). Tenant template."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "71",
+      "source_name": "工作中心",
+      "canonical_code": "DICT_WORK_CENTER",
+      "canonical_name": "工作中心",
+      "decision": "ADAPT",
+      "target_scope": "MASTER_DATA",
+      "reason": "DEV 3 items (主线车间/配件车间/包装车间). Promote from dictionary to first-class WorkCenter entity in V1 (per P1-005 plan)."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "3523",
+      "source_name": "岗位",
+      "canonical_code": "DICT_POSITION",
+      "canonical_name": "岗位",
+      "decision": "REUSE",
+      "target_scope": "TENANT_TEMPLATE",
+      "reason": "4 items in DEV, see position.json."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "3497",
+      "source_name": "往来类型",
+      "canonical_code": "DICT_BP_TYPE",
+      "canonical_name": "往来类型",
+      "decision": "ADAPT",
+      "target_scope": "TENANT_TEMPLATE",
+      "reason": "4 items, see business-partner-type.json. Becomes BusinessPartnerType entity."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "3097",
+      "source_name": "收支科目",
+      "canonical_code": "DICT_LEDGER_SUBJECT",
+      "canonical_name": "收支科目",
+      "decision": "PROPOSED",
+      "target_scope": "TENANT_TEMPLATE",
+      "reason": "DEV 7 items (差旅费/房租/电费/水费/管理费/工资/福利费). Promote to full Chart of Accounts in V2 (Finance module)."
+    },
+    {
+      "source": "DEV",
+      "source_table": "字典表",
+      "source_code": "3437",
+      "source_name": "科目类型",
+      "canonical_code": "DICT_LEDGER_KIND",
+      "canonical_name": "科目类型",
+      "decision": "PROPOSED",
+      "target_scope": "TENANT_TEMPLATE",
+      "reason": "DEV 5 items (资产/负债/权益/成本/损益). Chart of Accounts domain."
+    }
+  ]
+}

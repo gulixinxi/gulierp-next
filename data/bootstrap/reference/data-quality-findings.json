@@ -1,0 +1,16 @@
+{
+  "_deprecated": true,
+  "_deprecated_at": "2026-08-20T11:32:14+08:00",
+  "_deprecated_reason": "MDM-000D-R1 split this conflated file into two orthogonal dimensions:",
+  "_replaced_by": [
+    "data/bootstrap/reference/automated-data-quality-findings.json",
+    "data/bootstrap/reference/architectural-review-findings.json"
+  ],
+  "_see_also": "docs/architecture/MDM_000D_SOURCE_EXTRACTION_AND_SEED_PREPARATION.md (R1 section) and the curated manifest.json",
+  "_do_not_load": true,
+  "meta": {
+    "extraction_time": "2026-08-20T11:00:48+08:00",
+    "note": "DEPRECATED. Future Seeder MUST NOT load this file. The two replacement files above are the only authoritative findings."
+  },
+  "findings": []
+}

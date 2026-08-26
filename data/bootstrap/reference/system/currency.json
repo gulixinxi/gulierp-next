@@ -1,0 +1,341 @@
+{
+  "meta": {
+    "source_systems": [
+      {
+        "system": "ISO_4217",
+        "note": "Public standard, not extracted from any source DB."
+      }
+    ],
+    "extraction_time": "2026-08-20T11:00:48+08:00",
+    "notes": [
+      "DEV 数据库未发现独立币种表;仅在 系统表.货币 字段出现货币简称。",
+      "Currency seed SHOULD use ISO 4217 standard. This is REFERENCE_ONLY until external authoritative source is wired.",
+      "For V1, only major trading currencies are listed; full ISO 4217 list (180+) is documented in scope as a future Goal."
+    ],
+    "classification": "REFERENCE_ONLY",
+    "seed_status_at_file_level": "REFERENCE_ONLY",
+    "item_count": 20
+  },
+  "items": [
+    {
+      "iso_4217_code": "CNY",
+      "numeric_code": "156",
+      "minor_units": 2,
+      "name_zh": "人民币",
+      "name_en": "Chinese Yuan Renminbi",
+      "symbol": "¥",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "CNY"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "USD",
+      "numeric_code": "840",
+      "minor_units": 2,
+      "name_zh": "美元",
+      "name_en": "United States Dollar",
+      "symbol": "$",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "USD"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "EUR",
+      "numeric_code": "978",
+      "minor_units": 2,
+      "name_zh": "欧元",
+      "name_en": "Euro",
+      "symbol": "€",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "EUR"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "JPY",
+      "numeric_code": "392",
+      "minor_units": 0,
+      "name_zh": "日元",
+      "name_en": "Japanese Yen",
+      "symbol": "¥",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "JPY"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "GBP",
+      "numeric_code": "826",
+      "minor_units": 2,
+      "name_zh": "英镑",
+      "name_en": "Pound Sterling",
+      "symbol": "£",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "GBP"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "HKD",
+      "numeric_code": "344",
+      "minor_units": 2,
+      "name_zh": "港币",
+      "name_en": "Hong Kong Dollar",
+      "symbol": "HK$",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "HKD"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "TWD",
+      "numeric_code": "901",
+      "minor_units": 2,
+      "name_zh": "新台币",
+      "name_en": "New Taiwan Dollar",
+      "symbol": "NT$",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "TWD"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "KRW",
+      "numeric_code": "410",
+      "minor_units": 0,
+      "name_zh": "韩元",
+      "name_en": "South Korean Won",
+      "symbol": "₩",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "KRW"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "SGD",
+      "numeric_code": "702",
+      "minor_units": 2,
+      "name_zh": "新加坡元",
+      "name_en": "Singapore Dollar",
+      "symbol": "S$",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "SGD"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "AUD",
+      "numeric_code": "036",
+      "minor_units": 2,
+      "name_zh": "澳元",
+      "name_en": "Australian Dollar",
+      "symbol": "A$",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "AUD"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "CAD",
+      "numeric_code": "124",
+      "minor_units": 2,
+      "name_zh": "加元",
+      "name_en": "Canadian Dollar",
+      "symbol": "C$",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "CAD"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "CHF",
+      "numeric_code": "756",
+      "minor_units": 2,
+      "name_zh": "瑞士法郎",
+      "name_en": "Swiss Franc",
+      "symbol": "CHF",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "CHF"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "RUB",
+      "numeric_code": "643",
+      "minor_units": 2,
+      "name_zh": "俄罗斯卢布",
+      "name_en": "Russian Ruble",
+      "symbol": "₽",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "RUB"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "INR",
+      "numeric_code": "356",
+      "minor_units": 2,
+      "name_zh": "印度卢比",
+      "name_en": "Indian Rupee",
+      "symbol": "₹",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "INR"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "THB",
+      "numeric_code": "764",
+      "minor_units": 2,
+      "name_zh": "泰铢",
+      "name_en": "Thai Baht",
+      "symbol": "฿",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "THB"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "VND",
+      "numeric_code": "704",
+      "minor_units": 0,
+      "name_zh": "越南盾",
+      "name_en": "Vietnamese Dong",
+      "symbol": "₫",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "VND"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "MYR",
+      "numeric_code": "458",
+      "minor_units": 2,
+      "name_zh": "马来西亚林吉特",
+      "name_en": "Malaysian Ringgit",
+      "symbol": "RM",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "MYR"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "IDR",
+      "numeric_code": "360",
+      "minor_units": 2,
+      "name_zh": "印尼盾",
+      "name_en": "Indonesian Rupiah",
+      "symbol": "Rp",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "IDR"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "PHP",
+      "numeric_code": "608",
+      "minor_units": 2,
+      "name_zh": "菲律宾比索",
+      "name_en": "Philippine Peso",
+      "symbol": "₱",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "PHP"
+        }
+      ]
+    },
+    {
+      "iso_4217_code": "BRL",
+      "numeric_code": "986",
+      "minor_units": 2,
+      "name_zh": "巴西雷亚尔",
+      "name_en": "Brazilian Real",
+      "symbol": "R$",
+      "seed_status": "REFERENCE_ONLY",
+      "source_system_label": "ISO_4217_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "ISO_4217_PUBLIC_STANDARD",
+          "source_name": "BRL"
+        }
+      ]
+    }
+  ]
+}

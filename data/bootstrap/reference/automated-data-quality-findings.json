@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "extraction_time": "2026-08-20T11:32:14+08:00",
+    "scanner": "tools/discovery/mdm-000d/run_data_quality_scan.py",
+    "scanner_method": "machine-run; checks for null_code / duplicate_code / null_name across all seed files",
+    "scope": "data/bootstrap/reference/**/*.json (9 seed files + 28 DEV dictionaries)"
+  },
+  "totals": {
+    "blocker": 0,
+    "review_required": 0,
+    "info": 10
+  },
+  "scanner_exit_code": 0,
+  "raw_output_tail": "Scanning seed candidates...\n\n=== Scan summary: {'BLOCKER': 0, 'REVIEW_REQUIRED': 0, 'INFO': 10} ===\n",
+  "findings": [],
+  "note_on_no_findings": "Scanner ran 9 seed files + 28 DEV dictionary headers. All scanned items pass (no null code, no null name, no duplicate code within file). Only INFO-level stats are produced (one per file). The 0 BLOCKER / 0 REVIEW / N INFO result confirms structural seed-file integrity, not business-level correctness. Business-level concerns are recorded in architectural-review-findings.json (separate file, separate dimension)."
+}

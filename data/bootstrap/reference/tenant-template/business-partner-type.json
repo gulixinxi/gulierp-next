@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "source_systems": [
+      {
+        "system": "DEV",
+        "dictionary_code": 3497,
+        "items_count": 4
+      }
+    ],
+    "extraction_time": "2026-08-20T11:00:48+08:00",
+    "notes": [
+      "DEV 往来类型 4 项."
+    ],
+    "classification": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "seed_status_at_file_level": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "item_count": 4
+  },
+  "items": [
+    {
+      "canonical_code": "BPT_CUSTOMER",
+      "canonical_name_zh": "客户",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "客户"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "BPT_SUPPLIER",
+      "canonical_name_zh": "供应商",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "供应商"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "BPT_SUBCONTRACTOR",
+      "canonical_name_zh": "外协",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "外协"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "BPT_LOGISTICS",
+      "canonical_name_zh": "物流",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "物流"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "meta": {
+    "source_systems": [
+      {
+        "system": "DEV",
+        "dictionary_code": 2943,
+        "items_count": 6
+      }
+    ],
+    "extraction_time": "2026-08-20T11:00:48+08:00",
+    "notes": [
+      "6 items from DEV dictionary (学历) are SAFE_TO_SEED_SYSTEM.",
+      "4 items added from GB/T 4658 (高中/初中/小学/中专) are PROPOSED.",
+      "1 item is mixed: PHD_CAND 博士研究生 — derived from GB/T 4658 + DEV (currently set to PROPOSED; needs review).",
+      "Item count breakdown: SAFE=5, PROPOSED=5, total=10"
+    ],
+    "classification": "SAFE_TO_SEED_SYSTEM",
+    "seed_status_at_file_level": "SAFE_TO_SEED_SYSTEM",
+    "items_safe_to_seed_system": 5,
+    "items_proposed": 5
+  },
+  "items": [
+    {
+      "canonical_code": "PHD_CAND",
+      "canonical_name_zh": "博士研究生",
+      "level_order": 9,
+      "source": "GB_T_4658+DEV",
+      "seed_status": "PROPOSED",
+      "source_system_label": "GB_T_4658_PUBLIC_STANDARD",
+      "source_systems": [
+        {
+          "system": "GB_T_4658_PUBLIC_STANDARD",
+          "source_name": "博士研究生"
+        }
+      ]
+    },
+    {
+      "canonical_code": "PHD",
+      "canonical_name_zh": "博士",
+      "level_order": 8,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "博士"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "MASTER",
+      "canonical_name_zh": "硕士",
+      "level_order": 7,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "硕士"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "BACHELOR",
+      "canonical_name_zh": "本科",
+      "level_order": 6,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "本科"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "DIPLOMA",
+      "canonical_name_zh": "大专",
+      "level_order": 5,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "大专"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "VOCATIONAL",
+      "canonical_name_zh": "中专/中职",
+      "level_order": 4,
+      "source_systems": [],
+      "seed_status": "PROPOSED",
+      "source_system_label": "GB_T_4658_PUBLIC_STANDARD"
+    },
+    {
+      "canonical_code": "HIGH_SCHOOL",
+      "canonical_name_zh": "高中",
+      "level_order": 3,
+      "source_systems": [],
+      "seed_status": "PROPOSED",
+      "source_system_label": "GB_T_4658_PUBLIC_STANDARD"
+    },
+    {
+      "canonical_code": "JUNIOR_HIGH",
+      "canonical_name_zh": "初中",
+      "level_order": 2,
+      "source_systems": [],
+      "seed_status": "PROPOSED",
+      "source_system_label": "GB_T_4658_PUBLIC_STANDARD"
+    },
+    {
+      "canonical_code": "PRIMARY",
+      "canonical_name_zh": "小学",
+      "level_order": 1,
+      "source_systems": [],
+      "seed_status": "PROPOSED",
+      "source_system_label": "GB_T_4658_PUBLIC_STANDARD"
+    },
+    {
+      "canonical_code": "BELOW_PRIMARY",
+      "canonical_name_zh": "小学以下",
+      "level_order": 0,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "大专以下"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    }
+  ]
+}

@@ -1,0 +1,394 @@
+{
+  "meta": {
+    "source_systems": [
+      {
+        "system": "DEV",
+        "table": "dbo.JU_DataType",
+        "rows_in_source": 18,
+        "rows_in_sample": 5,
+        "extraction_completeness": "PARTIAL"
+      },
+      {
+        "system": "VOL",
+        "note": "Pattern reference only (Sys_Dictionary shape); no specific decimal/precision table in VOL research corpus."
+      }
+    ],
+    "extraction_time": "2026-08-20T11:00:48+08:00",
+    "notes": [
+      "JU_DataType has 18 rows in source; only 5 are in the sample (字符/整数/小数/时间/图像).",
+      "Other 13 are NOT in the sample. Their semantic meaning must be re-extracted with TOP N=50 from dev DB or inferred from template-field ComponentType usage.",
+      "Status: PROPOSED. No field is FROZEN yet."
+    ],
+    "classification": "SAFE_TO_SEED_SYSTEM",
+    "seed_status_at_file_level": "SAFE_TO_SEED_SYSTEM"
+  },
+  "business_semantic_types": [
+    {
+      "canonical_code": "AMOUNT",
+      "canonical_name_zh": "金额",
+      "dev_evidence": {
+        "DataTypeID": 4,
+        "DataTypeName_zh": "小数",
+        "BaseType": 3,
+        "BaseLength": 34,
+        "BasePrecision": 2,
+        "MatchPattern": "金额,汇率,总计,小数,汇率"
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(20,4)",
+      "proposed_precision": 20,
+      "proposed_scale": 4,
+      "rounding_mode": "HALF_EVEN",
+      "display_scale": 2,
+      "currency_aware": true,
+      "percentage_aware": false,
+      "uom_dimension": null,
+      "canonical_decision": "ADAPT",
+      "evidence_reason": "DEV 小数 DataTypeID 4 uses BaseType=3, BaseLength=34, BasePrecision=2 with MatchPattern explicitly listing 金额/汇率/总计/小数. Proposed GuliERP scale=4 (HALF_EVEN) for cross-currency aggregation safety; display_scale=2 matches typical currency presentation.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "DEV+STANDARD_INFERENCE",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "JU_DataType DataTypeID=4 (小数)"
+        },
+        {
+          "system": "STANDARD_INFERENCE"
+        }
+      ]
+    },
+    {
+      "canonical_code": "UNIT_PRICE",
+      "canonical_name_zh": "单价",
+      "dev_evidence": {
+        "DataTypeID": 4,
+        "shared_with_amount": true,
+        "note": "Not separate row in JU_DataType; uses 小数 with precision=2."
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(20,6)",
+      "proposed_precision": 20,
+      "proposed_scale": 6,
+      "rounding_mode": "HALF_EVEN",
+      "display_scale": 2,
+      "currency_aware": true,
+      "percentage_aware": false,
+      "uom_dimension": null,
+      "canonical_decision": "PROPOSED",
+      "evidence_reason": "DEV has no separate 单价 type. GuliERP V1 should distinguish 单价 (higher precision for tax/precision calculations) from AMOUNT (presentation precision).",
+      "seed_status": "PROPOSED",
+      "source_system_label": "GULIERP_DESIGN",
+      "source_systems": [
+        {
+          "system": "GULIERP_DESIGN",
+          "canonical_decision": "PROPOSED"
+        }
+      ]
+    },
+    {
+      "canonical_code": "COST",
+      "canonical_name_zh": "成本",
+      "dev_evidence": {
+        "DataTypeID": 4,
+        "shared_with_amount": true,
+        "note": "Not separate row in JU_DataType."
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(20,6)",
+      "proposed_precision": 20,
+      "proposed_scale": 6,
+      "rounding_mode": "HALF_EVEN",
+      "display_scale": 4,
+      "currency_aware": true,
+      "percentage_aware": false,
+      "uom_dimension": null,
+      "canonical_decision": "PROPOSED",
+      "evidence_reason": "Manufacturing costing requires 4-6 decimal places; DEV has no separation.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "GULIERP_DESIGN",
+      "source_systems": [
+        {
+          "system": "GULIERP_DESIGN",
+          "canonical_decision": "PROPOSED"
+        }
+      ]
+    },
+    {
+      "canonical_code": "QUANTITY",
+      "canonical_name_zh": "数量",
+      "dev_evidence": {
+        "DataTypeID": 4,
+        "note": "Not explicitly separated from AMOUNT in 5 sample rows. 商品表.数量 uses BaseType=3 with precision=1 (1.0 format)."
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(20,4)",
+      "proposed_precision": 20,
+      "proposed_scale": 4,
+      "rounding_mode": "HALF_UP",
+      "display_scale": "per-uom",
+      "currency_aware": false,
+      "percentage_aware": false,
+      "uom_dimension": "dynamic (per Item.UomCode)",
+      "canonical_decision": "PROPOSED",
+      "evidence_reason": "Quantity is dimensionally aware (UOM), not currency-aware. DEV uses 数量 = 1.0 (1 decimal); production reality needs higher precision (kg weight 0.001).",
+      "seed_status": "PROPOSED",
+      "source_system_label": "GULIERP_DESIGN",
+      "source_systems": [
+        {
+          "system": "GULIERP_DESIGN",
+          "canonical_decision": "PROPOSED"
+        }
+      ]
+    },
+    {
+      "canonical_code": "TAX_RATE",
+      "canonical_name_zh": "税率",
+      "dev_evidence": {
+        "DataTypeID": null,
+        "note": "No dedicated row in sample; not in 5 visible names."
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(6,4)",
+      "proposed_precision": 6,
+      "proposed_scale": 4,
+      "rounding_mode": "HALF_EVEN",
+      "display_scale": 2,
+      "currency_aware": false,
+      "percentage_aware": true,
+      "uom_dimension": null,
+      "canonical_decision": "PROPOSED",
+      "evidence_reason": "China VAT rates include 13%/9%/6%/3% (legacy 17%/13%); scale=4 supports 0.0001 (0.01%) granularity. Not in DEV sample.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "GULIERP_DESIGN",
+      "source_systems": [
+        {
+          "system": "GULIERP_DESIGN",
+          "canonical_decision": "PROPOSED"
+        }
+      ]
+    },
+    {
+      "canonical_code": "PERCENTAGE",
+      "canonical_name_zh": "百分比",
+      "dev_evidence": {
+        "DataTypeID": null,
+        "note": "No dedicated row in sample."
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(8,6)",
+      "proposed_precision": 8,
+      "proposed_scale": 6,
+      "rounding_mode": "HALF_EVEN",
+      "display_scale": 2,
+      "currency_aware": false,
+      "percentage_aware": true,
+      "uom_dimension": null,
+      "canonical_decision": "PROPOSED",
+      "evidence_reason": "Percentage for discount/commission. Not in DEV sample; standard accounting precision.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "GULIERP_DESIGN",
+      "source_systems": [
+        {
+          "system": "GULIERP_DESIGN",
+          "canonical_decision": "PROPOSED"
+        }
+      ]
+    },
+    {
+      "canonical_code": "DISCOUNT_RATE",
+      "canonical_name_zh": "折扣率",
+      "dev_evidence": {
+        "DataTypeID": null,
+        "note": "Not in sample. 阶梯类型 按数量/按金额 in DEV dictionary but no rate field schema."
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(6,4)",
+      "proposed_precision": 6,
+      "proposed_scale": 4,
+      "rounding_mode": "HALF_UP",
+      "display_scale": 2,
+      "currency_aware": false,
+      "percentage_aware": true,
+      "uom_dimension": null,
+      "canonical_decision": "PROPOSED",
+      "evidence_reason": "Discount rates typically 0.00-1.00 (or 0-100). 4 decimal places = 0.01% precision.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "GULIERP_DESIGN",
+      "source_systems": [
+        {
+          "system": "GULIERP_DESIGN",
+          "canonical_decision": "PROPOSED"
+        }
+      ]
+    },
+    {
+      "canonical_code": "EXCHANGE_RATE",
+      "canonical_name_zh": "汇率",
+      "dev_evidence": {
+        "DataTypeID": 4,
+        "MatchPattern_contains": "汇率",
+        "note": "Shares 小数 type."
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(18,8)",
+      "proposed_precision": 18,
+      "proposed_scale": 8,
+      "rounding_mode": "HALF_EVEN",
+      "display_scale": 4,
+      "currency_aware": true,
+      "percentage_aware": false,
+      "uom_dimension": null,
+      "canonical_decision": "ADAPT",
+      "evidence_reason": "DEV MatchPattern explicitly lists 汇率. FX rates need 6-8 decimal places (e.g. JPY/CNY 0.051234).",
+      "seed_status": "PROPOSED",
+      "source_system_label": "DEV+STANDARD_INFERENCE",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "JU_DataType DataTypeID=4 (小数)"
+        },
+        {
+          "system": "STANDARD_INFERENCE"
+        }
+      ]
+    },
+    {
+      "canonical_code": "LENGTH",
+      "canonical_name_zh": "长度",
+      "dev_evidence": {
+        "DataTypeID": 4,
+        "note": "DEV 克重/外箱尺寸/中盒尺寸/内盒尺寸 fields exist but no dedicated type."
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(12,4)",
+      "proposed_precision": 12,
+      "proposed_scale": 4,
+      "rounding_mode": "HALF_EVEN",
+      "display_scale": "per-uom",
+      "currency_aware": false,
+      "percentage_aware": false,
+      "uom_dimension": "LENGTH",
+      "canonical_decision": "PROPOSED",
+      "evidence_reason": "Length has UOM dimension (m/cm/mm). mm precision is the practical floor for engineering.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "GULIERP_DESIGN",
+      "source_systems": [
+        {
+          "system": "GULIERP_DESIGN",
+          "canonical_decision": "PROPOSED"
+        }
+      ]
+    },
+    {
+      "canonical_code": "WEIGHT",
+      "canonical_name_zh": "重量",
+      "dev_evidence": {
+        "DataTypeID": 4,
+        "note": "DEV 商品表.克重 field exists (0.0 default)."
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(12,4)",
+      "proposed_precision": 12,
+      "proposed_scale": 4,
+      "rounding_mode": "HALF_EVEN",
+      "display_scale": "per-uom",
+      "currency_aware": false,
+      "percentage_aware": false,
+      "uom_dimension": "MASS",
+      "canonical_decision": "ADAPT",
+      "evidence_reason": "Weight has UOM dimension (kg/g). g precision is the practical floor.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "DEV+STANDARD_INFERENCE",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "JU_DataType DataTypeID=4 (小数)"
+        },
+        {
+          "system": "STANDARD_INFERENCE"
+        }
+      ]
+    },
+    {
+      "canonical_code": "AREA",
+      "canonical_name_zh": "面积",
+      "dev_evidence": {
+        "DataTypeID": null,
+        "note": "No explicit type. 外箱尺寸/中盒尺寸/内盒尺寸 fields are strings."
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(12,4)",
+      "proposed_precision": 12,
+      "proposed_scale": 4,
+      "rounding_mode": "HALF_EVEN",
+      "display_scale": "per-uom",
+      "currency_aware": false,
+      "percentage_aware": false,
+      "uom_dimension": "AREA",
+      "canonical_decision": "PROPOSED",
+      "evidence_reason": "Area has UOM dimension (m2). Not in DEV.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "GULIERP_DESIGN",
+      "source_systems": [
+        {
+          "system": "GULIERP_DESIGN",
+          "canonical_decision": "PROPOSED"
+        }
+      ]
+    },
+    {
+      "canonical_code": "VOLUME",
+      "canonical_name_zh": "体积",
+      "dev_evidence": {
+        "DataTypeID": null,
+        "note": "No explicit type."
+      },
+      "proposed_dotnet_type": "decimal",
+      "proposed_postgres_type": "numeric(12,6)",
+      "proposed_precision": 12,
+      "proposed_scale": 6,
+      "rounding_mode": "HALF_EVEN",
+      "display_scale": "per-uom",
+      "currency_aware": false,
+      "percentage_aware": false,
+      "uom_dimension": "VOLUME",
+      "canonical_decision": "PROPOSED",
+      "evidence_reason": "Volume has UOM dimension (m3/L). L precision 0.001 L is reasonable.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "GULIERP_DESIGN",
+      "source_systems": [
+        {
+          "system": "GULIERP_DESIGN",
+          "canonical_decision": "PROPOSED"
+        }
+      ]
+    },
+    {
+      "canonical_code": "TIME_DURATION",
+      "canonical_name_zh": "时长",
+      "dev_evidence": {
+        "DataTypeID": null,
+        "note": "Not in sample."
+      },
+      "proposed_dotnet_type": "TimeSpan",
+      "proposed_postgres_type": "interval",
+      "proposed_precision": null,
+      "proposed_scale": null,
+      "rounding_mode": "n/a",
+      "display_scale": "auto (h:mm:ss)",
+      "currency_aware": false,
+      "percentage_aware": false,
+      "uom_dimension": "TIME",
+      "canonical_decision": "PROPOSED",
+      "evidence_reason": "Production 工时 / 提前期 use TimeSpan. Not in DEV.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "GULIERP_DESIGN",
+      "source_systems": [
+        {
+          "system": "GULIERP_DESIGN",
+          "canonical_decision": "PROPOSED"
+        }
+      ]
+    }
+  ]
+}

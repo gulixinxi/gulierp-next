@@ -1,0 +1,353 @@
+{
+  "meta": {
+    "source_systems": [
+      {
+        "system": "DEV",
+        "dictionary_code": 15,
+        "items_count": 13
+      }
+    ],
+    "extraction_time": "2026-08-20T11:00:48+08:00",
+    "notes": [
+      "Mixed classification: 13 items have DEV provenance and are SAFE_TO_SEED_SYSTEM; 8 items are EXTERNAL_STANDARD_CANDIDATE (ISO 80000 SI units not in DEV) and are PROPOSED.",
+      "Future Seeder should load only items with seed_status=SAFE_TO_SEED_SYSTEM by default; PROPOSED items require explicit opt-in."
+    ],
+    "classification": "SAFE_TO_SEED_SYSTEM",
+    "seed_status_at_file_level": "MIXED",
+    "item_count": 21,
+    "items_safe_to_seed_system": 13,
+    "items_proposed": 8
+  },
+  "items": [
+    {
+      "canonical_code": "BENG",
+      "canonical_name_zh": "本",
+      "symbol": null,
+      "dimension": "COUNT",
+      "kind": "DISCRETE",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "本",
+          "description": "",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "REUSE",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "TAO",
+      "canonical_name_zh": "套",
+      "symbol": null,
+      "dimension": "COUNT",
+      "kind": "DISCRETE",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "套",
+          "description": "",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "REUSE",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "ZHANG",
+      "canonical_name_zh": "张",
+      "symbol": null,
+      "dimension": "COUNT",
+      "kind": "DISCRETE",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "张",
+          "description": "",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "REUSE",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "TAI",
+      "canonical_name_zh": "台",
+      "symbol": null,
+      "dimension": "COUNT",
+      "kind": "DISCRETE",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "台",
+          "description": "",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "REUSE",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "GE",
+      "canonical_name_zh": "个",
+      "symbol": null,
+      "dimension": "COUNT",
+      "kind": "DISCRETE",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "个",
+          "description": "",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "REUSE",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "PCS",
+      "canonical_name_zh": "件",
+      "symbol": null,
+      "dimension": "COUNT",
+      "kind": "DISCRETE",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "PCS",
+          "description": "通用产品个数，片、只、张",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "REUSE",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "EA",
+      "canonical_name_zh": "个",
+      "symbol": null,
+      "dimension": "COUNT",
+      "kind": "DISCRETE",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "EA",
+          "description": "通用物料个数，片、只、张",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "REUSE",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "TNE",
+      "canonical_name_zh": "吨",
+      "symbol": "t",
+      "dimension": "MASS",
+      "kind": "SI",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "t",
+          "description": "吨",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "ADAPT",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "KGM",
+      "canonical_name_zh": "千克",
+      "symbol": "kg",
+      "dimension": "MASS",
+      "kind": "SI",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "kg",
+          "description": "千克",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "ADAPT",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "GRM",
+      "canonical_name_zh": "克",
+      "symbol": "g",
+      "dimension": "MASS",
+      "kind": "SI",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "g",
+          "description": "克",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "ADAPT",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "MTR",
+      "canonical_name_zh": "米",
+      "symbol": "m",
+      "dimension": "LENGTH",
+      "kind": "SI",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "m",
+          "description": "米",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "ADAPT",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "MTK",
+      "canonical_name_zh": "平方米",
+      "symbol": "m²",
+      "dimension": "AREA",
+      "kind": "SI",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "m2",
+          "description": "平方米",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "ADAPT",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "MTQ",
+      "canonical_name_zh": "立方米",
+      "symbol": "m³",
+      "dimension": "VOLUME",
+      "kind": "SI",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "m3",
+          "description": "立方米",
+          "status": "active"
+        }
+      ],
+      "canonical_decision": "ADAPT",
+      "seed_status": "SAFE_TO_SEED_SYSTEM",
+      "source_system_label": "DEV"
+    },
+    {
+      "canonical_code": "KM",
+      "canonical_name_zh": "千米",
+      "symbol": "km",
+      "dimension": "LENGTH",
+      "kind": "SI",
+      "source_systems": [],
+      "canonical_decision": "PROPOSED",
+      "notes": "Standard SI/ISO 80000 unit; not in DEV source but required for completeness.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "EXTERNAL_STANDARD_CANDIDATE"
+    },
+    {
+      "canonical_code": "CM",
+      "canonical_name_zh": "厘米",
+      "symbol": "cm",
+      "dimension": "LENGTH",
+      "kind": "SI",
+      "source_systems": [],
+      "canonical_decision": "PROPOSED",
+      "notes": "Standard SI/ISO 80000 unit; not in DEV source but required for completeness.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "EXTERNAL_STANDARD_CANDIDATE"
+    },
+    {
+      "canonical_code": "MM",
+      "canonical_name_zh": "毫米",
+      "symbol": "mm",
+      "dimension": "LENGTH",
+      "kind": "SI",
+      "source_systems": [],
+      "canonical_decision": "PROPOSED",
+      "notes": "Standard SI/ISO 80000 unit; not in DEV source but required for completeness.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "EXTERNAL_STANDARD_CANDIDATE"
+    },
+    {
+      "canonical_code": "L",
+      "canonical_name_zh": "升",
+      "symbol": "L",
+      "dimension": "VOLUME",
+      "kind": "SI",
+      "source_systems": [],
+      "canonical_decision": "PROPOSED",
+      "notes": "Standard SI/ISO 80000 unit; not in DEV source but required for completeness.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "EXTERNAL_STANDARD_CANDIDATE"
+    },
+    {
+      "canonical_code": "ML",
+      "canonical_name_zh": "毫升",
+      "symbol": "mL",
+      "dimension": "VOLUME",
+      "kind": "SI",
+      "source_systems": [],
+      "canonical_decision": "PROPOSED",
+      "notes": "Standard SI/ISO 80000 unit; not in DEV source but required for completeness.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "EXTERNAL_STANDARD_CANDIDATE"
+    },
+    {
+      "canonical_code": "H",
+      "canonical_name_zh": "小时",
+      "symbol": "h",
+      "dimension": "TIME",
+      "kind": "SI",
+      "source_systems": [],
+      "canonical_decision": "PROPOSED",
+      "notes": "Standard SI/ISO 80000 unit; not in DEV source but required for completeness.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "EXTERNAL_STANDARD_CANDIDATE"
+    },
+    {
+      "canonical_code": "MIN",
+      "canonical_name_zh": "分钟",
+      "symbol": "min",
+      "dimension": "TIME",
+      "kind": "SI",
+      "source_systems": [],
+      "canonical_decision": "PROPOSED",
+      "notes": "Standard SI/ISO 80000 unit; not in DEV source but required for completeness.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "EXTERNAL_STANDARD_CANDIDATE"
+    },
+    {
+      "canonical_code": "D",
+      "canonical_name_zh": "天",
+      "symbol": "d",
+      "dimension": "TIME",
+      "kind": "SI",
+      "source_systems": [],
+      "canonical_decision": "PROPOSED",
+      "notes": "Standard SI/ISO 80000 unit; not in DEV source but required for completeness.",
+      "seed_status": "PROPOSED",
+      "source_system_label": "EXTERNAL_STANDARD_CANDIDATE"
+    }
+  ]
+}

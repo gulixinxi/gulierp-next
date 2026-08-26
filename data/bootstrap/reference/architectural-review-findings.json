@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "extraction_time": "2026-08-20T11:32:14+08:00",
+    "reviewer": "agent (Mavis) architectural review during MDM-000D-R1 curation",
+    "note_on_dimension": "These are HUMAN/AGENT-ARCHITECTURAL concerns (semantic, design, governance, scope). They are NOT the same as machine-run automated checks (null/duplicate code). For automated checks see automated-data-quality-findings.json. The two files are intentionally separate to avoid metric conflation."
+  },
+  "findings": [
+    {
+      "id": "AR-001",
+      "severity": "BLOCKER",
+      "category": "EXTRACTION_GAP",
+      "description": "JU_DataType has 18 rows in source; only 5 in sample. 9 DataTypeIDs (referenced by template fields but without DataTypeName) cannot be canonicalized without re-extraction: [7, 8, 9, 101, 103, 105, 107, 109, 115]. An additional 4 source rows are completely orphaned (not in sample, not referenced).",
+      "affected_items": [
+        "DataTypeID 7",
+        "DataTypeID 8",
+        "DataTypeID 9",
+        "DataTypeID 101",
+        "DataTypeID 103",
+        "DataTypeID 105",
+        "DataTypeID 107",
+        "DataTypeID 109",
+        "DataTypeID 115",
+        "~4 unknown IDs (not in sample, not referenced)"
+      ],
+      "mitigation": "Re-run DevReverse with TOP N=50 for JU_DataType (requires reconnecting to dev DB; not done in MDM-000D per READ-ONLY policy). Until then, all 12 GuliERP semantic types are PROPOSED — not FROZEN."
+    },
+    {
+      "id": "AR-002",
+      "severity": "BLOCKER",
+      "category": "TASK_DESIGN_ASSUMPTION",
+      "description": "ONLYIT_INDEPENDENT_SOURCE = NOT_AVAILABLE. The dev database is Onlyit-derived (per DEV_METADATA_REVERSE_ENGINEERING_REPORT.md line 6 \"dev (网友制造 / Onlyit)\"). The task design assumed DEV/ONLYIT/VOL are three independent sources. This is not the case.",
+      "affected_items": "all three-way comparisons",
+      "mitigation": "Adopt canonical source strategy: DEV = primary ERP business evidence; GB/ISO/Standard = standard reference validation; VOL = productivity/Dictionary/Lookup pattern reference. NOT a failure; a correction of the source model."
+    },
+    {
+      "id": "AR-003",
+      "severity": "REVIEW_REQUIRED",
+      "category": "TECHNICAL_DEBT",
+      "description": "DEV 数据库 has 0 FK / 0 CHECK constraints; Code/Name fields are mixed, causing SOURCE_NAME/SOURCE_CODE separation issues (e.g. 单位字典 代码 field is empty for all items; must use 名称 as canonical code).",
+      "affected_items": "all DEV dictionaries",
+      "mitigation": "GuliERP 走 strong-typed C# + Snowflake ID, never relies on 名称 strings. Seeds already separate canonical_code from source_name."
+    },
+    {
+      "id": "AR-004",
+      "severity": "REVIEW_REQUIRED",
+      "category": "INCOMPLETE_STANDARD",
+      "description": "ethnic-group.json has 42 items out of 56 (GB/T 3304 standard). Missing 14 minorities. Currently classified SAFE_TO_SEED_SYSTEM at file level — DOWNGRADED to INCOMPLETE_STANDARD_DATA per curation policy.",
+      "affected_items": "system/ethnic-group.json",
+      "mitigation": "Re-extract from authoritative GB/T 3304 source (国家标准全文公开系统). Until 56/56, file is INCOMPLETE_STANDARD_DATA, items are PROPOSED."
+    },
+    {
+      "id": "AR-005",
+      "severity": "REVIEW_REQUIRED",
+      "category": "PROVENANCE_BLEND",
+      "description": "system/uom.json originally had file-level classification SAFE_TO_SEED_SYSTEM covering all 21 items, but only 13 have DEV provenance; 8 are EXTERNAL_STANDARD_CANDIDATE (ISO 80000 SI).",
+      "affected_items": "system/uom.json items 14-21 (KM/CM/MM/L/ML/H/MIN/D)",
+      "mitigation": "Per-item seed_status applied. 13 DEV items = SAFE_TO_SEED_SYSTEM; 8 EXTERNAL items = PROPOSED. file-level classification changed from blanket to MIXED."
+    },
+    {
+      "id": "AR-006",
+      "severity": "REVIEW_REQUIRED",
+      "category": "SEMANTIC_BLEND",
+      "description": "Position (岗位, company-internal job title) is being conflated with Occupation (职业, professional classification) in some downstream consumers.",
+      "affected_items": "tenant-template/position.json",
+      "mitigation": "Position is preserved as SAFE_TO_SEED_TENANT_TEMPLATE. Occupation flagged as OCCUPATION_SOURCE_NOT_FOUND; future Goal must seed from GB/T 8561-2001 or similar."
+    },
+    {
+      "id": "AR-007",
+      "severity": "REVIEW_REQUIRED",
+      "category": "TIME_BOUND_DATA",
+      "description": "行政区划 (Country/Province/City/County) is time-sensitive (GB/T 2260 changes yearly). Should not be committed to Git.",
+      "affected_items": "system/country.json",
+      "mitigation": "country.json: 0 items, schema_template only, classification NEEDS_EXTERNAL_STANDARD_UPDATE. Runtime loads from authoritative source (国家统计局 / 民政部)."
+    },
+    {
+      "id": "AR-008",
+      "severity": "SAFE_TO_SEED",
+      "category": "INTERNAL_CONSISTENCY",
+      "description": "system/education.json: 6 DEV items (SAFE) + 4 GB/T 4658 items (PROPOSED) = 10 total. After per-item seed_status applied, no double-counting.",
+      "affected_items": "system/education.json",
+      "mitigation": "Resolved via per-item seed_status."
+    },
+    {
+      "id": "AR-009",
+      "severity": "SAFE_TO_SEED",
+      "category": "INTERNAL_CONSISTENCY",
+      "description": "tenant-template/payment-method.json and business-partner-type.json: all items have DEV provenance; no duplicates; all SAFE_TO_SEED_TENANT_TEMPLATE.",
+      "affected_items": "tenant-template/payment-method.json, business-partner-type.json",
+      "mitigation": "None needed."
+    },
+    {
+      "id": "AR-010",
+      "severity": "SAFE_TO_SEED",
+      "category": "INTERNAL_CONSISTENCY",
+      "description": "system/semantic-data-type.json: 13 types defined, all PROPOSED (per policy no FROZEN until MDM-000 implementation). Schema covers AMOUNT/UNIT_PRICE/COST/QUANTITY/TAX_RATE/PERCENTAGE/DISCOUNT_RATE/EXCHANGE_RATE/LENGTH/WEIGHT/AREA/VOLUME/TIME_DURATION.",
+      "affected_items": "system/semantic-data-type.json",
+      "mitigation": "None needed for V1 curation. MDM-000 implementation will validate + ACCEPT."
+    }
+  ],
+  "totals": {
+    "blocker": 2,
+    "review_required": 5,
+    "safe_to_seed": 3
+  },
+  "note_on_two_dimensional_findings": "MDM-000D-R1 has TWO orthogonal finding dimensions: (1) automated-data-quality-findings.json = machine-run structural scan (0 BLOCKER / 0 REVIEW / N INFO on seed file integrity), and (2) architectural-review-findings.json = human/agent semantic + governance + scope review (2 BLOCKER / 5 REVIEW / 3 SAFE). They are NEVER merged into a single DATA_QUALITY_FINDINGS count. The previous (MDM-000D) document conflated them; this R1 fix separates them."
+}

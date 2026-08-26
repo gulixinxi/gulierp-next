@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "source_systems": [
+      {
+        "system": "DEV",
+        "dictionary_code": 3052,
+        "items_count": 5
+      }
+    ],
+    "extraction_time": "2026-08-20T11:00:48+08:00",
+    "notes": [
+      "DEV 付款方式 5 项,包含 款到发货/货到付款/月结30天/月结60天/月结90天。",
+      "GuliERP V1 未来应区分 PaymentMethod (channel/option) 和 PaymentTerm (duration/aging). 本文件 5 项混合两者,需要后续拆开。"
+    ],
+    "classification": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "seed_status_at_file_level": "SAFE_TO_SEED_TENANT_TEMPLATE",
+    "item_count": 5
+  },
+  "items": [
+    {
+      "canonical_code": "PM_PREPAID_DELIVERY",
+      "canonical_name_zh": "款到发货",
+      "kind": "method",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "款到发货"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "PM_COD",
+      "canonical_name_zh": "货到付款",
+      "kind": "method",
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "货到付款"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "PT_NET_30",
+      "canonical_name_zh": "月结30天",
+      "kind": "term",
+      "term_days": 30,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "月结30天"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "PT_NET_60",
+      "canonical_name_zh": "月结60天",
+      "kind": "term",
+      "term_days": 60,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "月结60天"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    },
+    {
+      "canonical_code": "PT_NET_90",
+      "canonical_name_zh": "月结90天",
+      "kind": "term",
+      "term_days": 90,
+      "source_systems": [
+        {
+          "system": "DEV",
+          "source_name": "月结90天"
+        }
+      ],
+      "seed_status": "SAFE_TO_SEED_TENANT_TEMPLATE"
+    }
+  ]
+}

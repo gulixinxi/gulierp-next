@@ -1,0 +1,226 @@
+{
+  "meta": {
+    "goal": "MDM-000D",
+    "curation_revision": "MDM-000D-R1",
+    "extraction_time": "2026-08-20T11:32:14+08:00",
+    "extractor": "Mavis (gulierp-next mvs_11a243eed8e544d6b19087711a392283)",
+    "read_only_source": "D:\\guli\\gulierp\\docs\\reverse-engineering\\dev-meta\\",
+    "canonical_source_strategy": {
+      "DEV": "PRIMARY_ERP_BUSINESS_EVIDENCE — dev is the Onlyit-derived SQL Server at 192.168.2.28, fully extracted via 22 JSON dumps (ju-meta/ju-columns/biz-tables/dictionaries/templates/template-fields/relations/formulas/actions/permissions/organizations/workflows/size + ju-samples 79 + biz-samples 12).",
+      "ONLYIT": "NOT_AVAILABLE_AS_INDEPENDENT_SOURCE — the dev DB IS the Onlyit-derived source. There is no separate Onlyit corpus. AR-002 documents this honestly.",
+      "VOL": "PATTERN_REFERENCE_ONLY — docs/research/vol-pro/ contains 22 research documents confirming Sys_Dictionary + Sys_DictionaryList pattern. NO DataType/Decimal/precision-specific table. VOL is not a value source for UOM/Currency/Semantic Type seeds.",
+      "EXTERNAL_STANDARDS": "GB/T 3304 (民族), GB/T 4658 (学历), ISO 4217 (currency), ISO 80000 (SI units), ISO 3166 (country codes), GB/T 2260 (行政区划). Used where DEV is silent and a public standard is authoritative."
+    },
+    "gate": "MDM_000D_CURATED_SEED_ASSETS_READY (post R1)",
+    "seeder_policy": "Future Seeder MUST load only seed_status=SAFE_TO_SEED_SYSTEM or SAFE_TO_SEED_TENANT_TEMPLATE items. PROPOSED / REFERENCE_ONLY / INCOMPLETE_STANDARD_DATA / NEEDS_EXTERNAL_STANDARD_UPDATE items require explicit opt-in or are deferred."
+  },
+  "ju_datatype_id_sets": {
+    "source_rowcount": 18,
+    "all_visible_count": 14,
+    "direct_sample_count": 5,
+    "referenced_count": 14,
+    "unresolved_count": 9,
+    "unreferenced_count": 0,
+    "completely_unknown_ids_count": 4
+  },
+  "seed_datasets": [
+    {
+      "dataset": "uom",
+      "path": "data/bootstrap/reference/system/uom.json",
+      "category": "system_reference_data",
+      "scope": "SYSTEM",
+      "itemCount": 21,
+      "items_safe_to_seed_system": 13,
+      "items_proposed": 8,
+      "items_proposed_source": "EXTERNAL_STANDARD_CANDIDATE (ISO 80000 SI)",
+      "seedStatus": "MIXED",
+      "sourceSystems": [
+        "DEV",
+        "ISO_80000_PUBLIC_STANDARD_CANDIDATE"
+      ],
+      "canonicalVersion": "2026-08-20",
+      "notes": "13 items from DEV dictionary 字典表s RecordID=15 (单位). 8 items are EXTERNAL_STANDARD_CANDIDATE (KM/CM/MM/L/ML/H/MIN/D) added for SI completeness."
+    },
+    {
+      "dataset": "currency",
+      "path": "data/bootstrap/reference/system/currency.json",
+      "category": "system_reference_data",
+      "scope": "SYSTEM",
+      "itemCount": 20,
+      "seedStatus": "REFERENCE_ONLY",
+      "sourceSystems": [
+        "ISO_4217_PUBLIC_STANDARD"
+      ],
+      "canonicalVersion": "2026-08-20",
+      "notes": "20 major trading currencies. Not from DEV. Requires external authoritative source for live exchange rates."
+    },
+    {
+      "dataset": "country",
+      "path": "data/bootstrap/reference/system/country.json",
+      "category": "system_reference_data",
+      "scope": "SYSTEM",
+      "itemCount": 0,
+      "seedStatus": "NEEDS_EXTERNAL_STANDARD_UPDATE",
+      "sourceSystems": [],
+      "canonicalVersion": "2026-08-20",
+      "notes": "Schema template only. Runtime loads from GB/T 2260 + ISO 3166. No items committed to Git."
+    },
+    {
+      "dataset": "ethnic-group",
+      "path": "data/bootstrap/reference/system/ethnic-group.json",
+      "category": "system_reference_data",
+      "scope": "SYSTEM",
+      "itemCount": 42,
+      "expected_count": 56,
+      "missing_count": 14,
+      "seedStatus": "INCOMPLETE_STANDARD_DATA",
+      "sourceSystems": [
+        "GB_T_3304_PUBLIC_STANDARD"
+      ],
+      "canonicalVersion": "2026-08-20",
+      "notes": "42 of 56 minorities. Standard is GB/T 3304. Re-extract to reach 56/56 before SAFE_TO_SEED_SYSTEM."
+    },
+    {
+      "dataset": "education",
+      "path": "data/bootstrap/reference/system/education.json",
+      "category": "system_reference_data",
+      "scope": "SYSTEM",
+      "itemCount": 10,
+      "items_safe_to_seed_system": 6,
+      "items_proposed": 4,
+      "seedStatus": "MIXED",
+      "sourceSystems": [
+        "DEV",
+        "GB_T_4658_PUBLIC_STANDARD"
+      ],
+      "canonicalVersion": "2026-08-20",
+      "notes": "6 DEV (学历 dictionary RecordID=2943) + 4 GB/T 4658 (高中/初中/小学/中专) = 10."
+    },
+    {
+      "dataset": "semantic-data-type",
+      "path": "data/bootstrap/reference/system/semantic-data-type.json",
+      "category": "business_semantic_metadata",
+      "scope": "SYSTEM",
+      "itemCount": 13,
+      "seedStatus": "PROPOSED",
+      "sourceSystems": [
+        "DEV+STANDARD_INFERENCE",
+        "GULIERP_DESIGN"
+      ],
+      "canonicalVersion": "2026-08-20",
+      "notes": "13 semantic types. All PROPOSED. No FROZEN until MDM-000 implementation. Covers AMOUNT/UNIT_PRICE/COST/QUANTITY/TAX_RATE/PERCENTAGE/DISCOUNT_RATE/EXCHANGE_RATE/LENGTH/WEIGHT/AREA/VOLUME/TIME_DURATION."
+    },
+    {
+      "dataset": "payment-method",
+      "path": "data/bootstrap/reference/tenant-template/payment-method.json",
+      "category": "tenant_template_data",
+      "scope": "TENANT_TEMPLATE",
+      "itemCount": 5,
+      "seedStatus": "SAFE_TO_SEED_TENANT_TEMPLATE",
+      "sourceSystems": [
+        "DEV"
+      ],
+      "canonicalVersion": "2026-08-20",
+      "notes": "5 items from DEV 付款方式 (RecordID=3052). Split into PM (method) and PT (term)."
+    },
+    {
+      "dataset": "business-partner-type",
+      "path": "data/bootstrap/reference/tenant-template/business-partner-type.json",
+      "category": "tenant_template_data",
+      "scope": "TENANT_TEMPLATE",
+      "itemCount": 4,
+      "seedStatus": "SAFE_TO_SEED_TENANT_TEMPLATE",
+      "sourceSystems": [
+        "DEV"
+      ],
+      "canonicalVersion": "2026-08-20",
+      "notes": "4 items from DEV 往来类型 (RecordID=3497)."
+    },
+    {
+      "dataset": "position",
+      "path": "data/bootstrap/reference/tenant-template/position.json",
+      "category": "tenant_template_data",
+      "scope": "TENANT_TEMPLATE",
+      "itemCount": 4,
+      "seedStatus": "SAFE_TO_SEED_TENANT_TEMPLATE",
+      "sourceSystems": [
+        "DEV"
+      ],
+      "canonicalVersion": "2026-08-20",
+      "notes": "4 items from DEV 岗位 (RecordID=3523). Position is NOT Occupation; OCCUPATION_SOURCE_NOT_FOUND for the latter."
+    }
+  ],
+  "internal_artifacts": [
+    {
+      "path": "data/bootstrap/reference/mapping/source-canonical-mapping.json",
+      "classification": "INTERNAL_MAPPING",
+      "decision_counts": {
+        "REUSE": 13,
+        "ADAPT": 12,
+        "REJECT": 1,
+        "PROPOSED": 4
+      }
+    },
+    {
+      "path": "data/bootstrap/reference/automated-data-quality-findings.json",
+      "classification": "INTERNAL_QUALITY_AUTOMATED",
+      "totals": {
+        "blocker": 0,
+        "review_required": 0,
+        "info": 10
+      },
+      "note": "machine-run; checks structural seed integrity. NEVER merged with architectural review."
+    },
+    {
+      "path": "data/bootstrap/reference/architectural-review-findings.json",
+      "classification": "INTERNAL_QUALITY_ARCHITECTURAL",
+      "totals": {
+        "blocker": 2,
+        "review_required": 5,
+        "safe_to_seed": 3
+      },
+      "note": "human/agent semantic + governance + scope review. NEVER merged with automated scan."
+    }
+  ],
+  "discovery_artifacts": [
+    {
+      "path": "tools/discovery/mdm-000d/_canonical/dev_business_data_type_catalog.json",
+      "classification": "DISCOVERY_CANONICAL"
+    },
+    {
+      "path": "tools/discovery/mdm-000d/_canonical/dev_dictionary_canonical.json",
+      "classification": "DISCOVERY_CANONICAL"
+    },
+    {
+      "path": "tools/discovery/mdm-000d/_canonical/ju_datatype_id_sets.json",
+      "classification": "DISCOVERY_CANONICAL"
+    },
+    {
+      "path": "tools/discovery/mdm-000d/_canonical/normalized-manifest.json",
+      "classification": "DISCOVERY_MANIFEST",
+      "note": "Records SHA-256 of every file in _normalized/ (which is .gitignored)."
+    }
+  ],
+  "totals": {
+    "seed_datasets": 9,
+    "internal_artifacts": 3,
+    "discovery_artifacts": 4,
+    "ju_datatype_unresolved_ids": 9,
+    "ju_datatype_orphan_ids": 4
+  },
+  "policy_enforcement": {
+    "seeder_may_auto_load": [
+      "SAFE_TO_SEED_SYSTEM",
+      "SAFE_TO_SEED_TENANT_TEMPLATE"
+    ],
+    "seeder_must_opt_in": [
+      "PROPOSED",
+      "MIXED"
+    ],
+    "seeder_must_defer": [
+      "REFERENCE_ONLY",
+      "INCOMPLETE_STANDARD_DATA",
+      "NEEDS_EXTERNAL_STANDARD_UPDATE"
+    ]
+  }
+}
