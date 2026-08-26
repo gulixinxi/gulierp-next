@@ -16,3 +16,26 @@ dist/
 # Tracked by tools/discovery/mdm-000d/_canonical/normalized-manifest.json (SHA-256).
 tools/discovery/mdm-000d/_normalized/
 
+
+# Local runtime / browser automation artifacts.
+.runtime-browser-profile/
+.stack-logs/
+.spec-workflow/
+.mcp.json
+
+# Frontend incremental build cache.
+apps/web/tsconfig.tsbuildinfo
+
+# Local generated artifacts and test evidence output.
+artifacts/
+tests/**/TestResults/
+tests/_evidence_trx/
+
+# Temporary quarantine / diagnostic scratch files.
+tools/.quarantine/
+modules/mdm/GuliERP.Mdm.Infrastructure/tools/.quarantine/
+
+# Discovery transient Python/cache/log output.
+tools/discovery/**/__pycache__/
+tools/discovery/**/*.pyc
+tools/discovery/**/_*.log
