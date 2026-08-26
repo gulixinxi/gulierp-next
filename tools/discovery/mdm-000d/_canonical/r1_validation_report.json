@@ -1,0 +1,64 @@
+{
+  "checks": [
+    {
+      "level": "INFO",
+      "name": "syntax:extract_dev_metadata.py",
+      "detail": "parse OK"
+    },
+    {
+      "level": "INFO",
+      "name": "syntax:extract_judatatype.py",
+      "detail": "parse OK"
+    },
+    {
+      "level": "INFO",
+      "name": "syntax:build_dev_datatype_catalog.py",
+      "detail": "parse OK"
+    },
+    {
+      "level": "INFO",
+      "name": "syntax:build_dictionary_canonical.py",
+      "detail": "parse OK"
+    },
+    {
+      "level": "INFO",
+      "name": "syntax:build_seed_candidates.py",
+      "detail": "parse OK"
+    },
+    {
+      "level": "INFO",
+      "name": "syntax:run_data_quality_scan.py",
+      "detail": "parse OK"
+    },
+    {
+      "level": "INFO",
+      "name": "syntax:curate_assets.py",
+      "detail": "parse OK"
+    },
+    {
+      "level": "INFO",
+      "name": "dq-scan-output",
+      "detail": "=== Scan summary: {'BLOCKER': 0, 'REVIEW_REQUIRED': 0, 'INFO': 10} ==="
+    },
+    {
+      "level": "INFO",
+      "name": "semantic-type-count",
+      "detail": "JSON=13 MD=13 Manifest=13"
+    },
+    {
+      "level": "INFO",
+      "name": "dq-automated",
+      "detail": "{'blocker': 0, 'review_required': 0, 'info': 10}"
+    },
+    {
+      "level": "INFO",
+      "name": "dq-architectural",
+      "detail": "{'blocker': 2, 'review_required': 5, 'safe_to_seed': 3}"
+    }
+  ],
+  "summary": {
+    "BLOCKER": 0,
+    "REVIEW_REQUIRED": 0,
+    "INFO": 11
+  }
+}

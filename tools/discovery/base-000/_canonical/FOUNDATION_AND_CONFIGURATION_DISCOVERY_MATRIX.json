@@ -1,0 +1,2248 @@
+{
+  "meta": {
+    "extraction_time": "2026-08-20T11:46:44+08:00",
+    "session": "mvs_11a243eed8e544d6b19087711a392283",
+    "goal": "BASE-000",
+    "total_findings": 149
+  },
+  "findings": [
+    {
+      "id": "B-001",
+      "area": "01 Business Semantic Data Types",
+      "capability": "AMOUNT",
+      "chinese_name": "金额",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "JU_DataType DataTypeID=4 (小数), BaseType=3, BaseLength=34, BasePrecision=2, MatchPattern=金额,汇率,总计,小数",
+        "GULIERP_CURRENT": "Foundation.G2-002 has zero tables; no decimal metadata yet",
+        "VOL": "pattern reference only"
+      },
+      "decision": "ADAPT",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-001",
+      "notes": "Already proposed in MDM-000D semantic-data-type.json. numeric(20,4) HALF_EVEN currency-aware. Will affect all money columns in Sales/Purchase/Inventory."
+    },
+    {
+      "id": "B-002",
+      "area": "01 Business Semantic Data Types",
+      "capability": "UNIT_PRICE",
+      "chinese_name": "单价",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "shared with AMOUNT (JU_DataTypeID=4), not separated",
+        "GULIERP_CURRENT": "not yet modeled",
+        "MDM-000D": "PROPOSED in semantic-data-type.json, precision 6"
+      },
+      "decision": "PROPOSED",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-001",
+      "notes": "Distinguish from AMOUNT to support tax-precision calculations."
+    },
+    {
+      "id": "B-003",
+      "area": "01 Business Semantic Data Types",
+      "capability": "COST",
+      "chinese_name": "成本",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "no dedicated row; computed field",
+        "MDM-000D": "PROPOSED"
+      },
+      "decision": "PROPOSED",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Cost method (FIFO/Weighted Avg/Standard) determines field presence; defer definition until Inventory/Production."
+    },
+    {
+      "id": "B-004",
+      "area": "01 Business Semantic Data Types",
+      "capability": "QUANTITY",
+      "chinese_name": "数量",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "JU_DataTypeID=4; 商品表.数量=1.0; 克重=0.0; 1 decimal in DEV",
+        "MDM-000D": "PROPOSED, per-uom precision"
+      },
+      "decision": "ADAPT",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-001",
+      "notes": "DIMENSION_AWARE: precision varies by UOM (kg=0.001, EA=1, M=0.001). HALF_UP rounding."
+    },
+    {
+      "id": "B-005",
+      "area": "01 Business Semantic Data Types",
+      "capability": "TAX_RATE",
+      "chinese_name": "税率",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "no dedicated row; 阶梯类型 dictionary 按数量/按金额",
+        "China tax": "13% / 9% / 6% / 3% VAT + historical 17%/13%"
+      },
+      "decision": "PROPOSED",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-001",
+      "notes": "numeric(6,4) HALF_EVEN. China VAT granularity 0.0001 (0.01%)."
+    },
+    {
+      "id": "B-006",
+      "area": "01 Business Semantic Data Types",
+      "capability": "PERCENTAGE",
+      "chinese_name": "百分比",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "no dedicated row",
+        "MDM-000D": "PROPOSED"
+      },
+      "decision": "PROPOSED",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "numeric(8,6) for discount/commission."
+    },
+    {
+      "id": "B-007",
+      "area": "01 Business Semantic Data Types",
+      "capability": "DISCOUNT_RATE",
+      "chinese_name": "折扣率",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "no dedicated row; 阶梯类型 dictionary 按数量/按金额",
+        "MDM-000D": "PROPOSED"
+      },
+      "decision": "PROPOSED",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "numeric(6,4) HALF_UP. 0-1.00 or 0-100."
+    },
+    {
+      "id": "B-008",
+      "area": "01 Business Semantic Data Types",
+      "capability": "EXCHANGE_RATE",
+      "chinese_name": "汇率",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "JU_DataTypeID=4 MatchPattern contains 汇率",
+        "MDM-000D": "ADAPT, precision 8"
+      },
+      "decision": "ADAPT",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-001",
+      "notes": "numeric(18,8) HALF_EVEN. FX 6-8 decimal precision required."
+    },
+    {
+      "id": "B-009",
+      "area": "01 Business Semantic Data Types",
+      "capability": "LENGTH",
+      "chinese_name": "长度",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "DEV has 克重/外箱尺寸/中盒尺寸/内盒尺寸 as strings",
+        "ISO 80000-3": "SI base unit m + mm/cm/km"
+      },
+      "decision": "PROPOSED",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "UOM=LENGTH dimension. mm precision floor."
+    },
+    {
+      "id": "B-010",
+      "area": "01 Business Semantic Data Types",
+      "capability": "WEIGHT",
+      "chinese_name": "重量",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "商品表.克重=0.0",
+        "ISO 80000-4": "SI base unit kg + g/t"
+      },
+      "decision": "ADAPT",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "UOM=MASS dimension. g precision floor."
+    },
+    {
+      "id": "B-011",
+      "area": "01 Business Semantic Data Types",
+      "capability": "AREA",
+      "chinese_name": "面积",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "no explicit type",
+        "ISO 80000-3": "m² + cm²/km²"
+      },
+      "decision": "PROPOSED",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "PRODUCTION",
+      "notes": "UOM=AREA. Used in Production capacity calculations."
+    },
+    {
+      "id": "B-012",
+      "area": "01 Business Semantic Data Types",
+      "capability": "VOLUME",
+      "chinese_name": "体积",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "no explicit type",
+        "ISO 80000-4": "m³ + L"
+      },
+      "decision": "PROPOSED",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "PRODUCTION",
+      "notes": "UOM=VOLUME. L precision 0.001."
+    },
+    {
+      "id": "B-013",
+      "area": "01 Business Semantic Data Types",
+      "capability": "TIME_DURATION",
+      "chinese_name": "时长",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "生产用时 0.0; 提前期 0",
+        "ISO 8601": "duration string + interval type"
+      },
+      "decision": "PROPOSED",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "TimeSpan / interval. Used in production hours, lead time, payment terms."
+    },
+    {
+      "id": "B-014",
+      "area": "02 Decimal / Precision / Rounding",
+      "capability": "CURRENCY_DEFAULT_PRECISION",
+      "chinese_name": "货币默认精度",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "JU_DataTypeID=4 BasePrecision=2, no separate scale column",
+        "Industry": "SAP/Oracle use 2-4 decimal places for currency; cross-currency needs HALF_EVEN"
+      },
+      "decision": "ADAPT",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-001",
+      "notes": "Default currency scale=2 (display), scale=4 (storage HALF_EVEN) for cross-currency aggregation safety."
+    },
+    {
+      "id": "B-015",
+      "area": "02 Decimal / Precision / Rounding",
+      "capability": "ROUNDING_MODE_DEFAULT",
+      "chinese_name": "默认舍入模式",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "JU_DataType BaseType=3 has no rounding mode; depends on client app",
+        "ISO 20022 + banking standard": "HALF_EVEN (banker's rounding) for currency; HALF_UP for quantity"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-001",
+      "notes": "Per-type rounding policy: AMOUNT/EXCHANGE_RATE= HALF_EVEN; QUANTITY= HALF_UP; RATE/PERCENTAGE= HALF_EVEN."
+    },
+    {
+      "id": "B-016",
+      "area": "02 Decimal / Precision / Rounding",
+      "capability": "JSON_NUMERIC_SAFE",
+      "chinese_name": "JSON 数字传输",
+      "category": "SEMANTIC_DATA_TYPE",
+      "source_evidence": {
+        "DEV": "field is decimal in DB but serialised via ntext/image in some legacy fields",
+        "GULIERP_CURRENT": "System.Text.Json by default for decimal  --  OK"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "Confirm System.Text.Json default serialisation for decimal/numeric avoids scientific notation. Add JsonConverter if needed."
+    },
+    {
+      "id": "B-017",
+      "area": "03 Dictionary / Reference Data",
+      "capability": "DICTIONARY_REFERENCE_TABLE",
+      "chinese_name": "字典参考表",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "字典表 + 字典表s (28 headers + 121 items, see MDM-000D R1)",
+        "MDM-000D": "system/ + tenant-template/ seed candidates prepared"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "Use ReferenceData entity pattern (per MDM-000 plan): ReferenceDataDefinition + ReferenceDataItem; sys vs tenant template."
+    },
+    {
+      "id": "B-018",
+      "area": "03 Dictionary / Reference Data",
+      "capability": "DICTIONARY_CATEGORY",
+      "chinese_name": "字典分类",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "28 dict headers (单位/商品属性/付款方式/学历/工序/工作中心/位置/部门/班组/...)",
+        "GULIERP_CURRENT": "not modeled"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "ReferenceDataDefinition.Category enum or string: SYSTEM_REFERENCE / TENANT_TEMPLATE / MASTER_DATA."
+    },
+    {
+      "id": "B-019",
+      "area": "03 Dictionary / Reference Data",
+      "capability": "DICTIONARY_INHERITANCE",
+      "chinese_name": "字典继承",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no explicit inheritance in DEV (28 headers are flat)",
+        "VOL": "Sys_Dictionary + Sys_DictionaryList pattern (parent-child)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "Allow ReferenceData to inherit from another (e.g. 行业子类继承行业父类). If not needed, defer."
+    },
+    {
+      "id": "B-020",
+      "area": "03 Dictionary / Reference Data",
+      "capability": "DICTIONARY_HISTORY",
+      "chinese_name": "字典历史",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "DEV dictionary has CreateTime + LastEditTime on each header",
+        "Industry": "SF/Odoo maintain change history for all dictionaries"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "If a dictionary value changes, business data that referenced the old code may break. Audit log needed (IAuditWriter already planned in G2-002)."
+    },
+    {
+      "id": "B-021",
+      "area": "04 UOM",
+      "capability": "UOM_DIMENSION",
+      "chinese_name": "单位维度",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "13 unit items (本/套/张/台/个/PCS/EA/t/kg/g/m/m2/m3)  --  no dimension",
+        "ISO 80000": "LENGTH / MASS / VOLUME / TIME / COUNT / AREA / TEMPERATURE / ELECTRIC / CURRENCY"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "MDM-000",
+      "notes": "Add UomDimension enum. Each Uom must declare its dimension. Mixed dimensions in single field is anti-pattern."
+    },
+    {
+      "id": "B-022",
+      "area": "04 UOM",
+      "capability": "UOM_CONVERSION",
+      "chinese_name": "单位换算",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "商品表.换算单位/换算系数/换算公式  --  per-item only, no global table",
+        "Industry": "UOM Conversion table: from_code + to_code + multiplier + valid_from/to"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Decision: GLOBAL conversion (kg<->g, m<->cm) or ITEM-LEVEL conversion (1 box = 12 ea for item A). DEV has item-level only; GuliERP should support both."
+    },
+    {
+      "id": "B-023",
+      "area": "04 UOM",
+      "capability": "BASE_UOM_PER_ITEM",
+      "chinese_name": "物料基本单位",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "商品表.单位 (single UOM, not base vs issue UOM)",
+        "Industry": "Item has BaseUom + multiple IssueUom + conversion ratios"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Each Item must declare ONE BaseUom (stocking Uom) and may have multiple IssueUom (sales Uom)."
+    },
+    {
+      "id": "B-024",
+      "area": "05 Currency / Exchange Rate",
+      "capability": "CURRENCY_TABLE",
+      "chinese_name": "币种表",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no dedicated currency table; 系统表.货币 field empty (0 chars)",
+        "ISO 4217": "156 currencies, 3-char alphabetic + numeric code"
+      },
+      "decision": "REUSE_DATA",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "MDM-000D R1 prepared system/currency.json (20 ISO 4217 currencies). Expand to 156 in V2."
+    },
+    {
+      "id": "B-025",
+      "area": "05 Currency / Exchange Rate",
+      "capability": "EXCHANGE_RATE_TABLE",
+      "chinese_name": "汇率表",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no exchange rate table; rates hardcoded per transaction",
+        "Industry": "Daily rates: from_currency + to_currency + rate + valid_from + valid_to + source"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "ExchangeRate entity: need rate_date, source, manual override flag, rate_type (spot/avg/buying/selling)."
+    },
+    {
+      "id": "B-026",
+      "area": "05 Currency / Exchange Rate",
+      "capability": "EXCHANGE_RATE_PROVIDER",
+      "chinese_name": "汇率提供方",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "not modeled",
+        "Industry": "ECB / NB / XE.com / OpenExchangeRates"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "Interface IExchangeRateProvider; pluggable; manual entry as fallback."
+    },
+    {
+      "id": "B-027",
+      "area": "06 Administrative Division",
+      "capability": "COUNTRY_TABLE",
+      "chinese_name": "国家表",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no country table",
+        "ISO 3166-1": "alpha-2/alpha-3/numeric + name_en/name_local"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "MDM-000D R1 prepared system/country.json (0 items, schema only). Runtime load from external source."
+    },
+    {
+      "id": "B-028",
+      "area": "06 Administrative Division",
+      "capability": "ADMINISTRATIVE_DIVISION",
+      "chinese_name": "行政区划",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no region/province/city table",
+        "GB/T 2260": "PRC 行政区划代码 (yearly update)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "Province/City/County hierarchy. Tenant-level addresses must select from controlled vocabulary."
+    },
+    {
+      "id": "B-029",
+      "area": "06 Administrative Division",
+      "capability": "ADDRESS_FORMAT",
+      "chinese_name": "地址格式",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no standardized address format",
+        "Industry": "SF/Odoo use multi-line AddressLine1/AddressLine2/City/Region/Country/PostalCode (already in gulierp_plant)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "Reuse G2-003 Plant.AddressLine1/AddressLine2/City/Region/CountryCode/PostalCode shape for BusinessPartner.Address."
+    },
+    {
+      "id": "B-030",
+      "area": "07 Document Numbering",
+      "capability": "AUTO_NUMBER_GENERATOR",
+      "chinese_name": "单号生成器",
+      "category": "NUMBERING",
+      "source_evidence": {
+        "DEV": "JU_AutoCode + JU_AutoCodeField + JU_AutoCodeRegister (15+5+12 rows)",
+        "GULIERP_CURRENT": "POC-003 IBusinessNumberGenerator implemented in Foundation.Kernel (BusinessNumberPattern)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-002",
+      "notes": "Foundation.Kernel already has IBusinessNumberGenerator + BusinessNumberPattern (POC-003). Keep contract. Audit prefix-date-seed structure."
+    },
+    {
+      "id": "B-031",
+      "area": "07 Document Numbering",
+      "capability": "NUMBER_PREFIX",
+      "chinese_name": "单号前缀",
+      "category": "NUMBERING",
+      "source_evidence": {
+        "DEV sample": "商品ID: Prefix=1, DateType=null, SeedLength=6; 客户ID: Prefix=2, DateType=null, SeedLength=4; etc.",
+        "Observed": "Prefix as fixed string (numbers like \"1\", \"2\", \"25\" for codes), DateType=6 means \"year\"; SeedLength is total digit count"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-002",
+      "notes": "Document: prefix=SO, year=2026, serial=000001. Pattern format: {PREFIX}-{YYYY}{MM}-{SEQ:6}. DEV uses simpler \"PREFIX + year + serial\"."
+    },
+    {
+      "id": "B-032",
+      "area": "07 Document Numbering",
+      "capability": "RESET_POLICY",
+      "chinese_name": "编号重置策略",
+      "category": "NUMBERING",
+      "source_evidence": {
+        "DEV": "JU_AutoCode has no explicit reset field",
+        "Industry": "DAILY / MONTHLY / YEARLY / NEVER"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-002",
+      "notes": "NumberingPattern.ResetPolicy enum. Default YEARLY for SO/PO/GR; NEVER for customer code."
+    },
+    {
+      "id": "B-033",
+      "area": "07 Document Numbering",
+      "capability": "MANUAL_NUMBER",
+      "chinese_name": "手工单号",
+      "category": "NUMBERING",
+      "source_evidence": {
+        "DEV": "JU_AutoCode.AllowMore=0 means no manual",
+        "Industry": "Allow operator to enter manual number for migrated documents"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "Some legacy documents have manual numbers (e.g. imported from old ERP). Need ManualNumberAllowed flag + conflict check."
+    },
+    {
+      "id": "B-034",
+      "area": "07 Document Numbering",
+      "capability": "NUMBER_SCOPE",
+      "chinese_name": "编号范围",
+      "category": "NUMBERING",
+      "source_evidence": {
+        "DEV": "JU_AutoCode has no TenantId/CompanyId field  --  global per system",
+        "Industry": "per-tenant or per-company sequence to avoid collision"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-002",
+      "notes": "GuliERP must scope NumberSequence by TenantId (and optionally CompanyId for multi-company tenant). DEV mistake to copy."
+    },
+    {
+      "id": "B-035",
+      "area": "07 Document Numbering",
+      "capability": "NUMBER_DEDICATED_RANGE",
+      "chinese_name": "专用号段",
+      "category": "NUMBERING",
+      "source_evidence": {
+        "DEV": "no concept of dedicated range",
+        "Industry": "Reserve a range for a special purpose (e.g. test data, integration)"
+      },
+      "decision": "DEFER",
+      "priority": "P3_DEFER",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "Low priority. Can add later if integration testing needs."
+    },
+    {
+      "id": "B-036",
+      "area": "08 Master Data Coding",
+      "capability": "ITEM_CODE_FORMAT",
+      "chinese_name": "物料编码",
+      "category": "CODING",
+      "source_evidence": {
+        "DEV sample": "商品表.品号 = \"1000001\" (pure numeric, 7 digits)",
+        "Industry": "Category-Prefix-Serial (e.g. FG-001, RM-002, SF-001)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Item.Code format: STRUCTURED code OR GUID. Avoid pure sequential (DEV mistake). Recommend: Code+Name+CategoryCode hierarchy."
+    },
+    {
+      "id": "B-037",
+      "area": "08 Master Data Coding",
+      "capability": "BP_CODE_FORMAT",
+      "chinese_name": "业务伙伴编码",
+      "category": "CODING",
+      "source_evidence": {
+        "DEV sample": "往来表.往来号 = \"20001\" \"20002\" (pure numeric)",
+        "MDM-000D": "BPT_CUSTOMER / BPT_SUPPLIER etc."
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "BP.Code structured: {TYPE_PREFIX}-{SERIAL} e.g. CUST-001, SUPP-001, SUB-001, LOG-001. Pure numeric is DEV mistake."
+    },
+    {
+      "id": "B-038",
+      "area": "08 Master Data Coding",
+      "capability": "WAREHOUSE_CODE_FORMAT",
+      "chinese_name": "仓库编码",
+      "category": "CODING",
+      "source_evidence": {
+        "DEV": "仓库表.仓库 (string)",
+        "GULIERP_CURRENT": "gulierp_plant has Code varchar(40)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Warehouse.Code: WH-{PLANT}-{SEQ}. Need Location below Warehouse as separate entity."
+    },
+    {
+      "id": "B-039",
+      "area": "08 Master Data Coding",
+      "capability": "WORK_CENTER_CODE_FORMAT",
+      "chinese_name": "工作中心编码",
+      "category": "CODING",
+      "source_evidence": {
+        "DEV dictionary": "工作中心 dictionary (RecordID=71) has 3 items: 主线车间/配件车间/包装车间",
+        "DEV": "no structured code field"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "PRODUCTION",
+      "notes": "WorkCenter.Code: WC-{PLANT}-{SEQ}. Promote from dictionary to first-class entity (per P1-005 plan)."
+    },
+    {
+      "id": "B-040",
+      "area": "09 Tax Configuration",
+      "capability": "TAX_CODE",
+      "chinese_name": "税码",
+      "category": "TAX",
+      "source_evidence": {
+        "DEV": "no dedicated tax code table; 收支科目 has 5 types (资产/负债/权益/成本/损益)",
+        "China VAT": "13% / 9% / 6% / 3% / exempt / zero-rated"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "TaxCode entity: code + name + rate + type (VAT/Consumption/Income/Withholding) + effective_from/to."
+    },
+    {
+      "id": "B-041",
+      "area": "09 Tax Configuration",
+      "capability": "TAX_INCLUSIVE_EXCLUSIVE",
+      "chinese_name": "含税/不含税",
+      "category": "TAX",
+      "source_evidence": {
+        "DEV": "no explicit tax-inclusive flag on lines",
+        "China accounting": "amount can be tax-inclusive or tax-exclusive (per 小规模 vs 一般纳税人)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "Critical: same numeric value means different amount based on inclusive flag. Each SalesOrderLine and PurchaseOrderLine needs TaxInclusive flag."
+    },
+    {
+      "id": "B-042",
+      "area": "09 Tax Configuration",
+      "capability": "TAX_ROUNDING",
+      "chinese_name": "税额舍入",
+      "category": "TAX",
+      "source_evidence": {
+        "DEV": "no explicit",
+        "China tax law": "税额四舍五入 to 0.01"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "Tax amount rounds to 2 decimals HALF_UP. TaxRate * Amount may produce 0.005 which must round to 0.01."
+    },
+    {
+      "id": "B-043",
+      "area": "09 Tax Configuration",
+      "capability": "INPUT_OUTPUT_TAX_SEPARATION",
+      "chinese_name": "进项销项税分离",
+      "category": "TAX",
+      "source_evidence": {
+        "DEV": "single 总金额 field, no separation",
+        "China accounting": "进项税 (input tax, recoverable) vs 销项税 (output tax, owed) must be separate GL accounts"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FINANCE",
+      "notes": "TaxTransaction entity: input/output + VAT type + amount + period (会计期间). Finance module scope."
+    },
+    {
+      "id": "B-044",
+      "area": "10 Payment",
+      "capability": "PAYMENT_METHOD",
+      "chinese_name": "付款方式",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV dictionary": "付款方式 5 items: 款到发货/货到付款/月结30天/月结60天/月结90天",
+        "MDM-000D R1": "tenant-template/payment-method.json (5 items, split into PM_* and PT_*)"
+      },
+      "decision": "REUSE_DATA",
+      "priority": "P0_NOW",
+      "target_phase": "MDM-000",
+      "notes": "Already in MDM-000D. PaymentMethod (channel) and PaymentTerm (duration) split. 5 items seed."
+    },
+    {
+      "id": "B-045",
+      "area": "10 Payment",
+      "capability": "PAYMENT_TERM_DAYS",
+      "chinese_name": "账期天数",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "月结30天 (30 days), 月结60天 (60), 月结90天 (90)",
+        "Industry": "NET_0 / NET_15 / NET_30 / NET_45 / NET_60 / COD / PREPAID / EOM+15 / 2MFI etc."
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "PaymentTerm as int days + semantic (NET, COD, PREPAID, EOM+N). Default NET_30."
+    },
+    {
+      "id": "B-046",
+      "area": "10 Payment",
+      "capability": "PAYMENT_TERM_DAY_OF_MONTH",
+      "chinese_name": "付款日期",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no concept of \"15th of every month\"",
+        "Industry": "EOM (end of month), 15th, specific day-of-month"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "SALES",
+      "notes": "Some terms are \"15th of next month\". Add PaymentTermType enum: NET_DAYS / FIXED_DAY_OF_MONTH / END_OF_MONTH."
+    },
+    {
+      "id": "B-047",
+      "area": "10 Payment",
+      "capability": "OVERDUE_POLICY",
+      "chinese_name": "逾期政策",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no overdue handling",
+        "Industry": "late fee %, dunning letter, credit hold"
+      },
+      "decision": "DEFER",
+      "priority": "P3_DEFER",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "Low priority. Defer to AR module."
+    },
+    {
+      "id": "B-048",
+      "area": "11 Delivery / Shipping",
+      "capability": "INCOTERMS",
+      "chinese_name": "国际贸易术语",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no Incoterms",
+        "Incoterms 2020": "EXW / FOB / CIF / DAP / DDP etc."
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "SALES",
+      "notes": "SalesOrder.IncotermCode (EXW/FOB/CIF/DAP/DDP). Per international trade; Chinese domestic may not need."
+    },
+    {
+      "id": "B-049",
+      "area": "11 Delivery / Shipping",
+      "capability": "SHIPPING_CARRIER",
+      "chinese_name": "承运商",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no carrier table",
+        "Industry": "SF Express / YTO / Yunda / JD Logistics / self-delivery"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "SALES",
+      "notes": "BPT_LOGISTICS as BusinessPartner. Carrier-specific service level."
+    },
+    {
+      "id": "B-050",
+      "area": "11 Delivery / Shipping",
+      "capability": "SHIPMENT_STATUS",
+      "chinese_name": "发货状态",
+      "category": "STATUS",
+      "source_evidence": {
+        "DEV": "状态表 has 创建/已审核/已下单/已生产; not specifically shipment",
+        "Industry": "PENDING / PICKED / PACKED / SHIPPED / IN_TRANSIT / DELIVERED / RETURNED"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Shipment entity: ShipmentStatus enum. Foundation G2-002 has AggregateState pattern."
+    },
+    {
+      "id": "B-051",
+      "area": "12 Price / Discount",
+      "capability": "PRICE_LIST",
+      "chinese_name": "价格表",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "商品表.单价 (single field)",
+        "Industry": "PriceList (Standard / VIP / Volume / Promotional) with validity period"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "PriceList entity + PriceListLine (Item + Uom + MinQty + Price + valid_from/to). DEV mistake to have single price."
+    },
+    {
+      "id": "B-052",
+      "area": "12 Price / Discount",
+      "capability": "TIERED_PRICING",
+      "chinese_name": "阶梯价",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV dictionary": "阶梯类型 (RecordID=2978) has 2 items: 按数量/按金额",
+        "Industry": "Tier-based pricing: 1-9 @ 100, 10-99 @ 95, 100+ @ 90"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "PriceListLine can have TierType (BY_QUANTITY / BY_AMOUNT) + tiers[]. DEV has dictionary entry but no schema."
+    },
+    {
+      "id": "B-053",
+      "area": "12 Price / Discount",
+      "capability": "CURRENCY_IN_PRICE",
+      "chinese_name": "价格币种",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "price in default currency only",
+        "Industry": "PriceList has CurrencyCode + multiple Currency-specific PriceList"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "PriceList.CurrencyCode. Item may have different price in different currencies."
+    },
+    {
+      "id": "B-054",
+      "area": "13 Warehouse / Location Type",
+      "capability": "WAREHOUSE_TYPE",
+      "chinese_name": "仓库类型",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "仓库表.仓库类型 (string)",
+        "Industry": "RAW / WIP / FINISHED / TRANSIT / QUARANTINE / VIRTUAL"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "WarehouseType enum. WIP separates raw material from finished goods for manufacturing."
+    },
+    {
+      "id": "B-055",
+      "area": "13 Warehouse / Location Type",
+      "capability": "LOCATION_TYPE",
+      "chinese_name": "库位类型",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no location table",
+        "Industry": "RECEIVING / STORAGE / PICKING / SHIPPING / QUARANTINE / INSPECTION"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "LocationType enum. Already designed in MDM-000 P1-005 spec."
+    },
+    {
+      "id": "B-056",
+      "area": "13 Warehouse / Location Type",
+      "capability": "BIN_LOT_TRACKING",
+      "chinese_name": "库位批次跟踪",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no concept",
+        "Industry": "Bin-level tracking vs Lot-level vs Both"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "WarehousePolicy: LotTracking, BinTracking, ExpiryTracking booleans per item/warehouse."
+    },
+    {
+      "id": "B-057",
+      "area": "14 Inventory Status",
+      "capability": "INVENTORY_STATUS",
+      "chinese_name": "库存状态",
+      "category": "STATUS",
+      "source_evidence": {
+        "DEV": "状态表 has 创建/已审核/已下单/已生产  --  but not specific inventory status",
+        "Industry": "AVAILABLE / RESERVED / PENDING_INSPECTION / BLOCKED / QUARANTINED / IN_TRANSIT / DAMAGED"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "INVENTORY",
+      "notes": "InventoryBalance.OnHand/Reserved/Available/Blocked/Quarantined. Already designed in POC-002/003 plan."
+    },
+    {
+      "id": "B-058",
+      "area": "14 Inventory Status",
+      "capability": "INVENTORY_BLOCK_REASON",
+      "chinese_name": "库存锁定原因",
+      "category": "STATUS",
+      "source_evidence": {
+        "DEV": "no block reason",
+        "Industry": "QualityHold / CustomerReturn / LegalHold / CycleCount"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "InventoryBlock entity: ItemId + WarehouseId + BlockReason + BlockedAt + BlockedBy + ReleasedAt."
+    },
+    {
+      "id": "B-059",
+      "area": "15 Inventory Transaction / Reason Code",
+      "capability": "INVENTORY_TX_REASON",
+      "chinese_name": "库存事务原因",
+      "category": "STATUS",
+      "source_evidence": {
+        "DEV": "no dedicated reason code table",
+        "MDM-000 plan": "InventoryTxType (Receipt/Issue/Transfer/Adjust/Reserve/Unreserve) + InventoryTxReason (PO_GR/SO_SH/...)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "INVENTORY",
+      "notes": "InventoryTransaction.InventoryTxType + InventoryTxReason enums. Already designed in POC-002."
+    },
+    {
+      "id": "B-060",
+      "area": "15 Inventory Transaction / Reason Code",
+      "capability": "STOCKTAKE_VARIANCE_REASON",
+      "chinese_name": "盘点差异原因",
+      "category": "STATUS",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "EVAPORATION / SHRINKAGE / MISCOUNT / DAMAGE / EXPIRED"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "StockTake variance reason code. Audit trail required."
+    },
+    {
+      "id": "B-061",
+      "area": "15 Inventory Transaction / Reason Code",
+      "capability": "ADJUSTMENT_REQUIRES_APPROVAL",
+      "chinese_name": "调整需审批",
+      "category": "RULE",
+      "source_evidence": {
+        "DEV": "manual",
+        "Industry": "Any inventory adjustment above threshold requires approval"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "IInventoryService.AdjustAsync(ApprovalId)  --  adjust must carry approval_id (per MDM-000 P1-005)."
+    },
+    {
+      "id": "B-062",
+      "area": "16 Lot / Serial Number",
+      "capability": "LOT_NUMBER",
+      "chinese_name": "批次号",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "批次库存 -- a view, not a real entity",
+        "Industry": "LotNumber = string, ExpiryDate = date, ManufactureDate = date, SupplierLotCode = string"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "InventoryLot entity. LotNumber string (no internal structure). Track per (Item, Warehouse)."
+    },
+    {
+      "id": "B-063",
+      "area": "16 Lot / Serial Number",
+      "capability": "SERIAL_NUMBER",
+      "chinese_name": "序列号",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no concept",
+        "Industry": "Each unit of an item has unique SN. Used for warranty, recall, traceability."
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "InventorySerialNumber entity. Optional per item (Item.IsSerialControlled = true)."
+    },
+    {
+      "id": "B-064",
+      "area": "16 Lot / Serial Number",
+      "capability": "EXPIRY_DATE",
+      "chinese_name": "效期管理",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "克重 -- 0.0 default; no expiry",
+        "Industry": "FEFO (First-Expiry-First-Out) for food/pharma"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Lot.ExpiryDate + Item.IsExpiryControlled. Required for FEFO issuing."
+    },
+    {
+      "id": "B-065",
+      "area": "17 Item Type / Category",
+      "capability": "ITEM_TYPE",
+      "chinese_name": "物料类型",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV dictionary": "商品属性 (RecordID=98) 4 items: 自制/外购/委外加工/客供",
+        "Industry": "Stockable / Non-Stockable / Service / Phantom (BOM) / Subassembly"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Item.ItemType enum. Phantom needed for BOM subassemblies. Recommend 5 types."
+    },
+    {
+      "id": "B-066",
+      "area": "17 Item Type / Category",
+      "capability": "ITEM_CATEGORY",
+      "chinese_name": "物料分类",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV dictionary": "商品分类 (RecordID=2859) 5 items: 电器/车辆/蔬菜/肉类/海鲜 (sample data, not real categories)",
+        "Industry": "Multi-level category tree with parent_id"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "ItemCategory tree entity. Allow 3-4 levels deep. Per-tenant customizable."
+    },
+    {
+      "id": "B-067",
+      "area": "17 Item Type / Category",
+      "capability": "ITEM_DEFAULT_UOM",
+      "chinese_name": "物料默认单位",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "商品表.单位 -- string reference to UOM",
+        "Industry": "Each item has one base UOM (for stock) + multiple issue UOMs"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Item.BaseUomId (FK to Uom). Plus ItemUomConversion table for sales/purchase units."
+    },
+    {
+      "id": "B-068",
+      "area": "18 Item Attribute",
+      "capability": "ITEM_ATTRIBUTE_COLOR",
+      "chinese_name": "颜色",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV sample: 商品表": "o explicit Color field; implicit via description",
+        "Industry": "Item attribute (Color, Size, Material, etc.) for SKU variants"
+      },
+      "decision": "DEFER",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "AttributeValue table. Defer until SKU variant engine is needed (per P1-005 plan deferred)."
+    },
+    {
+      "id": "B-069",
+      "area": "18 Item Attribute",
+      "capability": "ITEM_ATTRIBUTE_MATERIAL",
+      "chinese_name": "材质",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "商品表.材料 -- exists as string, no controlled vocabulary",
+        "Industry": "Steel / Plastic / Wood / Aluminum etc."
+      },
+      "decision": "DEFER",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Same as color. Defer to SKU variant phase."
+    },
+    {
+      "id": "B-070",
+      "area": "18 Item Attribute",
+      "capability": "ITEM_ATTRIBUTE_SIZE",
+      "chinese_name": "规格",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "商品表.规格 -- exists as string",
+        "Industry": "size dimensions or SKUs"
+      },
+      "decision": "DEFER",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Same. Defer to SKU variant phase."
+    },
+    {
+      "id": "B-071",
+      "area": "18 Item Attribute",
+      "capability": "ITEM_ATTRIBUTE_GRADE",
+      "chinese_name": "等级",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV dictionary": "物料级别 (RecordID=2749) 3 items: A/B/C",
+        "Industry": "Quality grade A/B/C for raw materials"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Could promote dictionary to ItemGrade. Low priority  --  defer."
+    },
+    {
+      "id": "B-072",
+      "area": "19 Packaging / Item UOM",
+      "capability": "PACKAGING_UNIT",
+      "chinese_name": "包装单位",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "商品表 -- no packaging field",
+        "Industry": "Box/Pallet/Container with quantity per package"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "ItemPackage entity: PackageType + QuantityPerPackage + Dimensions (L×W×H) + Weight."
+    },
+    {
+      "id": "B-073",
+      "area": "20 Barcode",
+      "capability": "BARCODE_FORMAT",
+      "chinese_name": "条码格式",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "商品表 -- no barcode field",
+        "Industry": "EAN-13 / EAN-8 / UPC-A / UPC-E / Code 128 / QR / DataMatrix"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "ItemBarcode entity: BarcodeType + Value + IsPrimary. Multiple barcodes per item possible."
+    },
+    {
+      "id": "B-074",
+      "area": "21 Business Partner Classification",
+      "capability": "BP_TYPE",
+      "chinese_name": "业务伙伴类型",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV dictionary": "往来类型 (RecordID=3497) 4 items: 客户/供应商/外协/物流",
+        "MDM-000D R1": "tenant-template/business-partner-type.json (4 items)"
+      },
+      "decision": "REUSE_DATA",
+      "priority": "P0_NOW",
+      "target_phase": "MDM-000",
+      "notes": "Already in MDM-000D. 4 types seed."
+    },
+    {
+      "id": "B-075",
+      "area": "21 Business Partner Classification",
+      "capability": "BP_LEVEL",
+      "chinese_name": "业务伙伴级别",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV sample: 往来表": "别 (string)",
+        "Industry": "A / B / C / Strategic / Regular / Transactional"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "BP.Level enum or controlled vocab. Affects payment terms and credit limit."
+    },
+    {
+      "id": "B-076",
+      "area": "21 Business Partner Classification",
+      "capability": "BP_CREDIT_LIMIT",
+      "chinese_name": "信用额度",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV sample: 往来表.额度": ".0",
+        "Industry": "Credit limit + available + on-hold"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "BusinessPartnerCreditLimit: BPId + Currency + Limit + Used + Available. AR module."
+    },
+    {
+      "id": "B-077",
+      "area": "22 Address / Contact Type",
+      "capability": "ADDRESS_TYPE",
+      "chinese_name": "地址类型",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV sample: 往来表.地址": "ingle string",
+        "Industry": "BILLING / SHIPPING / REGISTERED / CONTACT"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "AddressType enum. Multiple addresses per BP."
+    },
+    {
+      "id": "B-078",
+      "area": "22 Address / Contact Type",
+      "capability": "CONTACT_TYPE",
+      "chinese_name": "联系方式",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV sample: 往来表": "话/传真/地址/联系人/邮箱 (string fields)",
+        "Industry": "PHONE / EMAIL / FAX / MOBILE / WECHAT / WEBSITE"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "ContactType enum. Multiple contacts per BP."
+    },
+    {
+      "id": "B-079",
+      "area": "23 Workflow Status / Reason",
+      "capability": "WORKFLOW_STATUS",
+      "chinese_name": "工作流状态",
+      "category": "STATUS",
+      "source_evidence": {
+        "DEV sample: 状态表": "建/已审核/已下单/已生产 + 1 保留 (-1)",
+        "GULIERP_CURRENT": "Foundation G2-002 has no workflow state; per docs/goals/G2_FOUNDATION_EXECUTION_PLAN.md G2-007+"
+      },
+      "decision": "DEFER",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "Workflow status is module-specific (SO has Draft/Confirmed/Shipped/Closed; PO has its own). Use 3D model: DocumentStatus/ApprovalStatus/ExecutionStatus."
+    },
+    {
+      "id": "B-080",
+      "area": "23 Workflow Status / Reason",
+      "capability": "APPROVAL_REASON",
+      "chinese_name": "审批原因",
+      "category": "STATUS",
+      "source_evidence": {
+        "DEV": "品质异常审核意见 -- RecordID=3516, 7 items (报废且返厂/返工/报废无需返工/让步接收/退货/其它/部门知悉)",
+        "Industry": "Each approval action needs a reason code for audit"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "IAuditWriter (per G2-002) stores ApprovalReason. Foundation needs ApprovalReason registry per module."
+    },
+    {
+      "id": "B-081",
+      "area": "24 Print / Attachment / Document Type",
+      "capability": "PRINT_TEMPLATE",
+      "chinese_name": "打印模板",
+      "category": "PRODUCTIVITY_METADATA",
+      "source_evidence": {
+        "DEV": "JU_Template: 182 templates, each with print layout",
+        "VOL": "PrintDesigner (visual template editor)"
+      },
+      "decision": "DEFER",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "Print template engine is V1.5 per VOL pattern. V1 uses hard-coded HTML render."
+    },
+    {
+      "id": "B-082",
+      "area": "24 Print / Attachment / Document Type",
+      "capability": "ATTACHMENT_ENTITY",
+      "chinese_name": "附件实体",
+      "category": "PRODUCTIVITY_METADATA",
+      "source_evidence": {
+        "DEV": "JU_TemplateFile.TemplateFile: image column (anti-pattern!)",
+        "GULIERP_CURRENT": "no attachment yet"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "Attachment entity + object store (per G2-002-002 plan). DEV image column REJECT."
+    },
+    {
+      "id": "B-083",
+      "area": "24 Print / Attachment / Document Type",
+      "capability": "DOCUMENT_TYPE",
+      "chinese_name": "单据类型",
+      "category": "MASTER_DATA_CONVENTION",
+      "source_evidence": {
+        "DEV": "模板 -- 182 templates (all docs)",
+        "GULIERP_CURRENT": "no enum yet"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "DocumentType enum: SO / PO / GR / GI / TRANSFER / MO / QC / etc. Used by NumberingPattern + Audit."
+    },
+    {
+      "id": "B-084",
+      "area": "25 Import / Export Metadata",
+      "capability": "IMPORT_FORMAT",
+      "chinese_name": "导入格式",
+      "category": "PRODUCTIVITY_METADATA",
+      "source_evidence": {
+        "DEV": "模板 -- no",
+        "VOL": "Excel Import auto-binding from data source"
+      },
+      "decision": "DEFER",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "Excel import per VOL pattern. V1.5+ scope."
+    },
+    {
+      "id": "B-085",
+      "area": "25 Import / Export Metadata",
+      "capability": "EXPORT_FORMAT",
+      "chinese_name": "导出格式",
+      "category": "PRODUCTIVITY_METADATA",
+      "source_evidence": {
+        "VOL": "Excel Export VERIFIED_IN_DEMO"
+      },
+      "decision": "DEFER",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "V1.5+ scope per TASK F-16."
+    },
+    {
+      "id": "B-086",
+      "area": "26 Work Calendar / Shift",
+      "capability": "WORK_CALENDAR",
+      "chinese_name": "工作日历",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV dictionary": "班次 (RecordID=3519) has 3 items but names are empty in sample",
+        "Industry": "Mon-Fri 8-17 / Mon-Sat 8-12 14-17 / Shift A (06-14) / Shift B (14-22) / Shift C (22-06)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "PRODUCTION",
+      "notes": "WorkCalendar entity: PlantId + ShiftCode + StartTime + EndTime + EffectiveFrom/To + RestDays. Already designed in POC-001/002."
+    },
+    {
+      "id": "B-087",
+      "area": "26 Work Calendar / Shift",
+      "capability": "PUBLIC_HOLIDAY",
+      "chinese_name": "法定节假日",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no",
+        "China": "国务院办公厅每年发布"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "PRODUCTION",
+      "notes": "PublicHoliday table: CountryCode + Date + Name + IsWorkday (some holidays have make-up work days)."
+    },
+    {
+      "id": "B-088",
+      "area": "27 WorkCenter / Plant Parameters",
+      "capability": "PLANT_DEFAULT_PARAMS",
+      "chinese_name": "工厂默认参数",
+      "category": "MASTER_DATA_CONVENTION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "gulierp_plant has Code/Name/Address/CountryCode/Timezone/CalendarCode",
+        "Industry": "default warehouse / default UOM / default tax per Plant"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "PlantPolicy: DefaultWarehouseId, DefaultUomId, DefaultTaxCode, DefaultCurrency, etc."
+    },
+    {
+      "id": "B-089",
+      "area": "27 WorkCenter / Plant Parameters",
+      "capability": "WORK_CENTER_TYPE",
+      "chinese_name": "工作中心类型",
+      "category": "MASTER_DATA_CONVENTION",
+      "source_evidence": {
+        "DEV dictionary": "工作中心 (RecordID=71) 3 items: 主线车间/配件车间/包装车间",
+        "Industry": "MACHINE / ASSEMBLY_LINE / INSPECTION / PACKAGING / WAREHOUSE"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "PRODUCTION",
+      "notes": "WorkCenter.Type enum. Default: 4-5 types per industry."
+    },
+    {
+      "id": "B-090",
+      "area": "27 WorkCenter / Plant Parameters",
+      "capability": "WORK_CENTER_CAPACITY",
+      "chinese_name": "工作中心产能",
+      "category": "MASTER_DATA_CONVENTION",
+      "source_evidence": {
+        "DEV": "no capacity field",
+        "Industry": "HoursPerDay / Efficiency / StandardCapacity"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "PRODUCTION",
+      "notes": "WorkCenterCapacity: WorkCenterId + Date + HoursAvailable + HoursUsed + Efficiency. Production scheduling."
+    },
+    {
+      "id": "B-091",
+      "area": "28 Quality Types / Status",
+      "capability": "QC_STATUS",
+      "chinese_name": "质检状态",
+      "category": "STATUS",
+      "source_evidence": {
+        "DEV dictionary": "品质异常审核意见 (RecordID=3516) 7 items: 报废且返厂/返工/报废无需返工/让步接收/退货/其它/部门知悉"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "QCStatus enum: PENDING / PASSED / FAILED / WAIVED / ON_HOLD. Already designed in POC-002/003."
+    },
+    {
+      "id": "B-092",
+      "area": "28 Quality Types / Status",
+      "capability": "INSPECTION_TYPE",
+      "chinese_name": "检验类型",
+      "category": "STATUS",
+      "source_evidence": {
+        "DEV": "no concept (IQC/IPQC/FQC all missing)",
+        "Industry": "IQC (Incoming) / IPQC (In-Process) / FQC (Final)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "QUALITY",
+      "notes": "InspectionType enum. Per MDM-000 plan deferred to V2 (Quality module)."
+    },
+    {
+      "id": "B-093",
+      "area": "28 Quality Types / Status",
+      "capability": "INSPECTION_RESULT",
+      "chinese_name": "检验结果",
+      "category": "STATUS",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "PASS / FAIL / WAIVE / REWORK / SCRAP"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "QUALITY",
+      "notes": "Per inspection result enum. Defer to V2."
+    },
+    {
+      "id": "B-094",
+      "area": "29 Cost Method",
+      "capability": "COST_METHOD",
+      "chinese_name": "成本核算方法",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "STANDARD / MOVING_AVERAGE / FIFO / LIFO / WEIGHTED_AVERAGE"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Item.CostMethod. China accounting disallows LIFO. Default: MOVING_AVERAGE for manufacturing, STANDARD for retail."
+    },
+    {
+      "id": "B-095",
+      "area": "29 Cost Method",
+      "capability": "STANDARD_COST_VARIANCE",
+      "chinese_name": "标准成本差异",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Material Variance / Labor Variance / Overhead Variance"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "FINANCE",
+      "notes": "Defer to V2 (Finance)."
+    },
+    {
+      "id": "B-096",
+      "area": "30 Business Period",
+      "capability": "ACCOUNTING_PERIOD",
+      "chinese_name": "会计期间",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "系统表.会计年度 -- 0; 系统表.期间: 0",
+        "Industry": "MONTHLY (most common) / 13-PERIOD (retail)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "FINANCE",
+      "notes": "AccountingPeriod: Year + Period + StartDate + EndDate + Status (Open/Closed/Locked). Finance module."
+    },
+    {
+      "id": "B-097",
+      "area": "30 Business Period",
+      "capability": "FISCAL_YEAR",
+      "chinese_name": "会计年度",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "系统表.会计年度 -- int",
+        "China": "Calendar year (Jan-Dec) is default; some companies use Apr-Mar fiscal year"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "FINANCE",
+      "notes": "Tenant.FiscalYearStartMonth. Default 1 (Jan)."
+    },
+    {
+      "id": "B-098",
+      "area": "30 Business Period",
+      "capability": "PERIOD_CLOSE",
+      "chinese_name": "期间关账",
+      "category": "REFERENCE_DATA",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Hard close + soft close + reopen permission"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "FINANCE",
+      "notes": "Defer to V2."
+    },
+    {
+      "id": "B-099",
+      "area": "31 Date / Time / Locale",
+      "capability": "TIMEZONE_DEFAULT",
+      "chinese_name": "默认时区",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "gulierp_plant.Timezone varchar(64); Tenant not yet",
+        "Industry": "IANA timezone (Asia/Shanghai etc.)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-003",
+      "notes": "Foundation G2-002 uses DateTimeOffset + W3C TraceId. Tenant.Timezone needed. IANA names (Asia/Shanghai)."
+    },
+    {
+      "id": "B-100",
+      "area": "31 Date / Time / Locale",
+      "capability": "DATE_FORMAT_DEFAULT",
+      "chinese_name": "日期格式",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "dates stored as datetime",
+        "Industry": "yyyy-MM-dd ISO 8601; yyyy年MM月dd日 for CN display"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-003",
+      "notes": "ISO 8601 for storage. Display per locale. System.Globalization used by .NET."
+    },
+    {
+      "id": "B-101",
+      "area": "31 Date / Time / Locale",
+      "capability": "LOCALE_DEFAULT",
+      "chinese_name": "默认区域",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "not modeled",
+        "Industry": "zh-CN / en-US / ja-JP etc."
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-003",
+      "notes": "Tenant.DefaultLocale. Affects number/date formatting, currency display."
+    },
+    {
+      "id": "B-102",
+      "area": "31 Date / Time / Locale",
+      "capability": "WEEK_START",
+      "chinese_name": "周起始日",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "not modeled",
+        "China": "Monday (GB/T 7408); US: Sunday"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "Locale.WeekStart enum: MONDAY (CN/ISO) / SUNDAY (US). Affects week-based reports."
+    },
+    {
+      "id": "B-103",
+      "area": "32 Effective Date / Versioning",
+      "capability": "EFFECTIVE_DATED_MASTER",
+      "chinese_name": "生效日期主数据",
+      "category": "MASTER_DATA_CONVENTION",
+      "source_evidence": {
+        "DEV": "CreateTime + LastEditTime but no explicit valid_from/valid_to",
+        "Industry": "Price list / Tax rate / Customer terms have effective dating"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "Critical pattern: master data (Price, Tax, CustomerTerms, SupplierTerms) should be effective-dated."
+    },
+    {
+      "id": "B-104",
+      "area": "32 Effective Date / Versioning",
+      "capability": "SLOWLY_CHANGING_DIMENSION",
+      "chinese_name": "SCD 维度",
+      "category": "MASTER_DATA_CONVENTION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "SCD Type 2 (full history with valid_from/valid_to) is ERP standard"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "Decision: SCD Type 2 for Price/Tax/Customer. Type 1 for Item name corrections. Need helper base class."
+    },
+    {
+      "id": "B-105",
+      "area": "32 Effective Date / Versioning",
+      "capability": "BOM_VERSION",
+      "chinese_name": "BOM 版本",
+      "category": "MASTER_DATA_CONVENTION",
+      "source_evidence": {
+        "DEV": "BOM表 -- BOMStatus (0/1/2?) but no version",
+        "Industry": "BOM revisions with effective_from + status (Draft/Active/Obsolete)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "PRODUCTION",
+      "notes": "BomRevision entity per MDM-000 P1-005 plan. Already designed."
+    },
+    {
+      "id": "B-106",
+      "area": "33 Parameter Scope",
+      "capability": "PARAM_SCOPE_SYSTEM",
+      "chinese_name": "系统参数",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "ConnectionStrings__GuliERP + appsettings.json",
+        "G2-002": "config validation at startup"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-003",
+      "notes": "G2-002 already validates connection string at host start. SYSTEM params: default precision, default rounding, default currency."
+    },
+    {
+      "id": "B-107",
+      "area": "33 Parameter Scope",
+      "capability": "PARAM_SCOPE_TENANT",
+      "chinese_name": "租户参数",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "gulierp_tenant created but no param table",
+        "Industry": "Per-tenant config (timezone, locale, fiscal year, default currency)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-003",
+      "notes": "TenantSetting table: TenantId + Key + Value + Scope. Foundation provides ISystemSetting abstraction."
+    },
+    {
+      "id": "B-108",
+      "area": "33 Parameter Scope",
+      "capability": "PARAM_SCOPE_COMPANY",
+      "chinese_name": "公司参数",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "gulierp_company has DefaultCurrency + Timezone",
+        "Industry": "Per-company config (different company in same tenant may have different timezone)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-003",
+      "notes": "CompanySetting table. DefaultCurrency/Timezone already in gulierp_company but no extension mechanism."
+    },
+    {
+      "id": "B-109",
+      "area": "33 Parameter Scope",
+      "capability": "PARAM_SCOPE_PLANT",
+      "chinese_name": "工厂参数",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "gulierp_plant.CalendarCode varchar(40)  --  calendar link is there",
+        "Industry": "Per-plant config (calendar, default UOM, default warehouse)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-003",
+      "notes": "PlantSetting table. Plant.Policy. Default: first phase hard-coded."
+    },
+    {
+      "id": "B-110",
+      "area": "33 Parameter Scope",
+      "capability": "PARAM_SCOPE_USER",
+      "chinese_name": "用户参数",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "no per-user setting",
+        "Industry": "user preferences (language, theme, default page size)"
+      },
+      "decision": "DEFER",
+      "priority": "P3_DEFER",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "Per-user settings usually not business-critical. Defer to UX requirement."
+    },
+    {
+      "id": "B-111",
+      "area": "34 Default Value Policy",
+      "capability": "DEFAULT_WAREHOUSE",
+      "chinese_name": "默认仓库",
+      "category": "MASTER_DATA_CONVENTION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Each Company/Plant has Default Warehouse for auto-issue"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "PlantPolicy.DefaultWarehouseId."
+    },
+    {
+      "id": "B-112",
+      "area": "34 Default Value Policy",
+      "capability": "DEFAULT_CURRENCY",
+      "chinese_name": "默认币种",
+      "category": "MASTER_DATA_CONVENTION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "gulierp_company.DefaultCurrency char(3)  --  already in schema",
+        "Industry": "Company default currency (tenant may have multiple)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-003",
+      "notes": "Already in Identity G2-003. Reuse."
+    },
+    {
+      "id": "B-113",
+      "area": "34 Default Value Policy",
+      "capability": "DEFAULT_TAX",
+      "chinese_name": "默认税率",
+      "category": "MASTER_DATA_CONVENTION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Default tax code for new sales lines"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "CompanyPolicy.DefaultTaxCode. Affects SO/PO line entry UX."
+    },
+    {
+      "id": "B-114",
+      "area": "34 Default Value Policy",
+      "capability": "DEFAULT_UOM_PER_ITEM",
+      "chinese_name": "物料默认单位",
+      "category": "MASTER_DATA_CONVENTION",
+      "source_evidence": {
+        "DEV": "商品表.单位 -- string",
+        "Industry": "Item has BaseUom (stocking) + IssueUom (sales)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "Item.BaseUomId per (Item, Plant)."
+    },
+    {
+      "id": "B-115",
+      "area": "35 Metadata / Generator Contract",
+      "capability": "BUSINESS_SEMANTIC_TYPE_METADATA",
+      "chinese_name": "业务语义类型元数据",
+      "category": "PRODUCTIVITY_METADATA",
+      "source_evidence": {
+        "MDM-000D R1": "system/semantic-data-type.json (13 types, all PROPOSED)",
+        "VOL": "pattern reference only"
+      },
+      "decision": "REUSE_DATA",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-001",
+      "notes": "Already in MDM-000D. Generator metadata contract drafted (C# attribute)."
+    },
+    {
+      "id": "B-116",
+      "area": "35 Metadata / Generator Contract",
+      "capability": "REFERENCEDATA_METADATA",
+      "chinese_name": "引用数据元数据",
+      "category": "PRODUCTIVITY_METADATA",
+      "source_evidence": {
+        "MDM-000D R1": "ReferenceData concept (C# attribute) drafted",
+        "VOL": "Sys_Dictionary pattern"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "MDM-000",
+      "notes": "[ReferenceData(\"EDUCATION\")] attribute on field → auto-generates Select lookup."
+    },
+    {
+      "id": "B-117",
+      "area": "35 Metadata / Generator Contract",
+      "capability": "GENERATOR_ENGINE",
+      "chinese_name": "Generator 引擎",
+      "category": "PRODUCTIVITY_METADATA",
+      "source_evidence": {
+        "GULIERP_CURRENT": "no generator; manual C# classes",
+        "VOL": "code-generated Sys_Dictionary.vue"
+      },
+      "decision": "DEFER",
+      "priority": "P3_DEFER",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "Generator engine is G9+ per governance. V1 uses strong-typed C#."
+    },
+    {
+      "id": "B-118",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "LOCK_OPTIMISTIC_VERSION",
+      "chinese_name": "乐观锁版本号",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "ConcurrencyVersion int (G2-001 + Identity G2-003)",
+        "DEV": "no explicit version field (DEV uses AllowBatch + ReuseType)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-004",
+      "notes": "ConcurrencyVersion already in every Identity table. Foundation G2-001 baseline. Apply to ALL master data + business tables."
+    },
+    {
+      "id": "B-119",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "AUDIT_TRAIL_IAUDITWRITER",
+      "chinese_name": "审计写入",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "G2-002 POC-003": "IAuditWriter (Foundation.Kernel)",
+        "DEV: JU_SysLog (177 rows) + JU_SysDesignLog (349 rows)": "separate design log is a DEV good idea",
+        "DEV split: operation log vs design log separately": "(2 channels, design + operation)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-004",
+      "notes": "IAuditWriter per POC-003. Two log channels: OperationLog (state changes) + DesignLog (configuration changes). DEV pattern is good  --  KEEP it."
+    },
+    {
+      "id": "B-120",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "FIELD_COMMENT_OBLIGATION",
+      "chinese_name": "字段注释强制",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "no pg_comment on columns",
+        "DEV: SQL Server ms_description (0/151 JU_ tables have descriptions)": "0/151 JU_ tables have descriptions (also bad)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-004",
+      "notes": "Convention: every column must have pg_description comment. EF Core 10 supports comment migration. Architecture rule, not just style."
+    },
+    {
+      "id": "B-121",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "TABLE_COMMENT_OBLIGATION",
+      "chinese_name": "表注释强制",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "no pg_comment on tables",
+        "DEV: 0/151 JU_ tables have ms_description": "DEV: 0/151 JU_ tables have ms_description"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-004",
+      "notes": "Every table must have pg_description comment. Auto-generated if not provided (warning)."
+    },
+    {
+      "id": "B-122",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "AUTO_INC_VS_SNOWFLAKE",
+      "chinese_name": "主键生成策略",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "IdentityByDefaultColumn (PostgreSQL BIGINT identity)  --  for now",
+        "G2-002 SnowflakeIdGenerator": "41+10+12 bits, epoch 2026-01-01  --  for distributed scaling"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-004",
+      "notes": "Decision: per-table config. Snowflake for distributed tables (Order/Doc); serial for local-only. Already in G2-001/002."
+    },
+    {
+      "id": "B-123",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "TRANSACTION_OUTBOX",
+      "chinese_name": "事务性发件箱",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "no",
+        "Industry": "Critical for distributed: events emitted in same DB transaction, then published"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "Outbox pattern for cross-module events. Deferred to G2-007+ per governance, but design contract now."
+    },
+    {
+      "id": "B-124",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "SOFT_DELETE_CONVENTION",
+      "chinese_name": "软删除约定",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "Status int (Active/Inactive/Suspended)  --  soft delete via status flag",
+        "DEV: ReportStatus + LockStatus + WorkflowStatus  --  3 separate status fields is anti-pattern": "DEV: ReportStatus + LockStatus + WorkflowStatus  --  3 separate status fields is anti-pattern"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-004",
+      "notes": "Use single AggregateState enum (per G2-002 plan). Soft delete = state=DELETED. NEVER physical delete for master data."
+    },
+    {
+      "id": "B-125",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "NESTED_SET_VS_ADJACENCY_LIST",
+      "chinese_name": "组织树存储",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "gulierp_organization_unit + gulierp_plant both use parent_id adjacency list",
+        "Industry": "Adjacency list (simple) vs Nested Set (fast subtree query) vs Path Enumeration (variable)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "FOUNDATION",
+      "notes": "G2-003 already chose adjacency list + materialized path. Document the pattern; new trees (Category) follow same."
+    },
+    {
+      "id": "B-126",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "TIME_RANGE_OVERLAP_RULE",
+      "chinese_name": "生效期重叠规则",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "no",
+        "Industry": "SCD Type 2: two versions of same item cannot have overlapping valid dates"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "DB-level CHECK constraint or trigger to prevent (item_id, valid_from, valid_to) overlap. Per SCD Type 2."
+    },
+    {
+      "id": "B-127",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "SOFT_DELETE_AUDIT",
+      "chinese_name": "软删除审计",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "状态表 has 删除/恢复 logic",
+        "Industry": "Soft delete must be in audit log + reversible for 30 days"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "SoftDelete entity: EntityType + EntityId + DeletedAt + DeletedBy + RestoredAt + RestoredBy. Mandatory for master data."
+    },
+    {
+      "id": "B-128",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "STATUS_TRANSITION_VALIDATION",
+      "chinese_name": "状态机转换校验",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "Status int but no state machine",
+        "DEV: Workflow (NAV) but no validation library": "DEV: Workflow (NAV) but no validation library",
+        "POC-003": "SalesOrder has state machine (Draft/Confirmed/Closed/Cancelled)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-004",
+      "notes": "State machine library (Stateless or hand-rolled) per aggregate. POC-003 already implements for SalesOrder."
+    },
+    {
+      "id": "B-129",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "INVENTORY_POSTING_RULE",
+      "chinese_name": "库存过账规则",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "GULIERP_CURRENT": "no",
+        "DEV: manual 出库过账 / 入库过账 ": "anti-pattern",
+        "POC-003 / MDM-000": "IInventoryService.PostAsync (single entry point)"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-004",
+      "notes": "InventoryPostingEngine (per G2-002 plan)  --  event-driven, not manual step. Already designed."
+    },
+    {
+      "id": "B-130",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "CURRENCY_TRANSLATION_METHOD",
+      "chinese_name": "币种折算方法",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "单价 (single currency)",
+        "Industry": "Spot rate / Average rate / Historical rate (for fixed assets)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "CurrencyTranslationMethod enum: SPOT / AVERAGE / HISTORICAL. Default SPOT."
+    },
+    {
+      "id": "B-131",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "ROUNDING_TOLERANCE",
+      "chinese_name": "舍入容差",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "收支科目 with 0.01 precision",
+        "Industry": "Allow 0.01 tolerance for currency rounding (e.g. SO total vs sum of lines)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "SALES",
+      "notes": "Tolerance policy: 0.01 = always allow; 0.00 = strict (display warning)."
+    },
+    {
+      "id": "B-132",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "UOM_CONVERSION_DECIMAL_PRECISION",
+      "chinese_name": "换算精度",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "换算系数 (string)",
+        "Industry": "1 box = 12.5 ea (not always integer)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "ConversionRatio should be decimal, not integer. precision=10, scale=4."
+    },
+    {
+      "id": "B-133",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "TRIAL_BALANCE_POLICY",
+      "chinese_name": "试算平衡",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Debit must equal Credit in every journal entry. Hard fail."
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "FINANCE",
+      "notes": "Finance module V2."
+    },
+    {
+      "id": "B-134",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "DUPLICATE_DOCUMENT_NUMBER_POLICY",
+      "chinese_name": "重号检测",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "编号 (single field, no dedup check)",
+        "Industry": "NumberSequence must check uniqueness in DB (UNIQUE constraint) before insert"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-002",
+      "notes": "DocumentNumber UNIQUE constraint per (DocType, Year, Tenant). DB-level guard. Already implicit in POC-003."
+    },
+    {
+      "id": "B-135",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "GL_ACCOUNT_MAPPING",
+      "chinese_name": "总账科目映射",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV dictionary": "收支科目 (RecordID=3097) 7 items + 科目类型 (RecordID=3437) 5 items",
+        "China": "企业会计准则科目表 (specific chart of accounts)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "FINANCE",
+      "notes": "China COA standard: 资产/负债/所有者权益/成本/损益. 6-digit COA. V2 Finance."
+    },
+    {
+      "id": "B-136",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "ERP_CROSS_CUTTING_TENANT_SCOPE",
+      "chinese_name": "Tenant Scope 优先级",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "G2-002 / G2-003": "TenantId on every business table",
+        "Industry": "Tenant > Company > Plant > Organization hierarchy"
+      },
+      "decision": "REUSE_PATTERN",
+      "priority": "P0_NOW",
+      "target_phase": "BASE-004",
+      "notes": "ICurrentTenant + ICurrentCompany contracts (G2-003) define scope chain. Plant is a Scope for Inventory/Production."
+    },
+    {
+      "id": "B-137",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "DOCUMENT_NUMBER_GAP_DETECTION",
+      "chinese_name": "单号跳号检测",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Number 2026-000001, 2026-000003  --  gap detected, admin investigates"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "NumberingGapReport. Reports gaps. Audit trail of who/when used each number."
+    },
+    {
+      "id": "B-138",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "POSTING_PERIOD_LOCK",
+      "chinese_name": "过账期间锁定",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Once period is closed, no new postings allowed. Soft lock with override."
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "FINANCE",
+      "notes": "Period lock V2."
+    },
+    {
+      "id": "B-139",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "GL_DOUBLE_ENTRY_VALIDATION",
+      "chinese_name": "复式记账校验",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Sum(Debit) == Sum(Credit). Hard fail."
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "FINANCE",
+      "notes": "V2 Finance."
+    },
+    {
+      "id": "B-140",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "LOCALIZATION_I18N",
+      "chinese_name": "国际化",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "商品名称 stored in 单个 名称 field, no multi-lang",
+        "Industry": "Item.Name per locale; display current locale"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "FOUNDATION",
+      "notes": "i18n strategy: name + name_en + name_local_xx fields, or separate Translation table. Foundation-level concern."
+    },
+    {
+      "id": "B-141",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "BITEMPORAL_HISTORY",
+      "chinese_name": "双时态历史",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "LastEditTime (single timestamp)",
+        "Industry": "bitemporal: valid_time (business) + transaction_time (system) for full audit"
+      },
+      "decision": "DEFER",
+      "priority": "P3_DEFER",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "Advanced pattern. Defer to V2/V3 when audit requirements demand."
+    },
+    {
+      "id": "B-142",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "GLOBAL_SEARCH_FULLTEXT",
+      "chinese_name": "全局搜索",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Search across Item.Name / BP.Name / DocNo with typo tolerance"
+      },
+      "decision": "DEFER",
+      "priority": "P3_DEFER",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "PostgreSQL full-text search or ElasticSearch. V2."
+    },
+    {
+      "id": "B-143",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "PERMISSION_FIELD_LEVEL",
+      "chinese_name": "字段级权限",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "G2-005 NOT STARTED": "no",
+        "DEV: HiddenFieldID is visibility, not real permission": "DEV: HiddenFieldID is visibility, not real permission"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "G2-005",
+      "notes": "Field-level read/write policy (G2-005 plan). Salesperson sees qty not price."
+    },
+    {
+      "id": "B-144",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "DATA_SCOPE_FILTER",
+      "chinese_name": "数据范围过滤",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "G2-005": "not started",
+        "DEV: SpecViewRightFilter is expression string (anti-pattern)": "DEV: SpecViewRightFilter is expression string (anti-pattern)"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "G2-005",
+      "notes": "OrgScopedQuery<T> with Expression<Func<T,bool>> (per G2-002 plan)."
+    },
+    {
+      "id": "B-145",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "PRINT_FORM_NUMBERING",
+      "chinese_name": "打印表单号",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "打印模板 has its own counter",
+        "Industry": "Printed form has its own number (different from DB id)"
+      },
+      "decision": "DEFER",
+      "priority": "P2_WITH_MODULE",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "When print engine V1.5 ships."
+    },
+    {
+      "id": "B-146",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "NEGATIVE_STOCK_CHECK",
+      "chinese_name": "负库存检查",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Some companies allow negative stock (WIP); others block"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "PlantPolicy.AllowNegativeStock bool. Default false (block)."
+    },
+    {
+      "id": "B-147",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "BARCODE_LABEL_PRINT",
+      "chinese_name": "条码打印",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Label printer (Zebra) integration for warehouse labels"
+      },
+      "decision": "DEFER",
+      "priority": "P3_DEFER",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "V2+ Inventory."
+    },
+    {
+      "id": "B-148",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "CROSS_DOCK_OPERATION",
+      "chinese_name": "越库操作",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Goods received and shipped in same operation, no putaway"
+      },
+      "decision": "DEFER",
+      "priority": "P3_DEFER",
+      "target_phase": "IMPLEMENT_WITH_MODULE",
+      "notes": "V2+ WMS."
+    },
+    {
+      "id": "B-149",
+      "area": "DISCOVERED_FROM_SOURCE",
+      "capability": "INVENTORY_PERIODIC_AVERAGE",
+      "chinese_name": "期间移动平均",
+      "category": "FOUNDATION",
+      "source_evidence": {
+        "DEV": "no",
+        "Industry": "Moving Average Cost (MAC) per Item per Plant per Period"
+      },
+      "decision": "NEW_BUILD",
+      "priority": "P1_BEFORE_MODULE",
+      "target_phase": "INVENTORY",
+      "notes": "ItemCostLedger: ItemId + PlantId + Period + QtyIn + QtyOut + CostIn + CostOut + AvgCost. V1.5 Inventory."
+    }
+  ]
+}

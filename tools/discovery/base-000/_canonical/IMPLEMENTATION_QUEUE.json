@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "extraction_time": "2026-08-20T11:46:44+08:00",
+    "session": "mvs_11a243eed8e544d6b19087711a392283",
+    "goal": "BASE-000",
+    "note": "Sequence: BASE-001 → 002 → 003 → 004 (foundation) → 005 (reference) → 006 (master) → 007 (inventory) → 008 (state) → 009 (tests) → 010 (process). Parallel where deps allow."
+  },
+  "queue": [
+    {
+      "id": "BASE-001",
+      "name": "Semantic Data Type & Precision Convention",
+      "why": "All money/qty/price fields need this. Wrong precision → financial audit failure. Already seeded in MDM-000D R1.",
+      "dependency": "G2-002 Foundation verified",
+      "expected_duration_days": 3,
+      "deliverable": "[BusinessSemanticType] + [DecimalPrecision] attributes; semantic-data-type.json fully accepted",
+      "gate": "BASE_001_SEMANTIC_TYPE_ACCEPTED",
+      "implements_p0": "P0-01"
+    },
+    {
+      "id": "BASE-002",
+      "name": "Numbering Convention",
+      "why": "Document numbers are business identity. Need UNIQUE constraint + tenant scope + ResetPolicy.",
+      "dependency": "G2-002 IBusinessNumberGenerator (POC-003), P0-01 (semantic for NUMBER)",
+      "expected_duration_days": 2,
+      "deliverable": "NumberSequence entity, UNIQUE constraint, ResetPolicy enum, manual number support",
+      "gate": "BASE_002_NUMBERING_ACCEPTED",
+      "implements_p0": "P0-02"
+    },
+    {
+      "id": "BASE-003",
+      "name": "Parameter Scope Convention",
+      "why": "Settings must be scoped SYSTEM/TENANT/COMPANY/PLANT. Wrong scope = data leak.",
+      "dependency": "G2-003 ICurrentTenant/ICurrentCompany",
+      "expected_duration_days": 2,
+      "deliverable": "ISystemSetting + TenantSetting/CompanySetting/PlantSetting",
+      "gate": "BASE_003_PARAMETER_SCOPE_ACCEPTED",
+      "implements_p0": "P0-03"
+    },
+    {
+      "id": "BASE-004",
+      "name": "Foundation Cross-Cutting Convention",
+      "why": "SnowflakeId + ConcurrencyVersion + AuditLog + DesignLog + SoftDelete + AggregateState. Each is small; together they prevent re-inventing in each module.",
+      "dependency": "G2-001 + G2-002",
+      "expected_duration_days": 5,
+      "deliverable": "ISoftDelete, AggregateState, IDesignAuditWriter, pg_description convention",
+      "gate": "BASE_004_FOUNDATION_CROSS_CUTTING_ACCEPTED",
+      "implements_p0": "P0-04, P0-13, P0-14"
+    },
+    {
+      "id": "BASE-005",
+      "name": "UOM + Currency + Tax (Master Reference Data)",
+      "why": "UOM (P0-05) + Currency (P0-06) + Tax (P0-07) are all cross-module master data. Need dimension metadata, ISO 4217, inclusive/exclusive tax.",
+      "dependency": "BASE-001, BASE-003",
+      "expected_duration_days": 4,
+      "deliverable": "Uom/UomConversion/UomDimension; Currency/ExchangeRate/IExchangeRateProvider; TaxCode/TaxCalculationService",
+      "gate": "BASE_005_REFERENCE_DATA_ACCEPTED",
+      "implements_p0": "P0-05, P0-06, P0-07"
+    },
+    {
+      "id": "BASE-006",
+      "name": "BusinessPartner + Item + Category (Master Data)",
+      "why": "BP (P0-09) + Item (P0-10) + Category are shared across modules. Code formats, address/contact structure, type taxonomy.",
+      "dependency": "BASE-005 (UOM, Currency, Tax)",
+      "expected_duration_days": 4,
+      "deliverable": "BP/BPAddress/BPContact/Item/ItemCategory/ItemType",
+      "gate": "BASE_006_MASTER_DATA_ACCEPTED",
+      "implements_p0": "P0-09, P0-10"
+    },
+    {
+      "id": "BASE-007",
+      "name": "Warehouse + Location + InventoryStatus",
+      "why": "Inventory core. WarehousePolicy per Plant, LocationType, InventoryStatus 5-state balance.",
+      "dependency": "BASE-006 (Item), BASE-005 (UOM)",
+      "expected_duration_days": 4,
+      "deliverable": "Warehouse/Location/InventoryBalance (5-state)/IInventoryService.PostAsync",
+      "gate": "BASE_007_INVENTORY_FOUNDATION_ACCEPTED",
+      "implements_p0": "P0-08"
+    },
+    {
+      "id": "BASE-008",
+      "name": "Document State Machine Library",
+      "why": "Reusable state machine for SO/PO/GR/MO/QC. POC-003 has it for SO; need to generalize.",
+      "dependency": "BASE-004 (AggregateState)",
+      "expected_duration_days": 2,
+      "deliverable": "IAggregateStateMachine<T>, StateTransition audit",
+      "gate": "BASE_008_STATE_MACHINE_ACCEPTED",
+      "implements_p0": "P0-11"
+    },
+    {
+      "id": "BASE-009",
+      "name": "Field-Level Comment Obligation + Architecture Tests",
+      "why": "Cheap now, hard to retrofit. pg_description on every column. ArchUnit test for invariants.",
+      "dependency": "BASE-004",
+      "expected_duration_days": 1,
+      "deliverable": "pg_description convention, ArchUnit tests, run in CI",
+      "gate": "BASE_009_COMMENT_OBLIGATION_VERIFIED",
+      "implements_p0": "P0-12, P0-15"
+    },
+    {
+      "id": "BASE-010",
+      "name": "Discovery Preflight Checklist (Process)",
+      "why": "Document common ERP gotchas (DEV-derived) for future goals to review pre-kickoff. Prevents P0-15 class of issues.",
+      "dependency": "BASE-000 itself",
+      "expected_duration_days": 1,
+      "deliverable": "docs/process/PREFLIGHT_ERP_GOTCHAS.md, applied to next goal kickoff",
+      "gate": "BASE_010_PREFLIGHT_PUBLISHED",
+      "implements_p0": "P0-15"
+    }
+  ],
+  "total_estimated_days": 28
+}

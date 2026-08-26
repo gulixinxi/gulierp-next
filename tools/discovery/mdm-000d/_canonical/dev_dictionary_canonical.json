@@ -1,0 +1,1384 @@
+{
+  "meta": {
+    "source": "DEV (SQL Server 2012 SP1, Onlyit-derived)",
+    "extraction_tool": "tools/dev-reverse/DevReverse.csproj",
+    "extraction_date": "2026-08-17",
+    "normalized_by": "MDM-000D",
+    "extraction_completeness": "FULL (149 rows: 28 headers + 121 items)",
+    "read_only": true,
+    "note_on_5_sample_header_table": "biz-samples/dbo_字典表.json (5 sample rows) is a SUBSET of these 28 headers; the full set is in dictionaries.json."
+  },
+  "totals": {
+    "headers": 28,
+    "items": 121,
+    "sum": 149
+  },
+  "dictionaries": [
+    {
+      "dictionary_code_dev": 15,
+      "dictionary_name_zh": "单位",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2020-04-30T16:03:09",
+      "last_edit_time": "2025-11-22T15:01:26",
+      "items_count": 13,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "本",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "套",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "张",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "台",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 4,
+          "item_row_number": 5,
+          "name_zh": "个",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 5,
+          "item_row_number": 6,
+          "name_zh": "PCS",
+          "description_zh": "通用产品个数，片、只、张",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 6,
+          "item_row_number": 7,
+          "name_zh": "EA",
+          "description_zh": "通用物料个数，片、只、张",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 7,
+          "item_row_number": 8,
+          "name_zh": "t",
+          "description_zh": "吨",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 8,
+          "item_row_number": 9,
+          "name_zh": "kg",
+          "description_zh": "千克",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 9,
+          "item_row_number": 10,
+          "name_zh": "g",
+          "description_zh": "克",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 10,
+          "item_row_number": 11,
+          "name_zh": "m",
+          "description_zh": "米",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 11,
+          "item_row_number": 12,
+          "name_zh": "m2",
+          "description_zh": "平方米",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 12,
+          "item_row_number": 13,
+          "name_zh": "m3",
+          "description_zh": "立方米",
+          "code_zh": "",
+          "parent_dict_name_zh": "单位",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 98,
+      "dictionary_name_zh": "商品属性",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2020-05-24T23:31:05",
+      "last_edit_time": "2022-05-22T20:41:33",
+      "items_count": 4,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "自制",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "商品属性",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "外购",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "商品属性",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "委外加工",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "商品属性",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "客供",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "商品属性",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3941,
+      "dictionary_name_zh": "设备故障等级",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-07-11T21:55:40",
+      "last_edit_time": "2022-07-11T21:55:40",
+      "items_count": 2,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "一般",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "设备故障等级",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "严重",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "设备故障等级",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3517,
+      "dictionary_name_zh": "品质异常严重程度",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-05-22T20:46:43",
+      "last_edit_time": "2022-05-22T20:46:43",
+      "items_count": 3,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "轻微",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "品质异常严重程度",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "一般",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "品质异常严重程度",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "严重",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "品质异常严重程度",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3942,
+      "dictionary_name_zh": "维修工单状态",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-07-11T21:56:26",
+      "last_edit_time": "2022-07-11T21:59:32",
+      "items_count": 3,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "等待维修",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "维修工单状态",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "已修复",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "维修工单状态",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "未修复",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "维修工单状态",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 2749,
+      "dictionary_name_zh": "物料级别",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2021-12-18T21:44:59",
+      "last_edit_time": "2022-05-22T20:41:31",
+      "items_count": 3,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "A",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "物料级别",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "B",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "物料级别",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "C",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "物料级别",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 2859,
+      "dictionary_name_zh": "商品分类",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-01-12T21:15:50",
+      "last_edit_time": "2022-05-22T20:41:31",
+      "items_count": 5,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "电器",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "商品分类",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "车辆",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "商品分类",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "蔬菜",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "商品分类",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "肉类",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "商品分类",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 4,
+          "item_row_number": 5,
+          "name_zh": "海鲜",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "商品分类",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 4610,
+      "dictionary_name_zh": "销售机会来源",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2023-06-29T09:33:52",
+      "last_edit_time": "2023-06-29T09:33:52",
+      "items_count": 8,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "淘宝",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "销售机会来源",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "1688",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "销售机会来源",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "熟人介绍",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "销售机会来源",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "门户网站",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "销售机会来源",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 4,
+          "item_row_number": 5,
+          "name_zh": "主动电话",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "销售机会来源",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 5,
+          "item_row_number": 6,
+          "name_zh": "顺路拜访",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "销售机会来源",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 6,
+          "item_row_number": 7,
+          "name_zh": "百度竞价",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "销售机会来源",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 7,
+          "item_row_number": 8,
+          "name_zh": "抖音",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "销售机会来源",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 2940,
+      "dictionary_name_zh": "职位",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-03-13T23:12:52",
+      "last_edit_time": "2022-05-22T20:41:30",
+      "items_count": 0,
+      "items": []
+    },
+    {
+      "dictionary_code_dev": 2978,
+      "dictionary_name_zh": "阶梯类型",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-03-29T22:37:42",
+      "last_edit_time": "2022-05-22T20:41:28",
+      "items_count": 2,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "按数量",
+          "description_zh": "QTY",
+          "code_zh": "QTY",
+          "parent_dict_name_zh": "阶梯类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "按金额",
+          "description_zh": "AMT",
+          "code_zh": "AMT",
+          "parent_dict_name_zh": "阶梯类型",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3052,
+      "dictionary_name_zh": "付款方式",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-03-31T23:28:28",
+      "last_edit_time": "2022-05-22T20:41:28",
+      "items_count": 5,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "款到发货",
+          "description_zh": "",
+          "code_zh": "0",
+          "parent_dict_name_zh": "付款方式",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "货到付款",
+          "description_zh": "",
+          "code_zh": "1",
+          "parent_dict_name_zh": "付款方式",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "月结30天",
+          "description_zh": "",
+          "code_zh": "30",
+          "parent_dict_name_zh": "付款方式",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "月结60天",
+          "description_zh": "",
+          "code_zh": "60",
+          "parent_dict_name_zh": "付款方式",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 4,
+          "item_row_number": 5,
+          "name_zh": "月结90天",
+          "description_zh": "",
+          "code_zh": "90",
+          "parent_dict_name_zh": "付款方式",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3097,
+      "dictionary_name_zh": "收支科目",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-04-03T00:19:39",
+      "last_edit_time": "2022-05-22T20:41:27",
+      "items_count": 7,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "差旅费",
+          "description_zh": "",
+          "code_zh": "clf",
+          "parent_dict_name_zh": "收支科目",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "房租",
+          "description_zh": "",
+          "code_zh": "fz",
+          "parent_dict_name_zh": "收支科目",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "电费",
+          "description_zh": "",
+          "code_zh": "df",
+          "parent_dict_name_zh": "收支科目",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "水费",
+          "description_zh": "",
+          "code_zh": "sf",
+          "parent_dict_name_zh": "收支科目",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 4,
+          "item_row_number": 5,
+          "name_zh": "管理费",
+          "description_zh": "",
+          "code_zh": "glf",
+          "parent_dict_name_zh": "收支科目",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 5,
+          "item_row_number": 6,
+          "name_zh": "工资",
+          "description_zh": "",
+          "code_zh": "gz",
+          "parent_dict_name_zh": "收支科目",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 6,
+          "item_row_number": 7,
+          "name_zh": "福利费",
+          "description_zh": "",
+          "code_zh": "fl",
+          "parent_dict_name_zh": "收支科目",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3437,
+      "dictionary_name_zh": "科目类型",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-05-17T21:40:56",
+      "last_edit_time": "2022-05-22T20:41:26",
+      "items_count": 5,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "资产",
+          "description_zh": "借",
+          "code_zh": "",
+          "parent_dict_name_zh": "科目类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "负债",
+          "description_zh": "贷",
+          "code_zh": "",
+          "parent_dict_name_zh": "科目类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "权益",
+          "description_zh": "贷",
+          "code_zh": "",
+          "parent_dict_name_zh": "科目类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "成本",
+          "description_zh": "借",
+          "code_zh": "",
+          "parent_dict_name_zh": "科目类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 4,
+          "item_row_number": 5,
+          "name_zh": "损益",
+          "description_zh": "贷",
+          "code_zh": "",
+          "parent_dict_name_zh": "科目类型",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3497,
+      "dictionary_name_zh": "往来类型",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-05-22T19:19:32",
+      "last_edit_time": "2022-05-22T20:41:26",
+      "items_count": 4,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "客户",
+          "description_zh": "",
+          "code_zh": "1",
+          "parent_dict_name_zh": "往来类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "供应商",
+          "description_zh": "",
+          "code_zh": "2",
+          "parent_dict_name_zh": "往来类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "外协",
+          "description_zh": "",
+          "code_zh": "3",
+          "parent_dict_name_zh": "往来类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "物流",
+          "description_zh": "",
+          "code_zh": "4",
+          "parent_dict_name_zh": "往来类型",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3387,
+      "dictionary_name_zh": "往来分类",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-05-13T22:13:08",
+      "last_edit_time": "2022-05-22T20:41:27",
+      "items_count": 3,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "客户",
+          "description_zh": "",
+          "code_zh": "1",
+          "parent_dict_name_zh": "往来分类",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "供应商",
+          "description_zh": "",
+          "code_zh": "2",
+          "parent_dict_name_zh": "往来分类",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "外协",
+          "description_zh": "",
+          "code_zh": "3",
+          "parent_dict_name_zh": "往来分类",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 2943,
+      "dictionary_name_zh": "学历",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-03-13T23:14:59",
+      "last_edit_time": "2022-05-22T20:41:29",
+      "items_count": 6,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "博士后",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "学历",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "博士",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "学历",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "硕士",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "学历",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "本科",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "学历",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 4,
+          "item_row_number": 5,
+          "name_zh": "大专",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "学历",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 5,
+          "item_row_number": 6,
+          "name_zh": "大专以下",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "学历",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 2941,
+      "dictionary_name_zh": "部门",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-03-13T23:13:32",
+      "last_edit_time": "2022-05-22T20:41:29",
+      "items_count": 0,
+      "items": []
+    },
+    {
+      "dictionary_code_dev": 2939,
+      "dictionary_name_zh": "班组",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-03-13T23:12:40",
+      "last_edit_time": "2022-05-22T20:41:30",
+      "items_count": 0,
+      "items": []
+    },
+    {
+      "dictionary_code_dev": 2748,
+      "dictionary_name_zh": "物料分类",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2021-12-18T21:36:26",
+      "last_edit_time": "2022-05-22T20:41:32",
+      "items_count": 6,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "主材",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "物料分类",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "辅材",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "物料分类",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "包装材料",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "物料分类",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "备品备件",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "物料分类",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 4,
+          "item_row_number": 5,
+          "name_zh": "低值易耗品",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "物料分类",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 5,
+          "item_row_number": 6,
+          "name_zh": "办公用品",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "物料分类",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 63,
+      "dictionary_name_zh": "工序",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2020-06-14T08:34:05",
+      "last_edit_time": "2022-05-22T20:41:33",
+      "items_count": 4,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "焊接",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "工序",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "喷漆",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "工序",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "组装",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "工序",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "包装",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "工序",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 71,
+      "dictionary_name_zh": "工作中心",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2020-05-24T20:56:25",
+      "last_edit_time": "2022-05-22T20:41:34",
+      "items_count": 3,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "主线车间",
+          "description_zh": "",
+          "code_zh": "510",
+          "parent_dict_name_zh": "工作中心",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "配件车间",
+          "description_zh": "",
+          "code_zh": "520",
+          "parent_dict_name_zh": "工作中心",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "包装车间",
+          "description_zh": "",
+          "code_zh": "530",
+          "parent_dict_name_zh": "工作中心",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3519,
+      "dictionary_name_zh": "班次",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-05-22T21:10:19",
+      "last_edit_time": "2022-05-22T21:10:19",
+      "items_count": 3,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "白",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "班次",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "中",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "班次",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "夜",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "班次",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3533,
+      "dictionary_name_zh": "奖罚类型",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-05-22T21:46:46",
+      "last_edit_time": "2022-05-22T21:46:46",
+      "items_count": 6,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "嘉奖",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "奖罚类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "小功",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "奖罚类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "大功",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "奖罚类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "警告",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "奖罚类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 4,
+          "item_row_number": 5,
+          "name_zh": "小过",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "奖罚类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 5,
+          "item_row_number": 6,
+          "name_zh": "大过",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "奖罚类型",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3543,
+      "dictionary_name_zh": "请假类型",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-05-22T22:21:22",
+      "last_edit_time": "2022-05-22T22:21:22",
+      "items_count": 7,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "事假",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "请假类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "病假",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "请假类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "婚假",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "请假类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "陪护假",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "请假类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 4,
+          "item_row_number": 5,
+          "name_zh": "产假",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "请假类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 5,
+          "item_row_number": 6,
+          "name_zh": "丧假",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "请假类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 6,
+          "item_row_number": 7,
+          "name_zh": "其它",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "请假类型",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3516,
+      "dictionary_name_zh": "品质异常审核意见",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-05-22T20:43:18",
+      "last_edit_time": "2022-05-30T22:14:38",
+      "items_count": 7,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "报废且返工",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "品质异常审核意见",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "返工",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "品质异常审核意见",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "报废无需返工",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "品质异常审核意见",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "让步接收",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "品质异常审核意见",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 4,
+          "item_row_number": 5,
+          "name_zh": "退货",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "品质异常审核意见",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 5,
+          "item_row_number": 6,
+          "name_zh": "其它",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "品质异常审核意见",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 6,
+          "item_row_number": 7,
+          "name_zh": "部门知悉",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "品质异常审核意见",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3526,
+      "dictionary_name_zh": "培训类别",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-05-22T21:34:56",
+      "last_edit_time": "2022-05-30T22:15:19",
+      "items_count": 4,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "普通",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "培训类别",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "新员工培训",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "培训类别",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "安全类培训",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "培训类别",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "联合类培训",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "培训类别",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3523,
+      "dictionary_name_zh": "岗位",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-05-22T21:24:17",
+      "last_edit_time": "2022-05-30T22:16:34",
+      "items_count": 4,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "总经理",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "岗位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "经理",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "岗位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "科员",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "岗位",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "操作工",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "岗位",
+          "status_code": "0"
+        }
+      ]
+    },
+    {
+      "dictionary_code_dev": 3956,
+      "dictionary_name_zh": "设备类型",
+      "dictionary_internal_template_id": 114,
+      "create_time": "2022-07-12T22:49:39",
+      "last_edit_time": "2022-07-12T22:49:39",
+      "items_count": 4,
+      "items": [
+        {
+          "item_sequence_within_parent": 0,
+          "item_row_number": 1,
+          "name_zh": "基础",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "设备类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 1,
+          "item_row_number": 2,
+          "name_zh": "生产设备",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "设备类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 2,
+          "item_row_number": 3,
+          "name_zh": "辅助设备",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "设备类型",
+          "status_code": "0"
+        },
+        {
+          "item_sequence_within_parent": 3,
+          "item_row_number": 4,
+          "name_zh": "实验室设备",
+          "description_zh": "",
+          "code_zh": "",
+          "parent_dict_name_zh": "设备类型",
+          "status_code": "0"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,257 @@
+{
+  "meta": {
+    "source": "DEV (SQL Server 2012 SP1, Onlyit-derived)",
+    "source_evidence": "D:\\guli\\gulierp\\docs\\reverse-engineering\\DEV_METADATA_REVERSE_ENGINEERING_REPORT.md",
+    "extraction_tool": "tools/dev-reverse/DevReverse.csproj (SELECT TOP 5)",
+    "extraction_date": "2026-08-17",
+    "producer": "GOAL-P1-004B (closed)",
+    "normalized_by": "MDM-000D extraction script (this run)",
+    "extraction_completeness": "PARTIAL (5/18 sample rows, 13 unknown)",
+    "gulierp_consumer": "MDM-000D",
+    "read_only": true,
+    "decision_policy": "Faithful record of DEV; no agent invention. Status PROPOSED for future canonical decision."
+  },
+  "schema": {
+    "fqtn": "dbo.JU_DataType",
+    "rowcount_in_source": 18,
+    "columns": [
+      {
+        "name": "DataTypeID",
+        "sql_type": "int",
+        "max_length": 4,
+        "precision": 10,
+        "scale": 0,
+        "nullable": false
+      },
+      {
+        "name": "DataTypeName",
+        "sql_type": "nvarchar",
+        "max_length": 128,
+        "precision": 0,
+        "scale": 0,
+        "nullable": true
+      },
+      {
+        "name": "BaseType",
+        "sql_type": "int",
+        "max_length": 4,
+        "precision": 10,
+        "scale": 0,
+        "nullable": true
+      },
+      {
+        "name": "BaseLength",
+        "sql_type": "int",
+        "max_length": 4,
+        "precision": 10,
+        "scale": 0,
+        "nullable": true
+      },
+      {
+        "name": "BasePrecision",
+        "sql_type": "int",
+        "max_length": 4,
+        "precision": 10,
+        "scale": 0,
+        "nullable": true
+      },
+      {
+        "name": "DefaultValue",
+        "sql_type": "nvarchar",
+        "max_length": 510,
+        "precision": 0,
+        "scale": 0,
+        "nullable": true
+      },
+      {
+        "name": "MatchPattern",
+        "sql_type": "nvarchar",
+        "max_length": 510,
+        "precision": 0,
+        "scale": 0,
+        "nullable": true
+      },
+      {
+        "name": "Memo",
+        "sql_type": "nvarchar",
+        "max_length": 510,
+        "precision": 0,
+        "scale": 0,
+        "nullable": true
+      },
+      {
+        "name": "CreateUser",
+        "sql_type": "int",
+        "max_length": 4,
+        "precision": 10,
+        "scale": 0,
+        "nullable": true
+      },
+      {
+        "name": "CreateTime",
+        "sql_type": "datetime",
+        "max_length": 8,
+        "precision": 23,
+        "scale": 3,
+        "nullable": true
+      },
+      {
+        "name": "ISActive",
+        "sql_type": "int",
+        "max_length": 4,
+        "precision": 10,
+        "scale": 0,
+        "nullable": true
+      },
+      {
+        "name": "ResLvl",
+        "sql_type": "nvarchar",
+        "max_length": 64,
+        "precision": 0,
+        "scale": 0,
+        "nullable": true
+      }
+    ]
+  },
+  "sample_rows_5_of_18": [
+    {
+      "DataTypeID": 2,
+      "DataTypeName_zh": "字符",
+      "BaseType": 1,
+      "BaseLength": 128,
+      "BasePrecision": 0,
+      "DefaultValue": null,
+      "MatchPattern_zh": "",
+      "Memo_zh": null,
+      "ISActive": 1,
+      "ResLvl": "框架"
+    },
+    {
+      "DataTypeID": 3,
+      "DataTypeName_zh": "整数",
+      "BaseType": 3,
+      "BaseLength": 32,
+      "BasePrecision": 0,
+      "DefaultValue": "0",
+      "MatchPattern_zh": "个,台,套,只,件,辆,RN,RTID",
+      "Memo_zh": "",
+      "ISActive": 1,
+      "ResLvl": "框架"
+    },
+    {
+      "DataTypeID": 4,
+      "DataTypeName_zh": "小数",
+      "BaseType": 3,
+      "BaseLength": 34,
+      "BasePrecision": 2,
+      "DefaultValue": "0",
+      "MatchPattern_zh": "金额,合计,总计,小计,比例",
+      "Memo_zh": "",
+      "ISActive": 1,
+      "ResLvl": "框架"
+    },
+    {
+      "DataTypeID": 5,
+      "DataTypeName_zh": "日期",
+      "BaseType": 4,
+      "BaseLength": 0,
+      "BasePrecision": 0,
+      "DefaultValue": "",
+      "MatchPattern_zh": "日期,时间,交期",
+      "Memo_zh": "",
+      "ISActive": 1,
+      "ResLvl": "框架"
+    },
+    {
+      "DataTypeID": 6,
+      "DataTypeName_zh": "图片",
+      "BaseType": 5,
+      "BaseLength": 256,
+      "BasePrecision": 0,
+      "DefaultValue": null,
+      "MatchPattern_zh": "图片,照片",
+      "Memo_zh": null,
+      "ISActive": 1,
+      "ResLvl": "框架"
+    }
+  ],
+  "inferred_data_types": [
+    {
+      "BaseType": 1,
+      "observed_in_sample": true,
+      "examples": [
+        2
+      ],
+      "likely_semantic": "TEXT / STRING (nvarchar)",
+      "dotnet_inference": "string",
+      "postgres_inference": "text / varchar(n)",
+      "notes": "Inferred from DataTypeID 2 (字符); BaseType=1 only ever paired with character data in our sample."
+    },
+    {
+      "BaseType": 3,
+      "observed_in_sample": true,
+      "examples": [
+        3,
+        4
+      ],
+      "likely_semantic": "NUMERIC (decimal / numeric)",
+      "dotnet_inference": "decimal / int (per BasePrecision)",
+      "postgres_inference": "numeric(precision, scale)",
+      "notes": "Integer (ID 3, BaseLength=32, Precision=0) and Decimal (ID 4, BaseLength=34, Precision=2) both share BaseType=3; Precision discriminator."
+    },
+    {
+      "BaseType": 4,
+      "observed_in_sample": true,
+      "examples": [
+        5
+      ],
+      "likely_semantic": "DATETIME / TIME",
+      "dotnet_inference": "DateTimeOffset",
+      "postgres_inference": "timestamptz / date",
+      "notes": "Inferred from DataTypeID 5 (时间)."
+    },
+    {
+      "BaseType": 5,
+      "observed_in_sample": true,
+      "examples": [
+        6
+      ],
+      "likely_semantic": "BINARY (image / blob / attachment)",
+      "dotnet_inference": "byte[] / object storage ref",
+      "postgres_inference": "bytea OR object store pointer",
+      "notes": "GuliERP REJECT metadata-driven image column; should be Attachment entity + object store."
+    }
+  ],
+  "unknown_data_types_13_of_18": {
+    "count": 13,
+    "data_type_ids_known_sample_covers": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "reason_for_gap": "DevReverse Program.cs only emits SELECT TOP 5 per table. The 13 unobserved DataTypeIDs are NOT in the sample.",
+    "how_to_close_gap": [
+      "Option A: Re-run DevReverse with TOP N=50 for JU_DataType only. (Requires reconnecting to dev DB; not done in MDM-000D per READ-ONLY policy.)",
+      "Option B: Hand-derive from template-fields.json usage. JU_TemplateTableField.ComponentType + DataTypeID reference back to JU_DataType. We can list all DataTypeIDs actually used by the 6,339 fields. That gives the 18 IDs without their names. We do that below."
+    ],
+    "data_type_id_usage_from_template_fields": {
+      "2": 4135,
+      "3": 566,
+      "4": 564,
+      "5": 360,
+      "6": 32,
+      "7": 3,
+      "8": 142,
+      "9": 9,
+      "101": 142,
+      "103": 50,
+      "105": 27,
+      "107": 1,
+      "109": 73,
+      "115": 197
+    },
+    "note_on_usage": "IDs in the sample (2,3,4,5,6) ARE in the usage map. Other IDs that appear here but are NOT in the sample are the 13 unknown. Their semantic meaning can be INFERRED from template-field.ComponentType+usage, but the names (DataTypeName_zh) remain unknown without re-extraction."
+  }
+}

@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "extraction_time": "2026-08-20T11:46:44+08:00",
+    "session": "mvs_11a243eed8e544d6b19087711a392283",
+    "goal": "BASE-000",
+    "note": "P0 candidates are the must-do-before-module items. Total cost must NOT balloon into multi-week engineering. Cap at 15.",
+    "cost_legend": {
+      "XS": "0.5 day",
+      "S": "1-2 days",
+      "M": "3-5 days",
+      "L": "1-2 weeks"
+    },
+    "total_p0_count": 15
+  },
+  "p0_candidates": [
+    {
+      "id": "P0-01",
+      "title": "Semantic Data Type & Precision Convention (BASE-001)",
+      "why_must_come_first": "All money/qty/price fields need this. Wrong precision → financial audit failure. Wrong rounding → 0.01 lost per sum.",
+      "rework_if_deferred": "Every SalesOrder/PurchaseOrder/Inventory table would need precision annotation. If we set defaults wrong in POC-003, we change every column. Tax calculations (1.13 multiplications) need scale >= 4 for HALF_EVEN safety.",
+      "cost": "M",
+      "effort_breakdown": "1-2 days: write semantic-data-type.json (already done in MDM-000D R1); add C# attribute library; 1 day: migrate POC-003 fields to use attribute; 0.5 day: unit tests",
+      "deliverables": [
+        "SemanticTypeRegistry",
+        "[BusinessSemanticType] attribute",
+        "[DecimalPrecision] attribute",
+        "Generator metadata contract"
+      ],
+      "dependency": "Foundation.G2-002 IAuditWriter (already in POC-003)",
+      "evidence_files": [
+        "data/bootstrap/reference/system/semantic-data-type.json",
+        "docs/architecture/MDM_000D_BUSINESS_SEMANTIC_TYPE_MAPPING.md"
+      ]
+    },
+    {
+      "id": "P0-02",
+      "title": "Numbering Convention (BASE-002)",
+      "why_must_come_first": "DocumentNumber is identity of business documents. Wrong scope (system vs tenant) = production data corruption. Wrong UNIQUE constraint = race condition.",
+      "rework_if_deferred": "Every Doc table (SO/PO/GR/GI/MO/QC) needs NumberSequence + UNIQUE constraint. POC-003 has IBusinessNumberGenerator but no UNIQUE constraint. Migrations need re-run.",
+      "cost": "M",
+      "effort_breakdown": "0.5 day: NumberSequence entity + DB UNIQUE constraint; 0.5 day: ResetPolicy enum + manual number support; 0.5 day: tenant scope; 1 day: integration test",
+      "deliverables": [
+        "NumberSequence entity",
+        "UNIQUE (TenantId, DocType, Year, Serial) DB constraint",
+        "NumberPattern registry",
+        "POC-003 refactor to use it"
+      ],
+      "dependency": "IBusinessNumberGenerator (Foundation.Kernel, already in POC-003)",
+      "evidence_files": [
+        "DEV ju-samples/dbo_JU_AutoCode.json (15+5+12 sample rows)"
+      ]
+    },
+    {
+      "id": "P0-03",
+      "title": "Parameter Scope Convention (BASE-003)",
+      "why_must_come_first": "Settings need to be scoped. System/Tenant/Company/Plant. Wrong scope = wrong data leaks between tenants/plants.",
+      "rework_if_deferred": "Each module needs TenantSetting/CompanySetting/PlantSetting. If we hardcode as column, refactor every read site.",
+      "cost": "S",
+      "effort_breakdown": "0.5 day: ISystemSetting abstraction; 0.5 day: TenantSetting/CompanySetting/PlantSetting tables; 0.5 day: G2-002 config validation extension; 0.5 day: tests",
+      "deliverables": [
+        "ISystemSetting",
+        "ICompanySetting",
+        "IPlantSetting contracts",
+        "TenantSetting/CompanySetting/PlantSetting tables",
+        "Default currency/timezone/locale per scope"
+      ],
+      "dependency": "G2-003 ICurrentTenant/ICurrentCompany (already in place)",
+      "evidence_files": [
+        "G2-003 migration: gulierp_company has DefaultCurrency + Timezone already; gulierp_plant has Timezone + CountryCode + CalendarCode"
+      ]
+    },
+    {
+      "id": "P0-04",
+      "title": "Foundation Cross-Cutting Convention (BASE-004)",
+      "why_must_come_first": "Single source of truth for: SnowflakeId, ConcurrencyVersion, AuditLog, DesignLog, SoftDelete, StatusStateMachine, CommentObligation. Each is a small rule, but the SUM is huge if done per-module.",
+      "rework_if_deferred": "Each module would invent its own: id generation, version field, soft delete mechanism, status field. POC-003 already uses some, but not consistently enforced.",
+      "cost": "L",
+      "effort_breakdown": "1 day: SnowflakeId (already in G2-001) + ConcurrencyVersion (already pattern); 1 day: AuditLog + DesignLog split; 1 day: SoftDelete entity; 0.5 day: status state machine library; 0.5 day: pg_description migration; 0.5 day: test + doc",
+      "deliverables": [
+        "ISoftDelete",
+        "AggregateState enum (G2-002)",
+        "IDesignAuditWriter",
+        "EF Core pg_description convention",
+        "Architecture test for column comments"
+      ],
+      "dependency": "Foundation.G2-001 + G2-002 (already verified)",
+      "evidence_files": [
+        "G2-001 verification report",
+        "G2-002 verification report",
+        "DEV SysLog + SysDesignLog split (UNC-002)"
+      ]
+    },
+    {
+      "id": "P0-05",
+      "title": "UOM Convention with Dimension + Conversion",
+      "why_must_come_first": "UOM is cross-module (Sales/PO/Inventory/Production). Wrong dimension metadata = kg vs m cross-dimension bugs. Conversion not modeled = WMS inefficiency.",
+      "rework_if_deferred": "SalesOrderLine.UomId, PurchaseOrderLine.UomId, Item.BaseUomId all FK to Uom. If dimension not enforced, each module invents its own guard.",
+      "cost": "S",
+      "effort_breakdown": "0.5 day: UomDimension enum (8 dimensions); 0.5 day: UomConversion table (from_code+to_code+ratio+validity); 0.5 day: Item.BaseUomId; 0.5 day: tests",
+      "deliverables": [
+        "UomDimension enum",
+        "UomConversion entity",
+        "Item.BaseUomId",
+        "Field attribute [UomDimension]"
+      ],
+      "dependency": "MDM-000D R1 (system/uom.json 21 items seed)",
+      "evidence_files": [
+        "DEV ju-samples/dbo_JU_DataType.json (BaseType inferred)"
+      ]
+    },
+    {
+      "id": "P0-06",
+      "title": "Currency + ExchangeRate Convention",
+      "why_must_come_first": "Money without currency = nonsense. Cross-currency transactions need ExchangeRate with valid date.",
+      "rework_if_deferred": "Each module that has money needs CurrencyCode + ExchangeRateId. If not done early, backfill is painful.",
+      "cost": "S",
+      "effort_breakdown": "0.5 day: Currency entity (ISO 4217 subset); 0.5 day: ExchangeRate entity; 0.5 day: ExchangeRateProvider interface; 0.5 day: tests",
+      "deliverables": [
+        "Currency entity",
+        "ExchangeRate entity",
+        "IExchangeRateProvider",
+        "ISOCurrencyRegistry (dev seed from MDM-000D R1)"
+      ],
+      "dependency": "MDM-000D R1 (system/currency.json 20 ISO 4217 items seed)",
+      "evidence_files": [
+        "DEV has no currency table; MDM-000D R1 prepared seed"
+      ]
+    },
+    {
+      "id": "P0-07",
+      "title": "Tax Code + Inclusive/Exclusive Convention",
+      "why_must_come_first": "Tax is on every SalesOrderLine and PurchaseOrderLine. Inclusive/Exclusive flag changes amount meaning.",
+      "rework_if_deferred": "SO/PO/GR/GI all need TaxCodeId + TaxInclusive flag. Add later = migrate every line.",
+      "cost": "M",
+      "effort_breakdown": "0.5 day: TaxCode entity; 0.5 day: SalesOrderLine/POLine/GRLine fields; 1 day: tax calculation service with inclusive/exclusive; 0.5 day: tests",
+      "deliverables": [
+        "TaxCode entity",
+        "TaxCalculationService",
+        "TaxInclusive flag on lines",
+        "Tax rounding policy"
+      ],
+      "dependency": "P0-01 (semantic type for TAX_RATE)",
+      "evidence_files": [
+        "DEV 收支科目 dictionary (7 items, 5 types)  --  too coarse for tax"
+      ]
+    },
+    {
+      "id": "P0-08",
+      "title": "InventoryStatus Convention",
+      "why_must_come_first": "Available vs Reserved vs Blocked is core. Wrong = oversold or understocked.",
+      "rework_if_deferred": "InventoryBalance needs 5 separate decimal fields. POC-002 design already exists; this is to enforce + tests.",
+      "cost": "S",
+      "effort_breakdown": "0.5 day: InventoryStatus enum; 0.5 day: InventoryBalance schema with 5 fields; 0.5 day: IInventoryService.PostAsync; 0.5 day: tests",
+      "deliverables": [
+        "InventoryStatus enum",
+        "InventoryBalance 5-field design",
+        "IInventoryService.PostAsync single entry"
+      ],
+      "dependency": "P0-04 (AggregateState + AuditWriter)",
+      "evidence_files": [
+        "MDM-000 P1-005 plan",
+        "POC-002/003 design"
+      ]
+    },
+    {
+      "id": "P0-09",
+      "title": "BP Code Format + Address/Contact Convention",
+      "why_must_come_first": "BP is shared across Sales/Purchase/Inventory. Code format is hard to backfill.",
+      "rework_if_deferred": "Customer / Supplier / Subcontractor / Logistics all share BP table. Wrong code format = rename campaign later.",
+      "cost": "S",
+      "effort_breakdown": "0.5 day: BP.Code prefix (CUST-/SUPP-/SUB-/LOG-); 0.5 day: BPAddress entity (type=BILLING/SHIPPING/REGISTERED); 0.5 day: BPContact (type=PHONE/EMAIL/FAX); 0.5 day: tests",
+      "deliverables": [
+        "BP.Code prefix enforcement",
+        "BPAddress entity",
+        "BPContact entity",
+        "BPType enum (CUSTOMER/SUPPLIER/SUBCONTRACTOR/LOGISTICS)"
+      ],
+      "dependency": "MDM-000D R1 (tenant-template/business-partner-type.json 4 types seed)",
+      "evidence_files": [
+        "DEV 往来表 sample: 往来号=20001 (no prefix)"
+      ]
+    },
+    {
+      "id": "P0-10",
+      "title": "Item Master Convention (Type/Category/BaseUom)",
+      "why_must_come_first": "Item is shared. Type/Category/BaseUom are FK fields, not strings. Wrong = each module re-derives.",
+      "rework_if_deferred": "Item is in Inventory/Sales/Production/QC. If type is string, each module re-validates. Promote to enum + FK.",
+      "cost": "S",
+      "effort_breakdown": "0.5 day: ItemType enum (5 types incl. Phantom); 0.5 day: ItemCategory tree entity; 0.5 day: Item.BaseUomId; 0.5 day: tests",
+      "deliverables": [
+        "ItemType enum",
+        "ItemCategory entity",
+        "Item.BaseUomId",
+        "Item.QualityInspectionRequired flag"
+      ],
+      "dependency": "P0-05 (UOM dimension), P0-08 (Inventory status) ",
+      "evidence_files": [
+        "DEV 商品属性 dictionary (4 items: 自制/外购/委外加工/客供); 商品分类 (5 items sample)"
+      ]
+    },
+    {
+      "id": "P0-11",
+      "title": "Document Status State Machine Library",
+      "why_must_come_first": "SO has Draft/Confirmed/Shipped/Closed. PO has Draft/Confirmed/Received/Closed. Without library, each entity rolls own state machine  --  bugs.",
+      "rework_if_deferred": "POC-003 already has SalesOrder state machine. Without library, future modules will copy-paste.",
+      "cost": "M",
+      "effort_breakdown": "0.5 day: IAggregateStateMachine<T> abstraction; 0.5 day: state machine library (use Stateless or hand-rolled); 0.5 day: per-entity state config; 0.5 day: tests",
+      "deliverables": [
+        "IAggregateStateMachine",
+        "GenericStateMachine<T>",
+        "StateTransition table (audit of state changes)"
+      ],
+      "dependency": "P0-04 (AggregateState + AuditWriter)",
+      "evidence_files": [
+        "POC-003 SalesOrderState.cs"
+      ]
+    },
+    {
+      "id": "P0-12",
+      "title": "Field-Level Comment Obligation",
+      "why_must_come_first": "pg_description on every column. Cheap to do, hard to retrofit.",
+      "rework_if_deferred": "Future dev onboard slower. Schema documentation rots.",
+      "cost": "XS",
+      "effort_breakdown": "0.25 day: EF Core convention for pg_description; 0.25 day: architecture test (ArchUnit) for column comments; 0.25 day: doc",
+      "deliverables": [
+        "IEntityCommentConfiguration convention",
+        "Architecture test",
+        "Migration to add missing comments"
+      ],
+      "dependency": "Foundation.G2-001 (already verified)",
+      "evidence_files": [
+        "DEV 0/151 JU_ tables have ms_description  --  anti-pattern"
+      ]
+    },
+    {
+      "id": "P0-13",
+      "title": "Concurrency Version Pattern Enforcement",
+      "why_must_come_first": "ConcurrencyVersion int already in G2-003 tables. Without enforcement, new tables may forget.",
+      "rework_if_deferred": "Each module may invent its own row version. POC-003 has it; future modules must follow.",
+      "cost": "XS",
+      "effort_breakdown": "0.25 day: IVersioned interface; 0.25 day: EF Core convention; 0.25 day: architecture test",
+      "deliverables": [
+        "IVersioned interface",
+        "EF Core global convention",
+        "Architecture test"
+      ],
+      "dependency": "G2-003 Identity already has ConcurrencyVersion in every table",
+      "evidence_files": [
+        "Identity migration v1  --  every table has ConcurrencyVersion int"
+      ]
+    },
+    {
+      "id": "P0-14",
+      "title": "AggregateState Status (Replace 3-field status anti-pattern)",
+      "why_must_come_first": "DEV anti-pattern: ReportStatus + LockStatus + WorkflowStatus on same entity. Untestable combinations.",
+      "rework_if_deferred": "POC-003 already uses 3D model (DocumentStatus/ApprovalStatus/ExecutionStatus). Make this a Foundation contract.",
+      "cost": "S",
+      "effort_breakdown": "0.5 day: DocumentStatus/ApprovalStatus/ExecutionStatus enums; 0.5 day: IDocumentState<T> contract; 0.5 day: tests",
+      "deliverables": [
+        "DocumentStatus enum",
+        "ApprovalStatus enum",
+        "ExecutionStatus enum",
+        "IDocumentState<T> contract"
+      ],
+      "dependency": "P0-11 (state machine library)",
+      "evidence_files": [
+        "G2-002 plan",
+        "POC-003 implementation"
+      ]
+    },
+    {
+      "id": "P0-15",
+      "title": "IDiscoverableAndTruncatable Configuration (Preflight)",
+      "why_must_come_first": "G2-004R1 had PowerShell $PID collision bug. Code generator pitfalls. Need a process to discover pitfalls before they bite.",
+      "rework_if_deferred": "P0-05..P0-14 each could be caught at discovery time instead of after implementation.",
+      "cost": "XS",
+      "effort_breakdown": "0.5 day: pattern catalog of common ERP gotchas (DEV-derived); 0.5 day: preflight checklist template",
+      "deliverables": [
+        "PREFLIGHT_ERP_GOTCHAS.md",
+        "Each future goal reviews against it before kickoff"
+      ],
+      "dependency": "This BASE-000 itself",
+      "evidence_files": [
+        "G2-004R1 PID bug, G2-003V2 RI report"
+      ]
+    }
+  ]
+}

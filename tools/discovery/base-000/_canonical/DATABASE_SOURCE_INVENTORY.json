@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "extraction_time": "2026-08-20T11:46:44+08:00",
+    "session": "mvs_11a243eed8e544d6b19087711a392283",
+    "goal": "BASE-000",
+    "policy": "READ-ONLY; no source DB writes; no DDL/DML; connection tests only"
+  },
+  "sources": {
+    "DEV": {
+      "status": "EXTRACTED_VIA_JSON_DUMP",
+      "database": "dev (SQL Server 2012 SP1, Onlyit-derived)",
+      "access_method": "Read 22 JSON dumps + 79 ju-samples + 12 biz-samples at D:\\guli\\gulierp\\docs\\reverse-engineering\\dev-meta\\",
+      "completeness": "PARTIAL (sample TOP 5 per table from prior reverse-engineering tool)",
+      "read_only_maintained": true,
+      "notes": [
+        "22 JSON files (ju-meta, ju-columns, biz-tables, dictionaries, templates, template-fields, relations, formulas, actions, permissions, organizations, workflows, size, etc.)",
+        "79 JU_ metadata table samples (5 rows each)",
+        "12 business table samples (5 rows each)",
+        "Cannot re-query live DB (network reachable but password not in agent session per G2-001 design  --  read-only DUMP files are the evidence)"
+      ]
+    },
+    "ONLYIT": {
+      "status": "NOT_AVAILABLE_AS_INDEPENDENT_SOURCE",
+      "database": "N/A",
+      "access_method": "N/A",
+      "notes": [
+        "ONLYIT_INDEPENDENT_SOURCE_NOT_AVAILABLE",
+        "dev (SQL Server 192.168.2.28) is the Onlyit-derived source per DEV_METADATA_REVERSE_ENGINEERING_REPORT.md line 6",
+        "No separate Onlyit corpus was discoverable in this session",
+        "Do not fabricate a third source"
+      ]
+    },
+    "gulierp_adminnet_poc": {
+      "status": "NOT_ACCESSED_PASSWORD_REQUIRED",
+      "database": "gulierp_adminnet_poc",
+      "host": "192.168.2.228:5432",
+      "network_test": "PASS (Test-NetConnection + psycopg2 connect probe)",
+      "access_method": "Requires PGPASSWORD env var or ConnectionStrings env; not available in agent session",
+      "workaround": "dev reverse-engineering JSON dumps (ju-meta.json etc.) describe the Admin.NET POC style metadata if needed"
+    },
+    "gulierp_g2_001": {
+      "status": "NOT_ACCESSED_PASSWORD_REQUIRED",
+      "database": "gulierp_g2_001",
+      "host": "192.168.2.228:5432",
+      "network_test": "PASS",
+      "workaround": "Migration file 20260819103150_G2001_InitializeFoundationSchema.cs shows: only creates `foundation` schema; ZERO tables (G2-001 Foundation DbContext has no DbSet per G2-001 brief)."
+    },
+    "gulierp_g2_003_test": {
+      "status": "PARTIALLY_ACCESSED_VIA_MIGRATION_FILES",
+      "database": "gulierp_g2_003_test",
+      "host": "192.168.2.228:5432",
+      "network_test": "PASS (live DB query requires password)",
+      "access_method": "Read migration files in modules/identity/GuliERP.Identity.Infrastructure/Migrations/",
+      "current_tables_observed_via_migration": [
+        "identity.AspNetRoles",
+        "identity.AspNetUsers",
+        "identity.AspNetRoleClaims",
+        "identity.AspNetUserClaims",
+        "identity.AspNetUserLogins",
+        "identity.AspNetUserRoles",
+        "identity.AspNetUserTokens",
+        "identity.gulierp_tenant",
+        "identity.gulierp_company",
+        "identity.gulierp_organization_unit",
+        "identity.gulierp_plant",
+        "identity.gulierp_user_company_membership",
+        "identity.gulierp_user_organization_membership",
+        "identity.gulierp_user_role_assignment"
+      ],
+      "strict_read_only": true,
+      "note": "live DB query blocked; migration files are the source of truth for current schema. runtime row counts need Operator evidence."
+    },
+    "VOL": {
+      "status": "PATTERN_REFERENCE_ONLY",
+      "database": "N/A (no runtime DB accessible)",
+      "access_method": "docs/research/vol-pro/*.md (22 documents)",
+      "notes": [
+        "VOL_DATA_VALUE_SOURCE = NONE (no specific DataType/Decimal/precision table found)",
+        "VOL_PATTERN_SOURCE = AVAILABLE (Sys_Dictionary + Sys_DictionaryList pattern confirmed)",
+        "no runtime source code import (per governance; Admin.NET/VOL forbidden as runtime dependency)"
+      ]
+    }
+  },
+  "summary": {
+    "sources_total": 6,
+    "sources_extracted": 1,
+    "sources_pattern_only": 1,
+    "sources_password_blocked": 3,
+    "sources_not_available": 1,
+    "evidence_via_migration_files": 1
+  }
+}

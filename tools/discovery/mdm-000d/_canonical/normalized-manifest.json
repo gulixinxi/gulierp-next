@@ -1,0 +1,576 @@
+{
+  "meta": {
+    "extraction_time": "2026-08-20T11:32:14+08:00",
+    "source_origin": "D:\\guli\\gulierp\\docs\\reverse-engineering\\dev-meta\\",
+    "normalizer": "tools/discovery/mdm-000d/extract_dev_metadata.py",
+    "normalizer_version": "MDM-000D-R1",
+    "encoding_normalization": "GBK-encoded JSON property names were re-decoded to UTF-8 (using strict-decode + CJK validation).",
+    "git_policy": "this manifest records all _normalized/ contents; the _normalized/ folder itself is .gitignored. To restore: re-run extract_dev_metadata.py and verify checksums match."
+  },
+  "totals": {
+    "file_count": 112,
+    "total_bytes": 14643459
+  },
+  "files": [
+    {
+      "path": "actions.json",
+      "size_bytes": 321500,
+      "sha256": "a6685b6a9bb61e4303fea3c2453ee80c7cf9d32c71c8d051861fff5a43130c02"
+    },
+    {
+      "path": "all-functions.json",
+      "size_bytes": 21761,
+      "sha256": "0b3ba3e92e61331ba35075dde5c6a25f61588553736d76b8792a1323d19727c2"
+    },
+    {
+      "path": "all-procs.json",
+      "size_bytes": 9586,
+      "sha256": "1125f04727d8c28d7836e88e28f6af77eb6ebf9120e5fd91a8b7350610de2f6c"
+    },
+    {
+      "path": "all-views.json",
+      "size_bytes": 15979,
+      "sha256": "4561fbdb4b646b38971b772c38958a3c8fcf3802ae4d3b2d2f3a1bc9706c83dd"
+    },
+    {
+      "path": "biz-tables-summary.json",
+      "size_bytes": 8468,
+      "sha256": "d37767043b5a3311ab96d303cc228b1dcf0b119179b1332d7a71e2494c8897ca"
+    },
+    {
+      "path": "biz-tables.compact.json",
+      "size_bytes": 361978,
+      "sha256": "bd94bf8d82927a5792dfce017171d7fc4417285a596f51d4596c51f575776d47"
+    },
+    {
+      "path": "dictionaries.json",
+      "size_bytes": 36699,
+      "sha256": "02effbe17328107fa127afb58f06c9b2485464b5904bdc216f1e5b9933aafff3"
+    },
+    {
+      "path": "formulas.json",
+      "size_bytes": 245914,
+      "sha256": "e0c869608fda233a4012eeb45c9da8cf165165f116366ef8b7a43e126b3b816c"
+    },
+    {
+      "path": "ju-columns.compact.json",
+      "size_bytes": 449919,
+      "sha256": "4778bccb84ce30739eb54d8969915af42a5c3058d3de46d4c89980e01aa86891"
+    },
+    {
+      "path": "ju-meta.json",
+      "size_bytes": 18816,
+      "sha256": "78bd4c3ccee222150147d5e9984eb9f23782cbe4daf63b7bc54c300336847f03"
+    },
+    {
+      "path": "menus.json",
+      "size_bytes": 12671,
+      "sha256": "95918983e49e7ff2c3cd2598053e4360f84065c48a3e69a601b983ae62585eef"
+    },
+    {
+      "path": "organizations.json",
+      "size_bytes": 15699,
+      "sha256": "6c3a229c8b4bee4aa992656947f28c6714be692f3f9c411729147c2335a510e3"
+    },
+    {
+      "path": "permissions.json",
+      "size_bytes": 1398373,
+      "sha256": "67f4685abe00135caa64934d4e4e5c442118a91dea2ee08c148e007950a86399"
+    },
+    {
+      "path": "primary-keys.json",
+      "size_bytes": 25513,
+      "sha256": "fa279d99539259279ec04235476ae98e2f95ddc6c9c5b33c3788a91e17cfef19"
+    },
+    {
+      "path": "relations.json",
+      "size_bytes": 74438,
+      "sha256": "07c9eac03edb1fb782eabe809bc96ceba91d76f95d6080843e0ed65a7595778e"
+    },
+    {
+      "path": "size.json",
+      "size_bytes": 290,
+      "sha256": "8db7c04b8f5036bf0ecb4d866a18ea063871ece1fae97e53963e9c17b4164aab"
+    },
+    {
+      "path": "tables.json",
+      "size_bytes": 39210,
+      "sha256": "5df4b77e9377481b76e7e8dbdea87b73bb51405e368b56cb1867b9bc215e48d6"
+    },
+    {
+      "path": "template-fields.json",
+      "size_bytes": 10725106,
+      "sha256": "5e24029456c6d11eead692a552f0c24373df68e23e1578cc8db587be1cb6c673"
+    },
+    {
+      "path": "templates.json",
+      "size_bytes": 206102,
+      "sha256": "93e937dc23564f0ad9730dbad1a07289e14fa837e5cd66a110cae48efcb672cd"
+    },
+    {
+      "path": "workflow-content.json",
+      "size_bytes": 2450,
+      "sha256": "e364011c56f3efd8bfd21531bc3cafcdb346abb9b39aa617912cd181e5c3e697"
+    },
+    {
+      "path": "workflows.json",
+      "size_bytes": 9576,
+      "sha256": "8a323f78b2309c6f9dac449d541de25568c68402890ee62aa823e2be614c8a46"
+    },
+    {
+      "path": "biz-samples\\dbo_WXAP_JL.json",
+      "size_bytes": 3295,
+      "sha256": "92b34a51aba7a0c7393afeef2bb0b578ecf5fe7ea1b8ecdbdfe01976eab7a5ee"
+    },
+    {
+      "path": "biz-samples\\dbo_wx_ssj.json",
+      "size_bytes": 704,
+      "sha256": "cb4cc9779130ec696be3573ce8cc1aa104facec51052c02b98f4e5718d18ed84"
+    },
+    {
+      "path": "biz-samples\\dbo_分类表.json",
+      "size_bytes": 1439,
+      "sha256": "3afe662f24401988d37497b72a4603ec6e3d8fd1401b0707da7d29844495788a"
+    },
+    {
+      "path": "biz-samples\\dbo_商品表.json",
+      "size_bytes": 2409,
+      "sha256": "5b9063ee6bba478f15bbb4c8bb7a4bf347dcabbded30a2394b53b7f6cf13e61d"
+    },
+    {
+      "path": "biz-samples\\dbo_商品表bak.json",
+      "size_bytes": 2981,
+      "sha256": "930e786f04868540b3a0677be8e491e09e1b3df7bfc8eb099ab874499928f676"
+    },
+    {
+      "path": "biz-samples\\dbo_字典表.json",
+      "size_bytes": 2304,
+      "sha256": "28472f1267f395bb3cd5796474d23f39499ab18081332b8d819fbb4cdbd912be"
+    },
+    {
+      "path": "biz-samples\\dbo_字典表s.json",
+      "size_bytes": 1080,
+      "sha256": "8786918bb95a80de0815661fe671903035c231a9b8090f8d843b51fd30e3b2cd"
+    },
+    {
+      "path": "biz-samples\\dbo_往来表.json",
+      "size_bytes": 4170,
+      "sha256": "a054d1ccf468d796dc554c284e0057c11761fe277812680bbca7f43f16045c2d"
+    },
+    {
+      "path": "biz-samples\\dbo_报价表s.json",
+      "size_bytes": 5424,
+      "sha256": "f71487f7a2ba753e34b1f9fc5825d7eb5eadd20e7160663b47b703069ec95e5f"
+    },
+    {
+      "path": "biz-samples\\dbo_状态表.json",
+      "size_bytes": 2653,
+      "sha256": "952ec66a09ef99d8ed9b8fe2ac9865a0dc726afcc194240bb9c2a5778ebdf898"
+    },
+    {
+      "path": "biz-samples\\dbo_系统表.json",
+      "size_bytes": 7050,
+      "sha256": "3a3016fda074e1e964eea12a2362a306383ee0d4013d19dcc8621129e8c64c01"
+    },
+    {
+      "path": "biz-samples\\dbo_需求表s.json",
+      "size_bytes": 4685,
+      "sha256": "fadf9029632a95883b154e67101cd2ceb55ad147f8e107113459df07a33faeab"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ActionButton.json",
+      "size_bytes": 2457,
+      "sha256": "f64438aa2f11aa834a2b02799ec09372cf9870a5be2c9629bd48a4bb5da31aa0"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ActionInvoke.json",
+      "size_bytes": 1461,
+      "sha256": "5e936fa5a565582dedb25f5b570880bff4a28d0e3950ba1408cda2b9a3bfa0e6"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ActionStep.json",
+      "size_bytes": 2435,
+      "sha256": "5fdc7432f2c405637025f35864465c4266d7bde9bfad4a36eb4e496915cc880a"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Alert.json",
+      "size_bytes": 928,
+      "sha256": "ffa8f5e483076c0a2b9b8aaa15a8111a890862820e91757d7c6ee6d97664b7f5"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_AlertField.json",
+      "size_bytes": 1181,
+      "sha256": "30a6ef5212997633e107f425218b08d2e49733885ae9ec08158a42509b2f0754"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_AlertRight.json",
+      "size_bytes": 226,
+      "sha256": "ce8bd7c8528ccb37dcf9167a56bb1c59ef59e80abfac43c1c36ac2a6e7b7bdd5"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_AlertSource.json",
+      "size_bytes": 304,
+      "sha256": "3b9c515d90c48928e41ca9722f32ca963bae32e0430c4cdb7ac84791ee0320bc"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ApiConfig.json",
+      "size_bytes": 444,
+      "sha256": "544a2ee539cadecd673c4c273303ac69d45e13d82b9b6e5f77a178275fba205a"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ApiMethod.json",
+      "size_bytes": 707,
+      "sha256": "b64f9a21d22feecd7ee9662cba03586f22b854d2319d90d1221bc3010bfcb59c"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ApiMethodParams.json",
+      "size_bytes": 1214,
+      "sha256": "b581e9465f0c2e66d6c49cbf1a29a6a6a726417cef003c0712c4af07dd3b0917"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ApiTableMeta.json",
+      "size_bytes": 252,
+      "sha256": "167a0ba3a19c0da3e3259a9477afb61c3da81ad723072faf8a8c2942bcd83d6a"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ApiTableParamMeta.json",
+      "size_bytes": 1099,
+      "sha256": "1f200bd5ce4988b60379fbcdfa75d8f7aa24902eb6d525fd00c4317ee70055f9"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_AutoCode.json",
+      "size_bytes": 2233,
+      "sha256": "465736d1d9d68a697bf581548f8f146f0336f133e07c19d8825c39522057f3c4"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_AutoCodeField.json",
+      "size_bytes": 995,
+      "sha256": "0af5c5f6045b49ac49363223b873637a36ca9f6c41baef53bf74e38f8409597a"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_AutoCodeRegister.json",
+      "size_bytes": 618,
+      "sha256": "7ab86cd0b3ad55bb0c7eb88dabebed3e07e3a547db99aea6a81a8df53f795930"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Category.json",
+      "size_bytes": 1705,
+      "sha256": "a4828a4b34aef353a7552277118e3812f72ce4a1bd3b7fa48bf01b1bce45964b"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Checkbox.json",
+      "size_bytes": 3059,
+      "sha256": "f1c384bcb5100ddb1eb477b648872df77dadb272933103a0a301d4e1f86d0152"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_CheckboxItem.json",
+      "size_bytes": 701,
+      "sha256": "9f6b5b7c6b5b9d71ba5a423f68f84f584fc441cbbe24a49d90c92f840a69d3ed"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_CmdButton.json",
+      "size_bytes": 2799,
+      "sha256": "0005a1dfdbe1722206fde54d6d53bba2aab601bdaf1728b0e8c569a8b81d6c9b"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Combo.json",
+      "size_bytes": 1663,
+      "sha256": "993dfd89c9703b23cb572d67a7eb4c762f0def4a0324c97eb78f53e469f335e0"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ComboDataItem.json",
+      "size_bytes": 661,
+      "sha256": "6e0350d3afbef8f779f5e7671bad1c1d79bcd5802f6166f066f997ce824fd294"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Component.json",
+      "size_bytes": 889,
+      "sha256": "ebf528fa6a556512faf47de07d835262c38ee770711ffd88f138ed684736882e"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ConditionalRule.json",
+      "size_bytes": 1597,
+      "sha256": "44f49552336c2886b0319de10d7955fb0781eaea1c442ac0496835af2d9ae49a"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_CtrlRule.json",
+      "size_bytes": 9579,
+      "sha256": "a8229c7ddae7715c349bbc4ff0f982211b42d215d5344508916db812528631a5"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_CtrlRuleSource.json",
+      "size_bytes": 1170,
+      "sha256": "6e0b823d03d880f16eeb408673f8989cd8fb37e17c71a275728fb9e25e785c62"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_DataGrid.json",
+      "size_bytes": 3688,
+      "sha256": "dca6bffd678da027ed778c0bd5bcbb465e5bcea5ad2d9077e09acbad0667cc46"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_DataGridField.json",
+      "size_bytes": 2774,
+      "sha256": "0f892d5767150db0331471fbf204b242bdde1648de252a0dbf5bc6849259a854"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_DataGridGroupTree.json",
+      "size_bytes": 1316,
+      "sha256": "95daf76743ced8b8fc08bd146529dc210915157deb4c5617f6866612c4975d9a"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_DataGridSource.json",
+      "size_bytes": 1164,
+      "sha256": "d6031d305a0cfaeaaba0d4cad14796ea0f3f6cf418e717737452b3507f381a93"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_DataGridSourceRelations.json",
+      "size_bytes": 953,
+      "sha256": "4cfee493f844201f805dd92a16c311c73b3a636d4c933a26ce400f50a2f779d4"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_DataType.json",
+      "size_bytes": 1913,
+      "sha256": "0e755be1b23b89d94b5f742eee4527c0ccce15df554e4298c4dd1a4c9754429c"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_DbfConfig.json",
+      "size_bytes": 1228,
+      "sha256": "85bfd8ffba2bfe5133feebb47ec4c31a4aa78c85734155119d316196fa62b4b9"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Form.json",
+      "size_bytes": 2648,
+      "sha256": "f1aa58081366f934faedb4620588c739270e2bba792055bee196ac9c1ba2f93e"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_FormRight.json",
+      "size_bytes": 1181,
+      "sha256": "77c5b7e5453bc10046c1e3de52297847dc5689cfc5cf2d328768ff87681830b6"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Job.json",
+      "size_bytes": 355,
+      "sha256": "5b5f701b0a0fce4a6cf9132d8737e6e6f5bcfed67400710043e0cd11a283a992"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_JobAutoSyncDatabase.json",
+      "size_bytes": 582,
+      "sha256": "3447a4d5b1bfa7b257da69511b3774929a5dcfacf57d84eeb0015cd37e9eea01"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_JobAutoSyncDatabaseTable.json",
+      "size_bytes": 406,
+      "sha256": "91b1f719b418eb640ed574a04af784c872dc76380bee90e39168532370436b07"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_MenuItem.json",
+      "size_bytes": 104855,
+      "sha256": "56c124efdada058112b5b34bc61de58b2fc77a0920ea8e3f525587ed5d8ac2a7"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Navigation.json",
+      "size_bytes": 299677,
+      "sha256": "7b5f51748d4482cf57a672d6a5fa4b32a6d3e33632169f7ab85a1ca31982007c"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_NavigationStep.json",
+      "size_bytes": 1290,
+      "sha256": "17c4724d46c6a83e582a7b14c90956ec24fbe6dbe6f225bc1eb31bd7888032c6"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Org.json",
+      "size_bytes": 1495,
+      "sha256": "8f460a4c3714fcbebbd480065ded0b5bdfb3588f13cd6ed0010a1f2480f4479f"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Post.json",
+      "size_bytes": 1135,
+      "sha256": "094fd231e185a28c1ad638d3e3a40a9620058b8f4344b075a9ad9fa4412e4fef"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_QRCode.json",
+      "size_bytes": 785,
+      "sha256": "162d1aee07a13bd0794856d70f7790a65d38f66c573556af8d2e98ecc05eda5c"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Query.json",
+      "size_bytes": 1205,
+      "sha256": "1913c46c738955a5db5936c97093ee23b63272f015fdfb1e979cf71cbe991f25"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_QueryParams.json",
+      "size_bytes": 953,
+      "sha256": "20567d8b3c9fbb65c6e7ee622673682601d30005527cfc9e36aed73efa689b00"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ReportSeed.json",
+      "size_bytes": 595,
+      "sha256": "df2760ada7620cb0d98df9511bfd8931c4739286c295f6c1b02d155c87d4fc39"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Role.json",
+      "size_bytes": 1272,
+      "sha256": "e39ce85d065675b789999df26d5645146d7058ab2a158d8512bc8043b32fc8c7"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_RuleSource.json",
+      "size_bytes": 1166,
+      "sha256": "a8369ce23600f6a1ee609d45ee54cc96f5d481246f8da13bdb503046f40865e2"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_RuleSourceRelations.json",
+      "size_bytes": 2242,
+      "sha256": "51831712d86ffaa25db242bfa38805e5aaf971fe089441de586e8c6ef1d3842b"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Seed.json",
+      "size_bytes": 523,
+      "sha256": "f13970c8ef5b0758432db40f42b124cbb2b629dce843bf0c76348daa81985f0c"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_SelectRule.json",
+      "size_bytes": 18308,
+      "sha256": "41e1a6a2b4a0a09f07d292d34f0032abdd2d1065b5c27ee03ce21c0291de700b"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_SelectRuleField.json",
+      "size_bytes": 1531,
+      "sha256": "84966f2d2b846b09ac7a2c891952e622fb053b4b9e62aa17231194cc41241184"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_SysDesignLog.json",
+      "size_bytes": 3059,
+      "sha256": "0a41c917ed5e1a65db7b162fba7864503dfc5c7f53822f88527d10053bfe9ae6"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_SysLog.json",
+      "size_bytes": 2086,
+      "sha256": "72b08e7cbec1cc5766667a590d9f184ecac1f299b4bdb662a357bf3374f6faf5"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Template.json",
+      "size_bytes": 17668,
+      "sha256": "e4e744d38d25fb3aac4180ff75064f2866bb69e63db67797dc048cdcbb0459c0"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_TemplateGroupTree.json",
+      "size_bytes": 1078,
+      "sha256": "9b9e83f37bf48148ba51dc3a3263b94e018069c11b6679e912977c33681a0953"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_TemplateLinker.json",
+      "size_bytes": 1845,
+      "sha256": "13644b30fd48fffd7cc05c9519bbd68feba44fbca7fccdd77f4f6c1c997d6508"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_TemplateLinkerField.json",
+      "size_bytes": 1012,
+      "sha256": "38770dfa5b3a3465284cc75261933e0af5390624dca9b3cd5d9484227289f40f"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_TemplateReadRight.json",
+      "size_bytes": 2978,
+      "sha256": "ebc59d0c824da37b78597556d0881b418a50ed94ac911f716443d5891d44b332"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_TemplateTable.json",
+      "size_bytes": 4604,
+      "sha256": "c0cd3ace3a56377ecf069830c85082c869b9d233fb92c33c1265eebeae30a368"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_TemplateTableField.json",
+      "size_bytes": 12533,
+      "sha256": "66cb264344115332b36caa2dab26e43623cb6775927998f4e9ce3a2747a75d5b"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_TemplateWebPage.json",
+      "size_bytes": 622,
+      "sha256": "d196a632086855e1ec43c0d13b63a03a0bf11c4fc465cd21e103fdc436aae8fc"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_TemplateWriteRight.json",
+      "size_bytes": 2865,
+      "sha256": "b4e876bbe8a58f19b94fd159899914bb6657cbc5243756e8cc40fdc3741ce7df"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Tree.json",
+      "size_bytes": 4573,
+      "sha256": "ec75c33ee707ccc9117b5ecc0cd5c636ef362ac2a0e08a8edc7da0c84ac2fd80"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_UpdateRule.json",
+      "size_bytes": 9493,
+      "sha256": "2efc2fd8ad4e1bcd27cd1675a073f9ae43838c9a20dcf268a4b8ec01bcf16da3"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_UpdateRuleField.json",
+      "size_bytes": 1613,
+      "sha256": "851b1461687056fbc03bddce01e532a0c631c88e05e1af93a57ce9c4e61ff3f4"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_User.json",
+      "size_bytes": 5666,
+      "sha256": "79fa04e392b06f9355a7232140aa9829d20cf3bbfb2119b03568227c5d7dc2e1"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_UserConfig.json",
+      "size_bytes": 725,
+      "sha256": "d1b69a02cfae1e76c86e7519ab94a8d928b39566e86f89fee4db670d354449d5"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_UserHabitConfig.json",
+      "size_bytes": 337,
+      "sha256": "2bf6ab0772c86594256d5c4a53d952ee1d1fbfdb4a858ab1e48ba02742a01f00"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_UserOrg.json",
+      "size_bytes": 857,
+      "sha256": "7a593e44105dd9acdbe1015e29b0d3d07e9e0fb8e04681db6412d4a65d3e4176"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_UserPost.json",
+      "size_bytes": 865,
+      "sha256": "2c0daa97e8c761aa0ee479f3453f61524881799ba104b5cb2a7dc3f46caac80e"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_VER.json",
+      "size_bytes": 822,
+      "sha256": "f55744929cc74b2463746accd292873b47f09a81666c2419d99c4364edbd3ad1"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_View.json",
+      "size_bytes": 5756,
+      "sha256": "11881e5a5da35a92237fe3c028d498cbdd7893a766250a216ac43493fa76b1a8"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ViewField.json",
+      "size_bytes": 1001,
+      "sha256": "4a34d4c6a50857eb56b8894223718027206c30bad93d7d45d663bdff32da0bae"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ViewSource.json",
+      "size_bytes": 1154,
+      "sha256": "c90a429d263f967936afaf1096d0ee5b5b646989052a119a93cede25acceb9a4"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_ViewSourceRelations.json",
+      "size_bytes": 2197,
+      "sha256": "334aeea5c9f9e10e33c3181984e5b448bef23c1dbf6e538faa16a45ac5f8ac27"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_Workflow.json",
+      "size_bytes": 14778,
+      "sha256": "3f0da389dadc49e15e822e7d9673742d42e998efec2a098cf0fc0735fbdcc7f3"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_WorkflowActivity.json",
+      "size_bytes": 8491,
+      "sha256": "4c2afe3497fab748f1968286f3ff81e833b655b8bb15c1499a26c654df108f11"
+    },
+    {
+      "path": "ju-samples\\dbo_JU_WorkflowDirection.json",
+      "size_bytes": 922,
+      "sha256": "f98ad891fd84f955800d3b84493dde2383ad45e99a3a2cd3b67f685c49140198"
+    }
+  ]
+}

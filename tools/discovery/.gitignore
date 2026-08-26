@@ -1,0 +1,4 @@
+# MDM-000D-R1: discovery intermediate output (large normalized JSON dumps).
+# Re-creatable via tools/discovery/mdm-000d/extract_dev_metadata.py.
+# Tracked by tools/discovery/mdm-000d/_canonical/normalized-manifest.json (SHA-256).
+tools/discovery/mdm-000d/_normalized/

@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "extraction_time": "2026-08-20T11:32:14+08:00",
+    "method": "machine-computed set arithmetic",
+    "source": "tools/discovery/mdm-000d/_normalized/ju-samples/dbo_JU_DataType.json + template-fields.json"
+  },
+  "sets": {
+    "source_table": "dbo.JU_DataType",
+    "source_rowcount": 18,
+    "extraction_method": "DevReverse.Program.cs SELECT TOP 5 per table (sample-only)",
+    "all_visible_ids": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      101,
+      103,
+      105,
+      107,
+      109,
+      115
+    ],
+    "all_visible_count": 14,
+    "direct_sample_ids": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "direct_sample_count": 5,
+    "direct_sample_with_names": [
+      {
+        "DataTypeID": 2,
+        "DataTypeName_zh": "字符"
+      },
+      {
+        "DataTypeID": 3,
+        "DataTypeName_zh": "整数"
+      },
+      {
+        "DataTypeID": 4,
+        "DataTypeName_zh": "小数"
+      },
+      {
+        "DataTypeID": 5,
+        "DataTypeName_zh": "日期"
+      },
+      {
+        "DataTypeID": 6,
+        "DataTypeName_zh": "图片"
+      }
+    ],
+    "referenced_ids": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      101,
+      103,
+      105,
+      107,
+      109,
+      115
+    ],
+    "referenced_count": 14,
+    "unresolved_ids": [
+      7,
+      8,
+      9,
+      101,
+      103,
+      105,
+      107,
+      109,
+      115
+    ],
+    "unresolved_count": 9,
+    "unreferenced_ids": [],
+    "unreferenced_count": 0,
+    "completely_unknown_ids_count": 4,
+    "note": "completely_unknown_ids_count = source_rowcount(18) - union_visible(14) = 4 rows in source that are neither in sample nor referenced by any template field. Their DataTypeIDs are unknown."
+  }
+}

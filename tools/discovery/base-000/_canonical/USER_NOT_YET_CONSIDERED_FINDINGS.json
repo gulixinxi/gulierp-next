@@ -1,0 +1,566 @@
+{
+  "meta": {
+    "extraction_time": "2026-08-20T11:46:44+08:00",
+    "session": "mvs_11a243eed8e544d6b19087711a392283",
+    "goal": "BASE-000",
+    "note": "Findings the user has NOT explicitly considered but DEV/Industry evidence suggests should be on the radar. HIGH=act now, MEDIUM=before module, LOW=consider."
+  },
+  "findings": [
+    {
+      "id": "UNC-001",
+      "priority": "HIGH",
+      "category": "NUMBERING",
+      "topic": "NumberSequence per-tenant scope",
+      "discovered_from": "DEV JU_AutoCode has no TenantId  --  global counter per system",
+      "why_user_hasnt_considered": "G2-003 Identity uses TenantId on every business table, but DEV-style numbering is system-wide. User may have implicitly assumed system-wide.",
+      "evidence": "DEV reverse-engineering shows 0 number patterns with tenant scope",
+      "impact": "Two tenants in same DB would collide on SO/PO numbers → production data corruption",
+      "recommendation": "Add TenantId (and CompanyId) to NumberSequence; re-test cross-tenant uniqueness"
+    },
+    {
+      "id": "UNC-002",
+      "priority": "HIGH",
+      "category": "AUDIT",
+      "topic": "OperationLog vs DesignLog split",
+      "discovered_from": "DEV has JU_SysLog (operation) + JU_SysDesignLog (design)  --  separate tables",
+      "why_user_hasnt_considered": "G2-002 IAuditWriter covers operation log. User may have missed the design-config audit need.",
+      "evidence": "DEV has 349 design log rows vs 177 op log  --  heavy config changes need separate channel",
+      "impact": "Lost traceability on dictionary/numbering/tax changes",
+      "recommendation": "Add IDesignAuditWriter to Foundation.G2-002 (next iteration). DEV pattern is good  --  KEEP."
+    },
+    {
+      "id": "UNC-003",
+      "priority": "HIGH",
+      "category": "CONVENTION",
+      "topic": "pg_description comment on EVERY column",
+      "discovered_from": "DEV has 0/151 JU_ tables with ms_description; GULIERP_CURRENT has no pg_description either",
+      "why_user_hasnt_considered": "G2-001 PostgreSQL Engineering Standard may not mandate column comments.",
+      "evidence": "DEV reverse-engineering: ms_description=null on all 4006 columns",
+      "impact": "Schema documentation rots. New dev onboards slower.",
+      "recommendation": "Add architecture rule: every column has pg_description; CI check fails build if missing."
+    },
+    {
+      "id": "UNC-004",
+      "priority": "HIGH",
+      "category": "CONVENTION",
+      "topic": "Number UNIQUE constraint at DB level",
+      "discovered_from": "DEV has no unique constraint on number fields (0 FK + 0 CHECK pattern)",
+      "why_user_hasnt_considered": "NumberSequence application-level guard is implicit in POC-003. DB-level guard missing.",
+      "evidence": "DEV has 0 unique constraints documented (per size.json: only 1 default constraint)",
+      "impact": "Race condition: two concurrent inserts could create duplicate SO numbers",
+      "recommendation": "Add UNIQUE (TenantId, DocType, Year, Serial) at DB level."
+    },
+    {
+      "id": "UNC-005",
+      "priority": "HIGH",
+      "category": "ROUNDING",
+      "topic": "Rounding mode per semantic type",
+      "why_user_hasnt_considered": "DEV uses single .NET default rounding. User may not have thought about per-type policy.",
+      "evidence": "JU_DataType has no rounding column; depends on .NET Math.Round default",
+      "impact": "Currency cross-aggregation loses 0.01 per sum → financial audit failure",
+      "recommendation": "Documented in semantic-data-type.json: AMOUNT/EXCHANGE_RATE=HALF_EVEN, QUANTITY=HALF_UP, RATE=HALF_EVEN."
+    },
+    {
+      "id": "UNC-006",
+      "priority": "HIGH",
+      "category": "INVENTORY",
+      "topic": "InventoryPostingEngine is SINGLE entry point",
+      "discovered_from": "POC-002/POC-003 design (per G2-002 plan)",
+      "why_user_hasnt_considered": "DEV has 22 inventory tables with manual \"出库过账\" step (anti-pattern).",
+      "evidence": "DEV: 出库过账/入库过账 are manual UI steps  --  leads to inconsistent inventory",
+      "impact": "Inventory balance ≠ sum of transactions; reconciliation nightmare",
+      "recommendation": "IInventoryService.PostAsync as single entry. ALL other modules emit GoodsReceiptConfirmed/ShipmentConfirmed events → listener calls PostAsync. NEVER direct write."
+    },
+    {
+      "id": "UNC-007",
+      "priority": "MEDIUM",
+      "category": "REFERENCE_DATA",
+      "topic": "UomDimension (COUNT/LENGTH/MASS/etc.) as required enum",
+      "discovered_from": "DEV has 13 UOM but no dimension metadata",
+      "why_user_hasnt_considered": "UOM is a flat list in DEV; user assumes same UOM works everywhere.",
+      "evidence": "DEV cannot catch bug: assigning kg item to m UOM",
+      "impact": "Cross-dimensional arithmetic bugs (e.g. unit price × kg) undetected",
+      "recommendation": "Uom.Dimension enum required. Item.BaseUomId (FK to Uom). Field metadata: BusinessSemanticType=\"QUANTITY\" UomDimension=\"MASS\" (Foundation contract)."
+    },
+    {
+      "id": "UNC-008",
+      "priority": "MEDIUM",
+      "category": "INVENTORY",
+      "topic": "Status: AVAILABLE / RESERVED / PENDING_INSPECTION / BLOCKED",
+      "discovered_from": "POC-002 InventoryBalance design",
+      "why_user_hasnt_considered": "DEV status表 has 创建/已审核/已下单/已生产  --  workflow statuses, not inventory balances.",
+      "evidence": "DEV has 0 inventory balance states",
+      "impact": "Cannot block stock for QC; cannot show reserved vs available separately",
+      "recommendation": "InventoryBalance.{OnHand, Reserved, Available, PendingInspection, Blocked, Quarantined} as 5 separate decimal fields."
+    },
+    {
+      "id": "UNC-009",
+      "priority": "MEDIUM",
+      "category": "CODING",
+      "topic": "BP Code format structured (CUST-/SUPP-/SUB-/LOG-)",
+      "discovered_from": "DEV sample: 往来号=20001, 20002  --  pure numeric",
+      "why_user_hasnt_considered": "User may have seen numeric codes as \"natural\"",
+      "evidence": "DEV has 4 BP types but no code prefix differentiation",
+      "impact": "Same number space for Customer (20001) and Supplier (20002)  --  no type visible in code",
+      "recommendation": "BP.Code: {TYPE_PREFIX}-{SERIAL}. CUST-001, SUPP-001, SUB-001, LOG-001."
+    },
+    {
+      "id": "UNC-010",
+      "priority": "MEDIUM",
+      "category": "INVENTORY",
+      "topic": "Lot expiry date + FEFO",
+      "discovered_from": "DEV has 克重 0.0 but no ExpiryDate",
+      "why_user_hasnt_considered": "For non-pharma/食品 companies, expiry not needed. But tenant configurable.",
+      "evidence": "DEV no ExpiryDate field in any table",
+      "impact": "Cannot do FEFO for food/chem; cannot recall expired lot",
+      "recommendation": "InventoryLot.ExpiryDate nullable; Item.IsExpiryControlled bool; PickingStrategy enum (FIFO/FEFO/LIFO)."
+    },
+    {
+      "id": "UNC-011",
+      "priority": "MEDIUM",
+      "category": "TENANT_SCOPE",
+      "topic": "Plant as cross-cutting scope (Inventory/Production)",
+      "discovered_from": "G2-003 has gulierp_plant; IPlantScoped marker interface reserved",
+      "why_user_hasnt_considered": "Tenant/Company/Organization are obvious. Plant as ERP scope is less obvious.",
+      "evidence": "POC-001/002 used TenantId only. IPlantScoped not yet wired.",
+      "impact": "Multi-plant tenant cannot separate inventory per plant",
+      "recommendation": "Apply IPlantScoped to InventoryTransaction/InventoryBalance/ProductionOrder in their respective modules."
+    },
+    {
+      "id": "UNC-012",
+      "priority": "MEDIUM",
+      "category": "CONVENTION",
+      "topic": "Field-level precision annotation as code attribute",
+      "discovered_from": "POC-003 has SalesOrderLine.UnitPrice decimal without precision attr",
+      "why_user_hasnt_considered": "C# decimal type is unbounded; user may assume precision is implicit.",
+      "evidence": "G2-002 Foundation default is decimal(18,4); POC-003 not yet annotated",
+      "impact": "Generator cannot derive PG numeric(P,S) without manual map per field",
+      "recommendation": "[DecimalPrecision(20, 6)] attribute on C# decimal properties. Generator reads attribute → PG DDL. Already in MDM-000D contract draft."
+    },
+    {
+      "id": "UNC-013",
+      "priority": "MEDIUM",
+      "category": "FOUNDATION",
+      "topic": "Single AggregateState vs multi-status fields",
+      "discovered_from": "DEV: ReportStatus + LockStatus + WorkflowStatus  --  3 separate status fields on same entity",
+      "why_user_hasnt_considered": "Multi-status may seem flexible. But leads to ReportStatus=2 LockStatus=1 WorkflowStatus=3 (meaningless combinations).",
+      "evidence": "DEV: every template has 3 status fields. No consistency rules.",
+      "impact": "Untestable state combinations. Reports show inconsistent data.",
+      "recommendation": "Per G2-002 plan: 3D model DocumentStatus/ApprovalStatus/ExecutionStatus. NOT 3 fields on one entity. POC-003 already follows this."
+    },
+    {
+      "id": "UNC-014",
+      "priority": "MEDIUM",
+      "category": "CODING",
+      "topic": "Item code structured (category-prefix-serial)",
+      "discovered_from": "DEV: 品号=1000001 (pure numeric)",
+      "why_user_hasnt_considered": "Numeric codes feel \"clean\"",
+      "evidence": "DEV has 1 sample item with 1000001; no category prefix",
+      "impact": "Cannot identify item category from code; searching/sorting is hard",
+      "recommendation": "Item.Code: {CategoryCode}-{Sequence}. FG-000001, RM-000001, SF-000001."
+    },
+    {
+      "id": "UNC-015",
+      "priority": "LOW",
+      "category": "REFERENCE_DATA",
+      "topic": "Color / Material / Size as attribute, not UOM",
+      "discovered_from": "DEV sample: 商品表 has 材料 string but no Color",
+      "why_user_hasnt_considered": "User may think of Color/Material as ItemCategory.",
+      "evidence": "DEV has no Color dimension in UOM",
+      "impact": "If treated as UOM, cross-color arithmetic bugs",
+      "recommendation": "Color/Material/Size/Grade are ItemAttribute, NOT UOM. Defer to SKU variant phase per P1-005 plan."
+    },
+    {
+      "id": "UNC-016",
+      "priority": "LOW",
+      "category": "WORKFLOW",
+      "topic": "Design Audit vs Operation Audit",
+      "discovered_from": "DEV has JU_SysLog + JU_SysDesignLog  --  separate",
+      "why_user_hasnt_considered": "One audit log seems enough; user may have missed the need for design-config audit specifically.",
+      "evidence": "349 design log rows show config changes are frequent and need separate retention",
+      "impact": "Lost traceability on config changes",
+      "recommendation": "G2-002R2 may add IDesignAuditWriter. Per G2-002 plan, current IAuditWriter is for operations only."
+    },
+    {
+      "id": "UNC-017",
+      "priority": "LOW",
+      "category": "CONVENTION",
+      "topic": "Photo / Attachment as entity, not image column",
+      "discovered_from": "DEV: JU_TemplateFile.TemplateFile is image column (anti-pattern)",
+      "why_user_hasnt_considered": "image column looks convenient",
+      "evidence": "DEV: image columns store base64 in DB; large payload slows backups",
+      "impact": "Backup size explosion, slow queries, no CDN, no access control",
+      "recommendation": "Attachment entity + object store (S3/MinIO). Reference by URL. Per G2-002-002 plan. REJECT image columns."
+    },
+    {
+      "id": "UNC-018",
+      "priority": "LOW",
+      "category": "INVENTORY",
+      "topic": "Negative stock policy (allow vs block)",
+      "discovered_from": "DEV: no concept; some companies allow (WIP), others block",
+      "why_user_hasnt_considered": "User may assume \"block\" is universal",
+      "evidence": "DEV has no field to indicate policy",
+      "impact": "One-size policy breaks manufacturing (WIP needs negative)",
+      "recommendation": "PlantPolicy.AllowNegativeStock bool. Default false."
+    },
+    {
+      "id": "UNC-019",
+      "priority": "LOW",
+      "category": "CALENDAR",
+      "topic": "Public holiday + make-up work day",
+      "discovered_from": "DEV: no concept",
+      "why_user_hasnt_considered": "Tenant may think their own calendar",
+      "evidence": "China 国务院 publishes yearly; companies follow with adjustments",
+      "impact": "Production planning off by 1-2 days per holiday",
+      "recommendation": "PublicHoliday table: CountryCode + Date + Name + IsWorkday. Defer to V2 Production."
+    },
+    {
+      "id": "UNC-019b",
+      "priority": "LOW",
+      "category": "CALENDAR",
+      "topic": "i18n locale per tenant",
+      "discovered_from": "DEV no locale",
+      "why_user_hasnt_considered": "Default zh-CN assumed",
+      "evidence": "DEV has 14 users, no locale field",
+      "impact": "Multi-national tenant cannot have different display",
+      "recommendation": "Tenant.DefaultLocale + User.PreferredLocale."
+    },
+    {
+      "id": "UNC-020",
+      "priority": "LOW",
+      "category": "PRINT",
+      "topic": "Printed form number vs DB ID",
+      "discovered_from": "DEV: 编号 separate from RecordID",
+      "why_user_hasnt_considered": "User may use DB ID as print number",
+      "evidence": "DEV: 单号 2511220018 vs RecordID 397/402  --  different sequences",
+      "impact": "Print number gaps confuse user; DB ID is implementation detail",
+      "recommendation": "DocumentNumber (business) separate from Id (technical). Already in POC-003."
+    },
+    {
+      "id": "UNC-021",
+      "priority": "LOW",
+      "category": "AUDIT",
+      "topic": "SoftDelete entity with restore window",
+      "discovered_from": "DEV: 状态表 has 删除/恢复 logic but not as separate entity",
+      "why_user_hasnt_considered": "Soft delete via Status flag seems enough",
+      "evidence": "DEV status values not fully enumerated",
+      "impact": "Cannot restore 30-day-old delete; no audit of who/when",
+      "recommendation": "SoftDelete entity with DeletedAt/DeletedBy/RestoredAt. Required for master data."
+    },
+    {
+      "id": "UNC-022",
+      "priority": "LOW",
+      "category": "CONVENTION",
+      "topic": "Code+Name+Description separation",
+      "discovered_from": "G2-001/002/003 already use Code+Name pattern",
+      "why_user_hasnt_considered": "DEV has 名称 + 备注 but no Code separation",
+      "evidence": "DEV: 商品表.品名 + 商品表.品号; but 字典 has only 名称 no Code",
+      "impact": "Code is implementation detail; Name is user-facing; mixing causes i18n issues",
+      "recommendation": "Every ReferenceData / MasterData has Code (technical, immutable) + Name (display, localizable) + Description (long text). Already in POC-002/003."
+    },
+    {
+      "id": "UNC-023",
+      "priority": "LOW",
+      "category": "INVENTORY",
+      "topic": "Lot/Serial controlled flag per item",
+      "discovered_from": "DEV: no per-item flag",
+      "why_user_hasnt_considered": "Default to no-control simplifies",
+      "evidence": "DEV has 批次库存 view only",
+      "impact": "Cannot trace per-unit for recall; cannot enforce serialization for regulated items",
+      "recommendation": "Item.IsLotControlled, Item.IsSerialControlled, Item.IsExpiryControlled booleans."
+    },
+    {
+      "id": "UNC-024",
+      "priority": "LOW",
+      "category": "INVENTORY",
+      "topic": "CostMethod per item (FIFO/MAC/Standard)",
+      "discovered_from": "DEV: no cost method",
+      "why_user_hasnt_considered": "Default moving average assumed",
+      "evidence": "DEV no Item.CostMethod field",
+      "impact": "Cannot support Standard Cost (manufacturing) or FIFO (regulated)",
+      "recommendation": "Item.CostMethod enum: MOVING_AVERAGE (default) / STANDARD / FIFO. Per-Plant override possible."
+    }
+  ],
+  "by_priority": {
+    "HIGH": [
+      {
+        "id": "UNC-001",
+        "priority": "HIGH",
+        "category": "NUMBERING",
+        "topic": "NumberSequence per-tenant scope",
+        "discovered_from": "DEV JU_AutoCode has no TenantId  --  global counter per system",
+        "why_user_hasnt_considered": "G2-003 Identity uses TenantId on every business table, but DEV-style numbering is system-wide. User may have implicitly assumed system-wide.",
+        "evidence": "DEV reverse-engineering shows 0 number patterns with tenant scope",
+        "impact": "Two tenants in same DB would collide on SO/PO numbers → production data corruption",
+        "recommendation": "Add TenantId (and CompanyId) to NumberSequence; re-test cross-tenant uniqueness"
+      },
+      {
+        "id": "UNC-002",
+        "priority": "HIGH",
+        "category": "AUDIT",
+        "topic": "OperationLog vs DesignLog split",
+        "discovered_from": "DEV has JU_SysLog (operation) + JU_SysDesignLog (design)  --  separate tables",
+        "why_user_hasnt_considered": "G2-002 IAuditWriter covers operation log. User may have missed the design-config audit need.",
+        "evidence": "DEV has 349 design log rows vs 177 op log  --  heavy config changes need separate channel",
+        "impact": "Lost traceability on dictionary/numbering/tax changes",
+        "recommendation": "Add IDesignAuditWriter to Foundation.G2-002 (next iteration). DEV pattern is good  --  KEEP."
+      },
+      {
+        "id": "UNC-003",
+        "priority": "HIGH",
+        "category": "CONVENTION",
+        "topic": "pg_description comment on EVERY column",
+        "discovered_from": "DEV has 0/151 JU_ tables with ms_description; GULIERP_CURRENT has no pg_description either",
+        "why_user_hasnt_considered": "G2-001 PostgreSQL Engineering Standard may not mandate column comments.",
+        "evidence": "DEV reverse-engineering: ms_description=null on all 4006 columns",
+        "impact": "Schema documentation rots. New dev onboards slower.",
+        "recommendation": "Add architecture rule: every column has pg_description; CI check fails build if missing."
+      },
+      {
+        "id": "UNC-004",
+        "priority": "HIGH",
+        "category": "CONVENTION",
+        "topic": "Number UNIQUE constraint at DB level",
+        "discovered_from": "DEV has no unique constraint on number fields (0 FK + 0 CHECK pattern)",
+        "why_user_hasnt_considered": "NumberSequence application-level guard is implicit in POC-003. DB-level guard missing.",
+        "evidence": "DEV has 0 unique constraints documented (per size.json: only 1 default constraint)",
+        "impact": "Race condition: two concurrent inserts could create duplicate SO numbers",
+        "recommendation": "Add UNIQUE (TenantId, DocType, Year, Serial) at DB level."
+      },
+      {
+        "id": "UNC-005",
+        "priority": "HIGH",
+        "category": "ROUNDING",
+        "topic": "Rounding mode per semantic type",
+        "why_user_hasnt_considered": "DEV uses single .NET default rounding. User may not have thought about per-type policy.",
+        "evidence": "JU_DataType has no rounding column; depends on .NET Math.Round default",
+        "impact": "Currency cross-aggregation loses 0.01 per sum → financial audit failure",
+        "recommendation": "Documented in semantic-data-type.json: AMOUNT/EXCHANGE_RATE=HALF_EVEN, QUANTITY=HALF_UP, RATE=HALF_EVEN."
+      },
+      {
+        "id": "UNC-006",
+        "priority": "HIGH",
+        "category": "INVENTORY",
+        "topic": "InventoryPostingEngine is SINGLE entry point",
+        "discovered_from": "POC-002/POC-003 design (per G2-002 plan)",
+        "why_user_hasnt_considered": "DEV has 22 inventory tables with manual \"出库过账\" step (anti-pattern).",
+        "evidence": "DEV: 出库过账/入库过账 are manual UI steps  --  leads to inconsistent inventory",
+        "impact": "Inventory balance ≠ sum of transactions; reconciliation nightmare",
+        "recommendation": "IInventoryService.PostAsync as single entry. ALL other modules emit GoodsReceiptConfirmed/ShipmentConfirmed events → listener calls PostAsync. NEVER direct write."
+      }
+    ],
+    "MEDIUM": [
+      {
+        "id": "UNC-007",
+        "priority": "MEDIUM",
+        "category": "REFERENCE_DATA",
+        "topic": "UomDimension (COUNT/LENGTH/MASS/etc.) as required enum",
+        "discovered_from": "DEV has 13 UOM but no dimension metadata",
+        "why_user_hasnt_considered": "UOM is a flat list in DEV; user assumes same UOM works everywhere.",
+        "evidence": "DEV cannot catch bug: assigning kg item to m UOM",
+        "impact": "Cross-dimensional arithmetic bugs (e.g. unit price × kg) undetected",
+        "recommendation": "Uom.Dimension enum required. Item.BaseUomId (FK to Uom). Field metadata: BusinessSemanticType=\"QUANTITY\" UomDimension=\"MASS\" (Foundation contract)."
+      },
+      {
+        "id": "UNC-008",
+        "priority": "MEDIUM",
+        "category": "INVENTORY",
+        "topic": "Status: AVAILABLE / RESERVED / PENDING_INSPECTION / BLOCKED",
+        "discovered_from": "POC-002 InventoryBalance design",
+        "why_user_hasnt_considered": "DEV status表 has 创建/已审核/已下单/已生产  --  workflow statuses, not inventory balances.",
+        "evidence": "DEV has 0 inventory balance states",
+        "impact": "Cannot block stock for QC; cannot show reserved vs available separately",
+        "recommendation": "InventoryBalance.{OnHand, Reserved, Available, PendingInspection, Blocked, Quarantined} as 5 separate decimal fields."
+      },
+      {
+        "id": "UNC-009",
+        "priority": "MEDIUM",
+        "category": "CODING",
+        "topic": "BP Code format structured (CUST-/SUPP-/SUB-/LOG-)",
+        "discovered_from": "DEV sample: 往来号=20001, 20002  --  pure numeric",
+        "why_user_hasnt_considered": "User may have seen numeric codes as \"natural\"",
+        "evidence": "DEV has 4 BP types but no code prefix differentiation",
+        "impact": "Same number space for Customer (20001) and Supplier (20002)  --  no type visible in code",
+        "recommendation": "BP.Code: {TYPE_PREFIX}-{SERIAL}. CUST-001, SUPP-001, SUB-001, LOG-001."
+      },
+      {
+        "id": "UNC-010",
+        "priority": "MEDIUM",
+        "category": "INVENTORY",
+        "topic": "Lot expiry date + FEFO",
+        "discovered_from": "DEV has 克重 0.0 but no ExpiryDate",
+        "why_user_hasnt_considered": "For non-pharma/食品 companies, expiry not needed. But tenant configurable.",
+        "evidence": "DEV no ExpiryDate field in any table",
+        "impact": "Cannot do FEFO for food/chem; cannot recall expired lot",
+        "recommendation": "InventoryLot.ExpiryDate nullable; Item.IsExpiryControlled bool; PickingStrategy enum (FIFO/FEFO/LIFO)."
+      },
+      {
+        "id": "UNC-011",
+        "priority": "MEDIUM",
+        "category": "TENANT_SCOPE",
+        "topic": "Plant as cross-cutting scope (Inventory/Production)",
+        "discovered_from": "G2-003 has gulierp_plant; IPlantScoped marker interface reserved",
+        "why_user_hasnt_considered": "Tenant/Company/Organization are obvious. Plant as ERP scope is less obvious.",
+        "evidence": "POC-001/002 used TenantId only. IPlantScoped not yet wired.",
+        "impact": "Multi-plant tenant cannot separate inventory per plant",
+        "recommendation": "Apply IPlantScoped to InventoryTransaction/InventoryBalance/ProductionOrder in their respective modules."
+      },
+      {
+        "id": "UNC-012",
+        "priority": "MEDIUM",
+        "category": "CONVENTION",
+        "topic": "Field-level precision annotation as code attribute",
+        "discovered_from": "POC-003 has SalesOrderLine.UnitPrice decimal without precision attr",
+        "why_user_hasnt_considered": "C# decimal type is unbounded; user may assume precision is implicit.",
+        "evidence": "G2-002 Foundation default is decimal(18,4); POC-003 not yet annotated",
+        "impact": "Generator cannot derive PG numeric(P,S) without manual map per field",
+        "recommendation": "[DecimalPrecision(20, 6)] attribute on C# decimal properties. Generator reads attribute → PG DDL. Already in MDM-000D contract draft."
+      },
+      {
+        "id": "UNC-013",
+        "priority": "MEDIUM",
+        "category": "FOUNDATION",
+        "topic": "Single AggregateState vs multi-status fields",
+        "discovered_from": "DEV: ReportStatus + LockStatus + WorkflowStatus  --  3 separate status fields on same entity",
+        "why_user_hasnt_considered": "Multi-status may seem flexible. But leads to ReportStatus=2 LockStatus=1 WorkflowStatus=3 (meaningless combinations).",
+        "evidence": "DEV: every template has 3 status fields. No consistency rules.",
+        "impact": "Untestable state combinations. Reports show inconsistent data.",
+        "recommendation": "Per G2-002 plan: 3D model DocumentStatus/ApprovalStatus/ExecutionStatus. NOT 3 fields on one entity. POC-003 already follows this."
+      },
+      {
+        "id": "UNC-014",
+        "priority": "MEDIUM",
+        "category": "CODING",
+        "topic": "Item code structured (category-prefix-serial)",
+        "discovered_from": "DEV: 品号=1000001 (pure numeric)",
+        "why_user_hasnt_considered": "Numeric codes feel \"clean\"",
+        "evidence": "DEV has 1 sample item with 1000001; no category prefix",
+        "impact": "Cannot identify item category from code; searching/sorting is hard",
+        "recommendation": "Item.Code: {CategoryCode}-{Sequence}. FG-000001, RM-000001, SF-000001."
+      }
+    ],
+    "LOW": [
+      {
+        "id": "UNC-015",
+        "priority": "LOW",
+        "category": "REFERENCE_DATA",
+        "topic": "Color / Material / Size as attribute, not UOM",
+        "discovered_from": "DEV sample: 商品表 has 材料 string but no Color",
+        "why_user_hasnt_considered": "User may think of Color/Material as ItemCategory.",
+        "evidence": "DEV has no Color dimension in UOM",
+        "impact": "If treated as UOM, cross-color arithmetic bugs",
+        "recommendation": "Color/Material/Size/Grade are ItemAttribute, NOT UOM. Defer to SKU variant phase per P1-005 plan."
+      },
+      {
+        "id": "UNC-016",
+        "priority": "LOW",
+        "category": "WORKFLOW",
+        "topic": "Design Audit vs Operation Audit",
+        "discovered_from": "DEV has JU_SysLog + JU_SysDesignLog  --  separate",
+        "why_user_hasnt_considered": "One audit log seems enough; user may have missed the need for design-config audit specifically.",
+        "evidence": "349 design log rows show config changes are frequent and need separate retention",
+        "impact": "Lost traceability on config changes",
+        "recommendation": "G2-002R2 may add IDesignAuditWriter. Per G2-002 plan, current IAuditWriter is for operations only."
+      },
+      {
+        "id": "UNC-017",
+        "priority": "LOW",
+        "category": "CONVENTION",
+        "topic": "Photo / Attachment as entity, not image column",
+        "discovered_from": "DEV: JU_TemplateFile.TemplateFile is image column (anti-pattern)",
+        "why_user_hasnt_considered": "image column looks convenient",
+        "evidence": "DEV: image columns store base64 in DB; large payload slows backups",
+        "impact": "Backup size explosion, slow queries, no CDN, no access control",
+        "recommendation": "Attachment entity + object store (S3/MinIO). Reference by URL. Per G2-002-002 plan. REJECT image columns."
+      },
+      {
+        "id": "UNC-018",
+        "priority": "LOW",
+        "category": "INVENTORY",
+        "topic": "Negative stock policy (allow vs block)",
+        "discovered_from": "DEV: no concept; some companies allow (WIP), others block",
+        "why_user_hasnt_considered": "User may assume \"block\" is universal",
+        "evidence": "DEV has no field to indicate policy",
+        "impact": "One-size policy breaks manufacturing (WIP needs negative)",
+        "recommendation": "PlantPolicy.AllowNegativeStock bool. Default false."
+      },
+      {
+        "id": "UNC-019",
+        "priority": "LOW",
+        "category": "CALENDAR",
+        "topic": "Public holiday + make-up work day",
+        "discovered_from": "DEV: no concept",
+        "why_user_hasnt_considered": "Tenant may think their own calendar",
+        "evidence": "China 国务院 publishes yearly; companies follow with adjustments",
+        "impact": "Production planning off by 1-2 days per holiday",
+        "recommendation": "PublicHoliday table: CountryCode + Date + Name + IsWorkday. Defer to V2 Production."
+      },
+      {
+        "id": "UNC-019b",
+        "priority": "LOW",
+        "category": "CALENDAR",
+        "topic": "i18n locale per tenant",
+        "discovered_from": "DEV no locale",
+        "why_user_hasnt_considered": "Default zh-CN assumed",
+        "evidence": "DEV has 14 users, no locale field",
+        "impact": "Multi-national tenant cannot have different display",
+        "recommendation": "Tenant.DefaultLocale + User.PreferredLocale."
+      },
+      {
+        "id": "UNC-020",
+        "priority": "LOW",
+        "category": "PRINT",
+        "topic": "Printed form number vs DB ID",
+        "discovered_from": "DEV: 编号 separate from RecordID",
+        "why_user_hasnt_considered": "User may use DB ID as print number",
+        "evidence": "DEV: 单号 2511220018 vs RecordID 397/402  --  different sequences",
+        "impact": "Print number gaps confuse user; DB ID is implementation detail",
+        "recommendation": "DocumentNumber (business) separate from Id (technical). Already in POC-003."
+      },
+      {
+        "id": "UNC-021",
+        "priority": "LOW",
+        "category": "AUDIT",
+        "topic": "SoftDelete entity with restore window",
+        "discovered_from": "DEV: 状态表 has 删除/恢复 logic but not as separate entity",
+        "why_user_hasnt_considered": "Soft delete via Status flag seems enough",
+        "evidence": "DEV status values not fully enumerated",
+        "impact": "Cannot restore 30-day-old delete; no audit of who/when",
+        "recommendation": "SoftDelete entity with DeletedAt/DeletedBy/RestoredAt. Required for master data."
+      },
+      {
+        "id": "UNC-022",
+        "priority": "LOW",
+        "category": "CONVENTION",
+        "topic": "Code+Name+Description separation",
+        "discovered_from": "G2-001/002/003 already use Code+Name pattern",
+        "why_user_hasnt_considered": "DEV has 名称 + 备注 but no Code separation",
+        "evidence": "DEV: 商品表.品名 + 商品表.品号; but 字典 has only 名称 no Code",
+        "impact": "Code is implementation detail; Name is user-facing; mixing causes i18n issues",
+        "recommendation": "Every ReferenceData / MasterData has Code (technical, immutable) + Name (display, localizable) + Description (long text). Already in POC-002/003."
+      },
+      {
+        "id": "UNC-023",
+        "priority": "LOW",
+        "category": "INVENTORY",
+        "topic": "Lot/Serial controlled flag per item",
+        "discovered_from": "DEV: no per-item flag",
+        "why_user_hasnt_considered": "Default to no-control simplifies",
+        "evidence": "DEV has 批次库存 view only",
+        "impact": "Cannot trace per-unit for recall; cannot enforce serialization for regulated items",
+        "recommendation": "Item.IsLotControlled, Item.IsSerialControlled, Item.IsExpiryControlled booleans."
+      },
+      {
+        "id": "UNC-024",
+        "priority": "LOW",
+        "category": "INVENTORY",
+        "topic": "CostMethod per item (FIFO/MAC/Standard)",
+        "discovered_from": "DEV: no cost method",
+        "why_user_hasnt_considered": "Default moving average assumed",
+        "evidence": "DEV no Item.CostMethod field",
+        "impact": "Cannot support Standard Cost (manufacturing) or FIFO (regulated)",
+        "recommendation": "Item.CostMethod enum: MOVING_AVERAGE (default) / STANDARD / FIFO. Per-Plant override possible."
+      }
+    ]
+  }
+}

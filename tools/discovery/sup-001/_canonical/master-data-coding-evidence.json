@@ -1,0 +1,306 @@
+{
+  "meta": {
+    "goal": "SUP-001",
+    "extraction_time": "2026-08-20T13:08:40+08:00",
+    "session": "mvs_11a243eed8e544d6b19087711a392283",
+    "source": "DEV reverse-engineering JSON (READ-ONLY)",
+    "policy": "No live DB accessed; only JSON dumps",
+    "tables_inspected": [
+      "商品表",
+      "BOM表",
+      "字典表",
+      "字典表s",
+      "品牌表",
+      "状态表",
+      "员工表",
+      "凭证表",
+      "仓库表"
+    ],
+    "candidateDecision_allowed": [
+      "ADAPT",
+      "REFERENCE_ONLY",
+      "REUSE",
+      "UNKNOWN"
+    ]
+  },
+  "items": [
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.商品表",
+      "sourceColumn": "品号",
+      "role": "PRIMARY",
+      "declaration": "nvarchar(256)",
+      "nullable": false,
+      "sampleValue": "1000001",
+      "isNullMarker": false,
+      "confidence": "HIGH",
+      "interpretation": "商品表.品号 (PRIMARY). Cross-ref BASE-000 UNC-009/014: separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "REUSE"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.商品表",
+      "sourceColumn": "品名",
+      "role": "NAME",
+      "declaration": "nvarchar(256)",
+      "nullable": true,
+      "sampleValue": "儿童心理学",
+      "isNullMarker": false,
+      "confidence": "HIGH",
+      "interpretation": "商品表.品名 (NAME). Cross-ref BASE-000 UNC-009/014: separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "REUSE"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.商品表",
+      "sourceColumn": "拼音",
+      "role": "AID_INDEX",
+      "declaration": "nvarchar(256)",
+      "nullable": true,
+      "sampleValue": "ETXLX",
+      "isNullMarker": false,
+      "confidence": "HIGH",
+      "interpretation": "商品表.拼音 (AID_INDEX). Cross-ref BASE-000 UNC-009/014: separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "REUSE"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.商品表",
+      "sourceColumn": "分类",
+      "role": "CATEGORY_LABEL",
+      "declaration": "nvarchar(256)",
+      "nullable": true,
+      "sampleValue": "幼小",
+      "isNullMarker": false,
+      "confidence": "HIGH",
+      "interpretation": "商品表.分类 (CATEGORY_LABEL). Cross-ref BASE-000 UNC-009/014: separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "REUSE"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.商品表",
+      "sourceColumn": "分类ID",
+      "role": "CATEGORY_REF",
+      "declaration": "bigint(8)",
+      "nullable": true,
+      "sampleValue": "1",
+      "isNullMarker": false,
+      "confidence": "HIGH",
+      "interpretation": "商品表.分类ID (CATEGORY_REF). Cross-ref BASE-000 UNC-009/014: separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "REUSE"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.商品表",
+      "sourceColumn": "客户料号",
+      "role": "CROSS_REF_CUSTOMER_ALT",
+      "declaration": "nvarchar(256)",
+      "nullable": true,
+      "sampleValue": "",
+      "isNullMarker": true,
+      "confidence": "MEDIUM",
+      "interpretation": "商品表.客户料号 (CROSS_REF_CUSTOMER_ALT). Cross-ref BASE-000 UNC-009/014: separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "REFERENCE_ONLY"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.商品表",
+      "sourceColumn": "客户号",
+      "role": "CROSS_REF_CUSTOMER",
+      "declaration": "nvarchar(256)",
+      "nullable": true,
+      "sampleValue": "+",
+      "isNullMarker": true,
+      "confidence": "MEDIUM",
+      "interpretation": "商品表.客户号 (CROSS_REF_CUSTOMER). Cross-ref BASE-000 UNC-009/014: separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "REFERENCE_ONLY"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.商品表",
+      "sourceColumn": "供应号",
+      "role": "CROSS_REF_SUPPLIER",
+      "declaration": "nvarchar(256)",
+      "nullable": true,
+      "sampleValue": "+",
+      "isNullMarker": true,
+      "confidence": "MEDIUM",
+      "interpretation": "商品表.供应号 (CROSS_REF_SUPPLIER). Cross-ref BASE-000 UNC-009/014: separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "REFERENCE_ONLY"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.商品表",
+      "sourceColumn": "U8导入",
+      "role": "LEGACY_EXTERNAL",
+      "declaration": "int(4)",
+      "nullable": true,
+      "sampleValue": "(null)",
+      "isNullMarker": true,
+      "confidence": "MEDIUM",
+      "interpretation": "商品表.U8导入 (LEGACY_EXTERNAL). Cross-ref BASE-000 UNC-009/014: separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "ADAPT"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.商品表",
+      "sourceColumn": "内控码",
+      "role": "INTERNAL_CONTROL",
+      "declaration": "nvarchar(256)",
+      "nullable": true,
+      "sampleValue": "",
+      "isNullMarker": true,
+      "confidence": "MEDIUM",
+      "interpretation": "商品表.内控码 (INTERNAL_CONTROL). Cross-ref BASE-000 UNC-009/014: separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "ADAPT"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.商品表",
+      "sourceColumn": "版本号",
+      "role": "VERSION",
+      "declaration": "nvarchar(256)",
+      "nullable": true,
+      "sampleValue": "",
+      "isNullMarker": true,
+      "confidence": "MEDIUM",
+      "interpretation": "商品表.版本号 (VERSION). Cross-ref BASE-000 UNC-009/014: separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "ADAPT"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.仓库表",
+      "sourceColumn": "仓库",
+      "role": "PRIMARY",
+      "declaration": "nvarchar(256) NOT NULL",
+      "nullable": false,
+      "sampleValue": "(no sample row in DEV — 0 rows)",
+      "isNullMarker": null,
+      "confidence": "MEDIUM",
+      "interpretation": "仓库表.仓库: Warehouse uses name-as-code. GuliERP may want separate Code + Name per BASE-000 UNC-022.",
+      "candidateDecision": "ADAPT"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.字典表",
+      "sourceColumn": "(header)",
+      "role": "DICTIONARY_HEADER",
+      "declaration": "RecordID bigint PK + 字典名 nvarchar(256) + 名称 nvarchar(256) + 助记码 nvarchar(256) + 父级ID + RTID",
+      "nullable": null,
+      "sampleValue": "28 dictionary headers in DEV",
+      "isNullMarker": null,
+      "confidence": "HIGH",
+      "interpretation": "Dictionary header: 28 flat categories (学历/民族/职位/...). MDM-000D R1 already curated these into seed candidates.",
+      "candidateDecision": "REUSE"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.字典表s",
+      "sourceColumn": "编码/名称/助记码",
+      "role": "DICTIONARY_ITEM_CODE_NAME",
+      "declaration": "RecordID int PK + Sequence int + RN decimal(32,0) + 编码 nvarchar(256) + 名称 nvarchar(256) + 助记码 nvarchar(256)",
+      "nullable": null,
+      "sampleValue": "121 items in DEV",
+      "isNullMarker": null,
+      "confidence": "HIGH",
+      "interpretation": "Dictionary item: Code + Name + 助记码 (memory aid). This is the only DEV table that explicitly separates Code (immutable) from Name (display). MDM-000D R1 uses this Code+Name pattern for all reference data.",
+      "candidateDecision": "REUSE"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.凭证表",
+      "sourceColumn": "凭证号/凭证字/凭证字号",
+      "role": "VOUCHER_NUMBER_3PART",
+      "declaration": "凭证号 nvarchar(256) NOT NULL + 凭证字 nvarchar(256) + 凭证字号 int",
+      "nullable": null,
+      "sampleValue": "(0 rows in DEV — schema only)",
+      "isNullMarker": null,
+      "confidence": "MEDIUM",
+      "interpretation": "Voucher 3-part: 字 (type) + 号 (number) + 字号 (int suffix). China accounting convention.",
+      "candidateDecision": "REUSE"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "dbo.状态表",
+      "sourceColumn": "(row)",
+      "role": "STATUS_REFERENCE_GENERIC",
+      "declaration": "17 cols, 13 rows",
+      "nullable": null,
+      "sampleValue": "13 status rows in DEV",
+      "isNullMarker": null,
+      "confidence": "HIGH",
+      "interpretation": "状态表 is a single 17-col generic status reference. Per-document-type status machine (DocumentStatus enum) is the more modern pattern (see BASE-000 P0-11/P0-14). DEV single-table pattern may be adapted if GuliERP wants a flat cross-cutting status registry.",
+      "candidateDecision": "ADAPT"
+    },
+    {
+      "sourceSystem": "DEV",
+      "sourceTable": "(no dedicated BP table in DEV)",
+      "sourceColumn": "(none)",
+      "role": "BP_MASTER_GAP",
+      "declaration": "No 客户表 / 供应商表 / 外协表 in DEV biz-tables.json",
+      "nullable": null,
+      "sampleValue": "(DEV has no dedicated BP entity)",
+      "isNullMarker": null,
+      "confidence": "HIGH",
+      "interpretation": "BP info is scattered as fields on 商品表 (客户号 / 供应号 / 客户料号 / 供应商品号). DEV has NO dedicated BP master. Whether GuliERP wants a dedicated BP entity is a CONVENTION decision — left UNKNOWN at evidence stage.",
+      "candidateDecision": "UNKNOWN"
+    }
+  ],
+  "observations": [
+    {
+      "id": "CODE-OBS-001",
+      "topic": "ITEM_HAS_10PLUS_CODE_FIELDS",
+      "evidence": "商品表 has 10+ code-like fields mixing primary + cross-reference.",
+      "impact": "GuliERP may want to separate PRIMARY (one per tenant) from CROSS_REFERENCE (many per source system).",
+      "candidateDecision": "UNKNOWN"
+    },
+    {
+      "id": "CODE-OBS-002",
+      "topic": "PURE_NUMERIC_PRIMARY_CODE",
+      "evidence": "商品表 sample: 品号='1000001' (pure 7-digit numeric, no category info).",
+      "impact": "Numeric codes do not carry category. GuliERP may adopt structured prefix.",
+      "candidateDecision": "ADAPT",
+      "decisionReasoning": "Numeric style is REUSE; structured prefix is a design choice — ADAPT."
+    },
+    {
+      "id": "CODE-OBS-003",
+      "topic": "LITERAL_PLUS_AS_NULL_MARKER",
+      "evidence": "商品表 sample: 客户号='+', 供应号='+' (literal + as null-marker).",
+      "impact": "Anti-pattern. GuliERP should use proper SQL NULL.",
+      "candidateDecision": "UNKNOWN",
+      "decisionReasoning": "Evidence documents the anti-pattern. Whether GuliERP rejects it is a CONVENTION decision — UNKNOWN at evidence stage."
+    },
+    {
+      "id": "CODE-OBS-004",
+      "topic": "WAREHOUSE_NAME_AS_CODE",
+      "evidence": "仓库表.仓库 nvarchar(256) NOT NULL used as code (name-as-code).",
+      "impact": "Name and code conflated. GuliERP may want separate Code + Name.",
+      "candidateDecision": "ADAPT"
+    },
+    {
+      "id": "CODE-OBS-005",
+      "topic": "DICTIONARY_HAS_CODE_AND_NAME",
+      "evidence": "字典表s has 编码 (Code) + 名称 (Name) + 助记码 (memory aid).",
+      "impact": "DEV Dictionary is the only place with explicit Code+Name separation. MDM-000D R1 already uses this pattern.",
+      "candidateDecision": "REUSE"
+    },
+    {
+      "id": "CODE-OBS-006",
+      "topic": "NO_DEDICATED_BP_TABLE",
+      "evidence": "No 客户表 / 供应商表 / 外协表 in DEV. BP info lives as 商品表 fields.",
+      "impact": "DEV has no dedicated BP entity. Whether GuliERP wants one is a CONVENTION decision.",
+      "candidateDecision": "UNKNOWN"
+    }
+  ],
+  "gap_to_convention": {
+    "p0_referenced": "P0-09 BP Code Format + Address/Contact (BASE-002) and P0-10 Item Master (BASE-002)",
+    "must_decide": [
+      "Item code: pure numeric (DEV pattern) vs structured FG-/RM-/SF- prefix",
+      "BP code: pure numeric (DEV pattern) vs CUST-/SUPP-/SUB-/LOG- prefix",
+      "Cross-reference codes: per-item (DEV pattern) vs per-BP entity",
+      "Warehouse code: name-as-code (DEV pattern) vs separate Code+Name",
+      "Dictionary code: per-dictionary-enum (DEV pattern) vs per-CONFIG+per-TENANT",
+      "BP entity: NONE in DEV vs DEDICATED in GuliERP"
+    ]
+  }
+}
