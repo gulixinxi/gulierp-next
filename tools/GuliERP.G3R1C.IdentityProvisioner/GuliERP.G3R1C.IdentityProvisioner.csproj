@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>GuliERP.G3R1C.IdentityProvisioner</RootNamespace>
+    <AssemblyName>gulierp-g3r1c-identity-provisioner</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <!-- This CLI tool needs explicit package versions for the Identity
+         pipeline (UserManager, SignInManager, etc.) which require
+         Microsoft.AspNetCore.* packages. The Directory.Packages.props
+         CPM file does not pre-pin these. Override CPM locally so this
+         tool can declare its own package versions (same approach as
+         tools/GuliERP.Mdm.Bootstrap). -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <!--
+      G3-R1C dev-only Identity test-user provisioner.
+      Per docs/verification/G3_R1C_IDENTITY_ROLE_PACK_DISCOVERY.md §5
+      there is NO public HTTP API for Identity user creation, so
+      this CLI is the dev-only path. It uses the existing
+      AddGuliErpIdentity(connStr) extension and the existing
+      UserManager<GuliErpUser> / IdentityDbContext services.
+
+      This tool NEVER ships to production. It is restricted to
+      dev / test databases. The usernames created all use the
+      `g3r1c_` prefix so a future cleanup script can target them
+      without touching production users.
+
+      Per the G3-R1C brief: passwords come from environment
+      variables (GULIERP_G3R1C_*_PASS) — never hard-coded.
+    -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\modules\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\..\modules\identity\GuliERP.Identity.Application\GuliERP.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\modules\identity\GuliERP.Identity.Domain\GuliERP.Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\modules\identity\GuliERP.Identity.Infrastructure\GuliERP.Identity.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.11" />
+    <!-- Microsoft.AspNetCore.Authentication + Cookies come from the
+         .NET 10 shared framework (no explicit package needed). -->
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.11" />
+  </ItemGroup>
+
+</Project>
