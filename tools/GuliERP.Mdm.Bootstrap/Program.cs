@@ -59,6 +59,9 @@ public static class Program
                     return await RunDictionaryV15Async(args.AsSpan(1).ToArray());
                 case "masterdata-v15":
                     return await RunMasterDataV15Async(args.AsSpan(1).ToArray());
+                case "reference":
+                    // G3-R1B: reference bootstrap seed loader
+                    return await ReferenceSeedCommand.RunAsync(args.AsSpan(1).ToArray());
                 case "help":
                 case "--help":
                 case "-h":
@@ -66,7 +69,7 @@ public static class Program
                     return 0;
                 default:
                     Console.Error.WriteLine($"ERROR: unknown subcommand: {args[0]}");
-                    Console.Error.WriteLine("Valid subcommands: (default = dictionary), numbering, masterdata, dictionary-v15, masterdata-v15");
+                    Console.Error.WriteLine("Valid subcommands: (default = dictionary), numbering, masterdata, dictionary-v15, masterdata-v15, reference");
                     return 2;
             }
         }
