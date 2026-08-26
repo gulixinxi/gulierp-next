@@ -34,6 +34,26 @@ public static class EnterpriseBusinessRolePacks
     //     admin assignment is present (does not duplicate).
     public const string EmployeeOperatorRoleCode = "ERP_EMPLOYEE_OPERATOR";
 
+    // G3-R2B (GULIERP_PURCHASE_OPERATOR_001_PACK_BOUNDARY, 2026-08-26):
+    // The PurchaseOrder role pack is the 5th operator pack (parallel
+    // to MdmOperator / SalesOperator / EmployeeOperator). It contains
+    // exactly 2 permissions (purchase.order.read + purchase.order.manage)
+    // and does NOT touch any of the other operator packs' perms.
+    //
+    // Boundary contract (locked by PurchaseOperatorPackBoundaryFacts):
+    //   1. ERP_PURCH_OPERATOR contains EXACTLY 2 purchase.order.*
+    //      permissions. No more, no less.
+    //   2. ERP_PURCH_OPERATOR does NOT contain mdm.* / sales.* /
+    //      identity.* / identity.employee.* perms.
+    //   3. ERP_PURCH_OPERATOR is in InitialAdminRolePacks (so
+    //      the bootstrap admin can operate the purchase order
+    //      module out of the box, same as mdm / sales / employee).
+    //   4. ERP_PURCH_OPERATOR does NOT alter the 8-perm
+    //      EnterpriseSystemAdminPermissions array (G3-R1C
+    //      boundary stays locked).
+    public const string PurchOperatorRoleCode = "ERP_PURCH_OPERATOR";
+    public const string PurchOperatorRoleName = "ERP Purchase Operator";
+
     // GULIERP_SYSTEM_ADMIN_PACK_BOUNDARY_001 (G3-R1C, 2026-08-26):
     // The ERP_SYSTEM_ADMIN role pack is now ALSO exposed as an
     // `EnterpriseBusinessRolePack` record (parallel to MdmOperator /
@@ -123,15 +143,26 @@ public static class EnterpriseBusinessRolePacks
             "identity.employee.manage",
         });
 
+    public static readonly EnterpriseBusinessRolePack PurchOperator = new(
+        PurchOperatorRoleCode,
+        PurchOperatorRoleName,
+        "Read + manage access to the PurchaseOrder vertical slice only.",
+        new[]
+        {
+            "purchase.order.read",
+            "purchase.order.manage",
+        });
+
     /// <summary>
-    /// The 3 operator packs (NOT including <see cref="SystemAdmin"/>)
+    /// The 4 operator packs (NOT including <see cref="SystemAdmin"/>)
     /// that the bootstrap service assigns to the first enterprise
     /// admin in addition to the SystemAdmin role. This is a
     /// <b>bootstrap-service decision</b>, not a property of any
-    /// individual pack. The admin user ends up with 4 role
+    /// individual pack. The admin user ends up with 5 role
     /// assignments because the bootstrap calls
-    /// <c>EnsureInitialAdminBusinessRolePackAsync</c> (3 operator
-    /// packs) AND <c>EnsureSystemAdminRoleAsync</c> +
+    /// <c>EnsureInitialAdminBusinessRolePackAsync</c> (4 operator
+    /// packs: Mdm / Sales / Employee / Purchase) AND
+    /// <c>EnsureSystemAdminRoleAsync</c> +
     /// <c>EnsureRoleAssignmentAsync</c> (1 SystemAdmin role).
     /// A dedicated single-role test user for SystemAdmin (see
     /// G3-R1C) gets only the SystemAdmin role.
@@ -141,5 +172,6 @@ public static class EnterpriseBusinessRolePacks
         MdmOperator,
         SalesOperator,
         EmployeeOperator,
+        PurchOperator,
     };
 }

@@ -124,16 +124,22 @@ public sealed class ErpSystemAdminPackBoundaryFacts
     {
         // The bootstrap admin gets ERP_SYSTEM_ADMIN via a SEPARATE
         // code path (EnsureSystemAdminRoleAsync + EnsureRoleAssignmentAsync).
-        // The InitialAdminRolePacks array lists ONLY the 3 operator packs.
+        // The InitialAdminRolePacks array lists ONLY the 4 operator
+        // packs (Mdm / Sales / Employee / Purchase as of G3-R2B).
+        // The INTENT of this test is "SystemAdmin is not in this list" —
+        // the count is the SIZE of the operator-pack list, not a
+        // semantic claim about SystemAdmin. Updated 3->4 in G3-R2B
+        // when ERP_PURCH_OPERATOR joined the list.
         var codes = EnterpriseBusinessRolePacks.InitialAdminRolePacks
             .Select(p => p.Code)
             .ToArray();
 
-        Assert.Equal(3, codes.Length);
+        Assert.Equal(4, codes.Length);
         Assert.DoesNotContain(EnterpriseBusinessRolePacks.SystemAdminRoleCode, codes);
         Assert.Contains(EnterpriseBusinessRolePacks.MdmOperatorRoleCode, codes);
         Assert.Contains(EnterpriseBusinessRolePacks.SalesOperatorRoleCode, codes);
         Assert.Contains(EnterpriseBusinessRolePacks.EmployeeOperatorRoleCode, codes);
+        Assert.Contains(EnterpriseBusinessRolePacks.PurchOperatorRoleCode, codes);
     }
 
     [Fact]
@@ -149,6 +155,7 @@ public sealed class ErpSystemAdminPackBoundaryFacts
             ("MdmOperator",    EnterpriseBusinessRolePacks.MdmOperator.Permissions),
             ("SalesOperator",  EnterpriseBusinessRolePacks.SalesOperator.Permissions),
             ("EmployeeOperator", EnterpriseBusinessRolePacks.EmployeeOperator.Permissions),
+            ("PurchOperator",  EnterpriseBusinessRolePacks.PurchOperator.Permissions),
         };
 
         // Per-pack uniqueness.

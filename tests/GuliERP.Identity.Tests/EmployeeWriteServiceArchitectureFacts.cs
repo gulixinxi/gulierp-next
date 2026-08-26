@@ -237,14 +237,21 @@ public sealed class EmployeeWriteServiceArchitectureFacts
     [Fact]
     public void InitialAdminRolePacks_Contains_All_Four_Formal_Business_Role_Packs()
     {
-        // GULIERP_EMPLOYEE_PERMISSION_BOUNDARY_FIX_001 — STEP 4:
-        // The new enterprise's initial admin is assigned the 4
-        // formal business role packs (so the admin can manage
-        // MDM, Sales, and Employee surfaces out of the box).
+        // GULIERP_EMPLOYEE_PERMISSION_BOUNDARY_FIX_001 — STEP 4,
+        // G3-R2B update: the new enterprise's initial admin is
+        // assigned the 4 formal business role packs (so the admin
+        // can manage MDM, Sales, Employee, and Purchase surfaces
+        // out of the box). The test name "All_Four" was written
+        // before G3-R2B; the INTENT is "all formal business
+        // operator packs the design requires". The PACK COUNT
+        // (4, not 3) is the structural check; the 3 code
+        // assertions verify the Mdm / Sales / Employee packs
+        // are present. ERP_PURCH_OPERATOR is added in G3-R2B
+        // (commit feat(identity)).
         // Note: ERP_SYSTEM_ADMIN is the SEPARATE system admin role
         // (not in `InitialAdminRolePacks`; it is provisioned
-        // explicitly in EnterpriseBootstrapService at line 497-540
-        // with its frozen 8 Identity administration permissions).
+        // explicitly in EnterpriseBootstrapService with its
+        // frozen 8 Identity administration permissions).
         var packs = typeof(GuliERP.Identity.Application.Authorization.EnterpriseBusinessRolePacks);
         var initialField = packs.GetField("InitialAdminRolePacks")!;
         var initial = (GuliERP.Identity.Application.Authorization.EnterpriseBusinessRolePack[])initialField.GetValue(null)!;
@@ -252,7 +259,8 @@ public sealed class EmployeeWriteServiceArchitectureFacts
         Assert.Contains("ERP_MDM_OPERATOR", codes);
         Assert.Contains("ERP_SALES_OPERATOR", codes);
         Assert.Contains("ERP_EMPLOYEE_OPERATOR", codes);
-        Assert.Equal(3, initial.Length);
+        Assert.Contains("ERP_PURCH_OPERATOR", codes);
+        Assert.Equal(4, initial.Length);
     }
 
     // ----------------------------------------------------------------

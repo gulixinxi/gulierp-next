@@ -36,18 +36,22 @@ public sealed record EnterpriseRolePackProvisionResult(
 public sealed record EnterpriseBusinessRolePackProvisionResult(
     EnterpriseRolePackProvisionResult Mdm,
     EnterpriseRolePackProvisionResult Sales,
-    EnterpriseRolePackProvisionResult Employee)
+    EnterpriseRolePackProvisionResult Employee,
+    EnterpriseRolePackProvisionResult Purchase)
 {
     public bool Idempotent =>
         !Mdm.RoleCreated
         && !Sales.RoleCreated
         && !Employee.RoleCreated
+        && !Purchase.RoleCreated
         && Mdm.ClaimsCreated.Count == 0
         && Sales.ClaimsCreated.Count == 0
         && Employee.ClaimsCreated.Count == 0
+        && Purchase.ClaimsCreated.Count == 0
         && !Mdm.AssignmentCreated
         && !Sales.AssignmentCreated
-        && !Employee.AssignmentCreated;
+        && !Employee.AssignmentCreated
+        && !Purchase.AssignmentCreated;
 }
 
 public sealed class EnterpriseBusinessRolePackProvisioner
@@ -95,8 +99,21 @@ public sealed class EnterpriseBusinessRolePackProvisioner
             EnterpriseBusinessRolePacks.EmployeeOperator,
             now,
             ct);
+        // G3-R2B (GULIERP_PURCHASE_OPERATOR_001_PACK_BOUNDARY,
+        // 2026-08-26): the initial admin also receives
+        // `ERP_PURCH_OPERATOR` (2 perms: purchase.order.read /
+        // .manage) so the admin can operate the PurchaseOrder
+        // module out of the box. The pack is independent of all 3
+        // existing operator packs AND of ERP_SYSTEM_ADMIN.
+        var purchase = await EnsureRolePackAsync(
+            tenantId,
+            companyId,
+            userId,
+            EnterpriseBusinessRolePacks.PurchOperator,
+            now,
+            ct);
 
-        return new EnterpriseBusinessRolePackProvisionResult(mdm, sales, employee);
+        return new EnterpriseBusinessRolePackProvisionResult(mdm, sales, employee, purchase);
     }
 
     private async Task<EnterpriseRolePackProvisionResult> EnsureRolePackAsync(

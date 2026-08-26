@@ -28,6 +28,15 @@ public static class GuliErpPermissions
     public const string IdentityEmployeeRead = "identity.employee.read";
     public const string IdentityEmployeeManage = "identity.employee.manage";
 
+    // G3-R2B (GULIERP_PURCHASE_ORDER_001_DOMAIN_IMPLEMENTATION,
+    // 2026-08-26): 2 new permissions for the PurchaseOrder
+    // vertical slice (read + manage). Pure purchase.* namespace
+    // — does NOT touch mdm.*, identity.employee.*, sales.*, or
+    // the frozen EnterpriseSystemAdminPermissions array. Mirror
+    // of the sales.order.* permission pair.
+    public const string PurchaseOrderRead = "purchase.order.read";
+    public const string PurchaseOrderManage = "purchase.order.manage";
+
     public static readonly string[] EnterpriseSystemAdminPermissions =
     {
         IdentityOrganizationRead,
