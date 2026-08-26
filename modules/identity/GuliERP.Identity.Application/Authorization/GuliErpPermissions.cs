@@ -19,6 +19,15 @@ public static class GuliErpPermissions
     public const string IdentityCompanyRead = "identity.company.read";
     public const string IdentityCompanySwitch = "identity.company.switch";
 
+    // GULIERP_EMPLOYEE_MASTER_001_DOMAIN_IMPLEMENTATION -
+    // 2 new permissions for the Employee write surface (read +
+    // manage). Layered with the owner-specific permission
+    // (e.g., a user with only `IdentityEmployeeRead` sees the
+    // Employee but NOT the contact; the contact requires
+    // `ContactProfileRead` from the future Contact module).
+    public const string IdentityEmployeeRead = "identity.employee.read";
+    public const string IdentityEmployeeManage = "identity.employee.manage";
+
     public static readonly string[] EnterpriseSystemAdminPermissions =
     {
         IdentityOrganizationRead,
@@ -31,3 +40,4 @@ public static class GuliErpPermissions
         IdentityCompanySwitch,
     };
 }
+

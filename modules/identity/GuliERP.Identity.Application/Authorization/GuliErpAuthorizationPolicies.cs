@@ -18,5 +18,12 @@ public static class GuliErpAuthorizationPolicies
     public const string IdentityCompanyRead = Prefix + GuliErpPermissions.IdentityCompanyRead;
     public const string IdentityCompanySwitch = Prefix + GuliErpPermissions.IdentityCompanySwitch;
 
+    // GULIERP_EMPLOYEE_MASTER_001_DOMAIN_IMPLEMENTATION -
+    // Employee read + manage policy names. Mirror the
+    // IdentityOrganization / IdentityUser / IdentityRole pattern.
+    public const string IdentityEmployeeRead = Prefix + GuliErpPermissions.IdentityEmployeeRead;
+    public const string IdentityEmployeeManage = Prefix + GuliErpPermissions.IdentityEmployeeManage;
+
     public static string ForPermission(string permissionCode) => Prefix + permissionCode;
 }
+
