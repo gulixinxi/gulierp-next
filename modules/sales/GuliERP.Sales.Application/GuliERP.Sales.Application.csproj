@@ -2,5 +2,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
     <ProjectReference Include="..\GuliERP.Sales.Domain\GuliERP.Sales.Domain.csproj" />
+    <!-- G3-R2A: SalesOrder context facade returns MDM DTOs
+         (BusinessPartnerDto / ItemDto / UomDto / WarehouseDto /
+         DictionaryItemDto) so the frontend can render the
+         dropdowns without a parallel type. -->
+    <ProjectReference Include="..\..\mdm\GuliERP.Mdm.Application\GuliERP.Mdm.Application.csproj" />
   </ItemGroup>
 </Project>

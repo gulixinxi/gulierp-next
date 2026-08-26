@@ -102,6 +102,10 @@ public static class SalesOrderEndpoints
             })
             .RequireAuthorization(SalesPolicies.SalesOrderManage);
 
+        // G3-R2A: register the 5 context facade endpoints
+        // (customers / items / uoms / warehouses / payment-methods).
+        MapSalesOrderContextEndpoints(group);
+
         return routes;
     }
 
@@ -114,4 +118,85 @@ public static class SalesOrderEndpoints
             {
                 [ProblemDetailsExtensions.CodeKey] = ex.Code,
             });
+
+    // ============================================================
+    // G3-R2A — SalesOrder-scoped context facade (5 endpoints)
+    //
+    // Per the G3-R2A audit (G3_R2A_SALESORDER_CURRENT_STATE_AUDIT.md §3),
+    // the SALES_OPERATOR role has only sales.* perms (per the
+    // G3-R1C boundary contract) and CANNOT read MDM endpoints
+    // (/api/v1/mdm/business-partners, .../items, etc.). The
+    // SalesOrderList and SalesOrderEdit pages need to populate
+    // Customer / Item / UOM / Warehouse / PaymentMethod
+    // dropdowns. The 5 endpoints below re-expose the same MDM
+    // data but require SalesOrderRead (which SALES_OPERATOR has).
+    //
+    // Read-only, tenant + company scoped, forwards to the
+    // existing IMdmService / IMdmBusinessPartnerService /
+    // IMdmWarehouseService / IMdmDictionaryService.
+    // ============================================================
+
+    private static void MapSalesOrderContextEndpoints(IEndpointRouteBuilder group)
+    {
+        var ctx = group.MapGroup("/context").WithTags("Sales.Order.Context");
+
+        // GET /api/v1/sales/orders/context/customers?keyword=...&page=...&pageSize=...
+        ctx.MapGet("/customers", async (
+                [FromQuery] string? keyword,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                ISalesOrderContextService svc,
+                CancellationToken ct) =>
+            {
+                return Results.Ok(await svc.ListCustomersAsync(keyword, page, pageSize, ct));
+            })
+            .RequireAuthorization(SalesPolicies.SalesOrderRead);
+
+        // GET /api/v1/sales/orders/context/items?keyword=...&page=...&pageSize=...
+        ctx.MapGet("/items", async (
+                [FromQuery] string? keyword,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                ISalesOrderContextService svc,
+                CancellationToken ct) =>
+            {
+                return Results.Ok(await svc.ListItemsAsync(keyword, page, pageSize, ct));
+            })
+            .RequireAuthorization(SalesPolicies.SalesOrderRead);
+
+        // GET /api/v1/sales/orders/context/uoms?keyword=...&page=...&pageSize=...
+        ctx.MapGet("/uoms", async (
+                [FromQuery] string? keyword,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                ISalesOrderContextService svc,
+                CancellationToken ct) =>
+            {
+                return Results.Ok(await svc.ListUomsAsync(keyword, page, pageSize, ct));
+            })
+            .RequireAuthorization(SalesPolicies.SalesOrderRead);
+
+        // GET /api/v1/sales/orders/context/warehouses?keyword=...&page=...&pageSize=...
+        ctx.MapGet("/warehouses", async (
+                [FromQuery] string? keyword,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                ISalesOrderContextService svc,
+                CancellationToken ct) =>
+            {
+                return Results.Ok(await svc.ListWarehousesAsync(keyword, page, pageSize, ct));
+            })
+            .RequireAuthorization(SalesPolicies.SalesOrderRead);
+
+        // GET /api/v1/sales/orders/context/payment-methods?page=...&pageSize=...
+        ctx.MapGet("/payment-methods", async (
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                ISalesOrderContextService svc,
+                CancellationToken ct) =>
+            {
+                return Results.Ok(await svc.ListPaymentMethodsAsync(page, pageSize, ct));
+            })
+            .RequireAuthorization(SalesPolicies.SalesOrderRead);
+    }
 }

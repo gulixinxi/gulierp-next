@@ -21,6 +21,12 @@ public static class DependencyInjection
                 SalesDbContext.DefaultSchema));
         });
         services.AddScoped<ISalesOrderService, SalesOrderService>();
+        // G3-R2A: SalesOrder-scoped context facade (5 endpoints
+        // under /api/v1/sales/orders/context/* that proxy the
+        // same MDM data the standard mdm read endpoints return,
+        // but require SalesOrderRead instead of MdmPolicies.XRead
+        // — see G3_R2A_SALESORDER_CURRENT_STATE_AUDIT.md §3).
+        services.AddScoped<ISalesOrderContextService, SalesOrderContextService>();
 
         services.AddAuthorization(options =>
         {
