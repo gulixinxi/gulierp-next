@@ -71,7 +71,13 @@ public static class MdmSeed
     ///         looking for a directory that contains the relative
     ///         seed path. This lets the seed be found from the test
     ///         process whose CWD is <c>tests/.../bin/Release/net10.0/</c>
-    ///         while the JSON actually lives at the repo root.</item>
+    ///         while the JSON actually lives at the repo root. This
+    ///         step is SKIPPED if the testability hook
+    ///         <c>GULIERP_MDM_SEED_NO_BASE_DIR_WALK</c> is set to
+    ///         <c>"1"</c> — used by
+    ///         <c>MdmCurrentTenantParallelTests</c> to isolate the
+    ///         CWD walk-up from the AppContext walk-up so the test
+    ///         can synthesize a sandbox under the temp directory.</item>
     ///   <item>Otherwise, walk up from <c>Environment.CurrentDirectory</c>
     ///         using the same logic (catches the operator-harness
     ///         case where CWD = repo root).</item>
@@ -90,8 +96,19 @@ public static class MdmSeed
         var candidates = new List<string?>();
         if (!string.IsNullOrWhiteSpace(seedFilePath)) candidates.Add(seedFilePath);
         // Walk-up from AppContext.BaseDirectory looking for the
-        // repo root that contains data/bootstrap/reference/system/uom.json
-        candidates.Add(WalkUpForFile(AppContext.BaseDirectory, UomSeedFilePath));
+        // repo root that contains data/bootstrap/reference/system/uom.json.
+        // The GULIERP_MDM_SEED_NO_BASE_DIR_WALK env var is a testability
+        // hook (default OFF). Tests that synthesize a sandbox under the
+        // temp directory set it to "1" so the CWD walk-up can be
+        // exercised in isolation; the production CLI never sets it.
+        var skipBaseDir = string.Equals(
+            Environment.GetEnvironmentVariable("GULIERP_MDM_SEED_NO_BASE_DIR_WALK"),
+            "1",
+            StringComparison.Ordinal);
+        if (!skipBaseDir)
+        {
+            candidates.Add(WalkUpForFile(AppContext.BaseDirectory, UomSeedFilePath));
+        }
         candidates.Add(WalkUpForFile(Environment.CurrentDirectory, UomSeedFilePath));
         foreach (var c in candidates)
         {

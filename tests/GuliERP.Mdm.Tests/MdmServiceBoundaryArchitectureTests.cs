@@ -68,9 +68,19 @@ public sealed class MdmServiceBoundaryArchitectureTests
     // are explicitly allowed to use MdmDbContext directly because
     // they own the contract itself, not the data:
     //  - MdmService.cs: the Application service (the boundary)
+    //  - MdmDictionaryService.cs: the dictionary read/write service
+    //  - NumberingRuleService.cs: the NumberingRule read/write service
+    //    (ICompanyScoped; analogous to MdmService for NumberingRule)
+    //  - MdmMasterData002Services.cs: BP / Warehouse / Location services
     //  - MdmSeed.cs: dev-time system-scoped UOM seed (bypasses
     //    IMdmService because V1 UOM is system-scoped, not tenant-
     //    scoped; documented in MDM-000 §15)
+    //  - MdmDictionarySeedService.cs: dev-time dictionary seed (CLI-
+    //    invoked; per B1 architecture, the API tier never auto-seeds)
+    //  - MdmNumberingRuleSeedService.cs: dev-time NumberingRule seed
+    //    (CLI-invoked; per G3_NUMBERING_RULE_V1 plan)
+    //  - MdmMasterDataSeedService.cs: dev-time masterdata seed
+    //    (CLI-invoked; per G3_MDM_MASTERDATA_V1 plan)
     //  - DependencyInjection.cs: DI registration
     //  - DesignTimeMdmDbContextFactory.cs: design-time only
     //  - MdmDbContext.cs: the DbContext class itself
@@ -86,7 +96,11 @@ public sealed class MdmServiceBoundaryArchitectureTests
         "MdmService.cs",
         "MdmMasterData002Services.cs",
         "MdmDictionaryService.cs",
+        "NumberingRuleService.cs",
         "MdmSeed.cs",
+        "MdmDictionarySeedService.cs",
+        "MdmNumberingRuleSeedService.cs",
+        "MdmMasterDataSeedService.cs",
         "DependencyInjection.cs",
         "DesignTimeMdmDbContextFactory.cs",
         "MdmDbContext.cs",
@@ -98,6 +112,7 @@ public sealed class MdmServiceBoundaryArchitectureTests
         "LocationConfiguration.cs",
         "DictionaryTypeConfiguration.cs",
         "DictionaryItemConfiguration.cs",
+        "NumberingRuleConfiguration.cs",
         "FoundationModelBoundaries.cs", // if present
         ".Designer.cs",                 // all migrations
         "MdmDbContextModelSnapshot.cs",

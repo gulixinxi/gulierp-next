@@ -120,10 +120,17 @@ public sealed class MdmCurrentTenantParallelTests
     public void MdmSeed_ResolveSeedFilePath_Walks_Up_From_CurrentDirectory()
     {
         // Under `dotnet test --artifacts-path`, AppContext.BaseDirectory
-        // lives under %TEMP%, outside the repository. Exercise the
-        // production resolver's current-directory walk-up with a synthetic
-        // repo-shaped folder so the test stays independent from build output
-        // layout.
+        // lives under %TEMP%, outside the repository. Without
+        // `--artifacts-path` the test bin folder lives under the repo
+        // and the AppContext.BaseDirectory walk-up would find the
+        // REAL seed file before the CWD walk-up can locate the
+        // sandbox. The GULIERP_MDM_SEED_NO_BASE_DIR_WALK env var
+        // is the resolver's testability hook: when set to "1" it
+        // skips the AppContext.BaseDirectory walk-up so the test
+        // can exercise the CWD walk-up in isolation. The hook is
+        // default-OFF; the production CLI never sets it.
+        var prevHook = Environment.GetEnvironmentVariable("GULIERP_MDM_SEED_NO_BASE_DIR_WALK");
+        Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_NO_BASE_DIR_WALK", "1");
         using var sandbox = SeedPathSandbox.Create();
         var previous = Directory.GetCurrentDirectory();
         try
@@ -137,6 +144,7 @@ public sealed class MdmCurrentTenantParallelTests
         finally
         {
             Directory.SetCurrentDirectory(previous);
+            Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_NO_BASE_DIR_WALK", prevHook);
         }
     }
 
@@ -151,7 +159,11 @@ public sealed class MdmCurrentTenantParallelTests
         // test bin folder) without forcing the caller to handle the
         // path resolution. The env var GULIERP_MDM_SEED_FILE
         // (below) is the opt-out lever when the operator wants a
-        // hard FAIL on a missing path.
+        // hard FAIL on a missing path. The GULIERP_MDM_SEED_NO_BASE_DIR_WALK
+        // testability hook isolates the CWD walk-up for the
+        // synthetic sandbox.
+        var prevHook = Environment.GetEnvironmentVariable("GULIERP_MDM_SEED_NO_BASE_DIR_WALK");
+        Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_NO_BASE_DIR_WALK", "1");
         using var sandbox = SeedPathSandbox.Create();
         var previous = Directory.GetCurrentDirectory();
         try
@@ -165,6 +177,7 @@ public sealed class MdmCurrentTenantParallelTests
         finally
         {
             Directory.SetCurrentDirectory(previous);
+            Environment.SetEnvironmentVariable("GULIERP_MDM_SEED_NO_BASE_DIR_WALK", prevHook);
         }
     }
 
