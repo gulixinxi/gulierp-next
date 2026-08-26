@@ -65,7 +65,12 @@ export const shellNavigation: ShellNavigationModule[] = [
           { id: 'list-mdm-business-partners', label: '业务伙伴', icon: 'OfficeBuilding', route: '/mdm/business-partners', tabTitle: '业务伙伴' },
           { id: 'list-mdm-customers', label: '客户档案', icon: 'OfficeBuilding', route: '/mdm/customers', tabTitle: '客户档案' },
           { id: 'list-mdm-suppliers', label: '供应商', icon: 'Avatar', route: '/mdm/suppliers', tabTitle: '供应商' },
-          { id: 'basic-employees', label: '员工档案', icon: 'UserFilled', disabled: true, placeholder: '员工档案待开发' },
+          // G3-R1D (N-1): 基础数据 > 员工档案 now points to the real
+          // /mdm/employees page (the 主数据 > 员工档案 already does).
+          // The page was previously marked "待开发" because the 基础数据
+          // module was a placeholder before the EmployeeList page was wired
+          // to the real /api/v1/organization/companies/{id}/employees API.
+          { id: 'list-mdm-employees', label: '员工档案', icon: 'UserFilled', route: '/mdm/employees', tabTitle: '员工档案' },
           { id: 'list-mdm-warehouses', label: '仓库', icon: 'Box', route: '/mdm/warehouses', tabTitle: '仓库' },
           { id: 'list-mdm-locations', label: '库位', icon: 'Files', route: '/mdm/locations', tabTitle: '库位' },
         ],

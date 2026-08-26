@@ -129,7 +129,29 @@ const primaryModules: WorkbenchModule[] = [
   },
 ];
 
-const deferredModules: DeferredModule[] = [];
+// G3-R1D (N-2): These modules are listed in the G3-R1D brief §WorkItem 2
+// but currently have no real API on the backend. The page renders them
+// as explicit "DEFERRED" cards so operators know they exist and why
+// they are not present. Each reason is truthful and references the
+// real backend state.
+const deferredModules: DeferredModule[] = [
+  {
+    title: '币种 (Currency)',
+    reason: 'Dictionary V1 中币种为 REFERENCE_ONLY（opt-in），暂不加载；待 G3-R1B Currency opt-in 策略上线后可启用',
+  },
+  {
+    title: '付款方式 (PaymentMethod)',
+    reason: '后端尚无 PaymentMethod 域/实体/端点；当前销售单使用 mock/sales-order.ts 的 paymentTerms 占位',
+  },
+  {
+    title: '岗位 (Position)',
+    reason: '后端组织模型仅 OrganizationUnit（部门/班組），未拆 Position 实体；与员工档案暂不分离',
+  },
+  {
+    title: '学历 (Education)',
+    reason: '后端 Employee 实体无 education/profile 字段组；仅 employeeNo/name/departmentId/userId 最小集，待 Employee 详档阶段再设计',
+  },
+];
 </script>
 
 <style scoped>
