@@ -228,6 +228,11 @@ export interface ItemDto {
   itemNature: ItemNatureInt;
   status: MasterDataStatusInt;
   description: string | null;
+  // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 (2026-08-30) — Item.MnemonicCode
+  // wire field. Optional, nullable, max 40 chars. Optional-only
+  // per Reuse Wave brief §二十八 (Common Field Contract). Backend
+  // MDM006 + G3-R2A push already includes this field.
+  mnemonicCode: string | null;
   createdAt: string;
   modifiedAt: string;
   concurrencyVersion: number;
@@ -240,6 +245,11 @@ export interface CreateItemRequest {
   baseUomId: string;
   itemNature: ItemNatureInt;
   description: string | null;
+  // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 — server-side optional.
+  // Empty / null on the form is preserved as null (the backend
+  // accepts null, empty, or whitespace — the service layer
+  // trims and stores null on empty).
+  mnemonicCode?: string | null;
 }
 export interface UpdateItemRequest {
   name: string;
@@ -249,6 +259,10 @@ export interface UpdateItemRequest {
   itemNature: ItemNatureInt;
   status: MasterDataStatusInt;
   description: string | null;
+  // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 — editable. Pass null to
+  // clear. The backend's UpdateItemAsync calls NullIfEmpty
+  // before persisting.
+  mnemonicCode?: string | null;
   expectedConcurrencyVersion: number;
 }
 export interface ItemListParams {
@@ -283,6 +297,10 @@ export interface Item {
   itemNature: ItemNature;
   status: MasterDataStatus;
   description?: string;
+  // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 — UI view of MnemonicCode.
+  // The list's keyword search already covers it (server-side
+  // case-insensitive upper match on Code / Name / MnemonicCode).
+  mnemonicCode?: string;
   createdAt: string;
   updatedAt: string;
   /** Optional-only-for-SalesOrder-Mock (real API always provides). Default 0 when missing. */
@@ -300,6 +318,11 @@ export interface ItemForm {
   itemNature: ItemNature;
   status: MasterDataStatus;
   description?: string;
+  // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 — empty / null means
+  // "not set". The user is told via placeholder that the
+  // server will NOT auto-generate (no pinyin lib, hand-typed
+  // per Common Field Contract).
+  mnemonicCode?: string;
 }
 
 // ============================================================

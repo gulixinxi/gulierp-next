@@ -42,6 +42,10 @@ function dtoToUi(d: ItemDto): Item {
     itemNature: natureIntToUi(d.itemNature),
     status: statusIntToUi(d.status),
     description: d.description ?? undefined,
+    // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 (2026-08-30) — MnemonicCode
+    // round-trip. Empty string from server is treated as undefined
+    // so the form placeholder ("(未设置)") renders consistently.
+    mnemonicCode: d.mnemonicCode?.trim() ? d.mnemonicCode : undefined,
     createdAt: d.createdAt,
     updatedAt: d.modifiedAt,
     concurrencyVersion: d.concurrencyVersion,
@@ -59,6 +63,9 @@ function formToCreate(f: ItemForm): CreateItemRequest | never {
     baseUomId: f.baseUomId,
     itemNature: natureUiToInt(f.itemNature),
     description: f.description?.trim() || null,
+    // MnemonicCode: optional; null when blank (server trims +
+    // stores null on empty).
+    mnemonicCode: f.mnemonicCode?.trim() ? f.mnemonicCode.trim() : null,
   };
 }
 
@@ -118,6 +125,9 @@ export async function updateItem(
     itemNature: natureUiToInt(form.itemNature),
     status: statusUiToInt(form.status),
     description: form.description?.trim() || null,
+    // MnemonicCode: editable. null when blank (server-side
+    // NullIfEmpty clears it).
+    mnemonicCode: form.mnemonicCode?.trim() ? form.mnemonicCode.trim() : null,
     expectedConcurrencyVersion: expectedConcurrencyVersion ?? 0,
   };
   const d = await apiPut<ItemDto>(`/api/v1/mdm/items/${id}`, body);
@@ -136,6 +146,9 @@ export async function setItemStatus(row: Item, target: 'active' | 'inactive'): P
     itemNature: fresh.itemNature,
     status: target,
     description: fresh.description,
+    // MnemonicCode is preserved as-is across status toggles
+    // (the user did not edit it; pass through from server).
+    mnemonicCode: fresh.mnemonicCode,
   }, fresh.concurrencyVersion);
 }
 

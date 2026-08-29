@@ -12,13 +12,13 @@
     <!-- Toolbar (reused) -->
     <MdmListToolbar
       v-model:search="searchKeyword"
-      search-placeholder="搜索物料代码 / 名称 / 规格型号"
+      search-placeholder="搜索物料代码 / 名称 / 规格型号 / 助记码"
       create-label="新建物料"
       @search="applyFilters"
       @create="openCreate"
     >
       <template #filters>
-        <el-select v-model="filterCategory" placeholder="分类" clearable filterable style="width: 150px" @change="applyFilters">
+        <el-select v-model="filterCategory" placeholder="分类" clearable filterable class="item-filter-category" @change="applyFilters">
           <el-option
             v-for="c in itemCategories"
             :key="c.id"
@@ -26,10 +26,10 @@
             :value="c.id"
           />
         </el-select>
-        <el-select v-model="filterType" placeholder="物料性质" clearable style="width: 140px" @change="applyFilters">
+        <el-select v-model="filterType" placeholder="物料性质" clearable class="item-filter-type" @change="applyFilters">
           <el-option v-for="opt in ITEM_NATURE_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
-        <el-select v-model="filterStatus" placeholder="状态" clearable style="width: 100px" @change="applyFilters">
+        <el-select v-model="filterStatus" placeholder="状态" clearable class="item-filter-status" @change="applyFilters">
           <el-option v-for="opt in STATUS_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
       </template>
@@ -51,41 +51,50 @@
         size="small"
         row-key="id"
         @row-dblclick="openDetail"
-        :header-cell-style="{ padding: '0 8px' }"
-        :cell-style="{ padding: '0 8px' }"
       >
-        <el-table-column type="index" label="#" width="50" fixed="left" />
-        <el-table-column prop="code" label="物料代码" width="130" sortable show-overflow-tooltip>
+        <el-table-column type="index" label="#" :width="COL.index" fixed="left" />
+        <el-table-column prop="code" label="物料代码" :width="COL.code" sortable show-overflow-tooltip>
           <template #default="{ row }">
             <span class="mdm-code">{{ row.code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="物料名称" min-width="180" show-overflow-tooltip sortable />
-        <el-table-column prop="specification" label="规格型号" width="160" show-overflow-tooltip />
-        <el-table-column prop="categoryName" label="分类" width="120" show-overflow-tooltip>
+        <el-table-column prop="name" label="物料名称" :min-width="COL.nameMin" show-overflow-tooltip sortable />
+        <el-table-column prop="specification" label="规格型号" :width="COL.spec" show-overflow-tooltip />
+        <el-table-column prop="categoryName" label="分类" :width="COL.category" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.categoryName || '—' }}
           </template>
         </el-table-column>
-        <el-table-column label="基本单位" width="90" align="center">
+        <el-table-column label="基本单位" :width="COL.uom" align="center">
           <template #default="{ row }">{{ findUom(row.baseUomId)?.name || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="itemNature" label="物料性质" width="90" align="center">
+        <!-- GULIERP_ITEM_UI_REUSE_CLOSURE_V1 (2026-08-30) — optional
+             mnemonic column. Backend keyword search already covers
+             MnemonicCode (case-insensitive upper). The column is
+             present so the operator sees the round-trip value; it
+             stays at the design-system preset width (110). -->
+        <el-table-column prop="mnemonicCode" label="助记码" :width="COL.mnemonic" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span v-if="row.mnemonicCode" class="mdm-mnemonic">{{ row.mnemonicCode }}</span>
+            <span v-else class="mdm-mnemonic-empty">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="itemNature" label="物料性质" :width="COL.itemNature" align="center">
           <template #default="{ row }">
             {{ natureLabel(row.itemNature) }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="80" align="center">
+        <el-table-column prop="status" label="状态" :width="COL.status" align="center">
           <template #default="{ row }">
             <MdmStatusBadge :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="updatedAt" label="更新时间" width="160" sortable>
+        <el-table-column prop="updatedAt" label="更新时间" :width="COL.datetime" sortable>
           <template #default="{ row }">
             {{ formatDate(row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right" align="center">
+        <el-table-column label="操作" :width="COL.actions" fixed="right" align="center">
           <template #default="{ row }">
             <MdmTableRowActions
               :status="row.status"
@@ -126,7 +135,14 @@
       @submit="handleSubmit"
     >
       <el-form-item label="物料代码" prop="code">
-        <el-input v-model="formData.code" placeholder="如 ITEM-0001" :disabled="!!editingId" maxlength="30" />
+        <el-input v-model="formData.code" placeholder="留空则自动生成 ITEM_000001" :disabled="!!editingId" maxlength="30" />
+      </el-form-item>
+      <!-- GULIERP_ITEM_UI_REUSE_CLOSURE_V1 (2026-08-30) — MnemonicCode
+           field per Common Field Contract §二十八: optional,
+           hand-typed, max 40, no pinyin. Server-side
+           NullIfEmpty trims and stores null on empty. -->
+      <el-form-item label="助记码" prop="mnemonicCode">
+        <el-input v-model="formData.mnemonicCode" placeholder="手工输入助记码（可选）" maxlength="40" show-word-limit clearable />
       </el-form-item>
       <el-form-item label="物料名称" prop="name">
         <el-input v-model="formData.name" placeholder="物料全称" maxlength="100" />
@@ -190,6 +206,9 @@
           <el-descriptions :column="2" border size="small">
             <el-descriptions-item label="物料代码">{{ detailData?.code }}</el-descriptions-item>
             <el-descriptions-item label="物料名称">{{ detailData?.name }}</el-descriptions-item>
+            <el-descriptions-item label="助记码">
+              {{ detailData?.mnemonicCode || '—' }}
+            </el-descriptions-item>
             <el-descriptions-item label="规格型号">{{ detailData?.specification || '—' }}</el-descriptions-item>
             <el-descriptions-item label="物料分类">{{ detailData?.categoryName || '—' }}</el-descriptions-item>
             <el-descriptions-item label="基本单位">{{ findUom(detailData?.baseUomId ?? null)?.name || '—' }}</el-descriptions-item>
@@ -252,6 +271,7 @@ import MdmDetailDrawer from '../../components/mdm/MdmDetailDrawer.vue';
 import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
 import MdmTableRowActions from '../../components/mdm/MdmTableRowActions.vue';
+import { TABLE_COLUMN_PRESETS as COL } from '../../design-system/tableColumns';
 
 import { ApiError } from '../../api/http';
 import * as itemApi from '../../api/mdm/item';
@@ -362,10 +382,19 @@ const formData = reactive<ItemForm>({
   code: '', name: '', specification: '', categoryId: null,
   baseUomId: null, itemNature: 'MATERIAL', status: 'active',
   description: '',
+  // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 — empty string on Create.
+  // The server's NullIfEmpty trims and stores null. The form
+  // sends undefined → null when blank.
+  mnemonicCode: '',
 });
 
 const formRules: FormRules<ItemForm> = {
-  code: [{ required: true, message: '请输入物料代码', trigger: 'blur' }],
+  // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 — Code is OPTIONAL on
+  // Create (server auto-generates ITEM_000001 if blank).
+  // Required only when explicitly set; we keep the previous
+  // required rule disabled so the operator is not blocked from
+  // creating with empty Code.
+  code: [],
   name: [{ required: true, message: '请输入物料名称', trigger: 'blur' }],
   categoryId: [{ required: true, message: '请选择物料分类', trigger: 'change' }],
   baseUomId: [{ required: true, message: '请选择基本单位', trigger: 'change' }],
@@ -376,6 +405,7 @@ function resetForm() {
     code: '', name: '', specification: '', categoryId: null,
     baseUomId: null, itemNature: 'MATERIAL', status: 'active',
     description: '',
+    mnemonicCode: '',
   });
 }
 
@@ -396,6 +426,10 @@ async function openEdit(row: Item) {
       categoryId: fresh.categoryId, baseUomId: fresh.baseUomId,
       itemNature: fresh.itemNature, status: fresh.status,
       description: fresh.description || '',
+      // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 — round-trip the
+      // MnemonicCode. The form sends the value back via
+      // formToCreate / updateItem (preserves null on blank).
+      mnemonicCode: fresh.mnemonicCode || '',
     });
     editingConcurrency.value = fresh.concurrencyVersion ?? 0;
   } catch (e) {
@@ -404,6 +438,7 @@ async function openEdit(row: Item) {
       categoryId: row.categoryId, baseUomId: row.baseUomId,
       itemNature: row.itemNature, status: row.status,
       description: row.description || '',
+      mnemonicCode: row.mnemonicCode || '',
     });
   }
   formDrawerVisible.value = true;
@@ -532,6 +567,15 @@ function exportData() {
   color: var(--text-muted);
   font-size: 13px;
 }
+.item-filter-category {
+  width: 150px;
+}
+.item-filter-type {
+  width: var(--col-category);
+}
+.item-filter-status {
+  width: var(--col-status);
+}
 .mdm-detail-tabs {
   margin-bottom: 8px;
 }
@@ -545,5 +589,18 @@ function exportData() {
 }
 .mdm-tab-placeholder p {
   font-size: 13px;
+}
+/* GULIERP_ITEM_UI_REUSE_CLOSURE_V1 (2026-08-30) — MnemonicCode
+   list column rendering. Empty placeholder uses muted color
+   so the column doesn't visually shout on rows without a
+   mnemonic. */
+.mdm-mnemonic {
+  font-family: var(--font-mono, 'Consolas', 'Menlo', monospace);
+  font-size: 12px;
+  color: var(--text-default);
+}
+.mdm-mnemonic-empty {
+  color: var(--text-muted);
+  font-size: 12px;
 }
 </style>
