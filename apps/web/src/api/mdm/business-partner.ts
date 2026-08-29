@@ -50,6 +50,13 @@ function dtoToUi(d: BusinessPartnerDto): BusinessPartner {
     postalCode: d.postalCode ?? undefined,
     countryCode: d.countryCode ?? undefined,
     taxNumber: d.taxNumber ?? undefined,
+    // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 3
+    // (2026-08-28) additive UI fields. The snapshots are
+    // server-derived and shown read-only in the form detail.
+    mnemonicCode: d.mnemonicCode ?? undefined,
+    administrativeRegionId: d.administrativeRegionId ?? undefined,
+    regionCodeSnapshot: d.regionCodeSnapshot ?? undefined,
+    regionNameSnapshot: d.regionNameSnapshot ?? undefined,
     status: statusIntToUi(d.status),
     description: d.description ?? undefined,
     createdAt: d.createdAt,
@@ -76,6 +83,9 @@ function formToCreate(f: BusinessPartnerForm): CreateBusinessPartnerRequest {
     postalCode: trim(f.postalCode),
     countryCode: trim(f.countryCode),
     taxNumber: trim(f.taxNumber),
+    // Wave 3.
+    mnemonicCode: trim(f.mnemonicCode),
+    administrativeRegionId: f.administrativeRegionId || null,
     description: trim(f.description),
   };
 }
@@ -134,6 +144,9 @@ export async function updateBusinessPartner(
     postalCode: trim(form.postalCode),
     countryCode: trim(form.countryCode),
     taxNumber: trim(form.taxNumber),
+    // Wave 3.
+    mnemonicCode: trim(form.mnemonicCode),
+    administrativeRegionId: form.administrativeRegionId || null,
     status: statusUiToInt(form.status),
     description: trim(form.description),
     expectedConcurrencyVersion: expectedConcurrencyVersion ?? 0,
@@ -166,6 +179,8 @@ export async function setBusinessPartnerStatus(
       postalCode: fresh.postalCode || '',
       countryCode: fresh.countryCode || '',
       taxNumber: fresh.taxNumber || '',
+      mnemonicCode: fresh.mnemonicCode || '',
+      administrativeRegionId: fresh.administrativeRegionId || null,
       status: target,
       description: fresh.description || '',
     },

@@ -134,6 +134,53 @@ public static class MdmErrorCodes
     public const string CodeResemblesDocumentNumber =
         "mdm_code_resembles_document_number";
 
+    public const string CodeRequired =
+        "mdm_code_required";
+
+    public const string CodeRuleNotFound =
+        "mdm_code_rule_not_found";
+
+    public const string CodeRuleInactive =
+        "mdm_code_rule_inactive";
+
+    public const string CodeSequenceExhausted =
+        "mdm_code_sequence_exhausted";
+
+    public const string CodeGenerationConflict =
+        "mdm_code_generation_conflict";
+
+    // ============================================================
+    // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 3
+    // (2026-08-28) PostalAddress + BusinessPartner Backend.
+    // Per brief §十 + §十二, these errors are produced by the
+    // BusinessPartner service when:
+    //   - CountryCode is supplied on a NEW write / update but the
+    //     value is not present (or inactive) in the Country
+    //     reference data. Legacy historical invalid codes are NOT
+    //     rejected — the migration does not rewrite them.
+    //   - AdministrativeRegionId is supplied but the Region's
+    //     CountryCode does not match the BusinessPartner's
+    //     CountryCode. Cross-country binding is forbidden.
+    // ============================================================
+
+    /// <summary>
+    /// Wave 3. The supplied <c>CountryCode</c> (ISO 3166-1 alpha-2)
+    /// is not present in the active Country reference data. Filled
+    /// by <c>MdmBusinessPartnerService</c> on Create / Update.
+    /// </summary>
+    public const string BusinessPartnerCountryCodeUnknown =
+        "mdm_business_partner_country_code_unknown";
+
+    /// <summary>
+    /// Wave 3. The supplied <c>AdministrativeRegionId</c> belongs
+    /// to a different Country than the BusinessPartner's
+    /// <c>CountryCode</c> (or the Region's CountryCode is unknown
+    /// / inactive). Filled by <c>MdmBusinessPartnerService</c> on
+    /// Create / Update.
+    /// </summary>
+    public const string BusinessPartnerRegionCrossCountry =
+        "mdm_business_partner_region_cross_country";
+
     // ============================================================
     // G3_MDM_DICTIONARY_V1_SEED_B1 — seed error codes.
     // Filled by MdmDictionarySeedService (B1 implementation).

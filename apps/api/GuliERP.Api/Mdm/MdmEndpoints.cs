@@ -47,6 +47,11 @@ public static class MdmEndpoints
         MapLocationEndpoints(group);
         MapDictionaryEndpoints(group);
         MapNumberingRuleEndpoints(group);
+        // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 2/4
+        // (2026-08-28): Country + AdministrativeRegion read-only
+        // reference endpoints. The service is sanctioned via
+        // AllowedMdmDbContextUsers (MdmReferenceDataService).
+        MapReferenceDataEndpoints(group);
         // G3-R1E: PaymentMethod facade over the V1 Dictionary API.
         MapPaymentMethodEndpoints(group);
 
@@ -852,4 +857,116 @@ public static class MdmEndpoints
             {
                 [ProblemDetailsExtensions.CodeKey] = ex.Code,
             });
+
+    // ============================================================
+    // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 2/4
+    // (2026-08-28): Country + AdministrativeRegion read-only
+    // reference endpoints. Per brief §二十二, the service is
+    // reuse-style and uses the canonical auth / ProblemDetails
+    // conventions (MdmRead policy).
+    // ============================================================
+    private static void MapReferenceDataEndpoints(IEndpointRouteBuilder group)
+    {
+        var refGroup = group.MapGroup("/reference").WithTags("Mdm.ReferenceData");
+
+        // GET /api/v1/mdm/reference/countries?keyword=&includeInactive=
+        refGroup.MapGet("/countries", async (
+                [FromQuery] string? keyword,
+                [FromQuery] bool? includeInactive,
+                IMdmReferenceDataService svc,
+                CancellationToken ct) =>
+            {
+                var list = await svc.ListCountriesAsync(
+                    keyword, includeInactive ?? false, ct);
+                return Results.Ok(list);
+            })
+            .RequireAuthorization(MdmPolicies.BusinessPartnerRead);
+
+        // GET /api/v1/mdm/reference/countries/{code}
+        refGroup.MapGet("/countries/{code}", async (
+                string code,
+                IMdmReferenceDataService svc,
+                CancellationToken ct) =>
+            {
+                var c = await svc.GetCountryByCodeAsync(code, ct);
+                return c is null ? Results.NotFound() : Results.Ok(c);
+            })
+            .RequireAuthorization(MdmPolicies.BusinessPartnerRead);
+
+        // GET /api/v1/mdm/reference/regions?countryCode=&parentId=&includeInactive=
+        refGroup.MapGet("/regions", async (
+                [FromQuery] string countryCode,
+                [FromQuery] long? parentId,
+                [FromQuery] bool? includeInactive,
+                IMdmReferenceDataService svc,
+                CancellationToken ct) =>
+            {
+                var list = await svc.ListRegionsAsync(
+                    countryCode, parentId, includeInactive ?? false, ct);
+                return Results.Ok(list);
+            })
+            .RequireAuthorization(MdmPolicies.BusinessPartnerRead);
+
+        // GET /api/v1/mdm/reference/regions/{countryCode}/{code}
+        refGroup.MapGet("/regions/{countryCode}/{code}", async (
+                string countryCode,
+                string code,
+                IMdmReferenceDataService svc,
+                CancellationToken ct) =>
+            {
+                var r = await svc.GetRegionAsync(countryCode, code, ct);
+                return r is null ? Results.NotFound() : Results.Ok(r);
+            })
+            .RequireAuthorization(MdmPolicies.BusinessPartnerRead);
+
+        // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 5
+        // (2026-08-28). Operator-only seed endpoint. Idempotent.
+        // Requires the MdmManage policy. Used by the Operator
+        // evidence harness to bootstrap the reference data on a
+        // fresh PG database. Never called by the regular UI path.
+        refGroup.MapPost("/ensure-seed", async (
+                IMdmReferenceDataService svc,
+                CancellationToken ct) =>
+            {
+                var result = await svc.EnsureSeedAsync(ct);
+                return Results.Ok(result);
+            })
+            .RequireAuthorization(MdmPolicies.BusinessPartnerManage);
+
+        // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 5
+        // (2026-08-28). Operator-only MCA region importer. Reads
+        // the latest snapshot from the operator-provided local file
+        // (artifacts/operator/mdm-foundation/mca-cn.json) and upserts
+        // all CN administrative regions into the PG database. The
+        // service is idempotent (re-imports are no-ops for unchanged
+        // rows). NEVER called by the regular UI path.
+        refGroup.MapPost("/ensure-mca-cn", async (
+                IMdmReferenceDataService svc,
+                IConfiguration config,
+                CancellationToken ct) =>
+            {
+                var mcaPath = config["OperatorEvidence:McaCnFile"]
+                              ?? "artifacts/operator/mdm-foundation/mca-cn.json";
+                // The API may run from apps/api/GuliERP.Api; the
+                // MCA file lives in <repo-root>/artifacts/.... Try
+                // the configured path as-is, then fall back to a
+                // path relative to the repository root (three
+                // levels above the project).
+                if (!File.Exists(mcaPath))
+                {
+                    var probe = Path.Combine("..", "..", "..", mcaPath);
+                    if (File.Exists(probe)) mcaPath = Path.GetFullPath(probe);
+                }
+                if (!File.Exists(mcaPath))
+                {
+                    return Results.Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "MCA CN snapshot not found.",
+                        detail: $"Expected file at: {mcaPath}. Run the operator harness to download the latest snapshot first.");
+                }
+                var summary = await svc.EnsureMcaCnSeedAsync(mcaPath, ct);
+                return Results.Ok(summary);
+            })
+            .RequireAuthorization(MdmPolicies.BusinessPartnerManage);
+    }
 }

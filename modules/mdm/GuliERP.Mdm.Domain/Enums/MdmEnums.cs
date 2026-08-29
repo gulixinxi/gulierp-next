@@ -103,3 +103,13 @@ public enum NumberingRuleResetMode
     Yearly = 3,
     Never = 4,
 }
+
+/// <summary>
+/// V1 master-data code generation mode.
+/// </summary>
+public enum MasterDataCodeMode
+{
+    Manual = 1,
+    Auto = 2,
+    AutoEditable = 3,
+}

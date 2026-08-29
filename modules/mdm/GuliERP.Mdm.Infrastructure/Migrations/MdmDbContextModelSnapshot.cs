@@ -26,6 +26,88 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
             modelBuilder.HasSequence("gulierp_hilo_sequence", "identity")
                 .IncrementsBy(10);
 
+            modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.AdministrativeRegion", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseHiLo(b.Property<long>("Id"), "gulierp_hilo_sequence", "identity");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("ConcurrencyVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .IsUnicode(false)
+                        .HasColumnType("character(2)")
+                        .IsFixedLength();
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("EnglishName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("ModifiedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long?>("ParentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("RegionType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("ShortName")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId")
+                        .HasDatabaseName("ix_gulierp_region_parent");
+
+                    b.HasIndex("CountryCode", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_gulierp_region_country_code");
+
+                    b.HasIndex("CountryCode", "Level")
+                        .HasDatabaseName("ix_gulierp_region_country_level");
+
+                    b.ToTable("gulierp_administrative_region", "mdm");
+                });
+
             modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.BusinessPartner", b =>
                 {
                     b.Property<long>("Id")
@@ -41,6 +123,9 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
                     b.Property<string>("AddressLine2")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<long?>("AdministrativeRegionId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("City")
                         .HasMaxLength(100)
@@ -77,6 +162,10 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("MnemonicCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
                     b.Property<DateTimeOffset>("ModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -100,6 +189,14 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("RegionCodeSnapshot")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("RegionNameSnapshot")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
@@ -119,6 +216,9 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AdministrativeRegionId")
+                        .HasDatabaseName("ix_gulierp_business_partner_regionid");
+
                     b.HasIndex("TenantId")
                         .HasDatabaseName("ix_gulierp_business_partner_tenantid");
 
@@ -127,6 +227,72 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
                         .HasDatabaseName("ux_gulierp_business_partner_tenant_code");
 
                     b.ToTable("gulierp_business_partner", "mdm");
+                });
+
+            modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.Country", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseHiLo(b.Property<long>("Id"), "gulierp_hilo_sequence", "identity");
+
+                    b.Property<string>("Alpha3Code")
+                        .HasMaxLength(3)
+                        .IsUnicode(false)
+                        .HasColumnType("character(3)")
+                        .IsFixedLength();
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .IsUnicode(false)
+                        .HasColumnType("character(2)")
+                        .IsFixedLength();
+
+                    b.Property<int>("ConcurrencyVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("EnglishName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("ModifiedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Alpha3Code")
+                        .HasDatabaseName("ix_gulierp_country_alpha3")
+                        .HasFilter("\"Alpha3Code\" IS NOT NULL");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_gulierp_country_code");
+
+                    b.ToTable("gulierp_country", "mdm");
                 });
 
             modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.DictionaryItem", b =>
@@ -493,6 +659,131 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
                     b.ToTable("gulierp_location", "mdm");
                 });
 
+            modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.MasterDataCodeRule", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseHiLo(b.Property<long>("Id"), "gulierp_hilo_sequence", "identity");
+
+                    b.Property<long?>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ConcurrencyVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Mode")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("ModifiedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.Property<string>("Separator")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)");
+
+                    b.Property<int>("SequenceLength")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("StartValue")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SubType")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<long>("TenantId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("WarehouseId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "CompanyId", "WarehouseId", "EntityType", "SubType")
+                        .IsUnique()
+                        .HasDatabaseName("ux_gulierp_master_code_rule_scope");
+
+                    b.ToTable("gulierp_master_data_code_rule", "mdm");
+                });
+
+            modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.MasterDataCodeSequenceState", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseHiLo(b.Property<long>("Id"), "gulierp_hilo_sequence", "identity");
+
+                    b.Property<long?>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ConcurrencyVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CurrentValue")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("LastGeneratedCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("ModifiedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("RuleId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TenantId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("WarehouseId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RuleId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_gulierp_master_code_sequence_rule");
+
+                    b.ToTable("gulierp_master_data_code_sequence_state", "mdm");
+                });
+
             modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.NumberingRule", b =>
                 {
                     b.Property<long>("Id")
@@ -711,6 +1002,25 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
                     b.ToTable("gulierp_warehouse", "mdm");
                 });
 
+            modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.AdministrativeRegion", b =>
+                {
+                    b.HasOne("GuliERP.Mdm.Domain.Entities.AdministrativeRegion", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.BusinessPartner", b =>
+                {
+                    b.HasOne("GuliERP.Mdm.Domain.Entities.AdministrativeRegion", null)
+                        .WithMany()
+                        .HasForeignKey("AdministrativeRegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_gulierp_business_partner_administrative_region");
+                });
+
             modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.DictionaryItem", b =>
                 {
                     b.HasOne("GuliERP.Mdm.Domain.Entities.DictionaryType", "DictionaryType")
@@ -761,6 +1071,22 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
                     b.Navigation("Warehouse");
                 });
 
+            modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.MasterDataCodeSequenceState", b =>
+                {
+                    b.HasOne("GuliERP.Mdm.Domain.Entities.MasterDataCodeRule", "Rule")
+                        .WithOne("SequenceState")
+                        .HasForeignKey("GuliERP.Mdm.Domain.Entities.MasterDataCodeSequenceState", "RuleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Rule");
+                });
+
+            modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.AdministrativeRegion", b =>
+                {
+                    b.Navigation("Children");
+                });
+
             modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.DictionaryType", b =>
                 {
                     b.Navigation("Items");
@@ -769,6 +1095,11 @@ namespace GuliERP.Mdm.Infrastructure.Migrations
             modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.ItemCategory", b =>
                 {
                     b.Navigation("Children");
+                });
+
+            modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.MasterDataCodeRule", b =>
+                {
+                    b.Navigation("SequenceState");
                 });
 
             modelBuilder.Entity("GuliERP.Mdm.Domain.Entities.Warehouse", b =>

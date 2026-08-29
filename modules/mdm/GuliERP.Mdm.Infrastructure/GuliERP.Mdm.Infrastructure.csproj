@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
     <ProjectReference Include="..\..\identity\GuliERP.Identity.Application\GuliERP.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\identity\GuliERP.Identity.Domain\GuliERP.Identity.Domain.csproj" />
     <ProjectReference Include="..\..\identity\GuliERP.Identity.Infrastructure\GuliERP.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\GuliERP.Mdm.Domain\GuliERP.Mdm.Domain.csproj" />
     <ProjectReference Include="..\GuliERP.Mdm.Application\GuliERP.Mdm.Application.csproj" />

@@ -192,8 +192,11 @@ public sealed class SalesRuntimeRegressionSourceFacts
         Assert.Contains("listSalesOrders", src);
         Assert.Contains("createSalesOrder", src);
         Assert.Contains("updateSalesOrder", src);
-        Assert.Contains("listBusinessPartners", src);
-        Assert.Contains("listItems", src);
+        // SalesOrder context dropdowns must use the SalesOrder-scoped
+        // facade APIs, not the raw MDM clients, so ERP_SALES_OPERATOR
+        // does not need mdm.* permissions.
+        Assert.Contains("listSalesOrderCustomers", src);
+        Assert.Contains("listSalesOrderItems", src);
         Assert.DoesNotContain("../../mock/sales-order", src);
         Assert.DoesNotContain("seedSalesOrders", src);
         Assert.DoesNotContain("localStorage.setItem('erp.so", src);

@@ -114,6 +114,30 @@ public sealed class MdmServiceBoundaryArchitectureTests
         "DictionaryTypeConfiguration.cs",
         "DictionaryItemConfiguration.cs",
         "NumberingRuleConfiguration.cs",
+        "MasterDataCodeRuleConfiguration.cs",
+        "MasterDataCodeSequenceStateConfiguration.cs",
+        "MasterDataCodeService.cs", // GULIERP_MASTER_DATA_FOUNDATION: sanctioned code-rule service
+                                    // (analogous to MdmService for master data and
+                                    // NumberingRuleService for numbering). Reads
+                                    // MasterDataCodeRule + MasterDataCodeSequenceState
+                                    // only; never reads/writes any Tenant-scoped MDM data
+                                    // directly (BusinessPartner / Warehouse / Location
+                                    // remain in MdmMasterData002Services).
+        "MdmCodeRuleBootstrapService.cs", // GULIERP_MASTER_DATA_FOUNDATION Wave 1.5: sanctioned
+                                            // bootstrap service. Same contract as
+                                            // MasterDataCodeService (read MDM code-rule tables;
+                                            // read Identity Tenants; never write Tenant-scoped
+                                            // MDM data).
+        "MdmReferenceDataService.cs", // GULIERP_MASTER_DATA_FOUNDATION Wave 2: sanctioned
+                                       // reference-data service for Country + Region. Same
+                                       // contract as the other Mdm read services
+                                       // (MdmService / MdmDictionaryService / etc.):
+                                       // reads only from system-scoped MDM tables; never
+                                       // reads/writes Tenant-scoped MDM data
+                                       // (BusinessPartner / Warehouse / Location remain in
+                                       // MdmMasterData002Services).
+        "CountryConfiguration.cs",
+        "AdministrativeRegionConfiguration.cs",
         "FoundationModelBoundaries.cs", // if present
         ".Designer.cs",                 // all migrations
         "MdmDbContextModelSnapshot.cs",

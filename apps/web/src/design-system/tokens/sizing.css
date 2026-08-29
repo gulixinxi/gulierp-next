@@ -16,6 +16,8 @@
   --topbar-height:          52px;
   --tabstrip-height:        38px;
   --doc-headerbar-height:   48px;   /* sticky edit header */
+  --content-max-width:       none;   /* ERP workspace uses available desktop width */
+  --content-readable-max:    1440px; /* optional cap for narrative / setup pages */
 
   /* — Controls — */
   --size-input:             32px;   /* input / button */
@@ -26,6 +28,40 @@
   --table-header-h:         36px;
   --table-row-h:            36px;
   --table-row-compact-h:    32px;
+
+  /* Layout V2 — semantic table column presets.
+     TypeScript pages consume matching values from tableColumns.ts. */
+  --col-selection:          40px;
+  --col-index:              50px;
+  --col-status:             88px;
+  --col-code:               132px;
+  --col-document-no:        160px;
+  --col-date:               120px;
+  --col-datetime:           168px;
+  --col-person:             120px;
+  --col-phone:              132px;
+  --col-email:              196px;
+  --col-tax-no:             156px;
+  --col-short-name:         128px;
+  --col-type:               112px;
+  --col-uom:                100px;
+  --col-category:           140px;
+  --col-item-nature:        104px;
+  --col-spec:               168px;
+  --col-money:              136px;
+  --col-currency:           84px;
+  --col-name-min:           200px;
+  --col-partner-name:       240px;
+  --col-description-min:    220px;
+  --col-actions:            136px;
+  --col-document-actions:   150px;
+
+  /* Layout V2 — search and dialog sizing */
+  --toolbar-search-width:   280px;
+  --toolbar-search-wide:    320px;
+  --dialog-width-sm:        420px;
+  --dialog-width-md:        520px;
+  --dialog-width-lg:        640px;
 
   /* — Icon — */
   --icon-sm:                14px;

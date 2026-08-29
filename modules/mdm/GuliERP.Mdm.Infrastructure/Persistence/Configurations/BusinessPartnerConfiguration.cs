@@ -10,6 +10,22 @@ namespace GuliERP.Mdm.Infrastructure.Persistence.Configurations;
 /// Company scope (BusinessPartner is counterparty master that can serve
 /// multiple Companies in V1+; the Company relationship is V2+ scope).
 /// Code uniqueness: <c>(TenantId, Code)</c>.
+///
+/// <para>
+/// GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 — Wave 3
+/// (2026-08-28) additive extension:
+/// <list type="bullet">
+///   <item><c>AdministrativeRegionId</c> (nullable bigint) +
+///         FK Restrict to <c>mdm.gulierp_administrative_region.Id</c>
+///         + IX for filter / join lookup.</item>
+///   <item><c>RegionCodeSnapshot</c> (varchar 20) +
+///         <c>RegionNameSnapshot</c> (varchar 200) +
+///         <c>MnemonicCode</c> (varchar 40).</item>
+/// </list>
+/// All nullable. 0 DROP / 0 ALTER on existing columns. Migration
+/// <c>MDM005_BusinessPartnerPostalAddressFoundation</c> applies
+/// the diff; the production migration is ADDITIVE only.
+/// </para>
 /// </summary>
 public sealed class BusinessPartnerConfiguration : IEntityTypeConfiguration<BusinessPartner>
 {
@@ -34,6 +50,21 @@ public sealed class BusinessPartnerConfiguration : IEntityTypeConfiguration<Busi
         b.Property(x => x.PostalCode).HasMaxLength(20);
         b.Property(x => x.CountryCode).HasMaxLength(2);
         b.Property(x => x.TaxNumber).HasMaxLength(50);
+
+        // ----- Wave 3 (PostalAddress + MnemonicCode) additive fields -----
+        b.Property(x => x.MnemonicCode).HasMaxLength(40);
+        b.Property(x => x.RegionCodeSnapshot).HasMaxLength(20);
+        b.Property(x => x.RegionNameSnapshot).HasMaxLength(200);
+        b.Property(x => x.AdministrativeRegionId);
+        // FK Restrict (no cascade) to mdm.gulierp_administrative_region.
+        // The Region row may be deactivated (IsActive=false) but the FK
+        // remains; snapshot fields preserve the displayable name.
+        b.HasOne<AdministrativeRegion>()
+            .WithMany()
+            .HasForeignKey(x => x.AdministrativeRegionId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("FK_gulierp_business_partner_administrative_region");
+
         b.Property(x => x.Status).HasConversion<int>();
         b.Property(x => x.Description).HasMaxLength(2000);
 
@@ -43,6 +74,10 @@ public sealed class BusinessPartnerConfiguration : IEntityTypeConfiguration<Busi
 
         b.HasIndex(x => x.TenantId)
             .HasDatabaseName("ix_gulierp_business_partner_tenantid");
+
+        // Wave 3: index for RegionId lookup / join. Non-unique.
+        b.HasIndex(x => x.AdministrativeRegionId)
+            .HasDatabaseName("ix_gulierp_business_partner_regionid");
 
         b.Property(x => x.ConcurrencyVersion).IsConcurrencyToken();
     }

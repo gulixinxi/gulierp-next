@@ -47,6 +47,7 @@ public static class DependencyInjection
 
         // ----- Application service -----
         services.AddScoped<IMdmService, MdmService>();
+        services.AddScoped<IMasterDataCodeService, MasterDataCodeService>();
         services.AddScoped<IMdmBusinessPartnerService, MdmBusinessPartnerService>();
         services.AddScoped<IMdmWarehouseService, MdmWarehouseService>();
         services.AddScoped<IMdmLocationService, MdmLocationService>();
@@ -61,6 +62,28 @@ public static class DependencyInjection
         // tenant-template/ JSON files; idempotent; honors
         // manifest.json::policy_enforcement).
         services.AddScoped<IReferenceSeedService, ReferenceSeedService>();
+
+        // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 (Wave 1.5,
+        // 2026-08-28): default BusinessPartner code rule + sequence
+        // state bootstrap. Idempotent, Tenant-scoped. See
+        // IMdmCodeRuleBootstrapService for the idempotency contract.
+        services.AddScoped<IMdmCodeRuleBootstrapService, MdmCodeRuleBootstrapService>();
+        // The IHostedService runs at app startup to cover existing
+        // Tenants. New Tenants (created after this Wave 1.5
+        // commit) are also covered on the next app start; the
+        // per-Tenant hook into Identity EnterpriseBootstrap is
+        // a future enhancement and is NOT required for Wave 1.5
+        // GREEN.
+        services.AddHostedService<MdmCodeRuleBootstrapStartupService>();
+
+        // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 2
+        // (2026-08-28): Country + AdministrativeRegion reference
+        // data. Read API + operator-side EnsureSeedAsync. The
+        // Country seed is pre-baked (ISO 3166-1 alpha-2 + CLDR
+        // names, public-domain). The Region seed is intentionally
+        // a no-op pending Operator-side importer (see
+        // MdmReferenceDataService for the manifest).
+        services.AddScoped<IMdmReferenceDataService, MdmReferenceDataService>();
 
         // ----- Authorization policies (mirrors G2-005 pattern) -----
         services.AddAuthorization(options =>

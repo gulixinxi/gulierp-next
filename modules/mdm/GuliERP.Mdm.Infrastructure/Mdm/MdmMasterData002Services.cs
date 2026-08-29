@@ -7,6 +7,7 @@ using GuliERP.Mdm.Domain.Enums;
 using GuliERP.Mdm.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GuliERP.Mdm.Infrastructure.Mdm;
 
@@ -41,23 +42,43 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
     private const int MaxCountryLength = 2;  // ISO 3166-1 alpha-2
     private const int MaxTaxNumberLength = 50;
     private const int MaxDescriptionLength = 2000;
+    // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 3
+    // (2026-08-28): hand-typed mnemonic / short lookup code.
+    private const int MaxMnemonicLength = 40;
     private const int MaxPageSize = 200;
 
     private readonly MdmDbContext _db;
     private readonly ICurrentTenant _currentTenant;
     private readonly ICurrentUser _currentUser;
+    private readonly IMasterDataCodeService _codeService;
     private readonly ILogger<MdmBusinessPartnerService> _logger;
 
     public MdmBusinessPartnerService(
         MdmDbContext db,
         ICurrentTenant currentTenant,
         ICurrentUser currentUser,
+        IMasterDataCodeService codeService,
         ILogger<MdmBusinessPartnerService> logger)
     {
         _db = db;
         _currentTenant = currentTenant;
         _currentUser = currentUser;
+        _codeService = codeService;
         _logger = logger;
+    }
+
+    public MdmBusinessPartnerService(
+        MdmDbContext db,
+        ICurrentTenant currentTenant,
+        ICurrentUser currentUser,
+        ILogger<MdmBusinessPartnerService> logger)
+        : this(
+            db,
+            currentTenant,
+            currentUser,
+            new MasterDataCodeService(db, NullLogger<MasterDataCodeService>.Instance),
+            logger)
+    {
     }
 
     public async Task<PagedResult<BusinessPartnerDto>> ListAsync(
@@ -76,9 +97,27 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
         }
         if (!string.IsNullOrWhiteSpace(query.Keyword))
         {
-            var kw = query.Keyword.Trim().ToUpperInvariant();
-            q = q.Where(bp => bp.Code.Contains(kw) || bp.Name.Contains(kw)
-                || (bp.ShortName != null && bp.ShortName.Contains(kw)));
+            // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 3
+            // (2026-08-28): search is now an OR across 8 fields:
+            //   Code (uppercase), Name, ShortName, MnemonicCode,
+            //   ContactPerson, Phone, Email, TaxNumber.
+            // Per brief §十五, the keyword is normalized once and
+            // applied to each text column. Case-insensitive for
+            // string Contains semantics (EF translates to
+            // ILIKE on PostgreSQL).
+            var kw = query.Keyword.Trim();
+            if (kw.Length > 0)
+            {
+                q = q.Where(bp =>
+                    bp.Code.Contains(kw.ToUpperInvariant())
+                    || bp.Name.Contains(kw)
+                    || (bp.ShortName != null && bp.ShortName.Contains(kw))
+                    || (bp.MnemonicCode != null && bp.MnemonicCode.Contains(kw))
+                    || (bp.ContactPerson != null && bp.ContactPerson.Contains(kw))
+                    || (bp.Phone != null && bp.Phone.Contains(kw))
+                    || (bp.Email != null && bp.Email.Contains(kw))
+                    || (bp.TaxNumber != null && bp.TaxNumber.Contains(kw)));
+            }
         }
         if (query.Status.HasValue)
         {
@@ -107,7 +146,13 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
     {
         ArgumentNullException.ThrowIfNull(request);
         var tenantId = RequireTenant();
-        var code = CanonicalizeCode(request.Code, MaxCodeLength, nameof(request.Code));
+        var codeResult = await _codeService.GenerateNextAsync(new MasterDataCodeRequest(
+            EntityType: "BusinessPartner",
+            TenantId: tenantId,
+            CompanyId: null,
+            WarehouseId: null,
+            ExplicitCode: request.Code), ct);
+        var code = codeResult.Code;
         var name = ValidateRequiredText(request.Name, MaxNameLength, nameof(request.Name));
         var shortName = ValidateOptionalText(request.ShortName, MaxShortNameLength, nameof(request.ShortName));
         var contact = ValidateOptionalText(request.ContactPerson, MaxContactLength, nameof(request.ContactPerson));
@@ -119,15 +164,59 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
         var region = ValidateOptionalText(request.Region, MaxRegionLength, nameof(request.Region));
         var postal = ValidateOptionalText(request.PostalCode, MaxPostalLength, nameof(request.PostalCode));
         var country = ValidateOptionalCountryCode(request.CountryCode, nameof(request.CountryCode));
+        var mnemonic = ValidateOptionalText(request.MnemonicCode, MaxMnemonicLength, nameof(request.MnemonicCode));
         var tax = ValidateOptionalText(request.TaxNumber, MaxTaxNumberLength, nameof(request.TaxNumber));
         var description = ValidateOptionalText(request.Description, MaxDescriptionLength, nameof(request.Description));
 
-        // GULIERP_MDM_001_CODE_PIPELINE — 4-step code validation
-        // (Steps 1, 2, 4). Step 3 (uniqueness) is the existing DB
-        // check below.
-        // GULIERP_FOUNDATION_001_CODE_PIPELINE_PROMOTE — BusinessPartner
-        // is Tenant-scoped (not Company-scoped), so companyId = null.
-        ThrowIfCodeInvalid(code, tenantId, companyId: null);
+        // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 3:
+        // Validate Country against the reference data (active) on a
+        // NEW write. Existing legacy rows with historical invalid
+        // CountryCodes are NOT rejected by this code path (Create only).
+        // If the operator did not supply a CountryCode, the row is
+        // allowed (legacy compatibility).
+        if (country is not null)
+        {
+            var countryActive = await _db.Countries.AsNoTracking()
+                .AnyAsync(c => c.Code == country && c.IsActive, ct);
+            if (!countryActive)
+            {
+                throw new MdmValidationException(
+                    MdmErrorCodes.BusinessPartnerCountryCodeUnknown,
+                    $"CountryCode '{country}' is not present in the active Country reference data.");
+            }
+        }
+
+        // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 3:
+        // If AdministrativeRegionId is supplied, derive Code/Name
+        // snapshot from the reference data and enforce Country match.
+        // The Region may be IsActive=false (legacy binding kept) but
+        // must still exist.
+        string? regionCodeSnapshot = null;
+        string? regionNameSnapshot = null;
+        if (request.AdministrativeRegionId.HasValue)
+        {
+            var boundRegion = await _db.AdministrativeRegions.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == request.AdministrativeRegionId.Value, ct);
+            if (boundRegion is null)
+            {
+                throw new MdmValidationException(
+                    MdmErrorCodes.NotFound,
+                    $"AdministrativeRegion id={request.AdministrativeRegionId.Value} not found.");
+            }
+            if (country is not null && !string.Equals(boundRegion.CountryCode, country, StringComparison.Ordinal))
+            {
+                throw new MdmValidationException(
+                    MdmErrorCodes.BusinessPartnerRegionCrossCountry,
+                    $"AdministrativeRegion (Code={boundRegion.Code}, CountryCode={boundRegion.CountryCode}) " +
+                    $"does not belong to the BusinessPartner's CountryCode '{country}'.");
+            }
+            // If the user supplied a Region but no Country, derive the
+            // Country from the Region (preserves Region binding even
+            // when the user did not type the Country in the form).
+            country ??= boundRegion.CountryCode;
+            regionCodeSnapshot = boundRegion.Code;
+            regionNameSnapshot = boundRegion.Name;
+        }
 
         var exists = await _db.BusinessPartners.AsNoTracking()
             .AnyAsync(bp => bp.TenantId == tenantId && bp.Code == code, ct);
@@ -156,6 +245,10 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
             PostalCode = postal,
             CountryCode = country,
             TaxNumber = tax,
+            MnemonicCode = mnemonic,
+            AdministrativeRegionId = request.AdministrativeRegionId,
+            RegionCodeSnapshot = regionCodeSnapshot,
+            RegionNameSnapshot = regionNameSnapshot,
             Status = MasterDataStatus.Active,
             Description = description,
             CreatedAt = now,
@@ -167,8 +260,8 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
         _db.BusinessPartners.Add(bp);
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation(
-            "MDM BusinessPartner created id={Id} tenant={TenantId} code={Code} role={Role}",
-            bp.Id, bp.TenantId, bp.Code, bp.Role);
+            "MDM BusinessPartner created id={Id} tenant={TenantId} code={Code} role={Role} regionId={RegionId}",
+            bp.Id, bp.TenantId, bp.Code, bp.Role, bp.AdministrativeRegionId);
         return MapToDto(bp);
     }
 
@@ -206,7 +299,57 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
         bp.Region = ValidateOptionalText(request.Region, MaxRegionLength, nameof(request.Region));
         bp.PostalCode = ValidateOptionalText(request.PostalCode, MaxPostalLength, nameof(request.PostalCode));
         bp.CountryCode = ValidateOptionalCountryCode(request.CountryCode, nameof(request.CountryCode));
+        bp.MnemonicCode = ValidateOptionalText(request.MnemonicCode, MaxMnemonicLength, nameof(request.MnemonicCode));
         bp.TaxNumber = ValidateOptionalText(request.TaxNumber, MaxTaxNumberLength, nameof(request.TaxNumber));
+
+        // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 3:
+        // Country / Region / snapshot validation. The legacy text
+        // fields (Region / City / AddressLine1 / AddressLine2 /
+        // PostalCode / CountryCode) are always preserved; the new
+        // AdministrativeRegion binding is opt-in and orthogonal.
+        if (bp.CountryCode is not null)
+        {
+            var countryActive = await _db.Countries.AsNoTracking()
+                .AnyAsync(c => c.Code == bp.CountryCode && c.IsActive, ct);
+            if (!countryActive)
+            {
+                throw new MdmValidationException(
+                    MdmErrorCodes.BusinessPartnerCountryCodeUnknown,
+                    $"CountryCode '{bp.CountryCode}' is not present in the active Country reference data.");
+            }
+        }
+
+        if (request.AdministrativeRegionId.HasValue)
+        {
+            var boundRegion = await _db.AdministrativeRegions.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == request.AdministrativeRegionId.Value, ct);
+            if (boundRegion is null)
+            {
+                throw new MdmValidationException(
+                    MdmErrorCodes.NotFound,
+                    $"AdministrativeRegion id={request.AdministrativeRegionId.Value} not found.");
+            }
+            if (bp.CountryCode is not null
+                && !string.Equals(boundRegion.CountryCode, bp.CountryCode, StringComparison.Ordinal))
+            {
+                throw new MdmValidationException(
+                    MdmErrorCodes.BusinessPartnerRegionCrossCountry,
+                    $"AdministrativeRegion (Code={boundRegion.Code}, CountryCode={boundRegion.CountryCode}) " +
+                    $"does not belong to the BusinessPartner's CountryCode '{bp.CountryCode}'.");
+            }
+            bp.RegionCodeSnapshot = boundRegion.Code;
+            bp.RegionNameSnapshot = boundRegion.Name;
+        }
+        else
+        {
+            // User explicitly cleared the binding; clear the snapshots
+            // too. The legacy Region / City text fields are NOT
+            // touched (per brief §十).
+            bp.RegionCodeSnapshot = null;
+            bp.RegionNameSnapshot = null;
+        }
+        bp.AdministrativeRegionId = request.AdministrativeRegionId;
+
         bp.Status = request.Status;
         bp.Description = ValidateOptionalText(request.Description, MaxDescriptionLength, nameof(request.Description));
         bp.ModifiedAt = DateTimeOffset.UtcNow;
@@ -215,7 +358,8 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
 
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation(
-            "MDM BusinessPartner updated id={Id} status={Status}", bp.Id, bp.Status);
+            "MDM BusinessPartner updated id={Id} status={Status} regionId={RegionId}",
+            bp.Id, bp.Status, bp.AdministrativeRegionId);
         return MapToDto(bp);
     }
 
@@ -237,6 +381,8 @@ public sealed class MdmBusinessPartnerService : IMdmBusinessPartnerService
         bp.ContactPerson, bp.Phone, bp.Email,
         bp.AddressLine1, bp.AddressLine2, bp.City, bp.Region,
         bp.PostalCode, bp.CountryCode, bp.TaxNumber,
+        bp.MnemonicCode, bp.AdministrativeRegionId,
+        bp.RegionCodeSnapshot, bp.RegionNameSnapshot,
         bp.Status, bp.Description,
         bp.CreatedAt, bp.ModifiedAt, bp.ConcurrencyVersion);
 

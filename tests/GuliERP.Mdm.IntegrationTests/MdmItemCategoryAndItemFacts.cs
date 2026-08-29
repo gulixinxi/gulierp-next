@@ -75,7 +75,7 @@ public sealed class MdmItemCategoryAndItemFacts : IClassFixture<WebApplicationFa
 
         var tenantA = 1_000_000L + Math.Abs(UniqueSuffix().GetHashCode() % 100_000);
         var tenantB = 9_000_000L + Math.Abs(UniqueSuffix().GetHashCode() % 100_000);
-        var code = $"XT-{UniqueSuffix()}";
+        var code = $"XT{UniqueSuffix()}";
 
         // Create a Category under tenantA via the Application
         // service. MdmService canonicalizes Code + applies the
@@ -213,7 +213,7 @@ public sealed class MdmItemCategoryAndItemFacts : IClassFixture<WebApplicationFa
         using var _ = currentTenant.Change(tenantId);
 
         var svc = sp.GetRequiredService<GuliERP.Mdm.Application.IMdmService>();
-        var itemCode = $"IT-{UniqueSuffix()}";
+        var itemCode = $"IT{UniqueSuffix()}";
         var created = await svc.CreateItemAsync(
             new GuliERP.Mdm.Application.CreateItemRequest(
                 Code: itemCode,
@@ -273,7 +273,7 @@ public sealed class MdmItemCategoryAndItemFacts : IClassFixture<WebApplicationFa
         using var _ = currentTenant.Change(tenantId);
 
         var svc = sp.GetRequiredService<GuliERP.Mdm.Application.IMdmService>();
-        var code = $"DI-{UniqueSuffix()}";
+        var code = $"DI{UniqueSuffix()}";
         var first = await svc.CreateItemAsync(
             new GuliERP.Mdm.Application.CreateItemRequest(
                 Code: code, Name: "Dup Item 1", Specification: null,
@@ -328,7 +328,7 @@ public sealed class MdmItemCategoryAndItemFacts : IClassFixture<WebApplicationFa
         {
             await svc.CreateItemAsync(
                 new GuliERP.Mdm.Application.CreateItemRequest(
-                    Code: $"NB-{UniqueSuffix()}", Name: "No BaseUom",
+                    Code: $"NB{UniqueSuffix()}", Name: "No BaseUom",
                     Specification: null, CategoryId: null,
                     BaseUomId: 999_999_999_999L,    // intentionally non-existent
                     ItemNature: ItemNature.Material,

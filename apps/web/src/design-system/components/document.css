@@ -92,8 +92,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: #FEF3C7;
-  color: #92400E;
+  background: var(--warning-bg);
+  color: var(--warning-hover);
   padding: 2px 8px;
   border-radius: 8px;
   font-size: 11px;
@@ -118,14 +118,14 @@
    Reject reason banner
    ===================================================== */
 .gs-reject-banner {
-  background: #FEF2F2;
+  background: var(--danger-bg);
   border-left: 4px solid var(--status-danger);
-  border-bottom: 1px solid #FECACA;
+  border-bottom: 1px solid var(--danger-bg);
   padding: 10px var(--space-7);
   display: flex;
   align-items: center;
   gap: var(--gap);
-  color: #991B1B;
+  color: var(--danger-hover);
   font-size: var(--erp-font-size);
 }
 
@@ -316,44 +316,44 @@
    ===================================================== */
 .gs-list-toolbar {
   background: var(--bg-container);
-  padding: var(--space-4) var(--space-7);
+  padding: var(--layout-page-pad-y) var(--layout-page-pad-x);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--gap);
+  gap: var(--layout-toolbar-gap);
   flex-wrap: wrap;
 }
 .gs-toolbar-left,
 .gs-toolbar-right {
   display: flex;
   align-items: center;
-  gap: var(--gap);
+  gap: var(--layout-toolbar-gap);
   flex-wrap: wrap;
 }
 .gs-advanced-filter {
   background: var(--bg-container);
-  padding: var(--space-6) var(--space-7);
+  padding: var(--space-6) var(--layout-page-pad-x);
   border-bottom: 1px solid var(--border-subtle);
 }
 .gs-filter-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 0 var(--space-7);
+  gap: 0 var(--layout-form-gap-x);
 }
 .gs-filter-grid .el-form-item {
   margin-bottom: var(--space-6);
 }
 .gs-list-wrap {
-  padding: var(--section-gutter) var(--section-gutter) 0;
+  padding: var(--layout-section-gap) var(--layout-section-gap) 0;
 }
 .gs-list-pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-6) var(--space-7);
+  padding: var(--space-5) var(--layout-page-pad-x);
   background: var(--bg-container);
-  margin: 0 var(--section-gutter) var(--section-gutter);
+  margin: 0 var(--layout-section-gap) var(--layout-section-gap);
   border-radius: 0 0 var(--radius) var(--radius);
   border: 1px solid var(--border-subtle);
   border-top: none;

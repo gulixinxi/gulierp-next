@@ -158,6 +158,20 @@ public sealed record BusinessPartnerDto(
     string? PostalCode,
     string? CountryCode,
     string? TaxNumber,
+    /// <summary>
+    /// GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 — Wave 3
+    /// (2026-08-28). Hand-typed mnemonic / short lookup code.
+    /// </summary>
+    string? MnemonicCode,
+    /// <summary>
+    /// GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 — Wave 3.
+    /// Nullable FK to <c>mdm.gulierp_administrative_region.Id</c>.
+    /// </summary>
+    long? AdministrativeRegionId,
+    /// <summary>Wave 3. Server-derived snapshot of the Region's Code.</summary>
+    string? RegionCodeSnapshot,
+    /// <summary>Wave 3. Server-derived snapshot of the Region's Name.</summary>
+    string? RegionNameSnapshot,
     MasterDataStatus Status,
     string? Description,
     DateTimeOffset CreatedAt,
@@ -179,6 +193,10 @@ public sealed record CreateBusinessPartnerRequest(
     string? PostalCode,
     string? CountryCode,
     string? TaxNumber,
+    /// <summary>Wave 3. Optional hand-typed mnemonic code (max 40).</summary>
+    string? MnemonicCode,
+    /// <summary>Wave 3. Optional FK to AdministrativeRegion. NULL = legacy / free-text.</summary>
+    long? AdministrativeRegionId,
     string? Description);
 
 public sealed record UpdateBusinessPartnerRequest(
@@ -195,6 +213,10 @@ public sealed record UpdateBusinessPartnerRequest(
     string? PostalCode,
     string? CountryCode,
     string? TaxNumber,
+    /// <summary>Wave 3. Optional hand-typed mnemonic code (max 40).</summary>
+    string? MnemonicCode,
+    /// <summary>Wave 3. Optional FK to AdministrativeRegion. NULL = legacy / free-text.</summary>
+    long? AdministrativeRegionId,
     MasterDataStatus Status,
     string? Description,
     int ExpectedConcurrencyVersion);
@@ -417,3 +439,53 @@ public sealed record UpdateNumberingRuleRequest(
 public sealed record ChangeNumberingRuleStatusRequest(
     MasterDataStatus Status,
     int ExpectedConcurrencyVersion);
+
+// ============================================================
+// GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 2
+// (2026-08-28): Country + AdministrativeRegion DTOs.
+// Per brief §十五 + §二十一, V1 minimal fields.
+// ============================================================
+
+public sealed record CountryDto(
+    long Id,
+    string Code,
+    string? Alpha3Code,
+    string Name,
+    string EnglishName,
+    bool IsActive,
+    int SortOrder);
+
+public sealed record CountryListItemDto(
+    long Id,
+    string Code,
+    string? Alpha3Code,
+    string Name,
+    string EnglishName,
+    bool IsActive,
+    int SortOrder);
+
+public sealed record AdministrativeRegionDto(
+    long Id,
+    string CountryCode,
+    string Code,
+    string Name,
+    string? EnglishName,
+    string? ShortName,
+    long? ParentId,
+    int Level,
+    string RegionType,
+    bool IsActive,
+    int SortOrder);
+
+public sealed record AdministrativeRegionListItemDto(
+    long Id,
+    string CountryCode,
+    string Code,
+    string Name,
+    string? EnglishName,
+    string? ShortName,
+    long? ParentId,
+    int Level,
+    string RegionType,
+    bool IsActive,
+    int SortOrder);

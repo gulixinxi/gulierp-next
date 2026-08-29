@@ -39,17 +39,17 @@
   width: 100%;
   color: var(--text-secondary);
 }
-.gs-num-cell.gs-strong { color: #c2410c; font-weight: 700; }
+.gs-num-cell.gs-strong { color: var(--warning-hover); font-weight: 700; }
 .gs-num-cell.gs-partial { color: var(--status-warning); }
 .gs-num-cell.gs-done { color: var(--status-success); }
-.gs-num-cell.gs-open { color: var(--color-blue-600); }
+.gs-num-cell.gs-open { color: var(--primary-hover); }
 
 /* — Row status colors (execution visual) — */
 .el-table__row.gs-line-done {
-  background: #F0FDF4 !important;
+  background: var(--success-bg) !important;
 }
 .el-table__row.gs-line-partial {
-  background: #FFFBEB !important;
+  background: var(--warning-bg) !important;
 }
 
 /* — Action button cells (row operations single-line) — */

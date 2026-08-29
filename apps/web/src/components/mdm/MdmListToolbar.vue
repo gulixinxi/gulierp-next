@@ -9,7 +9,8 @@
         :placeholder="searchPlaceholder"
         clearable
         :prefix-icon="SearchIcon"
-        style="width: 260px"
+        class="mdm-toolbar-search"
+        :style="{ width: searchWidth }"
         @keyup.enter="emit('search')"
         @clear="emit('search')"
       />
@@ -42,10 +43,12 @@ const props = withDefaults(defineProps<{
    * / etc.
    */
   showCreate?: boolean;
+  searchWidth?: string;
 }>(), {
   searchPlaceholder: '搜索代码 / 名称',
   createLabel: '新建',
   showCreate: true,
+  searchWidth: 'var(--toolbar-search-width)',
 });
 
 const searchModel = defineModel<string>('search', { default: '' });
@@ -55,3 +58,11 @@ const emit = defineEmits<{
   create: [];
 }>();
 </script>
+
+<style scoped>
+.mdm-toolbar-search {
+  flex: 0 1 var(--toolbar-search-wide);
+  min-width: 220px;
+  max-width: 100%;
+}
+</style>

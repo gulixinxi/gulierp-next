@@ -289,6 +289,13 @@ public class SnowflakeLongJsonConverterFacts
     [Fact]
     public void BusinessPartnerDto_Id_Serializes_As_String()
     {
+        // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 5.2
+        // fix: the constructor signature was extended in Wave 3 with
+        // four snapshot/region fields (MnemonicCode,
+        // AdministrativeRegionId, RegionCodeSnapshot,
+        // RegionNameSnapshot). The test must pass the full 24-arg
+        // shape to keep the converter coverage in lock-step with
+        // the production record.
         var dto = new BusinessPartnerDto(
             Id: 83727350616817770L,
             Code: "BP-001",
@@ -299,6 +306,10 @@ public class SnowflakeLongJsonConverterFacts
             AddressLine1: null, AddressLine2: null,
             City: null, Region: null, PostalCode: null, CountryCode: null,
             TaxNumber: null,
+            MnemonicCode: null,
+            AdministrativeRegionId: null,
+            RegionCodeSnapshot: null,
+            RegionNameSnapshot: null,
             Status: GuliERP.Mdm.Domain.Enums.MasterDataStatus.Active,
             Description: null,
             CreatedAt: DateTimeOffset.UnixEpoch,

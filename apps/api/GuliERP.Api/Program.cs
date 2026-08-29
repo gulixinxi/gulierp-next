@@ -80,6 +80,14 @@ if (string.IsNullOrWhiteSpace(connectionString))
         "or user secrets. See docs/verification/G2_001_HOST_POSTGRESQL_REPORT.md §9 for the contract.");
 }
 
+if (connectionString.Contains("CHANGE_ME", StringComparison.OrdinalIgnoreCase))
+{
+    throw new InvalidOperationException(
+        "Configuration validation failed: ConnectionStrings:GuliERP still contains CHANGE_ME. " +
+        "Set a real operator PostgreSQL connection string via ConnectionStrings__GuliERP or " +
+        "GULIERP_ConnectionStrings__GuliERP; placeholder credentials are not accepted.");
+}
+
 // Log the redacted connection string so the operator can see what the host
 // actually resolved. This is critical for G2-001R1 — the G2-001 first
 // evidence pack returned /health/ready=503 and we needed to know whether

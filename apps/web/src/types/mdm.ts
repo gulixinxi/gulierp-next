@@ -354,6 +354,13 @@ export interface BusinessPartnerDto {
   postalCode: string | null;
   countryCode: string | null;
   taxNumber: string | null;
+  // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 3 (2026-08-28)
+  // additive fields. mnemonics + optional Region binding + server-
+  // derived snapshots. UI never writes the snapshots.
+  mnemonicCode: string | null;
+  administrativeRegionId: string | null;
+  regionCodeSnapshot: string | null;
+  regionNameSnapshot: string | null;
   status: MasterDataStatusInt;
   description: string | null;
   createdAt: string;
@@ -375,6 +382,9 @@ export interface CreateBusinessPartnerRequest {
   postalCode: string | null;
   countryCode: string | null;
   taxNumber: string | null;
+  // Wave 3.
+  mnemonicCode: string | null;
+  administrativeRegionId: string | null;
   description: string | null;
 }
 export interface UpdateBusinessPartnerRequest {
@@ -391,6 +401,9 @@ export interface UpdateBusinessPartnerRequest {
   postalCode: string | null;
   countryCode: string | null;
   taxNumber: string | null;
+  // Wave 3.
+  mnemonicCode: string | null;
+  administrativeRegionId: string | null;
   status: MasterDataStatusInt;
   description: string | null;
   expectedConcurrencyVersion: number;
@@ -420,6 +433,11 @@ export interface BusinessPartner {
   postalCode?: string;
   countryCode?: string;
   taxNumber?: string;
+  // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 3.
+  mnemonicCode?: string;
+  administrativeRegionId?: string;
+  regionCodeSnapshot?: string;
+  regionNameSnapshot?: string;
   status: MasterDataStatus;
   description?: string;
   createdAt: string;
@@ -441,6 +459,10 @@ export interface BusinessPartnerForm {
   postalCode: string;
   countryCode: string;
   taxNumber: string;
+  // Wave 3. mnemonicCode + Region binding (id only; snapshots
+  // are server-derived, never written from the SPA).
+  mnemonicCode: string;
+  administrativeRegionId: string | null;
   status: MasterDataStatus;
   description: string;
 }
@@ -683,3 +705,50 @@ export interface MdmColumnConfig {
 // ============================================================
 export type SemanticType = 'text' | 'code' | 'quantity' | 'enum' | 'status' | 'timestamp' | 'description';
 export interface SemanticField { prop: string; label: string; type: SemanticType; }
+
+// ============================================================
+// GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 2
+// (2026-08-28) Country + AdministrativeRegion reference DTOs.
+// Per brief §十五 + §二十一, V1 minimal fields. The wire format
+// mirrors the C# DTOs (long id as string per Snowflake/HiLo
+// string contract).
+// ============================================================
+export interface CountryListItem {
+  id: string;
+  code: string;          // ISO 3166-1 alpha-2
+  alpha3Code: string | null;
+  name: string;          // zh-Hans display name (CLDR)
+  englishName: string;   // en display name (CLDR)
+  isActive: boolean;
+  sortOrder: number;
+}
+export interface Country extends CountryListItem {}
+
+export interface AdministrativeRegionListItem {
+  id: string;
+  countryCode: string;
+  code: string;          // In-country region code (CN: GB/T 2260)
+  name: string;          // zh-Hans display name
+  englishName: string | null;
+  shortName: string | null;
+  parentId: string | null;
+  level: number;         // 0 = country-root, 1 = province, ...
+  regionType: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+export interface AdministrativeRegion extends AdministrativeRegionListItem {}
+
+// ============================================================
+// GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 2
+// (2026-08-28) Lightweight option shape for the Country
+// searchable selector. The component is shared with the future
+// Warehouse / Plant address flow (per brief §三十六).
+// ============================================================
+export interface CountryOption {
+  value: string;        // alpha-2 code
+  label: string;        // "{alpha-2} {name}" or "{alpha-2} {englishName}"
+  alpha3Code: string | null;
+  englishName: string;
+  zhName: string;
+}

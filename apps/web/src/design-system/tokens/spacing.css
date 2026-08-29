@@ -28,4 +28,12 @@
   --pad-cell:    var(--space-2) var(--space-3); /* table cell */
 
   --section-gutter: var(--space-4); /* between edit sections (8px) */
+
+  /* Layout V2 — desktop ERP page rhythm */
+  --layout-page-pad-x: var(--space-7);
+  --layout-page-pad-y: var(--space-4);
+  --layout-section-gap: var(--space-4);
+  --layout-toolbar-gap: var(--space-4);
+  --layout-form-gap-x: var(--space-7);
+  --layout-form-gap-y: var(--space-6);
 }

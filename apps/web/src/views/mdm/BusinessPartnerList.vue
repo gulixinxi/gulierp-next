@@ -1,13 +1,27 @@
 <template>
-  <!-- BusinessPartnerList — reusable page for 客户档案 / 供应商 / 全部往来单位.
-       Route meta.defaultRole ('customer' | 'supplier' | undefined) sets the
-       INITIAL role filter only; the operator may switch freely afterwards.
-       Per TRAE_MDM_002_API_HANDOFF.md §2/§5/§8/§9.
-       No mock fallback. 404 → "数据不存在或无权访问". -->
+  <!--
+    BusinessPartnerList — reusable page for 客户档案 / 供应商 / 全部往来单位.
+    GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 4 (2026-08-28):
+      * Code UX: AUTO_EDITABLE. Empty Code on Create = auto-generate.
+        "留空则自动生成" help text. Edit disables Code (immutable).
+      * CountryCode: searchable el-select from Country reference data.
+      * CN Region: el-cascader over AdministrativeRegion. Graceful
+        fallback when CN has 0 rows (Operator MCA importer not run yet).
+      * International: free-text State / City / Address Line fields.
+      * MnemonicCode: optional short code, case-insensitive search.
+      * Search: single keyword across Code / Name / ShortName /
+        MnemonicCode / Contact / Phone / Email / TaxId (8 fields).
+      * Form grouping: 3 logical groups (基础信息 / 联系信息 / 地址信息).
+      * List column widths: per brief §三十三. Code 170 (no truncation),
+        Name 200, ShortName 130, Type 120, Contact 110, Phone 130,
+        Email 200 (ellipsis + tooltip), TaxId 180, Status 90,
+        UpdatedAt 165, Actions 130 (fixed right).
+    No mock fallback. 404 → "数据不存在或无权访问".
+  -->
   <div class="mdm-list">
     <MdmListToolbar
       v-model:search="searchKeyword"
-      search-placeholder="搜索代码 / 名称 / 简称"
+      search-placeholder="搜索 代码 / 名称 / 简称 / 助记码 / 联系人 / 电话 / 邮箱 / 税号"
       :create-label="createLabel"
       @search="applyFilters"
       @create="openCreate"
@@ -17,7 +31,7 @@
           v-model="filterRole"
           placeholder="往来单位类型"
           clearable
-          style="width: 150px"
+          class="bp-filter-role"
           @change="applyFilters"
         >
           <el-option
@@ -27,7 +41,7 @@
             :value="opt.value"
           />
         </el-select>
-        <el-select v-model="filterStatus" placeholder="状态" clearable style="width: 100px" @change="applyFilters">
+        <el-select v-model="filterStatus" placeholder="状态" clearable class="bp-filter-status" @change="applyFilters">
           <el-option v-for="opt in STATUS_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
       </template>
@@ -49,45 +63,43 @@
         size="small"
         row-key="id"
         @row-dblclick="openDetail"
-        :header-cell-style="{ padding: '0 8px' }"
-        :cell-style="{ padding: '0 8px' }"
       >
-        <el-table-column type="index" label="#" width="50" fixed="left" />
-        <el-table-column prop="code" label="代码" width="120" sortable show-overflow-tooltip>
+        <el-table-column type="index" label="#" :width="COL.index" fixed="left" />
+        <el-table-column prop="code" label="代码" :width="COL.code" sortable show-overflow-tooltip>
           <template #default="{ row }">
             <span class="mdm-code">{{ row.code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="名称" min-width="180" show-overflow-tooltip sortable />
-        <el-table-column prop="shortName" label="简称" width="120" show-overflow-tooltip>
+        <el-table-column prop="name" label="名称" :min-width="COL.partnerName" show-overflow-tooltip sortable />
+        <el-table-column prop="shortName" label="简称" :width="COL.shortName" show-overflow-tooltip>
           <template #default="{ row }">{{ row.shortName || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="role" label="类型" width="120" align="center">
+        <el-table-column prop="role" label="类型" :width="COL.type" align="center">
           <template #default="{ row }">
             <el-tag :type="roleTagType(row.role)" size="small" effect="light">{{ roleLabel(row.role) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="contactPerson" label="联系人" width="100" show-overflow-tooltip>
+        <el-table-column prop="contactPerson" label="联系人" :width="COL.person" show-overflow-tooltip>
           <template #default="{ row }">{{ row.contactPerson || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="phone" label="电话" width="140" show-overflow-tooltip>
+        <el-table-column prop="phone" label="电话" :width="COL.phone" show-overflow-tooltip>
           <template #default="{ row }">{{ row.phone || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="email" label="邮箱" width="180" show-overflow-tooltip>
+        <el-table-column prop="email" label="邮箱" :width="COL.email" show-overflow-tooltip>
           <template #default="{ row }">{{ row.email || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="taxNumber" label="税号" width="160" show-overflow-tooltip>
+        <el-table-column prop="taxNumber" label="税号" :width="COL.taxNo" show-overflow-tooltip>
           <template #default="{ row }">{{ row.taxNumber || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="80" align="center">
+        <el-table-column prop="status" label="状态" :width="COL.status" align="center">
           <template #default="{ row }">
             <MdmStatusBadge :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="updatedAt" label="更新时间" width="160" sortable>
+        <el-table-column prop="updatedAt" label="更新时间" :width="COL.datetime" sortable>
           <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right" align="center">
+        <el-table-column label="操作" :width="COL.actions" fixed="right" align="center">
           <template #default="{ row }">
             <MdmTableRowActions
               :status="row.status"
@@ -117,7 +129,14 @@
       <el-button type="primary" link style="margin-left:12px" @click="fetchList">重新加载</el-button>
     </div>
 
-    <!-- Create/Edit Form Drawer -->
+    <!--
+      Create/Edit Form Drawer — 3 logical groups per brief §三十二.
+      Group 1: 基础信息 (Code, Name, ShortName, MnemonicCode, Type, Status)
+      Group 2: 联系信息 (Contact, Phone, Email, TaxId)
+      Group 3: 地址信息 (Country, Region, City, AddressLine1/2, PostalCode)
+      Region control swaps by Country: CN → cascader from reference data,
+      others → free-text State / City.
+    -->
     <MdmFormDrawer
       v-model="formDrawerVisible"
       v-model:model="formData"
@@ -127,58 +146,151 @@
       :submit-label="editingId ? '保存修改' : '创建'"
       @submit="handleSubmit"
     >
-      <el-form-item label="代码" prop="code">
-        <el-input v-model="formData.code" placeholder="如 CUST-0001" :disabled="!!editingId" maxlength="40" />
-      </el-form-item>
-      <el-form-item label="名称" prop="name">
-        <el-input v-model="formData.name" placeholder="往来单位全称" maxlength="200" />
-      </el-form-item>
-      <el-form-item label="简称">
-        <el-input v-model="formData.shortName" placeholder="可选" maxlength="40" />
-      </el-form-item>
-      <el-form-item label="类型" prop="role">
-        <el-select v-model="formData.role" style="width: 100%">
-          <el-option v-for="opt in BP_ROLE_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="联系人">
-        <el-input v-model="formData.contactPerson" maxlength="50" />
-      </el-form-item>
-      <el-form-item label="电话">
-        <el-input v-model="formData.phone" maxlength="50" />
-      </el-form-item>
-      <el-form-item label="邮箱" prop="email">
-        <el-input v-model="formData.email" placeholder="含 @" maxlength="100" />
-      </el-form-item>
-      <el-form-item label="地址">
-        <el-input v-model="formData.addressLine1" placeholder="地址行 1" maxlength="200" />
-      </el-form-item>
-      <el-form-item label=" ">
-        <el-input v-model="formData.addressLine2" placeholder="地址行 2（选填）" maxlength="200" />
-      </el-form-item>
-      <el-form-item label="城市">
-        <el-input v-model="formData.city" maxlength="100" />
-      </el-form-item>
-      <el-form-item label="省/州">
-        <el-input v-model="formData.region" maxlength="100" />
-      </el-form-item>
-      <el-form-item label="邮编">
-        <el-input v-model="formData.postalCode" maxlength="20" />
-      </el-form-item>
-      <el-form-item label="国家代码" prop="countryCode">
-        <el-input v-model="formData.countryCode" placeholder="如 CN, US（2 位）" maxlength="2" />
-      </el-form-item>
-      <el-form-item label="税号">
-        <el-input v-model="formData.taxNumber" maxlength="50" />
-      </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="formData.status" style="width: 100%">
-          <el-option v-for="opt in STATUS_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="说明">
-        <el-input v-model="formData.description" type="textarea" :rows="2" maxlength="200" show-word-limit />
-      </el-form-item>
+      <!-- Group 1: 基础信息 -->
+      <div class="bp-form-section">
+        <div class="bp-form-section-title">基础信息</div>
+        <el-form-item label="代码" prop="code">
+          <el-input
+            v-model="formData.code"
+            placeholder="留空则自动生成（推荐）"
+            :disabled="!!editingId"
+            maxlength="40"
+            show-word-limit
+          >
+            <template #append v-if="!editingId">
+              <el-tooltip content="代码留空 = 服务端在保存时按 MasterDataCodeRule (AUTO_EDITABLE) 自动生成 BP_000001 形式的编码" placement="top">
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </template>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="名称" prop="name">
+          <el-input v-model="formData.name" placeholder="往来单位全称" maxlength="200" />
+        </el-form-item>
+        <el-form-item label="简称">
+          <el-input v-model="formData.shortName" placeholder="可选" maxlength="40" />
+        </el-form-item>
+        <el-form-item label="助记码">
+          <el-input
+            v-model="formData.mnemonicCode"
+            placeholder="可选 · 用于快速搜索的助记码（不区分大小写）"
+            maxlength="40"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item label="类型" prop="role">
+          <el-select v-model="formData.role" style="width: 100%">
+            <el-option v-for="opt in BP_ROLE_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="formData.status" style="width: 100%">
+            <el-option v-for="opt in STATUS_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
+        </el-form-item>
+      </div>
+
+      <!-- Group 2: 联系信息 -->
+      <div class="bp-form-section">
+        <div class="bp-form-section-title">联系信息</div>
+        <el-form-item label="联系人">
+          <el-input v-model="formData.contactPerson" maxlength="100" />
+        </el-form-item>
+        <el-form-item label="电话">
+          <el-input v-model="formData.phone" maxlength="40" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="formData.email" placeholder="含 @" maxlength="200" />
+        </el-form-item>
+        <el-form-item label="税号">
+          <el-input v-model="formData.taxNumber" maxlength="50" />
+        </el-form-item>
+      </div>
+
+      <!-- Group 3: 地址信息 -->
+      <div class="bp-form-section">
+        <div class="bp-form-section-title">地址信息</div>
+        <el-form-item label="国家/地区" prop="countryCode">
+          <el-select
+            v-model="formData.countryCode"
+            placeholder="搜索 国家代码 / 中文名 / 英文名（如 CN、中国、China）"
+            filterable
+            clearable
+            :loading="countryLoading"
+            style="width: 100%"
+            @visible-change="onCountryDropdownOpen"
+            @clear="onCountryCleared"
+          >
+            <el-option
+              v-for="opt in countryOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            >
+              <div class="bp-country-option">
+                <span class="bp-country-code">{{ opt.value }}</span>
+                <span class="bp-country-zh">{{ opt.zhName }}</span>
+                <span class="bp-country-en">{{ opt.englishName }}</span>
+              </div>
+            </el-option>
+          </el-select>
+        </el-form-item>
+
+        <!-- CN-only: Cascader over AdministrativeRegion. Falls back to a notice + free-text when CN rows = 0. -->
+        <template v-if="isCnCountry">
+          <el-form-item label="省/市/区县">
+            <el-cascader
+              v-model="cnRegionPath"
+              :options="cnRegionOptions"
+              :props="cnCascaderProps"
+              :loading="cnRegionLoading"
+              clearable
+              filterable
+              placeholder="选择省/市/区县（如 北京市 / 北京市 / 东城区）"
+              style="width: 100%"
+              @change="onCnRegionChange"
+            />
+            <div v-if="cnRegionEmpty" class="bp-region-hint">
+              行政区划数据尚未初始化（操作员需导入 MCA 数据）。可继续填写下方文本地址，保存后区域选择留空。
+            </div>
+          </el-form-item>
+        </template>
+        <!-- International: free-text state / city / district -->
+        <template v-else>
+          <el-form-item label="省/州">
+            <el-input v-model="formData.region" maxlength="100" placeholder="如 California, NSW, Hessen" />
+          </el-form-item>
+        </template>
+
+        <el-form-item label="城市">
+          <el-input v-model="formData.city" maxlength="100" />
+        </el-form-item>
+        <el-form-item label="地址行 1">
+          <el-input v-model="formData.addressLine1" placeholder="街道、门牌号" maxlength="200" />
+        </el-form-item>
+        <el-form-item label="地址行 2">
+          <el-input v-model="formData.addressLine2" placeholder="楼栋、单元、房间（选填）" maxlength="200" />
+        </el-form-item>
+        <el-form-item label="邮编">
+          <el-input v-model="formData.postalCode" maxlength="20" />
+        </el-form-item>
+
+        <el-form-item v-if="formRegionNameSnapshot" label=" ">
+          <el-alert
+            :title="`已绑定的行政区划：${formRegionNameSnapshot}（${formRegionCodeSnapshot ?? ''}）`"
+            type="info"
+            :closable="false"
+            show-icon
+          />
+        </el-form-item>
+      </div>
+
+      <div class="bp-form-section">
+        <div class="bp-form-section-title">说明</div>
+        <el-form-item label="备注">
+          <el-input v-model="formData.description" type="textarea" :rows="2" maxlength="2000" show-word-limit />
+        </el-form-item>
+      </div>
     </MdmFormDrawer>
 
     <!-- Detail Drawer -->
@@ -196,22 +308,36 @@
           </el-tag>
         </div>
       </template>
-      <el-descriptions :column="2" border size="small">
+      <el-descriptions :column="2" border size="small" title="基础信息">
         <el-descriptions-item label="代码">{{ detailData?.code }}</el-descriptions-item>
         <el-descriptions-item label="名称">{{ detailData?.name }}</el-descriptions-item>
         <el-descriptions-item label="简称">{{ detailData?.shortName || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="助记码">{{ detailData?.mnemonicCode || '—' }}</el-descriptions-item>
         <el-descriptions-item label="类型">{{ roleLabel(detailData?.role) }}</el-descriptions-item>
+        <el-descriptions-item label="状态">{{ getStatusLabel(detailData?.status) }}</el-descriptions-item>
+      </el-descriptions>
+      <el-descriptions :column="2" border size="small" title="联系信息" style="margin-top: 16px">
         <el-descriptions-item label="联系人">{{ detailData?.contactPerson || '—' }}</el-descriptions-item>
         <el-descriptions-item label="电话">{{ detailData?.phone || '—' }}</el-descriptions-item>
         <el-descriptions-item label="邮箱">{{ detailData?.email || '—' }}</el-descriptions-item>
         <el-descriptions-item label="税号">{{ detailData?.taxNumber || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="地址">{{ formatAddress(detailData) || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="国家代码">{{ detailData?.countryCode || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="状态">{{ getStatusLabel(detailData?.status) }}</el-descriptions-item>
-        <el-descriptions-item label="说明">{{ detailData?.description || '—' }}</el-descriptions-item>
       </el-descriptions>
-      <el-descriptions :column="2" border size="small" style="margin-top: 16px">
-        <el-descriptions-item label="创建时间">{{ formatDate(detailData?.createdAt) }}</el-descriptions-item>
+      <el-descriptions :column="2" border size="small" title="地址信息" style="margin-top: 16px">
+        <el-descriptions-item label="国家代码">{{ detailData?.countryCode || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="行政区划">
+          <template v-if="detailData?.regionNameSnapshot">
+            {{ detailData.regionNameSnapshot }}（{{ detailData.regionCodeSnapshot }}）
+          </template>
+          <template v-else>—</template>
+        </el-descriptions-item>
+        <el-descriptions-item label="省/州">{{ detailData?.region || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="城市">{{ detailData?.city || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="地址行 1">{{ detailData?.addressLine1 || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="地址行 2">{{ detailData?.addressLine2 || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="邮编">{{ detailData?.postalCode || '—' }}</el-descriptions-item>
+      </el-descriptions>
+      <el-descriptions :column="2" border size="small" title="其他" style="margin-top: 16px">
+        <el-descriptions-item label="备注">{{ detailData?.description || '—' }}</el-descriptions-item>
         <el-descriptions-item label="更新时间">{{ formatDate(detailData?.updatedAt) }}</el-descriptions-item>
       </el-descriptions>
     </MdmDetailDrawer>
@@ -219,9 +345,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { Download } from '@element-plus/icons-vue';
+import { Download, QuestionFilled } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormRules } from 'element-plus';
 
@@ -232,9 +358,16 @@ import MdmDetailDrawer from '../../components/mdm/MdmDetailDrawer.vue';
 import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
 import MdmTableRowActions from '../../components/mdm/MdmTableRowActions.vue';
+import { TABLE_COLUMN_PRESETS as COL } from '../../design-system/tableColumns';
 
 import { ApiError } from '../../api/http';
 import * as bpApi from '../../api/mdm/business-partner';
+import {
+  listCountries,
+  toCountryOption,
+  listRegions,
+  getRegionByCode,
+} from '../../api/mdm/reference-data';
 import {
   STATUS_OPTIONS,
   BP_ROLE_OPTIONS,
@@ -247,7 +380,10 @@ import type {
   BusinessPartnerForm,
   BusinessPartnerRole,
   BusinessPartnerRoleFilter,
+  Country,
+  CountryOption,
   MasterDataStatus,
+  AdministrativeRegion,
 } from '../../types/mdm';
 
 // ===== Route-driven default role (meta.defaultRole) =====
@@ -312,7 +448,6 @@ async function fetchList() {
 }
 
 onMounted(() => {
-  // Apply route-driven default role on initial mount only.
   filterRole.value = defaultRole.value;
   fetchList();
 });
@@ -324,58 +459,265 @@ function applyFilters() {
   fetchList();
 }
 
+// ===== Country + Region reference data =====
+const countryOptions = ref<CountryOption[]>([]);
+const countryLoading = ref(false);
+const cnRegionOptions = ref<CascaderOption[]>([]);
+const cnRegionLoading = ref(false);
+const cnRegionEmpty = ref(false);
+const cnRegionPath = ref<string[]>([]);
+// GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 5.2
+// (2026-08-28). The listRegions API returns only the rows
+// matching the parentId filter (or L1 only when parentId=null).
+// The cascader therefore has to lazy-load children per expand
+// event so the user can drill from L1 (province) -> L2
+// (prefecture/city) -> L3 (county/district). With lazy=true the
+// cascader panel calls lazyLoad(node, resolve) and uses the
+// returned array as the next column.
+const cnCascaderProps = {
+  value: 'id',
+  label: 'name',
+  children: 'children',
+  checkStrictly: false,
+  emitPath: false, // return the leaf Region object as the value
+  lazy: true,
+  lazyLoad: async (node: { level: number; value?: string }, resolve: (children: CascaderOption[]) => void) => {
+    // level: 0 = root placeholder emitted by el-cascader
+    // level 1 = L1 (province) we already loaded eagerly
+    // level 2 = L2 (city) — fetch children by parentId
+    // level 3 = L3 (county) — leaves, no children
+    try {
+      if (node.level === 0) {
+        // Eagerly load L1 once (used by both the empty
+        // `regions?parentId=null` call and the watch on
+        // countryCode change).
+        const regions = await listRegions({ countryCode: 'CN', parentId: null, includeInactive: false });
+        const opts = regions.map(toCascaderOption);
+        cnRegionOptions.value = opts;
+        cnRegionEmpty.value = opts.length === 0;
+        resolve(opts);
+      } else if (node.value) {
+        const regions = await listRegions({ countryCode: 'CN', parentId: node.value, includeInactive: false });
+        const opts = regions.map(toCascaderOption);
+        resolve(opts);
+      } else {
+        resolve([]);
+      }
+    } catch (e) {
+      resolve([]);
+    }
+  },
+};
+function toCascaderOption(r: AdministrativeRegion): CascaderOption {
+  return {
+    id: r.id,
+    name: r.name,
+    level: r.level,
+    code: r.code,
+    countryCode: r.countryCode,
+    parentId: r.parentId,
+    regionType: r.regionType,
+  };
+}
+interface CascaderOption {
+  id: string;
+  name: string;
+  level: number;
+  code: string;
+  countryCode: string;
+  parentId: string | null;
+  regionType: string;
+  leaf?: boolean;
+  children?: CascaderOption[];
+}
+
+async function loadCountries(keyword?: string) {
+  countryLoading.value = true;
+  try {
+    const data: Country[] = await listCountries({ keyword, includeInactive: false });
+    countryOptions.value = data.map(toCountryOption);
+  } catch (e) {
+    countryOptions.value = [];
+  } finally {
+    countryLoading.value = false;
+  }
+}
+
+function onCountryDropdownOpen(open: boolean) {
+  if (open && countryOptions.value.length === 0) {
+    loadCountries();
+  }
+}
+
+function onCountryCleared() {
+  // Per brief §十三: clearing the Country must not erase the
+  // legacy address text. We keep Region / City / AddressLine1/2 /
+  // PostalCode intact and just clear the Region binding.
+  formData.administrativeRegionId = null;
+  cnRegionPath.value = [];
+  cnRegionOptions.value = [];
+  cnRegionEmpty.value = false;
+}
+
+// Build cascader options from a flat list of regions by
+// composing parentId -> children. lazy=false; we load the full
+// top-level list (CN currently has 0 rows in the repo, so this
+// is cheap; once Operator imports MCA dataset the CN tree will
+// grow to ~3 300 rows which is still acceptable for client-side
+// rendering).
+function buildCascaderTree(regions: AdministrativeRegion[]): CascaderOption[] {
+  const byParent = new Map<string | null, CascaderOption[]>();
+  const opts: CascaderOption[] = regions.map(r => ({
+    id: r.id,
+    name: r.name,
+    level: r.level,
+    code: r.code,
+    countryCode: r.countryCode,
+    parentId: r.parentId,
+    regionType: r.regionType,
+  }));
+  for (const o of opts) {
+    const key = o.parentId;
+    if (!byParent.has(key)) byParent.set(key, []);
+    byParent.get(key)!.push(o);
+  }
+  for (const o of opts) {
+    o.children = byParent.get(o.id) ?? [];
+  }
+  return byParent.get(null) ?? [];
+}
+
+async function loadCnRegions() {
+  if (formData.countryCode !== 'CN') {
+    cnRegionOptions.value = [];
+    cnRegionEmpty.value = false;
+    return;
+  }
+  cnRegionLoading.value = true;
+  try {
+    // Wave 5.2: cascader is now lazy; eagerly preload only the
+    // L1 (parentId=null) so the first column is rendered before
+    // the user clicks. The lazyLoad callback above handles L2
+    // and L3 on demand.
+    const regions = await listRegions({ countryCode: 'CN', parentId: null, includeInactive: false });
+    cnRegionOptions.value = regions.map(toCascaderOption);
+    cnRegionEmpty.value = regions.length === 0;
+  } catch (e) {
+    cnRegionOptions.value = [];
+    cnRegionEmpty.value = true;
+  } finally {
+    cnRegionLoading.value = false;
+  }
+}
+
+function onCnRegionChange(value: string | null) {
+  // value is the leaf region's id (we set emitPath=false).
+  if (!value) {
+    formData.administrativeRegionId = null;
+    return;
+  }
+  formData.administrativeRegionId = value;
+}
+
+const isCnCountry = computed(() => formData.countryCode === 'CN');
+
 // ===== Form state =====
 const formDrawerVisible = ref(false);
 const editingId = ref<string | null>(null);
 const editingConcurrency = ref(0);
 const submitting = ref(false);
 const formData = reactive<BusinessPartnerForm>(emptyForm());
+// Transient display-only fields from the server-derived snapshot.
+// The form never writes these back; the wave-3 backend ignores
+// them on the wire.
+const formRegionCodeSnapshot = ref<string | null>(null);
+const formRegionNameSnapshot = ref<string | null>(null);
 
 function emptyForm(): BusinessPartnerForm {
   return {
-    code: '', name: '', shortName: '',
+    code: '', name: '', shortName: '', mnemonicCode: '',
     role: defaultRole.value === 'supplier' ? 'SUPPLIER'
       : defaultRole.value === 'customer' ? 'CUSTOMER'
         : 'CUSTOMER',
     contactPerson: '', phone: '', email: '',
     addressLine1: '', addressLine2: '', city: '', region: '',
     postalCode: '', countryCode: '', taxNumber: '',
+    administrativeRegionId: null,
     status: 'active', description: '',
   };
 }
 
 const formRules: FormRules = {
-  code: [{ required: true, message: '请输入往来单位代码', trigger: 'blur' }],
+  code: [
+    { validator: (_rule, value, cb) => {
+      // Edit: code is immutable + pre-loaded.
+      if (editingId.value) return cb();
+      // Create: empty is OK (auto-generate), but if provided must
+      // match the 2..40 UPPER_SNAKE format. We let the server do
+      // the canonical validation; here we just require
+      // non-whitespace when provided.
+      if (value && value.trim().length > 0) {
+        if (!/^[A-Za-z][A-Za-z0-9_]{0,39}$/.test(value.trim())) {
+          return cb(new Error('代码仅允许字母/数字/下划线，首字符为字母'));
+        }
+      }
+      return cb();
+    }, trigger: 'blur' },
+  ],
   name: [{ required: true, message: '请输入往来单位名称', trigger: 'blur' }],
   role: [{ required: true, message: '请选择类型', trigger: 'change' }],
   email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
   countryCode: [
-    { pattern: /^[A-Za-z]{2}$/, message: '请输入 2 位国家代码（如 CN）', trigger: 'blur' },
+    { validator: (_rule, value, cb) => {
+      if (value && !/^[A-Za-z]{2}$/.test(value)) {
+        return cb(new Error('请输入 2 位国家代码（如 CN）'));
+      }
+      return cb();
+    }, trigger: 'blur' },
   ],
 };
 
 function resetForm() {
   Object.assign(formData, emptyForm());
+  cnRegionPath.value = [];
+  formRegionNameSnapshot.value = null;
+  formRegionCodeSnapshot.value = null;
 }
 
-function openCreate() {
+async function openCreate() {
   editingId.value = null;
   editingConcurrency.value = 0;
   resetForm();
+  // Pre-load Country options so the user can pick right away.
+  if (countryOptions.value.length === 0) {
+    loadCountries();
+  }
   formDrawerVisible.value = true;
 }
 
 async function openEdit(row: BusinessPartner) {
   editingId.value = row.id;
   editingConcurrency.value = row.concurrencyVersion ?? 0;
-  // Re-read via API for the authoritative DTO (fresh concurrencyVersion + fields).
   try {
     const fresh = await bpApi.getBusinessPartner(row.id);
     fillForm(fresh);
     editingConcurrency.value = fresh.concurrencyVersion ?? 0;
   } catch (e) {
-    // Fall back to row snapshot; concurrency mismatch will be caught at save time.
     fillForm(row);
+  }
+  // Load Country + CN region (if applicable) for the form.
+  if (countryOptions.value.length === 0) {
+    loadCountries();
+  }
+  if (formData.countryCode === 'CN') {
+    await loadCnRegions();
+    if (formData.administrativeRegionId) {
+      // Pre-populate the cascader path from the bound region.
+      const bound = await getRegionByCode('CN', row.regionCodeSnapshot ?? '');
+      if (bound) {
+        cnRegionPath.value = [bound.id];
+      }
+    }
   }
   formDrawerVisible.value = true;
 }
@@ -383,18 +725,44 @@ async function openEdit(row: BusinessPartner) {
 function fillForm(d: BusinessPartner) {
   Object.assign(formData, {
     code: d.code, name: d.name, shortName: d.shortName || '',
+    mnemonicCode: d.mnemonicCode || '',
     role: d.role, contactPerson: d.contactPerson || '', phone: d.phone || '',
     email: d.email || '', addressLine1: d.addressLine1 || '',
     addressLine2: d.addressLine2 || '', city: d.city || '', region: d.region || '',
     postalCode: d.postalCode || '', countryCode: d.countryCode || '',
-    taxNumber: d.taxNumber || '', status: d.status, description: d.description || '',
+    taxNumber: d.taxNumber || '',
+    administrativeRegionId: d.administrativeRegionId || null,
+    status: d.status, description: d.description || '',
   });
+  // Server-derived snapshots. Display-only in the form layer;
+  // the backend regenerates them on every save.
+  formRegionNameSnapshot.value = d.regionNameSnapshot ?? null;
+  formRegionCodeSnapshot.value = d.regionCodeSnapshot ?? null;
 }
 
 function isConcurrencyConflict(err: unknown): boolean {
   return err instanceof ApiError && err.code === 'mdm_validation_failed'
     && /concurrency|version|并发/i.test(err.detail || '');
 }
+
+// React to Country change in the form: when the user picks CN we
+// load the cascader data; when they pick a non-CN Country we
+// clear the binding but DO NOT clear legacy Region text.
+watch(() => formData.countryCode, async (next, prev) => {
+  if (next === prev) return;
+  if (next === 'CN') {
+    await loadCnRegions();
+  } else {
+    cnRegionOptions.value = [];
+    cnRegionEmpty.value = false;
+    cnRegionPath.value = [];
+  }
+  // Switching the Country clears the binding (snapshots are
+  // derived on save from the new Region). Legacy Region text
+  // is preserved as-is — it is the user's free-text fallback
+  // for non-CN countries or for legacy historical rows.
+  formData.administrativeRegionId = null;
+});
 
 async function handleSubmit() {
   submitting.value = true;
@@ -426,6 +794,12 @@ async function handleSubmit() {
 function formatApiError(e: ApiError): string {
   if (e.code === 'mdm_location_parent_warehouse_cross_scope') {
     return '所选仓库不属于当前公司或无权访问';
+  }
+  if (e.code === 'mdm_business_partner_country_code_unknown') {
+    return '国家代码无效：仅接受当前已激活的 ISO 3166-1 alpha-2 代码';
+  }
+  if (e.code === 'mdm_business_partner_region_cross_country') {
+    return '行政区划与所选国家不一致';
   }
   const parts = [e.title];
   if (e.detail) parts.push(e.detail);
@@ -473,11 +847,6 @@ function roleTagType(role?: BusinessPartnerRole): 'primary' | 'success' | 'warni
   if (role === 'SUPPLIER') return 'success';
   return 'warning';
 }
-function formatAddress(d: BusinessPartner | null): string {
-  if (!d) return '';
-  return [d.addressLine1, d.addressLine2, d.city, d.region, d.postalCode]
-    .filter(Boolean).join(' ');
-}
 
 // ===== Status change =====
 async function confirmDeactivate(row: BusinessPartner) {
@@ -524,5 +893,57 @@ function exportData() {
 /* GULIERP_PAGE_THEME_AUDIT_001 / Phase 1 (2026-08-23).
    .mdm-list, .mdm-code, .mdm-detail-title, .mdm-detail-name,
    .mdm-error-banner are shared (see design-system/components/mdm-page.css).
-   This page has no page-specific accents. */
+   This page keeps only filter sizing that is specific to business partners. */
+.bp-filter-role {
+  width: 150px;
+}
+.bp-filter-status {
+  width: var(--col-status);
+}
+
+/* GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 4:
+   3 logical form sections. */
+.bp-form-section {
+  margin-bottom: 8px;
+}
+.bp-form-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary, #303133);
+  margin: 16px 0 8px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
+}
+
+/* Country selector: custom 3-column option rendering. */
+.bp-country-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bp-country-code {
+  font-family: var(--el-font-family-monospace, monospace);
+  font-weight: 600;
+  width: 28px;
+  flex-shrink: 0;
+}
+.bp-country-zh {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bp-country-en {
+  color: var(--el-text-color-secondary, #909399);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* Region hint shown when CN has 0 rows. */
+.bp-region-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--el-color-warning, #e6a23c);
+  line-height: 1.4;
+}
 </style>

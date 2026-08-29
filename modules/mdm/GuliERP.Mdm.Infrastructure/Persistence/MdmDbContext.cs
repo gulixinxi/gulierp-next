@@ -78,6 +78,14 @@ public sealed class MdmDbContext : DbContext
     public DbSet<DictionaryType> DictionaryTypes => Set<DictionaryType>();
     public DbSet<DictionaryItem> DictionaryItems => Set<DictionaryItem>();
     public DbSet<NumberingRule> NumberingRules => Set<NumberingRule>();
+    public DbSet<MasterDataCodeRule> MasterDataCodeRules => Set<MasterDataCodeRule>();
+    public DbSet<MasterDataCodeSequenceState> MasterDataCodeSequenceStates => Set<MasterDataCodeSequenceState>();
+    // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 2 (2026-08-28):
+    // Country + AdministrativeRegion reference data. System-scoped
+    // (no TenantId FK). See the corresponding Configuration classes
+    // and the Wave 2 report.
+    public DbSet<Country> Countries => Set<Country>();
+    public DbSet<AdministrativeRegion> AdministrativeRegions => Set<AdministrativeRegion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -96,6 +104,7 @@ public sealed class MdmDbContext : DbContext
         modelBuilder.Entity<DictionaryType>(b => b.HasQueryFilter(e => true));
         modelBuilder.Entity<DictionaryItem>(b => b.HasQueryFilter(e => true));
         modelBuilder.Entity<NumberingRule>(b => b.HasQueryFilter(e => true));
+        modelBuilder.Entity<MasterDataCodeRule>(b => b.HasQueryFilter(e => true));
 
         // ------------------------------------------------------------
         // Table names — explicit UPPER_SNAKE for the MDM tables.
@@ -109,6 +118,10 @@ public sealed class MdmDbContext : DbContext
         modelBuilder.Entity<DictionaryType>(b => b.ToTable("gulierp_dictionary_type"));
         modelBuilder.Entity<DictionaryItem>(b => b.ToTable("gulierp_dictionary_item"));
         modelBuilder.Entity<NumberingRule>(b => b.ToTable("gulierp_numbering_rule"));
+        modelBuilder.Entity<MasterDataCodeRule>(b => b.ToTable("gulierp_master_data_code_rule"));
+        modelBuilder.Entity<MasterDataCodeSequenceState>(b => b.ToTable("gulierp_master_data_code_sequence_state"));
+        modelBuilder.Entity<Country>(b => b.ToTable("gulierp_country"));
+        modelBuilder.Entity<AdministrativeRegion>(b => b.ToTable("gulierp_administrative_region"));
 
         // ------------------------------------------------------------
         // Apply the per-entity IEntityTypeConfiguration<T> classes.

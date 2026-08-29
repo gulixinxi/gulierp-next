@@ -56,9 +56,20 @@ public sealed class MdmBusinessPartnerWarehouseLocationFacts : IClassFixture<Web
         var sp = scope.ServiceProvider;
         RequireRealDb(sp);
 
+        // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 5.2
+        // fix: tenant must be resolved before any master-data write.
+        // Without this the service throws MdmValidationException
+        // ("Current Tenant is not resolved"). Code is also
+        // normalized to the 6-digit UPPER_SNAKE shape (no hyphens,
+        // per the MasterDataCodeValidator regex
+        // ^[A-Z][A-Z0-9_]{1,39}$).
+        var tenantId = 1_400_000L + Math.Abs(UniqueSuffix().GetHashCode() % 100_000);
+        var currentTenant = sp.GetRequiredService<GuliERP.Foundation.Kernel.ICurrentTenant>();
+        using var _ = currentTenant.Change(tenantId);
+
         var bpSvc = sp.GetRequiredService<IMdmBusinessPartnerService>();
         var suffix = UniqueSuffix();
-        var code = $"BP-{suffix}";
+        var code = $"BP{suffix}";
 
         var create = new CreateBusinessPartnerRequest(
             Code: code,
@@ -74,7 +85,9 @@ public sealed class MdmBusinessPartnerWarehouseLocationFacts : IClassFixture<Web
             Region: "Shanghai",
             PostalCode: "200000",
             CountryCode: "CN",
-            TaxNumber: "TAX-" + suffix,
+            TaxNumber: "TAX" + suffix,
+            MnemonicCode: "TC" + suffix,
+            AdministrativeRegionId: null,
             Description: "MDM-002 integration test BP");
 
         var created = await bpSvc.CreateAsync(create);
@@ -112,7 +125,9 @@ public sealed class MdmBusinessPartnerWarehouseLocationFacts : IClassFixture<Web
             Region: "Shanghai",
             PostalCode: "200000",
             CountryCode: "CN",
-            TaxNumber: "TAX-" + suffix,
+            TaxNumber: "TAX" + suffix,
+            MnemonicCode: "TC" + suffix,
+            AdministrativeRegionId: null,
             Status: MasterDataStatus.Active,
             Description: "MDM-002 integration test BP (updated)",
             ExpectedConcurrencyVersion: created.ConcurrencyVersion));
@@ -130,11 +145,22 @@ public sealed class MdmBusinessPartnerWarehouseLocationFacts : IClassFixture<Web
         var sp = scope.ServiceProvider;
         RequireRealDb(sp);
 
+        // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 5.2
+        // fix: tenant AND company must be resolved before any
+        // master-data write. MdmWarehouseService.RequireScope
+        // throws on either missing.
+        var tenantId = 1_500_000L + Math.Abs(UniqueSuffix().GetHashCode() % 100_000);
+        var companyId = 1_500_100L + Math.Abs(UniqueSuffix().GetHashCode() % 100_000);
+        var currentTenant = sp.GetRequiredService<GuliERP.Foundation.Kernel.ICurrentTenant>();
+        var currentCompany = sp.GetRequiredService<GuliERP.Foundation.Kernel.ICurrentCompany>();
+        using var __t = currentTenant.Change(tenantId);
+        using var __c = currentCompany.Change(companyId);
+
         var whSvc = sp.GetRequiredService<IMdmWarehouseService>();
         var locSvc = sp.GetRequiredService<IMdmLocationService>();
         var suffix = UniqueSuffix();
-        var whCode = $"WH-{suffix}";
-        var locCode = $"LOC-{suffix}";
+        var whCode = $"WH{suffix}";
+        var locCode = $"LOC{suffix}";
 
         // Create Warehouse
         var wh = await whSvc.CreateAsync(new CreateWarehouseRequest(
@@ -172,7 +198,7 @@ public sealed class MdmBusinessPartnerWarehouseLocationFacts : IClassFixture<Web
         {
             await locSvc.CreateAsync(new CreateLocationRequest(
                 WarehouseId: long.MaxValue - 1,
-                Code: $"BAD-{suffix}",
+                Code: $"BAD{suffix}",
                 Name: "Bad Location",
                 Type: LocationType.Bin,
                 Aisle: null, Bay: null, Shelf: null,

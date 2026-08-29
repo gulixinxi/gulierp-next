@@ -27,6 +27,45 @@ namespace GuliERP.Mdm.Domain.Entities;
 /// table (V2+), credit limit (V2+), price list (V2+), and any
 /// financial-subject linkage (Finance module owns that).
 /// </para>
+///
+/// <para>
+/// <b>GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 — Wave 3
+/// (2026-08-28) PostalAddress + MnemonicCode additive
+/// extension</b>:
+/// <list type="bullet">
+///   <item><see cref="AdministrativeRegionId"/> — nullable FK to
+///         <c>mdm.gulierp_administrative_region</c>. V1 supports
+///         binding a BusinessPartner's primary address to an
+///         AdministrativeRegion reference (CN dataset: 0 rows in
+///         repo pending Operator MCA import; international
+///         datasets not yet supplied; <c>NULL</c> is the supported
+///         legacy / international free-text fallback). FK is
+///         <c>Restrict</c> (no cascade).</item>
+///   <item><see cref="RegionCodeSnapshot"/> + <see cref="RegionNameSnapshot"/>
+///         — server-derived cache of the bound Region's Code +
+///         Name, captured at write time. These snapshots are
+///         written by the server from the reference data; the SPA
+///         MUST NOT supply them. Snapshots are the contract for
+///         "what address text was in effect when this row was
+///         last edited" and are kept even when the underlying
+///         Region is later deactivated (Region.IsActive = false)
+///         so historical data remains readable.</item>
+///   <item><see cref="MnemonicCode"/> — short hand-typed code for
+///         fast lookup (no auto pinyin / NLP in V1). Nullable,
+///         not unique, max length 40, case-insensitive search.</item>
+/// </list>
+///
+/// <b>Legacy text fields (Region / City / AddressLine1 /
+/// AddressLine2 / PostalCode / CountryCode) are preserved as-is</b>.
+/// Existing BusinessPartner rows whose <c>AdministrativeRegionId
+/// IS NULL</c> continue to read / write their legacy text fields
+/// unchanged. The Wave 3 migration is ADDITIVE only — it does not
+/// backfill <c>AdministrativeRegionId</c> from existing
+/// <c>Region</c> text, and it does not normalize or rewrite
+/// existing address values. Per brief §十, this is a hard
+/// regression test: editing Phone alone must not erase legacy
+/// address text.
+/// </para>
 /// </summary>
 public sealed class BusinessPartner : IMultiTenant
 {
@@ -58,6 +97,43 @@ public sealed class BusinessPartner : IMultiTenant
 
     /// <summary>Tax registration number. Nullable for non-VAT entities.</summary>
     public string? TaxNumber { get; set; }
+
+    /// <summary>
+    /// GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 — Wave 3
+    /// (2026-08-28). Hand-typed mnemonic / short lookup code
+    /// (max 40, nullable, NOT unique). V1 has no auto pinyin
+    /// or NLP fill. Search is case-insensitive substring
+    /// against the typed value.
+    /// </summary>
+    public string? MnemonicCode { get; set; }
+
+    /// <summary>
+    /// GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 — Wave 3
+    /// (2026-08-28). Nullable FK to
+    /// <c>mdm.gulierp_administrative_region.Id</c>. NULL is the
+    /// supported legacy / international fallback. FK is
+    /// <c>Restrict</c> (no cascade) — Regions cannot be hard-
+    /// deleted while any BusinessPartner references them; use
+    /// <c>IsActive = false</c> instead.
+    /// </summary>
+    public long? AdministrativeRegionId { get; set; }
+
+    /// <summary>
+    /// GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 — Wave 3.
+    /// Server-derived cache of the bound Region's <c>Code</c>
+    /// captured at write time. The SPA MUST NOT supply this
+    /// field; the service recomputes it from the reference
+    /// data on every write. Survives Region deactivation.
+    /// </summary>
+    public string? RegionCodeSnapshot { get; set; }
+
+    /// <summary>
+    /// GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 — Wave 3.
+    /// Server-derived cache of the bound Region's <c>Name</c>
+    /// captured at write time. Same contract as
+    /// <see cref="RegionCodeSnapshot"/>.
+    /// </summary>
+    public string? RegionNameSnapshot { get; set; }
 
     public MasterDataStatus Status { get; set; } = MasterDataStatus.Active;
 

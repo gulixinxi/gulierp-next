@@ -6,7 +6,7 @@
   <el-drawer
     v-model="visible"
     :title="title"
-    size="480px"
+    :size="drawerSize"
     :close-on-click-modal="false"
     :before-close="handleClose"
   >
@@ -14,7 +14,7 @@
       ref="formRef"
       :model="model"
       :rules="rules"
-      label-width="100px"
+      :label-width="labelWidth"
       label-position="right"
       size="default"
     >
@@ -33,24 +33,36 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { FormRules } from 'element-plus';
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
+  modelValue?: boolean;
+  model: Record<string, any>;
   title: string;
   rules?: FormRules;
   loading?: boolean;
   submitLabel?: string;
+  drawerSize?: string;
+  labelWidth?: string;
 }>(), {
   loading: false,
   submitLabel: '保存',
+  drawerSize: 'var(--dialog-width-md)',
+  labelWidth: '104px',
 });
 
-const visible = defineModel<boolean>({ default: false });
-const model = defineModel<Record<string, any>>('model', { required: true });
-
 const emit = defineEmits<{
+  'update:modelValue': [value: boolean];
+  'update:model': [value: Record<string, any>];
   submit: [];
 }>();
+
+const visible = computed({
+  get: () => props.modelValue ?? false,
+  set: (value: boolean) => emit('update:modelValue', value),
+});
+const model = computed(() => props.model);
 
 function handleClose(done: () => void) {
   done();

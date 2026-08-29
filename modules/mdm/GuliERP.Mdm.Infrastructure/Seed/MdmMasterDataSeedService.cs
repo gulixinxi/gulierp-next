@@ -224,7 +224,20 @@ public sealed class MdmMasterDataSeedService : IMdmMasterDataSeedService
                 item.TryGetString("country_code", out var cc);
                 item.TryGetString("tax_number", out var tn);
                 item.TryGetString("description_zh", out var dz);
-                var req = new CreateBusinessPartnerRequest(code, name, sn, role, cp, p, e, a1, a2, c, r, pc, cc, tn, dz);
+                // GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 3
+                // (2026-08-28): seed data does NOT pre-bind
+                // AdministrativeRegionId. Operators who import CN
+                // dataset can re-bind regions post-seed; the
+                // bootstrap seed path intentionally leaves the FK
+                // NULL so the legacy text fields are still
+                // authoritative.
+                var req = new CreateBusinessPartnerRequest(
+                    code, name, sn, role,
+                    cp, p, e,
+                    a1, a2, c, r, pc, cc, tn,
+                    MnemonicCode: null,
+                    AdministrativeRegionId: null,
+                    Description: dz);
 
                 var existing = await _bp.ListAsync(new BusinessPartnerListQuery(code, null, null, 1, 10), ct);
                 if (existing.Items.Any(b => b.Code == code))
