@@ -93,7 +93,13 @@ public sealed record ItemDto(
     string? Description,
     DateTimeOffset CreatedAt,
     DateTimeOffset ModifiedAt,
-    int ConcurrencyVersion);
+    int ConcurrencyVersion,
+    /// <summary>
+    /// GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30). Optional
+    /// hand-typed mnemonic / short lookup code (max 40 chars).
+    /// Reuse Wave brief §二十八.
+    /// </summary>
+    string? MnemonicCode);
 
 public sealed record CreateItemRequest(
     string Code,
@@ -102,7 +108,13 @@ public sealed record CreateItemRequest(
     long? CategoryId,
     long BaseUomId,
     ItemNature ItemNature,
-    string? Description);
+    string? Description,
+    /// <summary>
+    /// GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30). Optional
+    /// hand-typed mnemonic / short lookup code. Null / empty =
+    /// "not set"; trim before storage.
+    /// </summary>
+    string? MnemonicCode);
 
 public sealed record UpdateItemRequest(
     string Name,
@@ -112,7 +124,13 @@ public sealed record UpdateItemRequest(
     ItemNature ItemNature,
     MasterDataStatus Status,
     string? Description,
-    int ExpectedConcurrencyVersion);
+    int ExpectedConcurrencyVersion,
+    /// <summary>
+    /// GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30). Optional
+    /// hand-typed mnemonic / short lookup code; trim before
+    /// storage; pass null/empty to clear.
+    /// </summary>
+    string? MnemonicCode);
 
 // ============================================================
 // Pagination + list query DTOs

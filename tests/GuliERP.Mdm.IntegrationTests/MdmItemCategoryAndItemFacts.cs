@@ -222,7 +222,8 @@ public sealed class MdmItemCategoryAndItemFacts : IClassFixture<WebApplicationFa
                 CategoryId: null,   // no category — optional
                 BaseUomId: baseUom!.Id,
                 ItemNature: ItemNature.Material,
-                Description: null));
+                Description: null,
+                MnemonicCode: null));
 
         Assert.True(created.Id > 0, "Item HiLo must assign a non-zero Id.");
         Assert.Equal(itemCode, created.Code);
@@ -278,7 +279,8 @@ public sealed class MdmItemCategoryAndItemFacts : IClassFixture<WebApplicationFa
             new GuliERP.Mdm.Application.CreateItemRequest(
                 Code: code, Name: "Dup Item 1", Specification: null,
                 CategoryId: null, BaseUomId: baseUom!.Id,
-                ItemNature: ItemNature.Material, Description: null));
+                ItemNature: ItemNature.Material, Description: null,
+                MnemonicCode: null));
 
         try
         {
@@ -288,7 +290,8 @@ public sealed class MdmItemCategoryAndItemFacts : IClassFixture<WebApplicationFa
                     new GuliERP.Mdm.Application.CreateItemRequest(
                         Code: code, Name: "Dup Item 2", Specification: null,
                         CategoryId: null, BaseUomId: baseUom.Id,
-                        ItemNature: ItemNature.Material, Description: null));
+                        ItemNature: ItemNature.Material, Description: null,
+                        MnemonicCode: null));
             });
             Assert.Equal(GuliERP.Mdm.Application.MdmErrorCodes.DuplicateCode, ex.Code);
         }
@@ -332,7 +335,8 @@ public sealed class MdmItemCategoryAndItemFacts : IClassFixture<WebApplicationFa
                     Specification: null, CategoryId: null,
                     BaseUomId: 999_999_999_999L,    // intentionally non-existent
                     ItemNature: ItemNature.Material,
-                    Description: null));
+                    Description: null,
+                    MnemonicCode: null));
         });
         Assert.Equal(GuliERP.Mdm.Application.MdmErrorCodes.UomNotFound, ex.Code);
     }

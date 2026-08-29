@@ -205,4 +205,140 @@ public sealed class MdmBusinessPartnerWarehouseLocationFacts : IClassFixture<Web
                 Description: "should fail"));
         });
     }
+
+    // ============================================================
+    // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1_SCHEMA_AND_OPERATOR_CLOSURE
+    // (2026-08-30) — schema-semantics tests. These require a
+    // real PostgreSQL connection because the InMemory provider
+    // does NOT enforce unique-index constraints; only the
+    // service-layer duplicate pre-check is exercised there
+    // (see MdmReuseWaveFacts.Same_Warehouse_Duplicate_Rejected).
+    // The PG tests below are the authoritative persistence proof.
+    // ============================================================
+
+    [Fact]
+    public async Task Location_Same_Warehouse_Same_Code_Rejected_By_Db_Unique_Index()
+    {
+        // MDM007 contract: (TenantId, CompanyId, WarehouseId, Code)
+        // is UNIQUE. Two Locations in the SAME Warehouse with the
+        // SAME Code must be rejected by the DB, not just by the
+        // service-layer pre-check.
+        using var factory = BuildHost();
+        using var scope = factory.Services.CreateScope();
+        var sp = scope.ServiceProvider;
+        RequireRealDb(sp);
+
+        var tenantId = 1_600_000L + Math.Abs(UniqueSuffix().GetHashCode() % 100_000);
+        var companyId = 1_600_100L + Math.Abs(UniqueSuffix().GetHashCode() % 100_000);
+        var currentTenant = sp.GetRequiredService<GuliERP.Foundation.Kernel.ICurrentTenant>();
+        var currentCompany = sp.GetRequiredService<GuliERP.Foundation.Kernel.ICurrentCompany>();
+        using var __t = currentTenant.Change(tenantId);
+        using var __c = currentCompany.Change(companyId);
+
+        var whSvc = sp.GetRequiredService<IMdmWarehouseService>();
+        var locSvc = sp.GetRequiredService<IMdmLocationService>();
+        var suffix = UniqueSuffix();
+        var whCode = $"WH{suffix}";
+        var dupCode = $"DUP{suffix}";
+
+        // One Warehouse, two Locations with the SAME Code.
+        var wh = await whSvc.CreateAsync(new CreateWarehouseRequest(
+            PlantId: null,
+            Code: whCode,
+            Name: "Dup WH " + suffix,
+            Type: WarehouseType.Physical,
+            AddressLine1: null, AddressLine2: null,
+            City: null, Region: null, PostalCode: null,
+            CountryCode: null, Description: null));
+
+        // First insert succeeds.
+        var first = await locSvc.CreateAsync(new CreateLocationRequest(
+            WarehouseId: wh.Id,
+            Code: dupCode,
+            Name: "First " + suffix,
+            Type: LocationType.Bin,
+            Aisle: null, Bay: null, Shelf: null,
+            Description: "first"));
+        Assert.True(first.Id > 0);
+
+        // Second insert with the SAME (TenantId, CompanyId,
+        // WarehouseId, Code) must throw — caught here as a
+        // MdmValidationException (service pre-check) OR as the
+        // raw DbUpdateException from the unique index. Either
+        // way: the duplicate is rejected.
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
+        {
+            await locSvc.CreateAsync(new CreateLocationRequest(
+                WarehouseId: wh.Id,
+                Code: dupCode,
+                Name: "Second " + suffix,
+                Type: LocationType.Bin,
+                Aisle: null, Bay: null, Shelf: null,
+                Description: "second — must be rejected"));
+        });
+    }
+
+    [Fact]
+    public async Task Location_Different_Warehouse_Same_Code_Allowed_By_MDM007_Index()
+    {
+        // MDM007 contract: (TenantId, CompanyId, WarehouseId, Code)
+        // is UNIQUE. Two Locations in DIFFERENT Warehouses with the
+        // SAME Code MUST be allowed (per-Warehouse uniqueness).
+        // This is the Foundation-driven scenario: Warehouse A and
+        // Warehouse B both auto-generate LOC_000001, both persist.
+        using var factory = BuildHost();
+        using var scope = factory.Services.CreateScope();
+        var sp = scope.ServiceProvider;
+        RequireRealDb(sp);
+
+        var tenantId = 1_700_000L + Math.Abs(UniqueSuffix().GetHashCode() % 100_000);
+        var companyId = 1_700_100L + Math.Abs(UniqueSuffix().GetHashCode() % 100_000);
+        var currentTenant = sp.GetRequiredService<GuliERP.Foundation.Kernel.ICurrentTenant>();
+        var currentCompany = sp.GetRequiredService<GuliERP.Foundation.Kernel.ICurrentCompany>();
+        using var __t = currentTenant.Change(tenantId);
+        using var __c = currentCompany.Change(companyId);
+
+        var whSvc = sp.GetRequiredService<IMdmWarehouseService>();
+        var locSvc = sp.GetRequiredService<IMdmLocationService>();
+        var suffix = UniqueSuffix();
+        var wh1Code = $"WA{suffix}";
+        var wh2Code = $"WB{suffix}";
+        var sharedLocCode = $"SHR{suffix}";
+
+        // Two distinct Warehouses, same Company, same Tenant.
+        var wh1 = await whSvc.CreateAsync(new CreateWarehouseRequest(
+            PlantId: null, Code: wh1Code, Name: "A " + suffix,
+            Type: WarehouseType.Physical,
+            AddressLine1: null, AddressLine2: null,
+            City: null, Region: null, PostalCode: null,
+            CountryCode: null, Description: null));
+        var wh2 = await whSvc.CreateAsync(new CreateWarehouseRequest(
+            PlantId: null, Code: wh2Code, Name: "B " + suffix,
+            Type: WarehouseType.Physical,
+            AddressLine1: null, AddressLine2: null,
+            City: null, Region: null, PostalCode: null,
+            CountryCode: null, Description: null));
+
+        // Same Location Code in both Warehouses — must BOTH succeed.
+        var l1 = await locSvc.CreateAsync(new CreateLocationRequest(
+            WarehouseId: wh1.Id,
+            Code: sharedLocCode,
+            Name: "A1 " + suffix,
+            Type: LocationType.Bin,
+            Aisle: null, Bay: null, Shelf: null, Description: null));
+        var l2 = await locSvc.CreateAsync(new CreateLocationRequest(
+            WarehouseId: wh2.Id,
+            Code: sharedLocCode,
+            Name: "B1 " + suffix,
+            Type: LocationType.Bin,
+            Aisle: null, Bay: null, Shelf: null, Description: null));
+
+        Assert.True(l1.Id > 0);
+        Assert.True(l2.Id > 0);
+        Assert.NotEqual(l1.Id, l2.Id);
+        Assert.Equal(sharedLocCode, l1.Code);
+        Assert.Equal(sharedLocCode, l2.Code);
+        Assert.Equal(wh1.Id, l1.WarehouseId);
+        Assert.Equal(wh2.Id, l2.WarehouseId);
+    }
 }

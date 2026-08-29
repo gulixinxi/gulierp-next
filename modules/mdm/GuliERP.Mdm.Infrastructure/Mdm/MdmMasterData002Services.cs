@@ -530,10 +530,16 @@ public sealed class MdmWarehouseService : IMdmWarehouseService
     private const int MaxDescriptionLength = 2000;
     private const int MaxPageSize = 200;
 
+    // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30) —
+    // entity-type identifier for IMasterDataCodeService scope
+    // resolution. Frozen per Reuse Wave brief §十一.
+    private const string EntityType = "Warehouse";
+
     private readonly MdmDbContext _db;
     private readonly ICurrentTenant _currentTenant;
     private readonly ICurrentCompany _currentCompany;
     private readonly ICurrentUser _currentUser;
+    private readonly IMasterDataCodeService _codeService;
     private readonly ILogger<MdmWarehouseService> _logger;
 
     public MdmWarehouseService(
@@ -541,13 +547,37 @@ public sealed class MdmWarehouseService : IMdmWarehouseService
         ICurrentTenant currentTenant,
         ICurrentCompany currentCompany,
         ICurrentUser currentUser,
+        IMasterDataCodeService codeService,
         ILogger<MdmWarehouseService> logger)
     {
         _db = db;
         _currentTenant = currentTenant;
         _currentCompany = currentCompany;
         _currentUser = currentUser;
+        _codeService = codeService;
         _logger = logger;
+    }
+
+    // Backward-compatible test-only overload. Production wires
+    // IMasterDataCodeService via DI (see DependencyInjection.cs);
+    // legacy / direct-construction tests that pass only the 5
+    // core dependencies can still spin up the service with the
+    // engine-default fallback. This preserves the existing
+    // constructor signature so older test fixtures compile.
+    public MdmWarehouseService(
+        MdmDbContext db,
+        ICurrentTenant currentTenant,
+        ICurrentCompany currentCompany,
+        ICurrentUser currentUser,
+        ILogger<MdmWarehouseService> logger)
+        : this(
+            db,
+            currentTenant,
+            currentCompany,
+            currentUser,
+            new MasterDataCodeService(db, NullLogger<MasterDataCodeService>.Instance),
+            logger)
+    {
     }
 
     public async Task<PagedResult<WarehouseDto>> ListAsync(
@@ -601,8 +631,21 @@ public sealed class MdmWarehouseService : IMdmWarehouseService
     {
         ArgumentNullException.ThrowIfNull(request);
         var (tenantId, companyId) = RequireScope();
-        var code = MdmBusinessPartnerService.CanonicalizeCode(request.Code, MaxCodeLength, nameof(request.Code));
         var name = MdmBusinessPartnerService.ValidateRequiredText(request.Name, MaxNameLength, nameof(request.Name));
+
+        // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30) —
+        // wire the Foundation IMasterDataCodeService so an empty
+        // Code becomes WH_001, WH_002, ... in Company scope. An
+        // explicit Code still flows through the engine's
+        // CanonicalizeExplicitCode path and is preserved verbatim
+        // (no auto-renumber of existing rows).
+        var codeResult = await _codeService.GenerateNextAsync(new MasterDataCodeRequest(
+            EntityType: EntityType,
+            TenantId: tenantId,
+            CompanyId: companyId,
+            WarehouseId: null,
+            ExplicitCode: request.Code), ct);
+        var code = codeResult.Code;
 
         // GULIERP_MDM_001_CODE_PIPELINE — 4-step code validation
         // (Steps 1, 2, 4). Step 3 (uniqueness) is the existing DB
@@ -729,10 +772,16 @@ public sealed class MdmLocationService : IMdmLocationService
     private const int MaxDescriptionLength = 2000;
     private const int MaxPageSize = 200;
 
+    // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30) —
+    // entity-type identifier for IMasterDataCodeService scope
+    // resolution. Frozen per Reuse Wave brief §十九.
+    private const string EntityType = "Location";
+
     private readonly MdmDbContext _db;
     private readonly ICurrentTenant _currentTenant;
     private readonly ICurrentCompany _currentCompany;
     private readonly ICurrentUser _currentUser;
+    private readonly IMasterDataCodeService _codeService;
     private readonly ILogger<MdmLocationService> _logger;
 
     public MdmLocationService(
@@ -740,13 +789,33 @@ public sealed class MdmLocationService : IMdmLocationService
         ICurrentTenant currentTenant,
         ICurrentCompany currentCompany,
         ICurrentUser currentUser,
+        IMasterDataCodeService codeService,
         ILogger<MdmLocationService> logger)
     {
         _db = db;
         _currentTenant = currentTenant;
         _currentCompany = currentCompany;
         _currentUser = currentUser;
+        _codeService = codeService;
         _logger = logger;
+    }
+
+    // Backward-compatible test-only overload (see
+    // MdmWarehouseService for rationale).
+    public MdmLocationService(
+        MdmDbContext db,
+        ICurrentTenant currentTenant,
+        ICurrentCompany currentCompany,
+        ICurrentUser currentUser,
+        ILogger<MdmLocationService> logger)
+        : this(
+            db,
+            currentTenant,
+            currentCompany,
+            currentUser,
+            new MasterDataCodeService(db, NullLogger<MasterDataCodeService>.Instance),
+            logger)
+    {
     }
 
     public async Task<PagedResult<LocationDto>> ListAsync(
@@ -804,10 +873,11 @@ public sealed class MdmLocationService : IMdmLocationService
     {
         ArgumentNullException.ThrowIfNull(request);
         var (tenantId, companyId) = RequireScope();
-        var code = MdmBusinessPartnerService.CanonicalizeCode(request.Code, MaxCodeLength, nameof(request.Code));
         var name = MdmBusinessPartnerService.ValidateRequiredText(request.Name, MaxNameLength, nameof(request.Name));
 
         // Parent Warehouse must exist in the SAME tenant + company.
+        // Validated BEFORE GenerateNextAsync so a bad parent does
+        // not burn a sequence value.
         var parent = await _db.Warehouses.AsNoTracking()
             .FirstOrDefaultAsync(w => w.Id == request.WarehouseId
                 && w.TenantId == tenantId && w.CompanyId == companyId, ct);
@@ -818,13 +888,30 @@ public sealed class MdmLocationService : IMdmLocationService
                 $"Parent Warehouse id={request.WarehouseId} not found in current tenant+company.");
         }
 
+        // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30) —
+        // wire the Foundation IMasterDataCodeService so an empty
+        // Code becomes LOC_000001 inside the parent Warehouse
+        // scope. Different Warehouses each get their own
+        // independent sequence; an explicit Code is preserved
+        // verbatim.
+        var codeResult = await _codeService.GenerateNextAsync(new MasterDataCodeRequest(
+            EntityType: EntityType,
+            TenantId: tenantId,
+            CompanyId: companyId,
+            WarehouseId: request.WarehouseId,
+            ExplicitCode: request.Code), ct);
+        var code = codeResult.Code;
+
         var exists = await _db.Locations.AsNoTracking()
-            .AnyAsync(l => l.TenantId == tenantId && l.CompanyId == companyId && l.Code == code, ct);
+            .AnyAsync(l => l.TenantId == tenantId
+                && l.CompanyId == companyId
+                && l.WarehouseId == request.WarehouseId
+                && l.Code == code, ct);
         if (exists)
         {
             throw new MdmValidationException(
                 MdmErrorCodes.DuplicateCode,
-                $"Location with Code '{code}' already exists in this tenant+company.");
+                $"Location with Code '{code}' already exists in this warehouse.");
         }
 
         var now = DateTimeOffset.UtcNow;

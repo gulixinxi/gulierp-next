@@ -347,7 +347,7 @@ public sealed class MdmMasterDataSeedService : IMdmMasterDataSeedService
                         throw new MdmValidationException(MdmErrorCodes.MasterDataSeedFkMissing, $"item.json: category_code '{catCode}' not found in ItemCategory catalog.");
                     categoryId = cid;
                 }
-                var req = new CreateItemRequest(code, name, s, categoryId, baseUomId, nature, dz);
+                var req = new CreateItemRequest(code, name, s, categoryId, baseUomId, nature, dz, MnemonicCode: null);
 
                 var existing = await _mdm.ListItemsAsync(new ListQuery(null, null, 1, 500), null, null, ct);
                 if (existing.Items.Any(i => i.Code == code))

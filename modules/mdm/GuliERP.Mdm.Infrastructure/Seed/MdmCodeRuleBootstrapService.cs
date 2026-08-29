@@ -28,6 +28,32 @@ public sealed class MdmCodeRuleBootstrapService : IMdmCodeRuleBootstrapService
     private const int BusinessPartnerSequenceLength = 6;
     private const long BusinessPartnerStartValue = 1;
 
+    // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30) — frozen
+    // per the Reuse Wave brief §十一 / §十九 / §二十六:
+    //   Warehouse = AUTO_EDITABLE, Company scope, default = WH_001.
+    //   Location  = AUTO_EDITABLE, Warehouse scope, default = LOC_000001.
+    //   Item      = AUTO_EDITABLE, Tenant scope, default = ITEM_000001.
+    // Same idempotency contract as the BusinessPartner bootstrap
+    // (the existing 4 invariants are preserved verbatim).
+    private const string WarehouseEntityType = "Warehouse";
+    private const string WarehousePrefix = "WH";
+    private const int WarehouseSequenceLength = 3;
+    private const long WarehouseStartValue = 1;
+
+    private const string LocationEntityType = "Location";
+    private const string LocationPrefix = "LOC";
+    private const int LocationSequenceLength = 6;
+    private const long LocationStartValue = 1;
+
+    private const string ItemEntityType = "Item";
+    private const string ItemPrefix = "ITEM";
+    private const int ItemSequenceLength = 6;
+    private const long ItemStartValue = 1;
+
+    // Shared separator (the engine is FROZEN, so all rules use
+    // the same "_" already in the Foundation spec).
+    private const string DefaultSeparator = "_";
+
     private readonly MdmDbContext _mdmDb;
     // IdentityDbContext is used ONLY to enumerate active Tenants.
     // All MDM-table writes go through MdmDbContext. The bootstrap
@@ -174,5 +200,359 @@ public sealed class MdmCodeRuleBootstrapService : IMdmCodeRuleBootstrapService
                 tenantId, currentUserId, ct));
         }
         return results;
+    }
+
+    // ============================================================
+    // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30)
+    // Default rule bootstrap for Warehouse / Location / Item.
+    // The 4 invariants on IMdmCodeRuleBootstrapService apply
+    // verbatim: idempotent on (TenantId, CompanyId, WarehouseId,
+    // EntityType, SubType); never mutates an existing rule; never
+    // touches the Warehouse / Location / Item tables; sequence
+    // initialised to StartValue-1.
+    //
+    // All three implementations below are private refactors of
+    // the original EnsureDefaultBusinessPartnerRuleForTenantAsync
+    // body — they call the same MasterDataCodeRule +
+    // MasterDataCodeSequenceState write path the Foundation
+    // already VERIFIED. The Foundation Core (engine +
+    // MasterDataCodeService) is NOT modified.
+    // ============================================================
+
+    public async Task<MdmCodeRuleBootstrapResult> EnsureDefaultWarehouseRuleForCompanyAsync(
+        long tenantId,
+        long companyId,
+        long? currentUserId,
+        CancellationToken ct = default)
+    {
+        if (tenantId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(tenantId),
+                "TenantId must be positive.");
+        }
+        if (companyId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(companyId),
+                "CompanyId must be positive.");
+        }
+
+        var existing = await _mdmDb.MasterDataCodeRules
+            .FirstOrDefaultAsync(x =>
+                x.TenantId == tenantId
+                && x.CompanyId == companyId
+                && x.WarehouseId == null
+                && x.EntityType == WarehouseEntityType
+                && x.SubType == null,
+                ct);
+
+        if (existing is not null)
+        {
+            _logger.LogInformation(
+                "MdmCodeRuleBootstrap: Warehouse rule for tenant={TenantId} company={CompanyId} " +
+                "already exists (id={RuleId}, prefix={Prefix}, active={IsActive}); no-op.",
+                tenantId, companyId, existing.Id, existing.Prefix, existing.IsActive);
+            return new MdmCodeRuleBootstrapResult(
+                tenantId, RuleCreated: false, RuleId: existing.Id,
+                SequenceStateCreated: false,
+                EntityType: existing.EntityType, Prefix: existing.Prefix,
+                Separator: existing.Separator, SequenceLength: existing.SequenceLength,
+                StartValue: existing.StartValue);
+        }
+
+        var (rule, state) = await CreateRuleAndStateAsync(
+            tenantId: tenantId,
+            companyId: companyId,
+            warehouseId: null,
+            entityType: WarehouseEntityType,
+            prefix: WarehousePrefix,
+            sequenceLength: WarehouseSequenceLength,
+            startValue: WarehouseStartValue,
+            currentUserId: currentUserId,
+            ct: ct);
+
+        return new MdmCodeRuleBootstrapResult(
+            tenantId, RuleCreated: true, RuleId: rule.Id,
+            SequenceStateCreated: true,
+            EntityType: rule.EntityType, Prefix: rule.Prefix,
+            Separator: rule.Separator, SequenceLength: rule.SequenceLength,
+            StartValue: rule.StartValue);
+    }
+
+    public async Task<IReadOnlyList<MdmCodeRuleBootstrapResult>> EnsureDefaultWarehouseRuleForAllCompaniesAsync(
+        long? currentUserId = null,
+        CancellationToken ct = default)
+    {
+        // Iterate Tenant -> Company. Bootstrap writes a
+        // Company-scoped rule; the Identity schema is the single
+        // source of truth for active Tenants + Companies.
+        var tenants = await _identityDb.Tenants
+            .AsNoTracking()
+            .Where(t => t.Status == TenantStatus.Active)
+            .Select(t => t.Id)
+            .ToListAsync(ct);
+
+        var results = new List<MdmCodeRuleBootstrapResult>();
+        foreach (var tenantId in tenants)
+        {
+            var companyIds = await _identityDb.Companies
+                .AsNoTracking()
+                .Where(c => c.TenantId == tenantId
+                    && c.Status == CompanyStatus.Active)
+                .Select(c => c.Id)
+                .ToListAsync(ct);
+            foreach (var companyId in companyIds)
+            {
+                results.Add(await EnsureDefaultWarehouseRuleForCompanyAsync(
+                    tenantId, companyId, currentUserId, ct));
+            }
+        }
+        return results;
+    }
+
+    public async Task<MdmCodeRuleBootstrapResult> EnsureDefaultLocationRuleForWarehouseAsync(
+        long tenantId,
+        long companyId,
+        long warehouseId,
+        long? currentUserId,
+        CancellationToken ct = default)
+    {
+        if (tenantId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(tenantId),
+                "TenantId must be positive.");
+        }
+        if (companyId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(companyId),
+                "CompanyId must be positive.");
+        }
+        if (warehouseId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(warehouseId),
+                "WarehouseId must be positive.");
+        }
+
+        var existing = await _mdmDb.MasterDataCodeRules
+            .FirstOrDefaultAsync(x =>
+                x.TenantId == tenantId
+                && x.CompanyId == companyId
+                && x.WarehouseId == warehouseId
+                && x.EntityType == LocationEntityType
+                && x.SubType == null,
+                ct);
+
+        if (existing is not null)
+        {
+            _logger.LogInformation(
+                "MdmCodeRuleBootstrap: Location rule for tenant={TenantId} company={CompanyId} " +
+                "warehouse={WarehouseId} already exists (id={RuleId}, prefix={Prefix}); no-op.",
+                tenantId, companyId, warehouseId, existing.Id, existing.Prefix);
+            return new MdmCodeRuleBootstrapResult(
+                tenantId, RuleCreated: false, RuleId: existing.Id,
+                SequenceStateCreated: false,
+                EntityType: existing.EntityType, Prefix: existing.Prefix,
+                Separator: existing.Separator, SequenceLength: existing.SequenceLength,
+                StartValue: existing.StartValue);
+        }
+
+        var (rule, _) = await CreateRuleAndStateAsync(
+            tenantId: tenantId,
+            companyId: companyId,
+            warehouseId: warehouseId,
+            entityType: LocationEntityType,
+            prefix: LocationPrefix,
+            sequenceLength: LocationSequenceLength,
+            startValue: LocationStartValue,
+            currentUserId: currentUserId,
+            ct: ct);
+
+        return new MdmCodeRuleBootstrapResult(
+            tenantId, RuleCreated: true, RuleId: rule.Id,
+            SequenceStateCreated: true,
+            EntityType: rule.EntityType, Prefix: rule.Prefix,
+            Separator: rule.Separator, SequenceLength: rule.SequenceLength,
+            StartValue: rule.StartValue);
+    }
+
+    public async Task<IReadOnlyList<MdmCodeRuleBootstrapResult>> EnsureDefaultLocationRuleForAllWarehousesAsync(
+        long? currentUserId = null,
+        CancellationToken ct = default)
+    {
+        // Iterate Tenant -> Company -> Warehouse. Bootstrap
+        // writes a Warehouse-scoped rule; Identity is the
+        // canonical source for Tenant / Company, and the MDM
+        // schema (Warehouses table) is the canonical source for
+        // active Warehouses.
+        var tenants = await _identityDb.Tenants
+            .AsNoTracking()
+            .Where(t => t.Status == TenantStatus.Active)
+            .Select(t => t.Id)
+            .ToListAsync(ct);
+
+        var results = new List<MdmCodeRuleBootstrapResult>();
+        foreach (var tenantId in tenants)
+        {
+            var companyIds = await _identityDb.Companies
+                .AsNoTracking()
+                .Where(c => c.TenantId == tenantId
+                    && c.Status == CompanyStatus.Active)
+                .Select(c => c.Id)
+                .ToListAsync(ct);
+            foreach (var companyId in companyIds)
+            {
+                var warehouseIds = await _mdmDb.Warehouses
+                    .AsNoTracking()
+                    .Where(w => w.TenantId == tenantId && w.CompanyId == companyId)
+                    .Select(w => w.Id)
+                    .ToListAsync(ct);
+                foreach (var warehouseId in warehouseIds)
+                {
+                    results.Add(await EnsureDefaultLocationRuleForWarehouseAsync(
+                        tenantId, companyId, warehouseId, currentUserId, ct));
+                }
+            }
+        }
+        return results;
+    }
+
+    public async Task<MdmCodeRuleBootstrapResult> EnsureDefaultItemRuleForTenantAsync(
+        long tenantId,
+        long? currentUserId,
+        CancellationToken ct = default)
+    {
+        if (tenantId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(tenantId),
+                "TenantId must be positive.");
+        }
+
+        var existing = await _mdmDb.MasterDataCodeRules
+            .FirstOrDefaultAsync(x =>
+                x.TenantId == tenantId
+                && x.CompanyId == null
+                && x.WarehouseId == null
+                && x.EntityType == ItemEntityType
+                && x.SubType == null,
+                ct);
+
+        if (existing is not null)
+        {
+            _logger.LogInformation(
+                "MdmCodeRuleBootstrap: Item rule for tenant={TenantId} already exists " +
+                "(id={RuleId}, prefix={Prefix}); no-op.",
+                tenantId, existing.Id, existing.Prefix);
+            return new MdmCodeRuleBootstrapResult(
+                tenantId, RuleCreated: false, RuleId: existing.Id,
+                SequenceStateCreated: false,
+                EntityType: existing.EntityType, Prefix: existing.Prefix,
+                Separator: existing.Separator, SequenceLength: existing.SequenceLength,
+                StartValue: existing.StartValue);
+        }
+
+        var (rule, _) = await CreateRuleAndStateAsync(
+            tenantId: tenantId,
+            companyId: null,
+            warehouseId: null,
+            entityType: ItemEntityType,
+            prefix: ItemPrefix,
+            sequenceLength: ItemSequenceLength,
+            startValue: ItemStartValue,
+            currentUserId: currentUserId,
+            ct: ct);
+
+        return new MdmCodeRuleBootstrapResult(
+            tenantId, RuleCreated: true, RuleId: rule.Id,
+            SequenceStateCreated: true,
+            EntityType: rule.EntityType, Prefix: rule.Prefix,
+            Separator: rule.Separator, SequenceLength: rule.SequenceLength,
+            StartValue: rule.StartValue);
+    }
+
+    public async Task<IReadOnlyList<MdmCodeRuleBootstrapResult>> EnsureDefaultItemRuleForAllTenantsAsync(
+        long? currentUserId = null,
+        CancellationToken ct = default)
+    {
+        var tenantIds = await _identityDb.Tenants
+            .AsNoTracking()
+            .Where(t => t.Status == TenantStatus.Active)
+            .Select(t => t.Id)
+            .ToListAsync(ct);
+
+        var results = new List<MdmCodeRuleBootstrapResult>(tenantIds.Count);
+        foreach (var tenantId in tenantIds)
+        {
+            results.Add(await EnsureDefaultItemRuleForTenantAsync(
+                tenantId, currentUserId, ct));
+        }
+        return results;
+    }
+
+    /// <summary>
+    /// GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30)
+    /// Shared rule + sequence-state writer used by the 3 new
+    /// entity bootstraps. Mirrors the existing BusinessPartner
+    /// bootstrap path verbatim so the persisted shape matches
+    /// (Audit columns, ConcurrencyVersion=1, two SaveChanges
+    /// for the Id assignment gap). Returns the persisted rule
+    /// for the caller to build a result record.
+    /// </summary>
+    private async Task<(MasterDataCodeRule Rule, MasterDataCodeSequenceState State)>
+        CreateRuleAndStateAsync(
+            long tenantId,
+            long? companyId,
+            long? warehouseId,
+            string entityType,
+            string prefix,
+            int sequenceLength,
+            long startValue,
+            long? currentUserId,
+            CancellationToken ct)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var rule = new MasterDataCodeRule
+        {
+            TenantId = tenantId,
+            CompanyId = companyId,
+            WarehouseId = warehouseId,
+            EntityType = entityType,
+            SubType = null,
+            Mode = MasterDataCodeMode.AutoEditable,
+            Prefix = prefix,
+            Separator = DefaultSeparator,
+            SequenceLength = sequenceLength,
+            StartValue = startValue,
+            IsActive = true,
+            CreatedAt = now,
+            CreatedBy = currentUserId,
+            ModifiedAt = now,
+            ModifiedBy = currentUserId,
+            ConcurrencyVersion = 1,
+        };
+        _mdmDb.MasterDataCodeRules.Add(rule);
+        await _mdmDb.SaveChangesAsync(ct);
+
+        var state = new MasterDataCodeSequenceState
+        {
+            RuleId = rule.Id,
+            TenantId = tenantId,
+            CompanyId = companyId,
+            WarehouseId = warehouseId,
+            CurrentValue = rule.StartValue - 1,
+            LastGeneratedCode = null,
+            CreatedAt = now,
+            CreatedBy = currentUserId,
+            ModifiedAt = now,
+            ModifiedBy = currentUserId,
+            ConcurrencyVersion = 1,
+        };
+        _mdmDb.MasterDataCodeSequenceStates.Add(state);
+        await _mdmDb.SaveChangesAsync(ct);
+
+        _logger.LogInformation(
+            "MdmCodeRuleBootstrap: created {Entity} rule id={RuleId} + sequence state " +
+            "for tenant={TenantId} company={CompanyId} warehouse={WarehouseId}.",
+            entityType, rule.Id, tenantId, companyId, warehouseId);
+
+        return (rule, state);
     }
 }

@@ -234,7 +234,8 @@ public class SnowflakeLongJsonConverterFacts
             Description: null,
             CreatedAt: DateTimeOffset.UnixEpoch,
             ModifiedAt: DateTimeOffset.UnixEpoch,
-            ConcurrencyVersion: 1);
+            ConcurrencyVersion: 1,
+            MnemonicCode: null);
 
         var json = JsonSerializer.Serialize(dto, Options);
 

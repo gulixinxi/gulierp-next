@@ -93,6 +93,88 @@ public interface IMdmCodeRuleBootstrapService
     Task<IReadOnlyList<MdmCodeRuleBootstrapResult>> EnsureDefaultBusinessPartnerRuleForAllTenantsAsync(
         long? currentUserId = null,
         CancellationToken ct = default);
+
+    // ============================================================
+    // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30)
+    // Default code-rule bootstrap for the 3 reuse-wave entities:
+    //   - Warehouse (Company scope)   — prefix WH, length 3
+    //   - Location  (Warehouse scope) — prefix LOC, length 6
+    //   - Item      (Tenant scope)    — prefix ITEM, length 6
+    //
+    // These are profile / registration-style additions only.
+    // The MasterDataCodeService / MasterDataCodeRule engine
+    // itself is FROZEN (GULIERP_MASTER_DATA_FOUNDATION_CLOSURE
+    // _V1); we are not extending the engine, we are simply
+    // ensuring that the existing engine has a default rule per
+    // scope so the new entities can call
+    // IMasterDataCodeService.GenerateNextAsync without each
+    // object shipping its own counter infrastructure.
+    // ============================================================
+
+    /// <summary>
+    /// Ensure the default Warehouse code rule + sequence state
+    /// exist for one Company. Idempotent. Scope =
+    /// (TenantId, CompanyId, WarehouseId=null, EntityType=
+    /// "Warehouse"). Prefix=WH, Separator=_, SequenceLength=3.
+    /// </summary>
+    Task<MdmCodeRuleBootstrapResult> EnsureDefaultWarehouseRuleForCompanyAsync(
+        long tenantId,
+        long companyId,
+        long? currentUserId,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Ensure the default Warehouse code rule + sequence state
+    /// exist for every Company in every active Tenant. Used at
+    /// app startup and by operator CLI / focused test fixture.
+    /// Idempotent.
+    /// </summary>
+    Task<IReadOnlyList<MdmCodeRuleBootstrapResult>> EnsureDefaultWarehouseRuleForAllCompaniesAsync(
+        long? currentUserId = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Ensure the default Location code rule + sequence state
+    /// exist for one Warehouse. Idempotent. Scope =
+    /// (TenantId, CompanyId, WarehouseId, EntityType="Location").
+    /// Prefix=LOC, Separator=_, SequenceLength=6. Sequence is
+    /// isolated per Warehouse so two Warehouses may both start
+    /// at LOC_000001.
+    /// </summary>
+    Task<MdmCodeRuleBootstrapResult> EnsureDefaultLocationRuleForWarehouseAsync(
+        long tenantId,
+        long companyId,
+        long warehouseId,
+        long? currentUserId,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Ensure the default Location code rule + sequence state
+    /// exist for every Warehouse in every active Company in
+    /// every active Tenant. Idempotent.
+    /// </summary>
+    Task<IReadOnlyList<MdmCodeRuleBootstrapResult>> EnsureDefaultLocationRuleForAllWarehousesAsync(
+        long? currentUserId = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Ensure the default Item code rule + sequence state exist
+    /// for one Tenant. Idempotent. Scope =
+    /// (TenantId, CompanyId=null, WarehouseId=null, EntityType=
+    /// "Item"). Prefix=ITEM, Separator=_, SequenceLength=6.
+    /// </summary>
+    Task<MdmCodeRuleBootstrapResult> EnsureDefaultItemRuleForTenantAsync(
+        long tenantId,
+        long? currentUserId,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Ensure the default Item code rule + sequence state exist
+    /// for every active Tenant. Idempotent.
+    /// </summary>
+    Task<IReadOnlyList<MdmCodeRuleBootstrapResult>> EnsureDefaultItemRuleForAllTenantsAsync(
+        long? currentUserId = null,
+        CancellationToken ct = default);
 }
 
 public sealed record MdmCodeRuleBootstrapResult(

@@ -7,6 +7,7 @@ using GuliERP.Mdm.Domain.Enums;
 using GuliERP.Mdm.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GuliERP.Mdm.Infrastructure.Mdm;
 
@@ -42,21 +43,47 @@ public sealed class MdmService : IMdmService
     private const int MaxNameLength = 200;
     private const int MaxPageSize = 200;
 
+    // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30) —
+    // entity-type identifier for IMasterDataCodeService scope
+    // resolution. Frozen per Reuse Wave brief §二十六.
+    private const string ItemEntityType = "Item";
+
     private readonly MdmDbContext _db;
     private readonly ICurrentTenant _currentTenant;
     private readonly ICurrentUser _currentUser;
+    private readonly IMasterDataCodeService _codeService;
     private readonly ILogger<MdmService> _logger;
 
     public MdmService(
         MdmDbContext db,
         ICurrentTenant currentTenant,
         ICurrentUser currentUser,
+        IMasterDataCodeService codeService,
         ILogger<MdmService> logger)
     {
         _db = db;
         _currentTenant = currentTenant;
         _currentUser = currentUser;
+        _codeService = codeService;
         _logger = logger;
+    }
+
+    // Backward-compatible test-only overload (see
+    // MdmWarehouseService for rationale). UOM + ItemCategory code
+    // paths do not call _codeService so the fallback is a
+    // safe no-op for those; the Item path does call it.
+    public MdmService(
+        MdmDbContext db,
+        ICurrentTenant currentTenant,
+        ICurrentUser currentUser,
+        ILogger<MdmService> logger)
+        : this(
+            db,
+            currentTenant,
+            currentUser,
+            new MasterDataCodeService(db, NullLogger<MasterDataCodeService>.Instance),
+            logger)
+    {
     }
 
     // ============================================================
@@ -332,7 +359,9 @@ public sealed class MdmService : IMdmService
         if (!string.IsNullOrWhiteSpace(query.Keyword))
         {
             var kw = query.Keyword.Trim().ToUpperInvariant();
-            q = q.Where(i => i.Code.Contains(kw) || i.Name.Contains(kw));
+            q = q.Where(i => i.Code.Contains(kw)
+                || i.Name.Contains(kw)
+                || (i.MnemonicCode != null && i.MnemonicCode.Contains(kw)));
         }
         if (query.Status.HasValue)
         {
@@ -346,7 +375,7 @@ public sealed class MdmService : IMdmService
             .Select(i => new ItemDto(
                 i.Id, i.Code, i.Name, i.Specification, i.CategoryId, i.BaseUomId,
                 i.ItemNature, i.Status, i.Description,
-                i.CreatedAt, i.ModifiedAt, i.ConcurrencyVersion))
+                i.CreatedAt, i.ModifiedAt, i.ConcurrencyVersion, i.MnemonicCode))
             .ToListAsync(ct);
         return new PagedResult<ItemDto>(items, page, pageSize, (int)total);
     }
@@ -364,8 +393,19 @@ public sealed class MdmService : IMdmService
     {
         ArgumentNullException.ThrowIfNull(request);
         var tenantId = RequireTenant();
-        var code = CanonicalizeCode(request.Code, nameof(request.Code));
         var name = ValidateName(request.Name, nameof(request.Name));
+
+        // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30) —
+        // wire the Foundation IMasterDataCodeService so an empty
+        // Code becomes ITEM_000001, ITEM_000002, ... in Tenant
+        // scope. An explicit Code is preserved verbatim.
+        var codeResult = await _codeService.GenerateNextAsync(new MasterDataCodeRequest(
+            EntityType: ItemEntityType,
+            TenantId: tenantId,
+            CompanyId: null,
+            WarehouseId: null,
+            ExplicitCode: request.Code), ct);
+        var code = codeResult.Code;
 
         // GULIERP_MDM_001_CODE_PIPELINE — 4-step code validation
         // (Steps 1, 2, 4). Step 3 (uniqueness) is the existing DB
@@ -414,6 +454,11 @@ public sealed class MdmService : IMdmService
             Code = code,
             Name = name,
             Specification = NullIfEmpty(request.Specification),
+            // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30).
+            // Optional, non-unique, trim before storage. No
+            // auto-generation — the operator types it (or leaves
+            // it null).
+            MnemonicCode = NullIfEmpty(request.MnemonicCode),
             CategoryId = request.CategoryId,
             BaseUomId = request.BaseUomId,
             ItemNature = request.ItemNature,
@@ -480,6 +525,9 @@ public sealed class MdmService : IMdmService
 
         i.Name = ValidateName(request.Name, nameof(request.Name));
         i.Specification = NullIfEmpty(request.Specification);
+        // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30).
+        // Pass null/empty to clear the mnemonic.
+        i.MnemonicCode = NullIfEmpty(request.MnemonicCode);
         i.CategoryId = request.CategoryId;
         i.BaseUomId = request.BaseUomId;
         i.ItemNature = request.ItemNature;
@@ -650,5 +698,5 @@ public sealed class MdmService : IMdmService
     private static ItemDto Map(Item i) => new(
         i.Id, i.Code, i.Name, i.Specification, i.CategoryId, i.BaseUomId,
         i.ItemNature, i.Status, i.Description,
-        i.CreatedAt, i.ModifiedAt, i.ConcurrencyVersion);
+        i.CreatedAt, i.ModifiedAt, i.ConcurrencyVersion, i.MnemonicCode);
 }

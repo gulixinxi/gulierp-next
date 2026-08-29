@@ -32,6 +32,10 @@ public sealed class ItemConfiguration : IEntityTypeConfiguration<Item>
             .HasMaxLength(200);
         b.Property(i => i.Specification)
             .HasMaxLength(1000);
+        // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30).
+        // Optional, non-unique, max 40 (matches BP's MnemonicCode).
+        b.Property(i => i.MnemonicCode)
+            .HasMaxLength(40);
         b.Property(i => i.ItemNature)
             .HasConversion<int>();
         b.Property(i => i.Status)
@@ -43,6 +47,14 @@ public sealed class ItemConfiguration : IEntityTypeConfiguration<Item>
         b.HasIndex(i => new { i.TenantId, i.Code })
             .IsUnique()
             .HasDatabaseName("ux_gulierp_item_tenant_code");
+
+        // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30).
+        // Non-unique index for MnemonicCode (used by the keyword
+        // search that now matches MnemonicCode in addition to
+        // Code + Name). The index is intentionally non-unique
+        // (the brief requires MnemonicCode to be NOT unique).
+        b.HasIndex(i => i.MnemonicCode)
+            .HasDatabaseName("ix_gulierp_item_mnemoniccode");
 
         // FK indexes. EF Core 7+ does NOT auto-create an index on
         // the FK column when the relationship is declared with the

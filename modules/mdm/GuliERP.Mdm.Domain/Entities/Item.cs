@@ -40,6 +40,15 @@ public sealed class Item : IMultiTenant
     /// <summary>Optional free-text specification (model / size / colour).</summary>
     public string? Specification { get; set; }
 
+    /// <summary>
+    /// GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1 (2026-08-30) — hand-typed
+    /// short lookup code (e.g. "BOLT8MM" for an 8mm bolt). Nullable,
+    /// non-unique, max 40 chars; not part of the Foundation
+    /// BusinessPartner / Country / Region infrastructure — it is the
+    /// Item-specific mnemonic field per Reuse Wave brief §二十八.
+    /// </summary>
+    public string? MnemonicCode { get; set; }
+
     /// <summary>Optional FK to ItemCategory.Id (same Tenant).</summary>
     public long? CategoryId { get; set; }
 

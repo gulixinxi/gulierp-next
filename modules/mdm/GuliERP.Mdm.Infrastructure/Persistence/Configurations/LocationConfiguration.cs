@@ -7,9 +7,15 @@ namespace GuliERP.Mdm.Infrastructure.Persistence.Configurations;
 /// <summary>
 /// EF Core configuration for <see cref="Location"/>. Tenant + Company-scoped
 /// (per <see cref="GuliERP.Foundation.Kernel.ICompanyScoped"/>). Code
-/// uniqueness: <c>(TenantId, CompanyId, Code)</c>. WarehouseId is a
-/// required FK to <see cref="Warehouse"/>; the Application service
-/// guarantees the FK is in the SAME tenant + company. Cascade is
+/// uniqueness: <c>(TenantId, CompanyId, WarehouseId, Code)</c> — added
+/// by GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1_SCHEMA_AND_OPERATOR_CLOSURE
+/// (2026-08-30) via MDM007_LocationWarehouseScopedCodeUniqueness. The
+/// older <c>(TenantId, CompanyId, Code)</c> index was replaced so
+/// each Warehouse can independently start at <c>LOC_000001</c>
+/// (matches the Foundation's per-Warehouse code-rule scope for
+/// the <c>Location</c> entity). WarehouseId is a required FK to
+/// <see cref="Warehouse"/>; the Application service guarantees
+/// the FK is in the SAME tenant + company. Cascade is
 /// <c>Restrict</c> (no orphan deletion; warehouses are deactivated).
 /// </summary>
 public sealed class LocationConfiguration : IEntityTypeConfiguration<Location>
@@ -32,9 +38,13 @@ public sealed class LocationConfiguration : IEntityTypeConfiguration<Location>
         b.Property(x => x.Status).HasConversion<int>();
         b.Property(x => x.Description).HasMaxLength(2000);
 
-        b.HasIndex(x => new { x.TenantId, x.CompanyId, x.Code })
+        // GULIERP_MDM_FOUNDATION_REUSE_WAVE_V1_SCHEMA_AND_OPERATOR_CLOSURE
+        // (2026-08-30) — MDM007. The frozen Location Code-uniqueness
+        // contract is (TenantId, CompanyId, WarehouseId, Code).
+        // Each Warehouse can independently auto-generate LOC_000001.
+        b.HasIndex(x => new { x.TenantId, x.CompanyId, x.WarehouseId, x.Code })
             .IsUnique()
-            .HasDatabaseName("ux_gulierp_location_tenant_company_code");
+            .HasDatabaseName("ux_gulierp_location_tenant_company_warehouse_code");
 
         b.HasIndex(x => new { x.TenantId, x.CompanyId })
             .HasDatabaseName("ix_gulierp_location_tenant_company");

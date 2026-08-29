@@ -43,13 +43,15 @@ public sealed class MdmDtosTests
             CategoryId: 5, BaseUomId: 7,
             ItemNature: ItemNature.Material,
             Status: MasterDataStatus.Active, Description: "Test item",
-            CreatedAt: default, ModifiedAt: default, ConcurrencyVersion: 1);
+            CreatedAt: default, ModifiedAt: default, ConcurrencyVersion: 1,
+            MnemonicCode: "STEEL-PLATE");
 
         Assert.Equal(100, dto.Id);
         Assert.Equal("MAT-001", dto.Code);
         Assert.Equal(ItemNature.Material, dto.ItemNature);
         Assert.Equal(5, dto.CategoryId);
         Assert.Equal(7, dto.BaseUomId);
+        Assert.Equal("STEEL-PLATE", dto.MnemonicCode);
     }
 
     [Fact]
