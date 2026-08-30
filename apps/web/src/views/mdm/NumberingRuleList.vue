@@ -32,15 +32,15 @@
         :header-cell-style="{ padding: '0 8px' }"
         :cell-style="{ padding: '0 8px' }"
       >
-        <el-table-column type="index" label="#" width="50" fixed="left" />
-        <el-table-column prop="documentType" label="DocumentType" min-width="160" show-overflow-tooltip>
+        <el-table-column type="index" label="#" width="48" fixed="left" />
+        <el-table-column prop="documentType" label="DocumentType" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="mdm-code">{{ row.documentType }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="prefix" label="Prefix" width="110" show-overflow-tooltip />
         <el-table-column prop="datePattern" label="DatePattern" width="140" show-overflow-tooltip />
-        <el-table-column prop="sequenceLength" label="SequenceLength" width="140" align="center" />
+        <el-table-column prop="sequenceLength" label="SequenceLength" width="130" align="center" />
         <el-table-column prop="resetMode" label="ResetMode" width="120" align="center">
           <template #default="{ row }">
             {{ resetModeLabel(row.resetMode) }}
@@ -51,12 +51,12 @@
             <MdmStatusBadge :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="updatedAt" label="更新时间" width="160" sortable>
+        <el-table-column prop="updatedAt" label="更新时间" width="165" sortable>
           <template #default="{ row }">
             {{ formatDate(row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right" align="center">
+        <el-table-column label="操作" width="130" fixed="right" align="center">
           <template #default="{ row }">
             <MdmTableRowActions
               :status="row.status"

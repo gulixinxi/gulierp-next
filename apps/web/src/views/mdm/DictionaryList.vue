@@ -30,26 +30,26 @@
           @current-change="selectType"
           @row-dblclick="openEditType"
         >
-          <el-table-column prop="code" label="类型代码" width="130" show-overflow-tooltip>
+          <el-table-column prop="code" label="类型代码" width="150" show-overflow-tooltip>
             <template #default="{ row }">
               <span class="mdm-code">{{ row.code }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="name" label="类型名称" min-width="140" show-overflow-tooltip />
-          <el-table-column prop="status" label="状态" width="78" align="center">
+          <el-table-column prop="name" label="类型名称" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="status" label="状态" width="90" align="center">
             <template #default="{ row }">
               <MdmStatusBadge :status="row.status" />
             </template>
           </el-table-column>
-          <el-table-column prop="isSystem" label="系统" width="70" align="center">
+          <el-table-column prop="isSystem" label="系统" width="80" align="center">
             <template #default="{ row }">
               <el-tag size="small" :type="row.isSystem ? 'warning' : 'info'" effect="plain">
                 {{ row.isSystem ? '是' : '否' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="sortOrder" label="排序" width="70" align="right" />
-          <el-table-column label="操作" width="132" fixed="right" align="center">
+          <el-table-column prop="sortOrder" label="排序" width="80" align="right" />
+          <el-table-column label="操作" width="130" fixed="right" align="center">
             <template #default="{ row }">
               <div class="mdm-row-actions">
                 <el-button text size="small" type="primary" :disabled="row.isSystem" @click.stop="openEditType(row)">
@@ -129,34 +129,34 @@
           :cell-style="{ padding: '0 8px' }"
           @row-dblclick="openEditItem"
         >
-          <el-table-column prop="code" label="项代码" width="120" show-overflow-tooltip>
+          <el-table-column prop="code" label="项代码" width="150" show-overflow-tooltip>
             <template #default="{ row }">
               <span class="mdm-code">{{ row.code }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="name" label="项名称" min-width="130" show-overflow-tooltip />
-          <el-table-column prop="value" label="值" min-width="120" show-overflow-tooltip />
-          <el-table-column prop="status" label="状态" width="78" align="center">
+          <el-table-column prop="name" label="项名称" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="value" label="值" min-width="160" show-overflow-tooltip />
+          <el-table-column prop="status" label="状态" width="90" align="center">
             <template #default="{ row }">
               <MdmStatusBadge :status="row.status" />
             </template>
           </el-table-column>
-          <el-table-column prop="isDefault" label="默认" width="70" align="center">
+          <el-table-column prop="isDefault" label="默认" width="80" align="center">
             <template #default="{ row }">
               <el-tag v-if="row.isDefault" size="small" type="success" effect="plain">默认</el-tag>
               <span v-else>—</span>
             </template>
           </el-table-column>
-          <el-table-column prop="isSystem" label="系统" width="70" align="center">
+          <el-table-column prop="isSystem" label="系统" width="80" align="center">
             <template #default="{ row }">
               <el-tag size="small" :type="row.isSystem ? 'warning' : 'info'" effect="plain">
                 {{ row.isSystem ? '是' : '否' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="sortOrder" label="排序" width="70" align="right" />
-          <el-table-column prop="description" label="说明" min-width="150" show-overflow-tooltip />
-          <el-table-column label="操作" width="132" fixed="right" align="center">
+          <el-table-column prop="sortOrder" label="排序" width="80" align="right" />
+          <el-table-column prop="description" label="说明" min-width="200" show-overflow-tooltip />
+          <el-table-column label="操作" width="130" fixed="right" align="center">
             <template #default="{ row }">
               <div class="mdm-row-actions">
                 <el-button text size="small" type="primary" :disabled="row.isSystem" @click.stop="openEditItem(row)">

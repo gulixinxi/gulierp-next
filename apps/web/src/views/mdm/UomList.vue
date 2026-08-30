@@ -43,40 +43,40 @@
         :header-cell-style="{ padding: '0 8px' }"
         :cell-style="{ padding: '0 8px' }"
       >
-        <el-table-column type="index" label="#" width="50" fixed="left" />
-        <el-table-column prop="code" label="代码" width="100" sortable show-overflow-tooltip>
+        <el-table-column type="index" label="#" width="48" fixed="left" />
+        <el-table-column prop="code" label="代码" width="150" sortable show-overflow-tooltip>
           <template #default="{ row }">
             <span class="mdm-code">{{ row.code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="名称" width="120" show-overflow-tooltip />
-        <el-table-column prop="symbol" label="符号" width="80">
+        <el-table-column prop="name" label="名称" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="symbol" label="符号" width="90">
           <template #default="{ row }">
             {{ row.symbol || '—' }}
           </template>
         </el-table-column>
-        <el-table-column prop="dimension" label="量纲" width="90" align="center">
+        <el-table-column prop="dimension" label="量纲" width="100" align="center">
           <template #default="{ row }">
             {{ dimensionLabel(row.dimension) }}
           </template>
         </el-table-column>
-        <el-table-column prop="kind" label="类型" width="80" align="center">
+        <el-table-column prop="kind" label="类型" width="100" align="center">
           <template #default="{ row }">
             {{ kindLabel(row.kind) }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="80" align="center">
+        <el-table-column prop="status" label="状态" width="90" align="center">
           <template #default="{ row }">
             <MdmStatusBadge :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="说明" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="updatedAt" label="更新时间" width="160" sortable>
+        <el-table-column prop="description" label="说明" min-width="220" show-overflow-tooltip />
+        <el-table-column prop="updatedAt" label="更新时间" width="165" sortable>
           <template #default="{ row }">
             {{ formatDate(row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right" align="center">
+        <el-table-column label="操作" width="130" fixed="right" align="center">
           <template #default="{ row }">
             <MdmTableRowActions
               :status="row.status"
