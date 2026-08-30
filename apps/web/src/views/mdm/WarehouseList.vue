@@ -52,31 +52,31 @@
         :header-cell-style="{ padding: '0 8px' }"
         :cell-style="{ padding: '0 8px' }"
       >
-        <el-table-column type="index" label="#" width="50" fixed="left" />
-        <el-table-column prop="code" label="仓库代码" width="130" sortable show-overflow-tooltip>
+        <el-table-column type="index" label="#" width="48" fixed="left" />
+        <el-table-column prop="code" label="仓库代码" width="150" sortable show-overflow-tooltip>
           <template #default="{ row }">
             <span class="mdm-code">{{ row.code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="仓库名称" min-width="180" show-overflow-tooltip sortable />
+        <el-table-column prop="name" label="仓库名称" min-width="160" show-overflow-tooltip sortable />
         <el-table-column prop="type" label="类型" width="100" align="center">
           <template #default="{ row }">{{ typeLabel(row.type) }}</template>
         </el-table-column>
-        <el-table-column prop="city" label="所在城市" width="120" show-overflow-tooltip>
+        <el-table-column prop="city" label="所在城市" width="110" show-overflow-tooltip>
           <template #default="{ row }">{{ row.city || '—' }}</template>
         </el-table-column>
         <el-table-column prop="countryCode" label="国家" width="80" align="center">
           <template #default="{ row }">{{ row.countryCode || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="80" align="center">
+        <el-table-column prop="status" label="状态" width="90" align="center">
           <template #default="{ row }">
             <MdmStatusBadge :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="updatedAt" label="更新时间" width="160" sortable>
+        <el-table-column prop="updatedAt" label="更新时间" width="165" sortable>
           <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right" align="center">
+        <el-table-column label="操作" width="130" fixed="right" align="center">
           <template #default="{ row }">
             <el-button text size="small" type="primary" @click="goLocations(row)">查看库位</el-button>
             <span class="mdm-action-sep">|</span>
