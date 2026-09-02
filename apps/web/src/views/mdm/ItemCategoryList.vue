@@ -43,7 +43,7 @@
             <span class="mdm-code">{{ row.code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="名称" min-width="200">
+        <el-table-column prop="name" label="名称" min-width="160">
           <template #default="{ row }">
             <span :style="{ paddingLeft: row.level * 16 + 'px' }" class="mdm-cat-name">
               <el-icon v-if="row.level > 0" class="mdm-indent-icon"><DArrowRight /></el-icon>
@@ -51,7 +51,7 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="fullPath" label="层级路径" min-width="240" show-overflow-tooltip>
+        <el-table-column prop="fullPath" label="层级路径" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="mdm-path">{{ row.fullPath }}</span>
           </template>
@@ -61,7 +61,7 @@
             <MdmStatusBadge :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="说明" :min-width="COL.descriptionMin" show-overflow-tooltip />
+        <el-table-column prop="description" label="说明" min-width="160" show-overflow-tooltip />
         <el-table-column prop="updatedAt" label="更新时间" :width="COL.datetime" sortable>
           <template #default="{ row }">
             {{ formatDate(row.updatedAt) }}

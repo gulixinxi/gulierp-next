@@ -70,8 +70,8 @@
             <span class="mdm-code">{{ row.code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="名称" :min-width="COL.partnerName" show-overflow-tooltip sortable />
-        <el-table-column prop="shortName" label="简称" :width="COL.shortName" show-overflow-tooltip>
+        <el-table-column prop="name" label="名称" min-width="180" show-overflow-tooltip sortable />
+        <el-table-column prop="shortName" label="简称" width="100" show-overflow-tooltip>
           <template #default="{ row }">{{ row.shortName || '—' }}</template>
         </el-table-column>
         <el-table-column prop="role" label="类型" :width="COL.type" align="center">
@@ -79,16 +79,16 @@
             <el-tag :type="roleTagType(row.role)" size="small" effect="light">{{ roleLabel(row.role) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="contactPerson" label="联系人" :width="COL.person" show-overflow-tooltip>
+        <el-table-column prop="contactPerson" label="联系人" width="100" show-overflow-tooltip>
           <template #default="{ row }">{{ row.contactPerson || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="phone" label="电话" :width="COL.phone" show-overflow-tooltip>
+        <el-table-column prop="phone" label="电话" width="110" show-overflow-tooltip>
           <template #default="{ row }">{{ row.phone || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="email" label="邮箱" :width="COL.email" show-overflow-tooltip>
+        <el-table-column prop="email" label="邮箱" width="150" show-overflow-tooltip>
           <template #default="{ row }">{{ row.email || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="taxNumber" label="税号" :width="COL.taxNo" show-overflow-tooltip>
+        <el-table-column prop="taxNumber" label="税号" width="130" show-overflow-tooltip>
           <template #default="{ row }">{{ row.taxNumber || '—' }}</template>
         </el-table-column>
         <el-table-column prop="status" label="状态" :width="COL.status" align="center">

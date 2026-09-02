@@ -49,18 +49,18 @@
             <span class="mdm-code">{{ row.code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="名称" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="symbol" label="符号" width="90">
+        <el-table-column prop="name" label="名称" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="symbol" label="符号" width="70">
           <template #default="{ row }">
             {{ row.symbol || '—' }}
           </template>
         </el-table-column>
-        <el-table-column prop="dimension" label="量纲" width="100" align="center">
+        <el-table-column prop="dimension" label="量纲" width="80" align="center">
           <template #default="{ row }">
             {{ dimensionLabel(row.dimension) }}
           </template>
         </el-table-column>
-        <el-table-column prop="kind" label="类型" width="100" align="center">
+        <el-table-column prop="kind" label="类型" width="80" align="center">
           <template #default="{ row }">
             {{ kindLabel(row.kind) }}
           </template>
@@ -70,7 +70,7 @@
             <MdmStatusBadge :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="说明" :min-width="COL.descriptionMin" show-overflow-tooltip />
+        <el-table-column prop="description" label="说明" min-width="160" show-overflow-tooltip />
         <el-table-column prop="updatedAt" label="更新时间" :width="COL.datetime" sortable>
           <template #default="{ row }">
             {{ formatDate(row.updatedAt) }}

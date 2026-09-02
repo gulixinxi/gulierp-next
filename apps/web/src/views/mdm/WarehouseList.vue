@@ -58,14 +58,14 @@
             <span class="mdm-code">{{ row.code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="仓库名称" min-width="140" show-overflow-tooltip sortable />
+        <el-table-column prop="name" label="仓库名称" min-width="120" show-overflow-tooltip sortable />
         <el-table-column prop="type" label="类型" :width="COL.type" align="center">
           <template #default="{ row }">{{ typeLabel(row.type) }}</template>
         </el-table-column>
-        <el-table-column prop="city" label="所在城市" min-width="140" show-overflow-tooltip>
+        <el-table-column prop="city" label="所在城市" min-width="120" show-overflow-tooltip>
           <template #default="{ row }">{{ row.city || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="countryCode" label="国家" width="80" align="center">
+        <el-table-column prop="countryCode" label="国家" width="60" align="center">
           <template #default="{ row }">{{ row.countryCode || '—' }}</template>
         </el-table-column>
         <el-table-column prop="status" label="状态" :width="COL.status" align="center">

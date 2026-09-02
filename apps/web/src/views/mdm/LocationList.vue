@@ -64,8 +64,8 @@
             <span class="mdm-code">{{ row.code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="库位名称" min-width="130" show-overflow-tooltip sortable />
-        <el-table-column prop="warehouseName" label="所属仓库" min-width="160" show-overflow-tooltip>
+        <el-table-column prop="name" label="库位名称" min-width="110" show-overflow-tooltip sortable />
+        <el-table-column prop="warehouseName" label="所属仓库" min-width="140" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.warehouseCode ? `${row.warehouseCode} · ${row.warehouseName || ''}` : (row.warehouseName || '—') }}
           </template>
@@ -73,13 +73,13 @@
         <el-table-column prop="type" label="类型" :width="COL.type" align="center">
           <template #default="{ row }">{{ typeLabel(row.type) }}</template>
         </el-table-column>
-        <el-table-column prop="aisle" label="通道" width="70" align="center">
+        <el-table-column prop="aisle" label="通道" width="60" align="center">
           <template #default="{ row }">{{ row.aisle || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="bay" label="货位" width="70" align="center">
+        <el-table-column prop="bay" label="货位" width="60" align="center">
           <template #default="{ row }">{{ row.bay || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="shelf" label="层" width="70" align="center">
+        <el-table-column prop="shelf" label="层" width="60" align="center">
           <template #default="{ row }">{{ row.shelf || '—' }}</template>
         </el-table-column>
         <el-table-column prop="status" label="状态" :width="COL.status" align="center">

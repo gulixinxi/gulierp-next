@@ -33,25 +33,25 @@
         :cell-style="{ padding: '0 8px' }"
       >
         <el-table-column type="index" label="#" :width="COL.index" fixed="left" />
-        <el-table-column prop="documentType" label="编号规则" :width="COL.code" sortable show-overflow-tooltip>
+        <el-table-column prop="documentType" label="编号规则" width="140" sortable show-overflow-tooltip>
           <template #default="{ row }">
             <span class="mdm-code">{{ row.documentType }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="中文名称" :width="COL.shortName" show-overflow-tooltip>
+        <el-table-column label="中文名称" width="110" show-overflow-tooltip>
           <template #default="{ row }">
             {{ documentTypeLabel(row.documentType) }}
           </template>
         </el-table-column>
-        <el-table-column prop="prefix" label="Prefix" width="110" show-overflow-tooltip />
-        <el-table-column prop="datePattern" label="DatePattern" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="sequenceLength" label="SequenceLength" width="130" align="center" />
-        <el-table-column prop="resetMode" label="ResetMode" width="120" align="center">
+        <el-table-column prop="prefix" label="Prefix" width="100" show-overflow-tooltip />
+        <el-table-column prop="datePattern" label="DatePattern" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="sequenceLength" label="SequenceLength" width="110" align="center" />
+        <el-table-column prop="resetMode" label="ResetMode" width="100" align="center">
           <template #default="{ row }">
             {{ resetModeLabel(row.resetMode) }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="Status" :width="COL.status" align="center">
+        <el-table-column prop="status" label="Status" width="75" align="center">
           <template #default="{ row }">
             <MdmStatusBadge :status="row.status" />
           </template>

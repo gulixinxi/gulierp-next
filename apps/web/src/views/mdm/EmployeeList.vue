@@ -58,18 +58,18 @@
             <span class="mdm-code">{{ row.employeeNo }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="姓名" min-width="180" show-overflow-tooltip sortable />
-        <el-table-column prop="status" label="状态" :width="COL.status" align="center">
+        <el-table-column prop="name" label="姓名" min-width="150" show-overflow-tooltip sortable />
+        <el-table-column prop="status" label="状态" width="80" align="center">
           <template #default="{ row }">
             <el-tag :type="employeeStatusType(row.status)" size="small" effect="light">
               {{ employeeStatusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="departmentId" label="部门" min-width="200" show-overflow-tooltip>
+        <el-table-column prop="departmentId" label="部门" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">{{ departmentLabel(row.departmentId) }}</template>
         </el-table-column>
-        <el-table-column prop="userId" label="关联用户 ID" min-width="180" show-overflow-tooltip>
+        <el-table-column prop="userId" label="关联用户 ID" min-width="140" show-overflow-tooltip>
           <template #default="{ row }">{{ row.userId || '—' }}</template>
         </el-table-column>
         <el-table-column prop="modifiedAt" label="更新时间" :width="COL.datetime" sortable>

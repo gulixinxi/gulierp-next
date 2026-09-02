@@ -53,20 +53,20 @@
             <span class="mdm-code">{{ row.code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="名称" min-width="200" show-overflow-tooltip sortable />
-        <el-table-column prop="isDefault" label="默认" width="80" align="center">
+        <el-table-column prop="name" label="名称" min-width="140" show-overflow-tooltip sortable />
+        <el-table-column prop="isDefault" label="默认" width="65" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.isDefault" type="success" size="small" effect="light">是</el-tag>
             <span v-else>—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="sortOrder" label="排序" width="90" align="center" sortable />
-        <el-table-column prop="status" label="状态" width="90" align="center">
+        <el-table-column prop="sortOrder" label="排序" width="75" align="center" sortable />
+        <el-table-column prop="status" label="状态" width="75" align="center">
           <template #default="{ row }">
             <MdmStatusBadge :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="描述" min-width="220" show-overflow-tooltip>
+        <el-table-column prop="description" label="描述" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.description || '—' }}
           </template>
