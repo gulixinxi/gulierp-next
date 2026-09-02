@@ -30,26 +30,26 @@
           @current-change="selectType"
           @row-dblclick="openEditType"
         >
-          <el-table-column prop="code" label="类型代码" :width="COL.code" show-overflow-tooltip>
+          <el-table-column prop="code" label="类型代码" width="130" show-overflow-tooltip>
             <template #default="{ row }">
               <span class="mdm-code">{{ row.code }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="name" label="类型名称" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="status" label="状态" :width="COL.status" align="center">
+          <el-table-column prop="name" label="类型名称" min-width="95" show-overflow-tooltip />
+          <el-table-column prop="status" label="状态" width="65" align="center">
             <template #default="{ row }">
               <MdmStatusBadge :status="row.status" />
             </template>
           </el-table-column>
-          <el-table-column prop="isSystem" label="系统" width="80" align="center">
+          <el-table-column prop="isSystem" label="系统" width="60" align="center">
             <template #default="{ row }">
               <el-tag size="small" :type="row.isSystem ? 'warning' : 'info'" effect="plain">
                 {{ row.isSystem ? '是' : '否' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="sortOrder" label="显示顺序" width="80" align="right" />
-          <el-table-column label="操作" :width="COL.actions" fixed="right" align="center">
+          <el-table-column prop="sortOrder" label="排序" width="65" align="right" />
+          <el-table-column label="操作" width="120" fixed="right" align="center">
             <template #default="{ row }">
               <div class="mdm-row-actions">
                 <el-button text size="small" type="primary" :disabled="row.isSystem" @click.stop="openEditType(row)">
@@ -129,34 +129,34 @@
           :cell-style="{ padding: '0 8px' }"
           @row-dblclick="openEditItem"
         >
-          <el-table-column prop="code" label="项代码" :width="COL.code" show-overflow-tooltip>
+          <el-table-column prop="code" label="项代码" width="150" show-overflow-tooltip>
             <template #default="{ row }">
               <span class="mdm-code">{{ row.code }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="name" label="项名称" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="value" label="值" min-width="160" show-overflow-tooltip />
-          <el-table-column prop="status" label="状态" :width="COL.status" align="center">
+          <el-table-column prop="name" label="项名称" min-width="90" show-overflow-tooltip />
+          <el-table-column prop="value" label="值" min-width="95" show-overflow-tooltip />
+          <el-table-column prop="status" label="状态" width="65" align="center">
             <template #default="{ row }">
               <MdmStatusBadge :status="row.status" />
             </template>
           </el-table-column>
-          <el-table-column prop="isDefault" label="默认" width="80" align="center">
+          <el-table-column prop="isDefault" label="默认" width="60" align="center">
             <template #default="{ row }">
               <el-tag v-if="row.isDefault" size="small" type="success" effect="plain">默认</el-tag>
               <span v-else>—</span>
             </template>
           </el-table-column>
-          <el-table-column prop="isSystem" label="系统" width="80" align="center">
+          <el-table-column prop="isSystem" label="系统" width="60" align="center">
             <template #default="{ row }">
               <el-tag size="small" :type="row.isSystem ? 'warning' : 'info'" effect="plain">
                 {{ row.isSystem ? '是' : '否' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="sortOrder" label="显示顺序" width="80" align="right" />
-          <el-table-column prop="description" label="说明" :min-width="COL.descriptionMin" show-overflow-tooltip />
-          <el-table-column label="操作" :width="COL.actions" fixed="right" align="center">
+          <el-table-column prop="sortOrder" label="排序" width="65" align="right" />
+          <el-table-column prop="description" label="说明" min-width="100" show-overflow-tooltip />
+          <el-table-column label="操作" width="120" fixed="right" align="center">
             <template #default="{ row }">
               <div class="mdm-row-actions">
                 <el-button text size="small" type="primary" :disabled="row.isSystem" @click.stop="openEditItem(row)">
@@ -746,5 +746,24 @@ async function confirmItemStatus(row: DictionaryItem, target: MasterDataStatus) 
   .mdm-dictionary-panel {
     min-height: 520px;
   }
+}
+
+/* GULIERP_MDM_DICTIONARY_UI_FIX_01 (2026-09-02) — local
+   header cell nowrap. Element Plus .cell allows wrap by default;
+   "显示顺序" (4 hanzi) at 75px would otherwise be wrapped to two
+   lines. Scoped to .mdm-dictionary-page so other list pages are
+   unaffected. */
+.mdm-dictionary-page :deep(.el-table th > .cell) {
+  white-space: nowrap;
+}
+
+.mdm-dictionary-page :deep(.el-table td > .cell) {
+  white-space: nowrap;
+}
+
+/* Action column: keep the 编辑 | 停用 cluster on one line even
+   when the button is long. Local to Dictionary. */
+.mdm-dictionary-page :deep(.mdm-row-actions) {
+  white-space: nowrap;
 }
 </style>
