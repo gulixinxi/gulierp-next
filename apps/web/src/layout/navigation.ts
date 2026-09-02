@@ -62,7 +62,7 @@ export const shellNavigation: ShellNavigationModule[] = [
       {
         label: '基础数据',
         items: [
-          { id: 'list-mdm-business-partners', label: '业务伙伴', icon: 'OfficeBuilding', route: '/mdm/business-partners', tabTitle: '业务伙伴' },
+          { id: 'list-mdm-business-partners', label: '客商', icon: 'OfficeBuilding', route: '/mdm/business-partners', tabTitle: '客商' },
           { id: 'list-mdm-customers', label: '客户档案', icon: 'OfficeBuilding', route: '/mdm/customers', tabTitle: '客户档案' },
           { id: 'list-mdm-suppliers', label: '供应商', icon: 'Avatar', route: '/mdm/suppliers', tabTitle: '供应商' },
           // G3-R1D (N-1): 基础数据 > 员工档案 now points to the real

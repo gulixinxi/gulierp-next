@@ -37,8 +37,8 @@
         :header-cell-style="{ padding: '0 8px' }"
         :cell-style="{ padding: '0 8px' }"
       >
-        <el-table-column type="index" label="#" width="48" fixed="left" />
-        <el-table-column prop="code" label="代码" width="150" sortable show-overflow-tooltip>
+        <el-table-column type="index" label="#" :width="COL.index" fixed="left" />
+        <el-table-column prop="code" label="代码" :width="COL.code" sortable show-overflow-tooltip>
           <template #default="{ row }">
             <span class="mdm-code">{{ row.code }}</span>
           </template>
@@ -56,18 +56,18 @@
             <span class="mdm-path">{{ row.fullPath }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="90" align="center">
+        <el-table-column prop="status" label="状态" :width="COL.status" align="center">
           <template #default="{ row }">
             <MdmStatusBadge :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="说明" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="updatedAt" label="更新时间" width="165" sortable>
+        <el-table-column prop="description" label="说明" :min-width="COL.descriptionMin" show-overflow-tooltip />
+        <el-table-column prop="updatedAt" label="更新时间" :width="COL.datetime" sortable>
           <template #default="{ row }">
             {{ formatDate(row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="130" fixed="right" align="center">
+        <el-table-column label="操作" :width="COL.actions" fixed="right" align="center">
           <template #default="{ row }">
             <MdmTableRowActions
               :status="row.status"
@@ -171,6 +171,7 @@ import MdmDetailDrawer from '../../components/mdm/MdmDetailDrawer.vue';
 import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
 import MdmTableRowActions from '../../components/mdm/MdmTableRowActions.vue';
+import { TABLE_COLUMN_PRESETS as COL } from '../../design-system/tableColumns';
 
 import { ApiError } from '../../api/http';
 import * as icApi from '../../api/mdm/item-category';

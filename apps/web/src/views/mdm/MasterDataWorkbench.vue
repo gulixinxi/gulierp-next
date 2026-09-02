@@ -3,7 +3,7 @@
     <header class="mdm-workbench__header">
       <div>
         <h1>主数据中心</h1>
-        <p>维护企业基础资料、物料资料、仓库库位与往来单位</p>
+        <p>维护企业基础资料、物料资料、仓库库位与客商</p>
       </div>
     </header>
 
@@ -87,8 +87,8 @@ const primaryModules: WorkbenchModule[] = [
     icon: Goods,
   },
   {
-    title: '往来单位',
-    description: '维护客户、供应商与往来单位基础信息',
+    title: '客商',
+    description: '维护客户、供应商与客商基础信息',
     route: '/mdm/business-partners',
     status: '真实 API',
     icon: OfficeBuilding,

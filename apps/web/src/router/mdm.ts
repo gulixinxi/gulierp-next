@@ -71,7 +71,7 @@ export function installMdmRoutes(router: Router): void {
         path: 'business-partners',
         name: 'mdm-business-partners',
         component: () => import('../views/mdm/BusinessPartnerList.vue'),
-        meta: { title: '往来单位', module: 'mdm', defaultRole: 'all' },
+        meta: { title: '客商', module: 'mdm', defaultRole: 'all' },
       },
       {
         path: 'customers',

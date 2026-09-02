@@ -32,31 +32,36 @@
         :header-cell-style="{ padding: '0 8px' }"
         :cell-style="{ padding: '0 8px' }"
       >
-        <el-table-column type="index" label="#" width="48" fixed="left" />
-        <el-table-column prop="documentType" label="DocumentType" min-width="180" show-overflow-tooltip>
+        <el-table-column type="index" label="#" :width="COL.index" fixed="left" />
+        <el-table-column prop="documentType" label="编号规则" :width="COL.code" sortable show-overflow-tooltip>
           <template #default="{ row }">
             <span class="mdm-code">{{ row.documentType }}</span>
           </template>
         </el-table-column>
+        <el-table-column label="中文名称" :width="COL.shortName" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ documentTypeLabel(row.documentType) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="prefix" label="Prefix" width="110" show-overflow-tooltip />
-        <el-table-column prop="datePattern" label="DatePattern" width="140" show-overflow-tooltip />
+        <el-table-column prop="datePattern" label="DatePattern" min-width="140" show-overflow-tooltip />
         <el-table-column prop="sequenceLength" label="SequenceLength" width="130" align="center" />
         <el-table-column prop="resetMode" label="ResetMode" width="120" align="center">
           <template #default="{ row }">
             {{ resetModeLabel(row.resetMode) }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="Status" width="90" align="center">
+        <el-table-column prop="status" label="Status" :width="COL.status" align="center">
           <template #default="{ row }">
             <MdmStatusBadge :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="updatedAt" label="更新时间" width="165" sortable>
+        <el-table-column prop="updatedAt" label="更新时间" :width="COL.datetime" sortable>
           <template #default="{ row }">
             {{ formatDate(row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="130" fixed="right" align="center">
+        <el-table-column label="操作" :width="COL.actions" fixed="right" align="center">
           <template #default="{ row }">
             <MdmTableRowActions
               :status="row.status"
@@ -152,6 +157,7 @@ import MdmFormDrawer from '../../components/mdm/MdmFormDrawer.vue';
 import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
 import MdmTableRowActions from '../../components/mdm/MdmTableRowActions.vue';
+import { TABLE_COLUMN_PRESETS as COL } from '../../design-system/tableColumns';
 
 import { ApiError } from '../../api/http';
 import * as numberingRuleApi from '../../api/mdm/numberingRule';
@@ -364,6 +370,28 @@ async function changeStatus(row: NumberingRule, target: MasterDataStatus) {
 
 function resetModeLabel(mode?: NumberingRuleResetMode): string {
   return NUMBERING_RULE_RESET_MODE_OPTIONS.find(o => o.value === mode)?.label || '—';
+}
+
+// GULIERP_MDM_UI_FINAL_AUDIT_V1 (2026-09-02) — Chinese name
+// mapping for DocumentType. Internal Key stays English; the
+// Chinese name is for business operators. Per brief §6.
+const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  CUSTOMER: '客户编码',
+  SUPPLIER: '供应商编码',
+  BUSINESS_PARTNER: '客商编码',
+  MATERIAL: '物料编码',
+  ITEM: '物料编码',
+  WAREHOUSE: '仓库编码',
+  LOCATION: '库位编码',
+  ITEM_CATEGORY: '物料分类编码',
+  EMPLOYEE: '员工编码',
+  SALES_ORDER: '销售订单',
+  PURCHASE_ORDER: '采购订单',
+  PAYMENT_METHOD: '付款方式编码',
+};
+function documentTypeLabel(type?: string): string {
+  if (!type) return '—';
+  return DOCUMENT_TYPE_LABELS[type] || type;
 }
 
 function formatDate(iso?: string): string {

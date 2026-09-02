@@ -30,13 +30,13 @@
           @current-change="selectType"
           @row-dblclick="openEditType"
         >
-          <el-table-column prop="code" label="类型代码" width="150" show-overflow-tooltip>
+          <el-table-column prop="code" label="类型代码" :width="COL.code" show-overflow-tooltip>
             <template #default="{ row }">
               <span class="mdm-code">{{ row.code }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="name" label="类型名称" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="status" label="状态" width="90" align="center">
+          <el-table-column prop="status" label="状态" :width="COL.status" align="center">
             <template #default="{ row }">
               <MdmStatusBadge :status="row.status" />
             </template>
@@ -48,8 +48,8 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="sortOrder" label="排序" width="80" align="right" />
-          <el-table-column label="操作" width="130" fixed="right" align="center">
+          <el-table-column prop="sortOrder" label="显示顺序" width="80" align="right" />
+          <el-table-column label="操作" :width="COL.actions" fixed="right" align="center">
             <template #default="{ row }">
               <div class="mdm-row-actions">
                 <el-button text size="small" type="primary" :disabled="row.isSystem" @click.stop="openEditType(row)">
@@ -129,14 +129,14 @@
           :cell-style="{ padding: '0 8px' }"
           @row-dblclick="openEditItem"
         >
-          <el-table-column prop="code" label="项代码" width="150" show-overflow-tooltip>
+          <el-table-column prop="code" label="项代码" :width="COL.code" show-overflow-tooltip>
             <template #default="{ row }">
               <span class="mdm-code">{{ row.code }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="name" label="项名称" min-width="180" show-overflow-tooltip />
           <el-table-column prop="value" label="值" min-width="160" show-overflow-tooltip />
-          <el-table-column prop="status" label="状态" width="90" align="center">
+          <el-table-column prop="status" label="状态" :width="COL.status" align="center">
             <template #default="{ row }">
               <MdmStatusBadge :status="row.status" />
             </template>
@@ -154,9 +154,9 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="sortOrder" label="排序" width="80" align="right" />
-          <el-table-column prop="description" label="说明" min-width="200" show-overflow-tooltip />
-          <el-table-column label="操作" width="130" fixed="right" align="center">
+          <el-table-column prop="sortOrder" label="显示顺序" width="80" align="right" />
+          <el-table-column prop="description" label="说明" :min-width="COL.descriptionMin" show-overflow-tooltip />
+          <el-table-column label="操作" :width="COL.actions" fixed="right" align="center">
             <template #default="{ row }">
               <div class="mdm-row-actions">
                 <el-button text size="small" type="primary" :disabled="row.isSystem" @click.stop="openEditItem(row)">
@@ -291,6 +291,7 @@ import MdmFormDrawer from '../../components/mdm/MdmFormDrawer.vue';
 import MdmListToolbar from '../../components/mdm/MdmListToolbar.vue';
 import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmStatusBadge from '../../components/mdm/MdmStatusBadge.vue';
+import { TABLE_COLUMN_PRESETS as COL } from '../../design-system/tableColumns';
 import { ApiError } from '../../api/http';
 import * as dictionaryApi from '../../api/mdm/dictionary';
 import { STATUS_OPTIONS, statusUiToInt } from '../../types/mdm';
@@ -682,7 +683,13 @@ async function confirmItemStatus(row: DictionaryItem, target: MasterDataStatus) 
 <style scoped>
 .mdm-dictionary-page {
   display: grid;
-  grid-template-columns: minmax(360px, 0.92fr) minmax(520px, 1.4fr);
+  /* GULIERP_MDM_UI_FINAL_AUDIT_V1 (2026-09-02) — per brief §7
+     the left types panel needs enough room for the 6-column
+     table (code+name+status+isSystem+sortOrder+actions ≈ 710+).
+     Bumped min from 360 → 420 and the ratio to 1fr:1.5fr so
+     the type names are not truncated at 1366px screens. The
+     right items panel still dominates at wider viewports. */
+  grid-template-columns: minmax(420px, 1fr) minmax(520px, 1.5fr);
   gap: 12px;
   min-height: 100%;
   padding: 16px;

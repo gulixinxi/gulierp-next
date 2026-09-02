@@ -318,10 +318,9 @@ export interface ItemForm {
   itemNature: ItemNature;
   status: MasterDataStatus;
   description?: string;
-  // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 — empty / null means
-  // "not set". The user is told via placeholder that the
-  // server will NOT auto-generate (no pinyin lib, hand-typed
-  // per Common Field Contract).
+  // GULIERP_MDM_MNEMONIC_LIFECYCLE_V1 — UI auto-suggests from
+  // name via pinyin-pro until the operator manually edits the
+  // value. Server still stores only the submitted value.
   mnemonicCode?: string;
 }
 
@@ -351,7 +350,7 @@ export function roleUiToInt(v: BusinessPartnerRole): BusinessPartnerRoleInt { re
  */
 export type BusinessPartnerRoleFilter = 'all' | 'customer' | 'supplier';
 export const BP_ROLE_FILTER_OPTIONS: { value: BusinessPartnerRoleFilter; label: string }[] = [
-  { value: 'all', label: '全部往来单位' },
+  { value: 'all', label: '全部客商' },
   { value: 'customer', label: '客户' },
   { value: 'supplier', label: '供应商' },
 ];

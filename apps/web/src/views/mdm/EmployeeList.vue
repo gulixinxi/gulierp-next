@@ -52,14 +52,14 @@
         :header-cell-style="{ padding: '0 8px' }"
         :cell-style="{ padding: '0 8px' }"
       >
-        <el-table-column type="index" label="#" width="48" fixed="left" />
-        <el-table-column prop="employeeNo" label="员工号" width="170" sortable show-overflow-tooltip>
+        <el-table-column type="index" label="#" :width="COL.index" fixed="left" />
+        <el-table-column prop="employeeNo" label="员工号" :width="COL.code" sortable show-overflow-tooltip>
           <template #default="{ row }">
             <span class="mdm-code">{{ row.employeeNo }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="name" label="姓名" min-width="180" show-overflow-tooltip sortable />
-        <el-table-column prop="status" label="状态" width="90" align="center">
+        <el-table-column prop="status" label="状态" :width="COL.status" align="center">
           <template #default="{ row }">
             <el-tag :type="employeeStatusType(row.status)" size="small" effect="light">
               {{ employeeStatusLabel(row.status) }}
@@ -72,10 +72,10 @@
         <el-table-column prop="userId" label="关联用户 ID" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">{{ row.userId || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="modifiedAt" label="更新时间" width="165" sortable>
+        <el-table-column prop="modifiedAt" label="更新时间" :width="COL.datetime" sortable>
           <template #default="{ row }">{{ formatDate(row.modifiedAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right" align="center">
+        <el-table-column label="操作" :width="COL.documentActions" fixed="right" align="center">
           <template #default="{ row }">
             <div class="mdm-row-actions">
               <el-button
@@ -182,6 +182,7 @@ import MdmListToolbar from '../../components/mdm/MdmListToolbar.vue';
 import MdmFormDrawer from '../../components/mdm/MdmFormDrawer.vue';
 import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
+import { TABLE_COLUMN_PRESETS as COL } from '../../design-system/tableColumns';
 import { ApiError } from '../../api/http';
 import * as employeeApi from '../../api/mdm/employee';
 import type {

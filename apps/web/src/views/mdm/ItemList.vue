@@ -139,10 +139,18 @@
       </el-form-item>
       <!-- GULIERP_ITEM_UI_REUSE_CLOSURE_V1 (2026-08-30) — MnemonicCode
            field per Common Field Contract §二十八: optional,
-           hand-typed, max 40, no pinyin. Server-side
+           auto-suggested from name via pinyin-pro, manually editable,
+           max 40. Server-side
            NullIfEmpty trims and stores null on empty. -->
       <el-form-item label="助记码" prop="mnemonicCode">
-        <el-input v-model="formData.mnemonicCode" placeholder="手工输入助记码（可选）" maxlength="40" show-word-limit clearable />
+        <el-input
+          v-model="formData.mnemonicCode"
+          placeholder="按物料名称自动建议，可手工覆盖"
+          maxlength="40"
+          show-word-limit
+          clearable
+          @input="onMnemonicInput"
+        />
       </el-form-item>
       <el-form-item label="物料名称" prop="name">
         <el-input v-model="formData.name" placeholder="物料全称" maxlength="100" />
@@ -259,7 +267,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { Download, Box, ShoppingCart, Goods, Collection } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormRules } from 'element-plus';
@@ -285,6 +293,7 @@ import type {
   Item, ItemForm, ItemNature, MasterDataStatus,
   ItemCategoryListItem, Uom,
 } from '../../types/mdm';
+import { generateMnemonicCode, shouldRefreshMnemonic } from '../../utils/mnemonic';
 
 // ===== Real API state =====
 const items = ref<Item[]>([]);
@@ -387,6 +396,8 @@ const formData = reactive<ItemForm>({
   // sends undefined → null when blank.
   mnemonicCode: '',
 });
+const mnemonicEditedByUser = ref(false);
+const lastMnemonicSuggestion = ref('');
 
 const formRules: FormRules<ItemForm> = {
   // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 — Code is OPTIONAL on
@@ -407,6 +418,8 @@ function resetForm() {
     description: '',
     mnemonicCode: '',
   });
+  mnemonicEditedByUser.value = false;
+  lastMnemonicSuggestion.value = '';
 }
 
 function openCreate() {
@@ -421,33 +434,55 @@ async function openEdit(row: Item) {
   editingConcurrency.value = row.concurrencyVersion ?? 0;
   try {
     const fresh = await itemApi.getItem(row.id);
-    Object.assign(formData, {
-      code: fresh.code, name: fresh.name, specification: fresh.specification || '',
-      categoryId: fresh.categoryId, baseUomId: fresh.baseUomId,
-      itemNature: fresh.itemNature, status: fresh.status,
-      description: fresh.description || '',
-      // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 — round-trip the
-      // MnemonicCode. The form sends the value back via
-      // formToCreate / updateItem (preserves null on blank).
-      mnemonicCode: fresh.mnemonicCode || '',
-    });
+    fillForm(fresh);
     editingConcurrency.value = fresh.concurrencyVersion ?? 0;
   } catch (e) {
-    Object.assign(formData, {
-      code: row.code, name: row.name, specification: row.specification || '',
-      categoryId: row.categoryId, baseUomId: row.baseUomId,
-      itemNature: row.itemNature, status: row.status,
-      description: row.description || '',
-      mnemonicCode: row.mnemonicCode || '',
-    });
+    fillForm(row);
   }
   formDrawerVisible.value = true;
+}
+
+function fillForm(item: Item) {
+  const suggestedMnemonic = generateMnemonicCode(item.name);
+  Object.assign(formData, {
+    code: item.code, name: item.name, specification: item.specification || '',
+    categoryId: item.categoryId, baseUomId: item.baseUomId,
+    itemNature: item.itemNature, status: item.status,
+    description: item.description || '',
+    // GULIERP_ITEM_UI_REUSE_CLOSURE_V1 — round-trip the
+    // MnemonicCode. The form sends the value back via
+    // formToCreate / updateItem (preserves null on blank).
+    mnemonicCode: item.mnemonicCode || '',
+  });
+  lastMnemonicSuggestion.value = suggestedMnemonic;
+  mnemonicEditedByUser.value = !!item.mnemonicCode
+    && item.mnemonicCode.trim() !== suggestedMnemonic;
 }
 
 function isConcurrencyConflict(err: unknown): boolean {
   return err instanceof ApiError && (
     err.code === 'mdm_validation_failed' && /concurrency|version|并发/i.test(err.detail || '')
   );
+}
+
+watch(() => formData.name, (next) => {
+  const generated = generateMnemonicCode(next);
+  if (shouldRefreshMnemonic(formData.mnemonicCode, lastMnemonicSuggestion.value, mnemonicEditedByUser.value)) {
+    formData.mnemonicCode = generated;
+    lastMnemonicSuggestion.value = generated;
+  }
+});
+
+function onMnemonicInput(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    mnemonicEditedByUser.value = false;
+    const generated = generateMnemonicCode(formData.name);
+    formData.mnemonicCode = generated;
+    lastMnemonicSuggestion.value = generated;
+    return;
+  }
+  mnemonicEditedByUser.value = trimmed !== lastMnemonicSuggestion.value;
 }
 
 async function handleSubmit() {

@@ -1,6 +1,6 @@
 <template>
   <!--
-    BusinessPartnerList — reusable page for 客户档案 / 供应商 / 全部往来单位.
+    BusinessPartnerList — reusable page for 客户档案 / 供应商 / 全部客商.
     GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 - Wave 4 (2026-08-28):
       * Code UX: AUTO_EDITABLE. Empty Code on Create = auto-generate.
         "留空则自动生成" help text. Edit disables Code (immutable).
@@ -29,7 +29,7 @@
       <template #filters>
         <el-select
           v-model="filterRole"
-          placeholder="往来单位类型"
+          placeholder="客商类型"
           clearable
           class="bp-filter-role"
           @change="applyFilters"
@@ -140,7 +140,7 @@
     <MdmFormDrawer
       v-model="formDrawerVisible"
       v-model:model="formData"
-      :title="editingId ? '编辑往来单位' : '新建往来单位'"
+      :title="editingId ? '编辑客商' : '新建客商'"
       :rules="formRules"
       :loading="submitting"
       :submit-label="editingId ? '保存修改' : '创建'"
@@ -165,7 +165,7 @@
           </el-input>
         </el-form-item>
         <el-form-item label="名称" prop="name">
-          <el-input v-model="formData.name" placeholder="往来单位全称" maxlength="200" />
+          <el-input v-model="formData.name" placeholder="客商全称" maxlength="200" />
         </el-form-item>
         <el-form-item label="简称">
           <el-input v-model="formData.shortName" placeholder="可选" maxlength="40" />
@@ -173,9 +173,11 @@
         <el-form-item label="助记码">
           <el-input
             v-model="formData.mnemonicCode"
-            placeholder="可选 · 用于快速搜索的助记码（不区分大小写）"
+            placeholder="按名称自动建议，可手工覆盖"
             maxlength="40"
             show-word-limit
+            clearable
+            @input="onMnemonicInput"
           />
         </el-form-item>
         <el-form-item label="类型" prop="role">
@@ -296,7 +298,7 @@
     <!-- Detail Drawer -->
     <MdmDetailDrawer
       v-model="detailDrawerVisible"
-      :title="`往来单位详情 · ${detailData?.code || ''}`"
+      :title="`客商详情 · ${detailData?.code || ''}`"
       @edit="openEditFromDetail"
     >
       <template #header>
@@ -375,6 +377,7 @@ import {
   roleFilterToInt,
   statusUiToInt,
 } from '../../types/mdm';
+import { generateMnemonicCode, shouldRefreshMnemonic } from '../../utils/mnemonic';
 import type {
   BusinessPartner,
   BusinessPartnerForm,
@@ -394,12 +397,12 @@ const defaultRole = computed<BusinessPartnerRoleFilter>(
 const createLabel = computed(() =>
   defaultRole.value === 'customer' ? '新建客户'
     : defaultRole.value === 'supplier' ? '新建供应商'
-      : '新建往来单位',
+      : '新建客商',
 );
 const emptyMessage = computed(() =>
   defaultRole.value === 'customer' ? '暂无客户数据'
     : defaultRole.value === 'supplier' ? '暂无供应商数据'
-      : '暂无往来单位数据',
+      : '暂无客商数据',
 );
 
 // ===== Real API list state =====
@@ -438,7 +441,7 @@ async function fetchList() {
         error.value = parts.join(' — ');
       }
     } else {
-      error.value = '加载往来单位数据失败，请刷新重试';
+      error.value = '加载客商数据失败，请刷新重试';
     }
     list.value = [];
     total.value = 0;
@@ -632,6 +635,8 @@ const formData = reactive<BusinessPartnerForm>(emptyForm());
 // them on the wire.
 const formRegionCodeSnapshot = ref<string | null>(null);
 const formRegionNameSnapshot = ref<string | null>(null);
+const mnemonicEditedByUser = ref(false);
+const lastMnemonicSuggestion = ref('');
 
 function emptyForm(): BusinessPartnerForm {
   return {
@@ -664,7 +669,7 @@ const formRules: FormRules = {
       return cb();
     }, trigger: 'blur' },
   ],
-  name: [{ required: true, message: '请输入往来单位名称', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入客商名称', trigger: 'blur' }],
   role: [{ required: true, message: '请选择类型', trigger: 'change' }],
   email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
   countryCode: [
@@ -682,6 +687,8 @@ function resetForm() {
   cnRegionPath.value = [];
   formRegionNameSnapshot.value = null;
   formRegionCodeSnapshot.value = null;
+  mnemonicEditedByUser.value = false;
+  lastMnemonicSuggestion.value = '';
 }
 
 async function openCreate() {
@@ -723,6 +730,7 @@ async function openEdit(row: BusinessPartner) {
 }
 
 function fillForm(d: BusinessPartner) {
+  const suggestedMnemonic = generateMnemonicCode(d.name);
   Object.assign(formData, {
     code: d.code, name: d.name, shortName: d.shortName || '',
     mnemonicCode: d.mnemonicCode || '',
@@ -738,6 +746,9 @@ function fillForm(d: BusinessPartner) {
   // the backend regenerates them on every save.
   formRegionNameSnapshot.value = d.regionNameSnapshot ?? null;
   formRegionCodeSnapshot.value = d.regionCodeSnapshot ?? null;
+  lastMnemonicSuggestion.value = suggestedMnemonic;
+  mnemonicEditedByUser.value = !!d.mnemonicCode
+    && d.mnemonicCode.trim() !== suggestedMnemonic;
 }
 
 function isConcurrencyConflict(err: unknown): boolean {
@@ -764,12 +775,32 @@ watch(() => formData.countryCode, async (next, prev) => {
   formData.administrativeRegionId = null;
 });
 
+watch(() => formData.name, (next) => {
+  const generated = generateMnemonicCode(next);
+  if (shouldRefreshMnemonic(formData.mnemonicCode, lastMnemonicSuggestion.value, mnemonicEditedByUser.value)) {
+    formData.mnemonicCode = generated;
+    lastMnemonicSuggestion.value = generated;
+  }
+});
+
+function onMnemonicInput(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    mnemonicEditedByUser.value = false;
+    const generated = generateMnemonicCode(formData.name);
+    formData.mnemonicCode = generated;
+    lastMnemonicSuggestion.value = generated;
+    return;
+  }
+  mnemonicEditedByUser.value = trimmed !== lastMnemonicSuggestion.value;
+}
+
 async function handleSubmit() {
   submitting.value = true;
   try {
     if (editingId.value == null) {
       await bpApi.createBusinessPartner(formData);
-      ElMessage.success('创建往来单位成功');
+      ElMessage.success('创建客商成功');
     } else {
       await bpApi.updateBusinessPartner(editingId.value, formData, editingConcurrency.value);
       ElMessage.success('保存修改成功');

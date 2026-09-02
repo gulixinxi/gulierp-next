@@ -58,19 +58,19 @@
         :header-cell-style="{ padding: '0 8px' }"
         :cell-style="{ padding: '0 8px' }"
       >
-        <el-table-column type="index" label="#" width="48" fixed="left" />
-        <el-table-column prop="code" label="库位代码" width="150" sortable show-overflow-tooltip>
+        <el-table-column type="index" label="#" :width="COL.index" fixed="left" />
+        <el-table-column prop="code" label="库位代码" :width="COL.code" sortable show-overflow-tooltip>
           <template #default="{ row }">
             <span class="mdm-code">{{ row.code }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="库位名称" min-width="150" show-overflow-tooltip sortable />
-        <el-table-column prop="warehouseName" label="所属仓库" min-width="140" show-overflow-tooltip>
+        <el-table-column prop="name" label="库位名称" min-width="130" show-overflow-tooltip sortable />
+        <el-table-column prop="warehouseName" label="所属仓库" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.warehouseCode ? `${row.warehouseCode} · ${row.warehouseName || ''}` : (row.warehouseName || '—') }}
           </template>
         </el-table-column>
-        <el-table-column prop="type" label="类型" width="90" align="center">
+        <el-table-column prop="type" label="类型" :width="COL.type" align="center">
           <template #default="{ row }">{{ typeLabel(row.type) }}</template>
         </el-table-column>
         <el-table-column prop="aisle" label="通道" width="70" align="center">
@@ -82,15 +82,15 @@
         <el-table-column prop="shelf" label="层" width="70" align="center">
           <template #default="{ row }">{{ row.shelf || '—' }}</template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="90" align="center">
+        <el-table-column prop="status" label="状态" :width="COL.status" align="center">
           <template #default="{ row }">
             <MdmStatusBadge :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column prop="updatedAt" label="更新时间" width="165" sortable>
+        <el-table-column prop="updatedAt" label="更新时间" :width="COL.datetime" sortable>
           <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="130" fixed="right" align="center">
+        <el-table-column label="操作" :width="COL.actions" fixed="right" align="center">
           <template #default="{ row }">
             <MdmTableRowActions
               :status="row.status"
@@ -225,6 +225,7 @@ import MdmDetailDrawer from '../../components/mdm/MdmDetailDrawer.vue';
 import MdmPagination from '../../components/mdm/MdmPagination.vue';
 import MdmEmptyState from '../../components/mdm/MdmEmptyState.vue';
 import MdmTableRowActions from '../../components/mdm/MdmTableRowActions.vue';
+import { TABLE_COLUMN_PRESETS as COL } from '../../design-system/tableColumns';
 
 import { ApiError } from '../../api/http';
 import * as locApi from '../../api/mdm/location';
