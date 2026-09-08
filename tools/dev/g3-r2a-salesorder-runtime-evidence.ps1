@@ -314,12 +314,62 @@ if ($null -eq $salesOp -or -not $apiUp) {
         if ($code -eq 200) { Assert-Updated "confirm $orderId → 200" }
         else { Assert-Fail "confirm $orderId → $code" }
 
-        # -------- Cancel (cleanup: V1 has no DELETE) --------
+        # -------- Create a separate Draft order for cleanup --------
+        # V1 state machine (see modules/sales/.../Enums/SalesOrderStatus.cs):
+        #   Draft -> Confirmed   (allowed; tested above)
+        #   Draft -> Cancelled   (allowed; tested below as the cleanup path)
+        #   Confirmed -> Cancelled (NOT allowed in V1; see SalesOrderStatus
+        #     reserved-state comment - reversal goes through a separate
+        #     amendment flow, not the simple cancel endpoint)
+        # Therefore the cleanup target must be a Draft, not the Confirmed
+        # order we just confirmed. We create a minimal second order here
+        # solely to exercise the Draft -> Cancelled transition.
         Write-Host ''
-        Write-Host "  --- Cancel (cleanup) ---" -ForegroundColor Cyan
-        $code = Get-StatusCode -Session $sess -Url "$BaseUrl/api/v1/sales/orders/$orderId/cancel" -Method 'POST' -Body '{}'
-        if ($code -eq 200) { Assert-Cleaned "cancel $orderId → 200 (V1 cleanup path)" }
-        else { Assert-Fail "cancel $orderId → $code" }
+        Write-Host "  --- Create cleanup order (Draft, for cancel test) ---" -ForegroundColor Cyan
+        $cleanupCreateBody = @{
+            customerId = [long]$customerId
+            orderDate = $orderDate
+            requestedDeliveryDate = $null
+            remarks = "$remarks (cleanup target)"
+            lines = @(
+                @{
+                    itemId = [long]$itemId
+                    uomId = [long]$uomId
+                    quantity = 1.0000
+                    unitPrice = 1.00
+                    discountRate = 0
+                    taxRate = 0.13
+                    remarks = "cleanup line"
+                }
+            )
+        } | ConvertTo-Json -Depth 8
+        $cleanupOrderId = $null
+        try {
+            $resp = Invoke-WebRequest -Uri $createUrl -Method POST -Body $cleanupCreateBody -ContentType 'application/json' -Headers $headers -WebSession $sess -ErrorAction Stop
+            $cleanupCode = [int]$resp.StatusCode
+            $cleanupResp = $resp.Content | ConvertFrom-Json
+        } catch {
+            $cleanupCode = 0
+        }
+        if ($cleanupCode -eq 201) {
+            $cleanupOrderId = $cleanupResp.id
+            Assert-Created "SalesOrder $($cleanupResp.orderNo) (id=$cleanupOrderId, cleanup) → 201"
+        } else {
+            Assert-Fail "cleanup create → $cleanupCode (expected 201)"
+        }
+
+        # -------- Cancel (cleanup: V1 has no DELETE) --------
+        # The cleanup target is the Draft order we just created above.
+        # Cancelling a Confirmed order is intentionally not supported in V1.
+        Write-Host ''
+        Write-Host "  --- Cancel (cleanup, Draft → Cancelled) ---" -ForegroundColor Cyan
+        if ($cleanupOrderId) {
+            $code = Get-StatusCode -Session $sess -Url "$BaseUrl/api/v1/sales/orders/$cleanupOrderId/cancel" -Method 'POST' -Body '{}'
+            if ($code -eq 200) { Assert-Cleaned "cancel $cleanupOrderId → 200 (V1 cleanup path, Draft→Cancelled)" }
+            else { Assert-Fail "cancel $cleanupOrderId → $code" }
+        } else {
+            Assert-Fail "cancel skipped (cleanup create failed)"
+        }
     }
 }
 
