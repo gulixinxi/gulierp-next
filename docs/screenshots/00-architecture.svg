@@ -1,0 +1,136 @@
+<svg viewBox="0 0 1200 820" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <!-- 背景 -->
+  <rect width="1200" height="820" fill="#fafbfc"/>
+
+  <!-- 标题 -->
+  <text x="600" y="42" text-anchor="middle" font-size="26" font-weight="700" fill="#1f2328">GuliERP 技术架构</text>
+  <text x="600" y="68" text-anchor="middle" font-size="13" fill="#57606a">.NET 8 + Vue 3 + EF Core + ASP.NET Identity · MIT</text>
+
+  <!-- ============== 前端层 ============== -->
+  <rect x="80" y="100" width="1040" height="150" rx="10" fill="#e6f4ea" stroke="#1a7f37" stroke-width="2"/>
+  <text x="600" y="128" text-anchor="middle" font-size="16" font-weight="700" fill="#1a7f37">前端层 · Vue 3 SPA</text>
+
+  <g font-size="12" fill="#1f2328">
+    <rect x="140" y="155" width="150" height="70" rx="6" fill="#ffffff" stroke="#1a7f37"/>
+    <text x="215" y="180" text-anchor="middle" font-weight="700">Vue 3</text>
+    <text x="215" y="200" text-anchor="middle" fill="#57606a">Composition API</text>
+    <text x="215" y="215" text-anchor="middle" fill="#57606a">响应式 / 组合式</text>
+
+    <rect x="310" y="155" width="150" height="70" rx="6" fill="#ffffff" stroke="#1a7f37"/>
+    <text x="385" y="180" text-anchor="middle" font-weight="700">Vite 7</text>
+    <text x="385" y="200" text-anchor="middle" fill="#57606a">构建 / HMR</text>
+    <text x="385" y="215" text-anchor="middle" fill="#57606a">esbuild 引擎</text>
+
+    <rect x="480" y="155" width="150" height="70" rx="6" fill="#ffffff" stroke="#1a7f37"/>
+    <text x="555" y="180" text-anchor="middle" font-weight="700">Element Plus 2</text>
+    <text x="555" y="200" text-anchor="middle" fill="#57606a">UI 组件库</text>
+    <text x="555" y="215" text-anchor="middle" fill="#57606a">Vue 3 原生</text>
+
+    <rect x="650" y="155" width="150" height="70" rx="6" fill="#ffffff" stroke="#1a7f37"/>
+    <text x="725" y="180" text-anchor="middle" font-weight="700">Pinia 3</text>
+    <text x="725" y="200" text-anchor="middle" fill="#57606a">状态管理</text>
+    <text x="725" y="215" text-anchor="middle" fill="#57606a">Vuex 替代</text>
+
+    <rect x="820" y="155" width="150" height="70" rx="6" fill="#ffffff" stroke="#1a7f37"/>
+    <text x="895" y="180" text-anchor="middle" font-weight="700">Vue Router 4</text>
+    <text x="895" y="200" text-anchor="middle" fill="#57606a">SPA 路由</text>
+    <text x="895" y="215" text-anchor="middle" fill="#57606a">懒加载 / 守卫</text>
+  </g>
+
+  <!-- 前端 → 后端 箭头 + 标签 -->
+  <line x1="600" y1="252" x2="600" y2="298" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="510" y="262" width="180" height="22" rx="4" fill="#ffffff" stroke="#d1d9e0"/>
+  <text x="600" y="278" text-anchor="middle" font-size="11" fill="#1f2328">HTTPS · JWT in Header</text>
+
+  <!-- ============== 后端层 ============== -->
+  <rect x="80" y="300" width="740" height="280" rx="10" fill="#f3e8ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="450" y="328" text-anchor="middle" font-size="16" font-weight="700" fill="#7c3aed">后端层 · .NET 8 ASP.NET Core</text>
+
+  <!-- 三个模块 -->
+  <g font-size="12" fill="#1f2328">
+    <rect x="110" y="355" width="200" height="100" rx="6" fill="#ffffff" stroke="#7c3aed"/>
+    <text x="210" y="380" text-anchor="middle" font-weight="700" fill="#7c3aed">Identity 身份权限</text>
+    <text x="210" y="402" text-anchor="middle" fill="#57606a">93 / 93 tests</text>
+    <text x="210" y="420" text-anchor="middle" fill="#57606a">4 角色 · 9 系统字典</text>
+    <text x="210" y="438" text-anchor="middle" fill="#57606a">Policy 授权 / JWT</text>
+
+    <rect x="330" y="355" width="200" height="100" rx="6" fill="#ffffff" stroke="#7c3aed"/>
+    <text x="430" y="380" text-anchor="middle" font-weight="700" fill="#7c3aed">MDM 主数据</text>
+    <text x="430" y="402" text-anchor="middle" fill="#57606a">278 / 278 tests</text>
+    <text x="430" y="420" text-anchor="middle" fill="#57606a">UOM / 字典 / 支付方式</text>
+    <text x="430" y="438" text-anchor="middle" fill="#57606a">编号规则 / 客户</text>
+
+    <rect x="550" y="355" width="200" height="100" rx="6" fill="#ffffff" stroke="#7c3aed"/>
+    <text x="650" y="380" text-anchor="middle" font-weight="700" fill="#7c3aed">Sales 销售订单</text>
+    <text x="650" y="402" text-anchor="middle" fill="#57606a">17 / 17 tests</text>
+    <text x="650" y="420" text-anchor="middle" fill="#57606a">CRUD + 取消</text>
+    <text x="650" y="438" text-anchor="middle" fill="#57606a">5 个 Context 代理</text>
+  </g>
+
+  <!-- 基础设施 -->
+  <text x="450" y="478" text-anchor="middle" font-size="11" fill="#57606a">— 基础设施 —</text>
+  <g font-size="11" fill="#1f2328">
+    <rect x="110" y="490" width="155" height="42" rx="6" fill="#faf5ff" stroke="#a78bfa"/>
+    <text x="187" y="516" text-anchor="middle">MediatR</text>
+
+    <rect x="280" y="490" width="155" height="42" rx="6" fill="#faf5ff" stroke="#a78bfa"/>
+    <text x="357" y="516" text-anchor="middle">EF Core 8</text>
+
+    <rect x="450" y="490" width="155" height="42" rx="6" fill="#faf5ff" stroke="#a78bfa"/>
+    <text x="527" y="516" text-anchor="middle">Policy 授权</text>
+
+    <rect x="620" y="490" width="130" height="42" rx="6" fill="#faf5ff" stroke="#a78bfa"/>
+    <text x="685" y="516" text-anchor="middle">JWT 中间件</text>
+  </g>
+
+  <!-- ============== 鉴权层 ============== -->
+  <rect x="840" y="300" width="280" height="280" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="980" y="328" text-anchor="middle" font-size="16" font-weight="700" fill="#ea580c">鉴权 · 权限边界</text>
+
+  <g font-size="12" fill="#1f2328">
+    <text x="860" y="358" font-weight="700">4 个内置角色</text>
+    <text x="868" y="378">• ERP_SYSTEM_ADMIN</text>
+    <text x="868" y="396">• ERP_MDM_OPERATOR</text>
+    <text x="868" y="414">• ERP_SALES_OPERATOR</text>
+    <text x="868" y="432">• ERP_EMPLOYEE_OPERATOR</text>
+
+    <text x="860" y="458" font-weight="700">边界保证</text>
+    <text x="868" y="478">• 角色 × 模块 × 操作 三维权限</text>
+    <text x="868" y="496">• 9 单测锁定 SYSTEM_ADMIN</text>
+    <text x="868" y="514" fill="#c2410c" font-weight="700">• SYSTEM_ADMIN 不能调业务 API</text>
+    <text x="868" y="532" fill="#c2410c">• 只能走 UI 管用户/角色</text>
+    <text x="868" y="558" fill="#57606a" font-size="11">evidence 脚本:38 / 38 跨角色</text>
+  </g>
+
+  <!-- 后端 → DB 箭头 + 标签 -->
+  <line x1="450" y1="582" x2="450" y2="628" stroke="#57606a" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="370" y="592" width="160" height="22" rx="4" fill="#ffffff" stroke="#d1d9e0"/>
+  <text x="450" y="608" text-anchor="middle" font-size="11" fill="#1f2328">TCP · EF Core 驱动</text>
+
+  <!-- ============== 数据层 ============== -->
+  <rect x="80" y="630" width="1040" height="140" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="600" y="658" text-anchor="middle" font-size="16" font-weight="700" fill="#2563eb">数据层 · 关系型数据库</text>
+
+  <g font-size="12" fill="#1f2328">
+    <rect x="280" y="678" width="240" height="76" rx="6" fill="#ffffff" stroke="#2563eb"/>
+    <text x="400" y="702" text-anchor="middle" font-weight="700" fill="#2563eb">SQL Server 2019+</text>
+    <text x="400" y="722" text-anchor="middle" fill="#57606a">生产推荐</text>
+    <text x="400" y="740" text-anchor="middle" fill="#57606a">Windows 一体机 / 私有化</text>
+
+    <rect x="680" y="678" width="240" height="76" rx="6" fill="#ffffff" stroke="#2563eb"/>
+    <text x="800" y="702" text-anchor="middle" font-weight="700" fill="#2563eb">PostgreSQL 15+</text>
+    <text x="800" y="722" text-anchor="middle" fill="#57606a">开源 / 跨平台</text>
+    <text x="800" y="740" text-anchor="middle" fill="#57606a">Linux / 容器 / 云</text>
+  </g>
+
+  <!-- 底部说明 -->
+  <line x1="80" y1="790" x2="1120" y2="790" stroke="#d1d9e0" stroke-width="1"/>
+  <text x="600" y="808" text-anchor="middle" font-size="11" fill="#57606a">测试统计:Identity 93 + MDM 278 + Sales 17 = 388 单测全通过 · 跨角色写路径 evidence 4 级验证</text>
+
+  <!-- 箭头定义 -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#57606a"/>
+    </marker>
+  </defs>
+</svg>
