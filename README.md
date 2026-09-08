@@ -35,7 +35,7 @@ GuliERP is the third path: an open, well-tested, self-hostable ERP you can actua
 | **Finance (GL)** | 🚧 Planned G5 | — | — |
 | **Mobile** | 📅 Future | — | — |
 
-> **Evidence-driven delivery.** Every stage produces a PowerShell script that exercises the actual code paths end-to-end. Reports live under `docs/verification/`.
+> **Evidence-driven delivery.** Every stage produces a PowerShell script that exercises the actual code paths end-to-end. Reports live under `docs/verification/`. Current runtime evidence: **48 / 49** (the one fail is `cancel` on an already-`Confirmed` order — the V1 state machine disallows that transition by design; the cancel cleanup path is currently being revised).
 
 ---
 
@@ -94,7 +94,7 @@ npm run dev
 # All unit tests
 dotnet test
 
-# Sales order runtime evidence (49 / 49)
+# Sales order runtime evidence (48 / 49 — see status section above)
 pwsh tools/dev/g3-r2a-salesorder-runtime-evidence.ps1
 
 # Sales order web integration evidence (20 / 20)
