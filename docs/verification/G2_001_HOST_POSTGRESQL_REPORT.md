@@ -167,7 +167,7 @@ those `PackageReference` entries (they are auto-included in ASP.NET Core 10).
 |---|---|
 | Local PostgreSQL | **NOT installed** (no `psql`, no service, no port 5432 bound locally) |
 | Docker | **NOT installed** |
-| NAS PostgreSQL (`192.168.2.228:5432`) | **TCP reachable** (Test-NetConnection `TcpTestSucceeded=True`) |
+| NAS PostgreSQL (`<your-nas-host>:5432`) | **TCP reachable** (Test-NetConnection `TcpTestSucceeded=True`) |
 | `ef database update` against NAS with wrong password | `Npgsql.PostgresException 28P01: password authentication failed` — confirms network OK, credentials required |
 | Real-runtime evidence | **Operator must inject PGPASSWORD** — see §13 |
 
@@ -182,7 +182,7 @@ Per task §十三, the priority order is: (1) existing PG → use directly, (2) 
 | Connection name | `ConnectionStrings:GuliERP` | Per task §九 |
 | Env-var override | `ConnectionStrings__GuliERP` (double underscore = section separator) | ASP.NET Core standard |
 | App-settings file (Production) | `Host=CHANGE_ME;Password=CHANGE_ME` | Task §九 "禁止提交真实密码" |
-| App-settings file (Development) | `Host=192.168.2.228;Database=gulierp_g2_001;Password=CHANGE_ME` | NAS host hard-coded (not a secret); password is `CHANGE_ME` |
+| App-settings file (Development) | `Host=<your-nas-host>;Database=gulierp_g2_001;Password=CHANGE_ME` | NAS host hard-coded (not a secret); password is `CHANGE_ME` |
 | PGPASSWORD injection | **Operator-driven** (POC-001/002 pattern) | Real password NEVER in csproj / appsettings / source / log / markdown |
 | Design-time override | `GULIERP_FOUNDATION_CONNECTION` env var (consumed by `DesignTimeFoundationDbContextFactory`) | Same PGPASSWORD pattern, separated from runtime config |
 | `Program.cs` fail-fast | Throws `InvalidOperationException` at startup if connection string is missing/whitespace | Per task §15: "如果关键配置完全缺失: 应 fail-fast 并给明确开发错误" |
@@ -346,7 +346,7 @@ end-to-end.
 
 `tools/dev/g2-001-operator-evidence.ps1` is provided. Steps:
 
-1. `$env:ConnectionStrings__GuliERP = "Host=192.168.2.228;Port=5432;Database=gulierp_g2_001;Username=gulidata;Password=***"`
+1. `$env:ConnectionStrings__GuliERP = "Host=<your-nas-host>;Port=5432;Database=gulierp_g2_001;Username=gulidata;Password=***"`
 2. `.\tools\dev\g2-001-operator-evidence.ps1`
 3. Script applies migration, runs the 7 integration tests, starts the host twice, hits `/health/live` + `/health/ready`
 4. Captures `trx` artifacts at `$env:TEMP\host-r1.log` / `host-r2.log`
@@ -361,7 +361,7 @@ banner on success.
 
 | # | Item | Mavis-verified? | Notes |
 |---|---|---|---|
-| 1 | TCP connection | ✅ (Test-NetConnection) | `TcpTestSucceeded = True` to 192.168.2.228:5432 |
+| 1 | TCP connection | ✅ (Test-NetConnection) | `TcpTestSucceeded = True` to <your-nas-host>:5432 |
 | 2 | Authentication | ⏳ Operator-only | Mavis got `28P01` (expected — wrong creds); Operator must verify with real PGPASSWORD |
 | 3 | Database exists / accessible | ⏳ Operator-only | Database `gulierp_g2_001` not yet created; will be created by the first `dotnet ef database update` |
 | 4 | Migration apply PASS | ⏳ Operator-only | Migration code is well-formed; apply path is via `dotnet ef database update` or `tools/dev/g2-001-operator-evidence.ps1` |
@@ -513,7 +513,7 @@ Agent's work was modified.
 | R-G2-001-1 | Operator handoff script may race with Npgsql connection timeouts on slow networks | Script uses `Timeout=10;Command Timeout=10` defaults; if needed the Operator can edit the script before running |
 | R-G2-001-2 | Mavis cannot test the real-DB path; if the integration tests have a hidden bug that only manifests against real PG, the bug surfaces at Operator-run time | Integration tests use the same `WebApplicationFactory<Program>` that `dotnet run` uses; the only delta is the connection string. The 3 raw-DB tests are minimal (`SELECT 1` + schema check + history table check) — failure modes are obvious |
 | R-G2-001-3 | The `Mavis-trash` / `git diff --check` invocation path did not produce a "no real password" warning; this is covered by §16's manual scan, not by an automated check | Section §16's `Select-String` scan is recorded; an automated `git secrets` hook is recommended for G2-002 |
-| R-G2-001-4 | `appsettings.Development.json` hard-codes `192.168.2.228` — if the NAS host changes, the file needs updating | Documented in the operator script; Operator-only file path |
+| R-G2-001-4 | `appsettings.Development.json` hard-codes `<your-nas-host>` — if the NAS host changes, the file needs updating | Documented in the operator script; Operator-only file path |
 | R-G2-001-5 | The `dotnet-ef` local tool is not part of the project file (only `dotnet-tools.json`) — CI must restore local tools before invoking `dotnet ef` | Documented; `dotnet tool restore` is the standard command |
 | R-G2-001-6 | `WebApplicationFactory<Program>` shares the singleton `IConfiguration` between tests — test ordering could leak connection state. Mitigated by `WithWebHostBuilder` overriding the config per test | The fixture is `IClassFixture` so one host per test class; each test calls `WithWebHostBuilder` to override |
 | R-G2-001-7 | `Program.cs` uses the implicit `using` for the global usings (System, Microsoft.*); explicit `using` is recommended for the few namespaces actually used | The two `using` directives at the top of `Program.cs` (GuliERP.Foundation, Microsoft.EntityFrameworkCore) are sufficient; `<ImplicitUsings>enable</ImplicitUsings>` in `Directory.Build.props` provides the rest |
@@ -724,7 +724,7 @@ operator, this means the JSON body shows `"description": "FoundationDbContext.Ca
 
 The **startup-log line** (R1 1st-pass diagnostic) is also confirmed
 working: with `ConnectionStrings__GuliERP` set, the host logs:
-> `G2-001 startup: ConnectionStrings:GuliERP resolved to Host=192.168.2.228;Port=5432;Database=gulierp_g2_001;Username=gulidata;Password=***;Timeout=5;Command Timeout=5 (password redacted; if you see Password=CHANGE_ME the env var was not picked up).`
+> `G2-001 startup: ConnectionStrings:GuliERP resolved to Host=<your-nas-host>;Port=5432;Database=gulierp_g2_001;Username=gulidata;Password=***;Timeout=5;Command Timeout=5 (password redacted; if you see Password=CHANGE_ME the env var was not picked up).`
 
 This proves both that (a) the env-var precedence fix from `e6ba753` is
 working, and (b) the real `Password=***` is read, not the appsettings
@@ -753,7 +753,7 @@ Operator-side final gate.
 | # | Risk | Mitigation |
 |---|---|---|
 | R-G2-001R1-1 | Mavis cannot verify the success branch of `ReadyHealthyWithGoodDb` without real PGPASSWORD. If the e6ba753 env-var precedence fix has a hidden edge case (e.g. user-secrets precedence interaction), it will only surface at Operator-run time. | The startup log line + the diagnostic JSON body together give the operator enough information to diagnose any remaining issue in 1-2 iterations. |
-| R-G2-001R1-2 | The Mavis-side "wrong creds" test exercised the Operator-supplied `192.168.2.228` host and confirmed TCP reachability + auth-failure. The Operator's "real creds" test will exercise the same host with a real password — a different code path on the Npgsql layer (the auth-failure path exits before the SQL layer, the success path runs `SELECT 1`). | The `9e9d076` readiness probe issues `SELECT 1` explicitly on the success path, so the SQL-layer auth-success path is now also exercised. |
+| R-G2-001R1-2 | The Mavis-side "wrong creds" test exercised the Operator-supplied `<your-nas-host>` host and confirmed TCP reachability + auth-failure. The Operator's "real creds" test will exercise the same host with a real password — a different code path on the Npgsql layer (the auth-failure path exits before the SQL layer, the success path runs `SELECT 1`). | The `9e9d076` readiness probe issues `SELECT 1` explicitly on the success path, so the SQL-layer auth-success path is now also exercised. |
 | R-G2-001R1-3 | The custom `FoundationDbReadinessHealthCheck` opens a fresh Npgsql connection on every probe (no connection pool reuse). At high probe rates this is more expensive than `AddDbContextCheck`'s pooled approach. | For G2-001 the probe rate is the upstream K8s/load-balancer default (every 10s), and the 5s probe timeout bounds the worst case. The pool-reuse optimisation is a G2-007+ concern (profiling-driven, not premature). |
 | R-G2-001R1-4 | The `gulidata` PostgreSQL role has `CREATEDB` privilege (proved by Operator-side `CREATE DATABASE gulierp_g2_001` succeeding). The runtime application credential should not need this privilege. | R-G2-001-CREDENTIAL-PRIVILEGE recorded in §20; remediation = split Deployment/Migration credential (CREATEDB) from Runtime Application credential (no CREATEDB). Out of scope for G2-001. |
 | R-G2-001R1-5 | `xunit.runner.visualstudio` was downgraded from 3.1.4 to 2.8.2 in the e6ba753 commit to reduce the cross-version gap. This may be too conservative if xunit 2.9.3 + runner 2.8.2 has its own bugs. | R1 Mavis-side verification (2 PASS / 5 loud-fail) confirms the cross-version pairing works for the G2-001 test design. If a future test needs a 3.x feature, the runner upgrade must be re-evaluated. |
@@ -799,7 +799,7 @@ acceptance gate from the Goal brief §二十五 is satisfied:
 |---|---|
 | .NET 10 SDK PASS | ✅ (`D:\guli\gulierp\.dotnet\dotnet.exe` 10.0.400) |
 | Host Build PASS | ✅ (0 warn / 0 err) |
-| PostgreSQL Real Runtime PASS | ✅ (Operator reached `192.168.2.228:5432`; database `gulierp_g2_001` created; migration applied; `SELECT 1` returns 1) |
+| PostgreSQL Real Runtime PASS | ✅ (Operator reached `<your-nas-host>:5432`; database `gulierp_g2_001` created; migration applied; `SELECT 1` returns 1) |
 | EF Core/Npgsql PASS | ✅ (EF Core 10.0.11 + Npgsql 10.0.3) |
 | Migration PASS | ✅ (`20260819103150_G2001_InitializeFoundationSchema` applied; database up-to-date; `__ef_migrations_history` row present) |
 | `foundation` schema PASS | ✅ (schema exists; `information_schema.schemata` row present) |
@@ -808,7 +808,7 @@ acceptance gate from the Goal brief §二十五 is satisfied:
 | `/health/live` PASS | ✅ (200 Healthy in Round 1, Round 2, Bad-DB negative) |
 | `/health/ready` PASS | ✅ (200 Healthy in Round 1 + Round 2; 503 Unhealthy in Bad-DB negative) |
 | Bad-DB readiness negative test PASS | ✅ (live=200, ready=503, real `Npgsql.NpgsqlException: Failed to connect` surfaced) |
-| Runtime Round 1 PASS | ✅ (live=200, ready=200, `foundation-db SELECT 1 OK against Host=192.168.2.228`) |
+| Runtime Round 1 PASS | ✅ (live=200, ready=200, `foundation-db SELECT 1 OK against Host=<your-nas-host>`) |
 | Runtime Round 2 PASS | ✅ (fresh process; same shape; restart round-trip consistent) |
 | Secret Handling PASS | ✅ (`Password=CHANGE_ME` placeholder in tracked files; real PGPASSWORD injected at Operator runtime only) |
 | `git diff --check` PASS | ✅ (exit 0; pre-existing LF/CRLF warnings on `apps/web/**` are not G2-001 files) |
@@ -858,7 +858,7 @@ Operator at the PowerShell prompt — never in any tracked file).
 | Step | Result |
 |---|---|
 | `dotnet build -c Release` (GuliERP.slnx) | ✅ Build succeeded — 0 warnings / 0 errors |
-| `dotnet ef database update` (against `Host=192.168.2.228;Port=5432;Database=gulierp_g2_001;Username=gulidata`) | ✅ **Migration PASS — database up-to-date** |
+| `dotnet ef database update` (against `Host=<your-nas-host>;Port=5432;Database=gulierp_g2_001;Username=gulidata`) | ✅ **Migration PASS — database up-to-date** |
 | `SELECT 1` against `gulierp_g2_001` | ✅ Returns 1 |
 | `SELECT 1 FROM information_schema.schemata WHERE schema_name='foundation'` | ✅ Returns 1 |
 | `SELECT 1 FROM information_schema.tables WHERE table_schema='foundation' AND table_name='__ef_migrations_history'` | ✅ Returns 1 |
@@ -872,7 +872,7 @@ Operator at the PowerShell prompt — never in any tracked file).
 | `FoundationSchemaExists` | `FoundationDatabaseFacts` | ✅ PASS — `information_schema.schemata` row present |
 | `MigrationHistoryExists` | `FoundationDatabaseFacts` | ✅ PASS — `foundation.__ef_migrations_history` table exists |
 | `LiveHealthyWithGoodDb` | `FoundationHostHealthFactsGoodDb` | ✅ PASS — `/health/live` returns 200 Healthy (liveness decoupled from DB) |
-| `ReadyHealthyWithGoodDb` | `FoundationHostHealthFactsGoodDb` | ✅ PASS — `/health/ready` returns 200 Healthy (real `SELECT 1 OK against Host=192.168.2.228`) |
+| `ReadyHealthyWithGoodDb` | `FoundationHostHealthFactsGoodDb` | ✅ PASS — `/health/ready` returns 200 Healthy (real `SELECT 1 OK against Host=<your-nas-host>`) |
 | `LiveHealthyWithBadDb` | `FoundationHostHealthFactsBadDb` | ✅ PASS — `/health/live` returns 200 Healthy with hard-coded `Host=127.0.0.1;Port=1` |
 | `ReadyUnhealthyWithBadDb` | `FoundationHostHealthFactsBadDb` | ✅ PASS — `/health/ready` returns 503 Unhealthy with hard-coded bad conn |
 
@@ -888,9 +888,9 @@ unconditionally.
 | `dotnet run --project apps/api/GuliERP.Api --no-build -c Release` (env var set, real PGPASSWORD) | ✅ Process started, listening on `http://127.0.0.1:5099` |
 | `GET /` | ✅ 200, banner `GuliERP Api (G2-001)` |
 | `GET /health/live` | ✅ **200 Healthy** — `self` check Healthy, description "Host process alive." |
-| `GET /health/ready` | ✅ **200 Healthy** — `foundation-db` check Healthy, description `SELECT 1 OK against Host=192.168.2.228 (returned 1)` |
+| `GET /health/ready` | ✅ **200 Healthy** — `foundation-db` check Healthy, description `SELECT 1 OK against Host=<your-nas-host> (returned 1)` |
 | Process stopped | ✅ OK |
-| Startup log (R1 1st-pass diagnostic) | `G2-001 startup: ConnectionStrings:GuliERP resolved to Host=192.168.2.228;Port=5432;Database=gulierp_g2_001;Username=gulidata;Password=***;Timeout=5;Command Timeout=5` — `Password=***` confirms env-var precedence fix (e6ba753) is working; real PGPASSWORD read, not appsettings `Password=CHANGE_ME` |
+| Startup log (R1 1st-pass diagnostic) | `G2-001 startup: ConnectionStrings:GuliERP resolved to Host=<your-nas-host>;Port=5432;Database=gulierp_g2_001;Username=gulidata;Password=***;Timeout=5;Command Timeout=5` — `Password=***` confirms env-var precedence fix (e6ba753) is working; real PGPASSWORD read, not appsettings `Password=CHANGE_ME` |
 
 ### 26.4 Runtime Round 2 (real DB, fresh process, 2026-08-19)
 
@@ -898,7 +898,7 @@ unconditionally.
 |---|---|
 | Restart host (fresh process, same env var) | ✅ Process started, listening on `http://127.0.0.1:5099` |
 | `GET /health/live` | ✅ **200 Healthy** — `self` check Healthy |
-| `GET /health/ready` | ✅ **200 Healthy** — `foundation-db` check Healthy, `SELECT 1 OK against Host=192.168.2.228 (returned 1)` |
+| `GET /health/ready` | ✅ **200 Healthy** — `foundation-db` check Healthy, `SELECT 1 OK against Host=<your-nas-host> (returned 1)` |
 | Process stopped | ✅ OK |
 
 The restart round-trip is consistent with Round 1 — no first-run
