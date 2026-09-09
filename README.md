@@ -3,7 +3,7 @@
 > **Production-ready open source ERP foundation, built on .NET 8 + Vue 3.**
 > 388 unit tests + multi-role write-path evidence — all green.
 
-> 🌟 **Open-sourced and promoted on [LINUX DO](https://linux.do) community** — see the [开源推广 thread](https://linux.do/t/topic/xxxxxx) (replace `xxxxxx` with the actual topic id after posting). Thanks to the LINUX DO community for the support.
+> 🙏 感谢 [LINUX DO](https://linux.do) 社区支持推广。Thanks to the LINUX DO community for the support.
 
 [English](#english) · [简体中文](#简体中文)
 
@@ -158,14 +158,11 @@ For security issues, **do not** open a public issue. Email `chunqing0536@outlook
 
 ## Community
 
-This project is open-sourced and promoted in the **[LINUX DO 开源推广](https://linux.do)** section.
+Thanks to the **[LINUX DO](https://linux.do)** community for supporting this open-source project.
 
-- 💬 Discuss, ask questions, or share your use case: [LINUX DO community thread](https://linux.do/t/topic/xxxxxx) — replace `xxxxxx` with your actual topic id after posting
 - 🐛 File bugs / request features: [GitHub Issues](https://github.com/gulixinxi/gulierp-next/issues)
 - 💡 Start a discussion: [GitHub Discussions](https://github.com/gulixinxi/gulierp-next/discussions)
 - 📦 Source: [github.com/gulixinxi/gulierp-next](https://github.com/gulixinxi/gulierp-next)
-
-Thanks to the [LINUX DO](https://linux.do) community for supporting this open-source project.
 
 ---
 
@@ -223,11 +220,8 @@ docker compose up -d
 
 ### 社区
 
-本项目在 [LINUX DO 社区开源推广](https://linux.do) 发布。
+感谢 [LINUX DO](https://linux.do) 社区支持推广。
 
-- 💬 讨论 / 提问 / 分享场景:[LINUX DO 社区帖](https://linux.do/t/topic/xxxxxx)(发完帖后把 `xxxxxx` 换成实际 topic id)
 - 🐛 Bug / 需求:[GitHub Issues](https://github.com/gulixinxi/gulierp-next/issues)
 - 💡 自由讨论:[GitHub Discussions](https://github.com/gulixinxi/gulierp-next/discussions)
 - 📦 源码:[github.com/gulixinxi/gulierp-next](https://github.com/gulixinxi/gulierp-next)
-
-感谢 [LINUX DO](https://linux.do) 社区对本开源项目的支持。
