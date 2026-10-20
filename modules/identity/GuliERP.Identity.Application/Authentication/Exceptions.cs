@@ -117,3 +117,15 @@ public sealed class BackendUnavailableException : Exception
         Context = context;
     }
 }
+
+/// <summary>Safe, authenticated password-change failure; never carries either password.</summary>
+public sealed class PasswordChangeRejectedException : Exception
+{
+    public bool CurrentPasswordInvalid { get; }
+
+    public PasswordChangeRejectedException(bool currentPasswordInvalid)
+        : base("Password change was rejected.")
+    {
+        CurrentPasswordInvalid = currentPasswordInvalid;
+    }
+}

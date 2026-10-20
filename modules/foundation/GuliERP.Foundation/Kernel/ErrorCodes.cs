@@ -60,6 +60,7 @@ public static class ErrorCodes
     /// violates the G2-004 tightened policy (D-010 fix).
     /// </summary>
     public const string PasswordPolicyViolation = "password_policy_violation";
+    public const string CurrentPasswordInvalid = "current_password_invalid";
 
     /// <summary>
     /// <c>POST /api/v1/auth/company/switch</c> was called with a

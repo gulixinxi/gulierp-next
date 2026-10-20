@@ -28,6 +28,7 @@
     trigger="click"
     popper-class="gs-user-menu-popper"
     :teleported="true"
+    @command="onCommand"
   >
     <button class="gs-user-chip" type="button" :aria-label="ariaLabel">
       <el-icon :size="16" class="gs-user-icon"><UserFilled /></el-icon>
@@ -56,13 +57,31 @@
           <span>个人中心</span>
         </el-dropdown-item>
 
-        <el-dropdown-item disabled command="change-password">
+        <el-dropdown-item command="change-password">
           <el-icon><Lock /></el-icon>
           <span>修改密码</span>
         </el-dropdown-item>
       </el-dropdown-menu>
     </template>
   </el-dropdown>
+  <el-dialog v-model="changeDialogVisible" title="修改密码" width="420px" append-to-body @closed="clearPasswords">
+    <el-form label-position="top" @submit.prevent="onChangePassword">
+      <el-form-item label="当前密码" required>
+        <el-input v-model="currentPassword" type="password" show-password autocomplete="current-password" />
+      </el-form-item>
+      <el-form-item label="新密码" required>
+        <el-input v-model="newPassword" type="password" show-password autocomplete="new-password" />
+      </el-form-item>
+      <el-form-item label="确认新密码" required>
+        <el-input v-model="confirmPassword" type="password" show-password autocomplete="new-password" />
+      </el-form-item>
+      <p class="password-guidance">至少 15 个字符，可使用长密码短语。修改成功后需重新登录。</p>
+    </el-form>
+    <template #footer>
+      <el-button @click="changeDialogVisible = false">取消</el-button>
+      <el-button type="primary" :loading="changing" @click="onChangePassword">保存并重新登录</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -70,11 +89,59 @@
 // Identity surface only — read-only wrapper around the auth store.
 // No business actions, no sign-out (lives in the topbar button),
 // no role chip, no initials, no avatar circle.
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { ArrowDown, User, UserFilled, Lock } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
 import { useAuthStore } from '../../stores/auth';
+import { changePassword } from '../../api/auth';
 
 const auth = useAuthStore();
+const changeDialogVisible = ref(false);
+const changing = ref(false);
+const currentPassword = ref('');
+const newPassword = ref('');
+const confirmPassword = ref('');
+
+function clearPasswords(): void {
+  currentPassword.value = '';
+  newPassword.value = '';
+  confirmPassword.value = '';
+}
+
+function onCommand(command: string): void {
+  if (command === 'change-password') changeDialogVisible.value = true;
+}
+
+async function onChangePassword(): Promise<void> {
+  if (changing.value) return;
+  if (!currentPassword.value || newPassword.value.length < 15 || newPassword.value.length > 128) {
+    ElMessage.warning('请填写当前密码和 15–128 个字符的新密码');
+    return;
+  }
+  if (newPassword.value !== confirmPassword.value) {
+    ElMessage.warning('两次输入的新密码不一致');
+    return;
+  }
+  changing.value = true;
+  try {
+    await changePassword(currentPassword.value, newPassword.value);
+    clearPasswords();
+    changeDialogVisible.value = false;
+    ElMessage.success('密码已修改，请重新登录');
+    auth.finishPasswordChange();
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    ElMessage.error(code === 'current_password_invalid'
+      ? '当前密码不正确'
+      : code === 'password_policy_violation'
+        ? '新密码不符合安全要求，请换一个密码短语'
+        : '修改失败，请稍后重试');
+  } finally {
+    changing.value = false;
+  }
+}
+
+onBeforeUnmount(clearPasswords);
 
 const displayName = computed<string>(() => auth.displayName);
 const userName = computed<string>(() => auth.userName);

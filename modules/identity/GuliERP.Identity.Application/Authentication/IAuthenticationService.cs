@@ -75,4 +75,7 @@ public interface IAuthenticationService
     /// </summary>
     Task<LoginResponse> SwitchCompanyAsync(
         long targetCompanyId, CancellationToken ct = default);
+
+    /// <summary>Change the current user's password, then end the current session.</summary>
+    Task ChangePasswordAsync(string currentPassword, string newPassword, CancellationToken ct = default);
 }

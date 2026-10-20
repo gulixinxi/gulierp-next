@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GuliERP.Api.Authentication;
 
@@ -163,6 +164,34 @@ public static class AuthEndpoints
             }
             return Results.NoContent();
         });
+
+        group.MapPost("/password/change", async (
+            [FromBody] ChangePasswordRequest request,
+            IAuthenticationService auth,
+            IAntiforgery antiforgery,
+            HttpContext http,
+            CancellationToken ct) =>
+        {
+            if (!await antiforgery.IsRequestValidAsync(http))
+            {
+                return CsrfProblem(http);
+            }
+
+            if (request is null || string.IsNullOrEmpty(request.CurrentPassword)
+                || string.IsNullOrEmpty(request.NewPassword))
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Both password fields are required.",
+                    extensions: new Dictionary<string, object?>
+                    {
+                        [ProblemDetailsExtensions.CodeKey] = ErrorCodes.ValidationFailed,
+                    });
+            }
+
+            await auth.ChangePasswordAsync(request.CurrentPassword, request.NewPassword, ct);
+            return Results.NoContent();
+        }).RequireAuthorization().RequireRateLimiting("password-change");
 
         // -----------------------------------------------------------
         // GET /api/v1/auth/me — authenticated, CSRF-EXEMPT (GET).

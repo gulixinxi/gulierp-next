@@ -19,6 +19,7 @@ using InvalidCredentialsException = GuliERP.Identity.Application.Authentication.
 using AuthenticationRequiredException = GuliERP.Identity.Application.Authentication.AuthenticationRequiredException;
 using CompanyAccessDeniedException = GuliERP.Identity.Application.Authentication.CompanyAccessDeniedException;
 using BackendUnavailableException = GuliERP.Identity.Application.Authentication.BackendUnavailableException;
+using PasswordChangeRejectedException = GuliERP.Identity.Application.Authentication.PasswordChangeRejectedException;
 
 namespace GuliERP.Identity.Infrastructure.Authentication;
 
@@ -241,6 +242,38 @@ public sealed class AuthenticationService : IAppAuthenticationService
         await MintCookieAsync(user, isPersistent: false, companyIdOverride: targetCompanyId, ct);
 
         return await BuildResponseAsync(user, companyIdOverride: targetCompanyId, ct);
+    }
+
+    public async Task ChangePasswordAsync(
+        string currentPassword, string newPassword, CancellationToken ct = default)
+    {
+        var (userId, _, _) = ReadCurrentClaims();
+        if (userId is null)
+        {
+            throw new AuthenticationRequiredException();
+        }
+
+        var user = await _userManager.FindByIdAsync(userId.Value.ToString(CultureInfo.InvariantCulture));
+        if (user is null || user.Status != UserStatus.Active)
+        {
+            throw new AuthenticationRequiredException();
+        }
+
+        if (string.Equals(currentPassword, newPassword, StringComparison.Ordinal))
+        {
+            throw new PasswordChangeRejectedException(false);
+        }
+
+        var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        if (!result.Succeeded)
+        {
+            throw new PasswordChangeRejectedException(
+                result.Errors.Any(error => error.Code == "PasswordMismatch"));
+        }
+
+        // Identity updates the security stamp. End this browser session now;
+        // the validator rejects other cookies after its configured interval.
+        await _signInManager.SignOutAsync();
     }
 
     // ----- internal helpers -----

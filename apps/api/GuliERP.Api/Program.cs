@@ -18,6 +18,9 @@ using GuliERP.Sales.Infrastructure;
 using TestValidationRequest = GuliERP.Api.Kernel.TestEndpoints.TestValidationRequest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -215,6 +218,21 @@ builder.Services.AddProblemDetails(options =>
 });
 builder.Services.AddExceptionHandler<AuthenticationExceptionHandler>();
 builder.Services.AddExceptionHandler<FoundationExceptionHandler>();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("password-change", http =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            http.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(15),
+                QueueLimit = 0,
+                AutoReplenishment = true,
+            }));
+});
 
 // --- 6. ASP.NET Core health checks (native, G2-001 preserved) ---
 //     Per docs/architecture/G2_FOUNDATION_ARCHITECTURE_V1_DRAFT.md §5 / §11:
@@ -296,6 +314,7 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseRouting();
 app.UseAuthentication();     // G2-004: sets HttpContext.User from the auth cookie
 app.UseAuthenticationContext();   // G2-004: claims → ICurrentTenant/Company/User (D-003 closure)
+app.UseRateLimiter();
 app.UseAuthorization();      // G2-005: endpoint policy evaluation after routing
 
 // --- 9. OpenAPI (dev) ---

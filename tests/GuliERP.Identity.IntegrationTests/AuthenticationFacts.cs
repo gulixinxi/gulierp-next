@@ -332,6 +332,65 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
             code => code.GetString() == "crm.lead.manage");
     }
 
+    [Fact]
+    public async Task ChangePassword_RequiresCurrentPassword_AndRevokesSession()
+    {
+        using var factory = BuildInMemoryClient(nameof(ChangePassword_RequiresCurrentPassword_AndRevokesSession));
+        await SeedPlatformRoleLoginFixtureAsync(factory.Services);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+
+        async Task<HttpResponseMessage> PostPasswordChangeAsync(string current, string replacement)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/password/change")
+            {
+                Content = JsonContent.Create(new ChangePasswordRequest(current, replacement)),
+            };
+            AttachCsrfToken(request, await FetchCsrfTokenAsync(client));
+            return await client.SendAsync(request);
+        }
+
+        async Task<HttpResponseMessage> LoginAsync(string password)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/login")
+            {
+                Content = JsonContent.Create(new LoginRequest("test_operator_g2_004", password)),
+            };
+            AttachCsrfToken(request, await FetchCsrfTokenAsync(client));
+            return await client.SendAsync(request);
+        }
+
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await PostPasswordChangeAsync("wrong", "LongUniquePassphrase2026")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync("CorrectHorse!2026")).StatusCode);
+        var missingCsrf = await client.PostAsJsonAsync("/api/v1/auth/password/change",
+            new ChangePasswordRequest("CorrectHorse!2026", "calm river crosses the valley"));
+        Assert.Equal(HttpStatusCode.BadRequest, missingCsrf.StatusCode);
+        Assert.Contains("csrf_validation_failed", await missingCsrf.Content.ReadAsStringAsync());
+
+        var wrongCurrent = await PostPasswordChangeAsync("wrong", "LongUniquePassphrase2026");
+        Assert.Equal(HttpStatusCode.BadRequest, wrongCurrent.StatusCode);
+        Assert.Contains("current_password_invalid", await wrongCurrent.Content.ReadAsStringAsync());
+
+        var unchanged = await PostPasswordChangeAsync("CorrectHorse!2026", "CorrectHorse!2026");
+        Assert.Equal(HttpStatusCode.BadRequest, unchanged.StatusCode);
+        Assert.Contains("password_policy_violation", await unchanged.Content.ReadAsStringAsync());
+
+        var weakNew = await PostPasswordChangeAsync("CorrectHorse!2026", "short");
+        Assert.Equal(HttpStatusCode.BadRequest, weakNew.StatusCode);
+        Assert.Contains("password_policy_violation", await weakNew.Content.ReadAsStringAsync());
+
+        var blockedNew = await PostPasswordChangeAsync(
+            "CorrectHorse!2026", "test_operator_g2_004 is here");
+        Assert.Equal(HttpStatusCode.BadRequest, blockedNew.StatusCode);
+        Assert.Contains("password_policy_violation", await blockedNew.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await PostPasswordChangeAsync("CorrectHorse!2026", "calm river crosses the valley")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/auth/me")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync("CorrectHorse!2026")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync("calm river crosses the valley")).StatusCode);
+    }
+
     // ----- /api/v1/auth/logout -----
 
     [Fact]

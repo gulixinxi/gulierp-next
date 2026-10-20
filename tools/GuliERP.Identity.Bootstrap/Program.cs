@@ -6,6 +6,7 @@ using GuliERP.Identity.Infrastructure.EnterpriseOrganization;
 using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Infrastructure.Persistence;
 using GuliERP.Identity.Infrastructure.Seed;
+using GuliERP.Identity.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -270,17 +271,7 @@ public static class Program
         });
         services.AddIdentity<GuliErpUser, GuliErpRole>(options =>
         {
-            // Bootstrap MUST accept a brand-new user with a
-            // single password. The runtime policy (D-010 fix:
-            // 12+ chars + upper/lower/digit/non-alphanumeric)
-            // is enforced by the runtime UserManager; we
-            // mirror it here so the bootstrap test is honest.
-            options.Password.RequiredLength = 12;
-            options.Password.RequireDigit = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequiredUniqueChars = 4;
+            GuliErpPasswordPolicy.Configure(options.Password);
             options.User.RequireUniqueEmail = false;
             options.SignIn.RequireConfirmedEmail = false;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
@@ -289,6 +280,7 @@ public static class Program
         })
         .AddEntityFrameworkStores<IdentityDbContext>()
         .AddDefaultTokenProviders();
+        GuliErpPasswordPolicy.AddValidator(services);
 
         await using var sp = services.BuildServiceProvider();
         var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("Bootstrap");
@@ -420,12 +412,7 @@ public static class Program
         });
         services.AddIdentity<GuliErpUser, GuliErpRole>(options =>
         {
-            options.Password.RequiredLength = 12;
-            options.Password.RequireDigit = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequiredUniqueChars = 4;
+            GuliErpPasswordPolicy.Configure(options.Password);
             options.User.RequireUniqueEmail = false;
             options.SignIn.RequireConfirmedEmail = false;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
@@ -434,6 +421,7 @@ public static class Program
         })
         .AddEntityFrameworkStores<IdentityDbContext>()
         .AddDefaultTokenProviders();
+        GuliErpPasswordPolicy.AddValidator(services);
 
         await using var sp = services.BuildServiceProvider();
         var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("BootstrapReset");
@@ -913,12 +901,7 @@ public static class Program
             });
             services.AddIdentity<GuliErpUser, GuliErpRole>(options =>
             {
-                options.Password.RequiredLength = 12;
-                options.Password.RequireDigit = true;
-                options.Password.RequireLowercase = true;
-                options.Password.RequireUppercase = true;
-                options.Password.RequireNonAlphanumeric = true;
-                options.Password.RequiredUniqueChars = 4;
+                GuliErpPasswordPolicy.Configure(options.Password);
                 options.User.RequireUniqueEmail = false;
                 options.SignIn.RequireConfirmedEmail = false;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
@@ -927,6 +910,7 @@ public static class Program
             })
             .AddEntityFrameworkStores<IdentityDbContext>()
             .AddDefaultTokenProviders();
+            GuliErpPasswordPolicy.AddValidator(services);
 
             await using var sp = services.BuildServiceProvider();
             var db = sp.GetRequiredService<IdentityDbContext>();

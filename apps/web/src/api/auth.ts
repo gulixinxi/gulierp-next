@@ -1,5 +1,4 @@
-// Auth API module — 5 endpoints exactly as specified in TRAE_FRONTEND_AUTH_HANDOFF.md §1.
-// DO NOT add/remove endpoints. DO NOT invent fields. Contract is FROZEN.
+// Auth API module. Password lifecycle endpoints are owned by the shared identity core.
 import { apiGet, apiPost } from './http';
 import type {
   LoginRequest,
@@ -44,6 +43,10 @@ export function login(req: LoginRequest): Promise<AuthUserDto> {
  */
 export function logout(): Promise<void> {
   return apiPost<void>(`${BASE}/logout`);
+}
+
+export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  return apiPost<void>(`${BASE}/password/change`, { currentPassword, newPassword });
 }
 
 /**

@@ -73,19 +73,11 @@ public static class DependencyInjection
         });
 
         // ----- ASP.NET Core Identity -----
-        // G2-004 — D-010 fix: tighten the password policy. The dev
-        // seed user `admin` / `platform_admin` keeps the legacy
-        // `ChangeMe!2026` password (the seed is G2-003's
-        // `G2-003 seed only` boundary); the policy applies to NEW
-        // passwords (the future `change-password` endpoint).
+        // Shared ERP/CRM password policy. Length and a blocklist replace
+        // composition rules; existing hashes continue to verify normally.
         services.AddIdentity<GuliErpUser, GuliErpRole>(options =>
         {
-            options.Password.RequiredLength = 12;
-            options.Password.RequireDigit = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequiredUniqueChars = 4;
+            GuliErpPasswordPolicy.Configure(options.Password);
             options.User.RequireUniqueEmail = true;
             options.SignIn.RequireConfirmedEmail = false;   // V1: no email channel
             options.SignIn.RequireConfirmedPhoneNumber = false;
@@ -97,6 +89,9 @@ public static class DependencyInjection
         })
         .AddEntityFrameworkStores<IdentityDbContext>()
         .AddDefaultTokenProviders();
+        GuliErpPasswordPolicy.AddValidator(services);
+        services.Configure<SecurityStampValidatorOptions>(options =>
+            options.ValidationInterval = TimeSpan.FromMinutes(1));
 
         // ----- Authentication + Cookie scheme (G2-004) -----
         // V1 uses Cookie Authentication per DEC-AUTH-001.

@@ -8,6 +8,7 @@ using AuthenticationRequiredException = GuliERP.Identity.Application.Authenticat
 using CompanyAccessDeniedException = GuliERP.Identity.Application.Authentication.CompanyAccessDeniedException;
 using InvalidCompanySelectionException = GuliERP.Identity.Application.Authentication.InvalidCompanySelectionException;
 using BackendUnavailableException = GuliERP.Identity.Application.Authentication.BackendUnavailableException;
+using PasswordChangeRejectedException = GuliERP.Identity.Application.Authentication.PasswordChangeRejectedException;
 
 namespace GuliERP.Identity.Infrastructure.Authentication;
 
@@ -96,6 +97,14 @@ public sealed class AuthenticationExceptionHandler : IExceptionHandler
                 "Service unavailable.",
                 "The authentication service is temporarily unavailable. Please try again later."),
 
+            PasswordChangeRejectedException rejected => BuildProblem(
+                StatusCodes.Status400BadRequest,
+                rejected.CurrentPasswordInvalid ? ErrorCodes.CurrentPasswordInvalid : ErrorCodes.PasswordPolicyViolation,
+                "Password change rejected.",
+                rejected.CurrentPasswordInvalid
+                    ? "The current password is incorrect."
+                    : "Choose a password that meets the current policy."),
+
             _ => null,
         };
 
@@ -174,6 +183,10 @@ public sealed class AuthenticationExceptionHandler : IExceptionHandler
                     bue.InnerException,
                     "Backend unavailable: context={Context}",
                     bue.Context);
+                break;
+            case PasswordChangeRejectedException rejected:
+                _logger.LogInformation("Password change rejected: currentPasswordInvalid={CurrentPasswordInvalid}",
+                    rejected.CurrentPasswordInvalid);
                 break;
         }
     }

@@ -321,6 +321,13 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /** The change-password endpoint already revoked the current cookie. */
+    finishPasswordChange(): void {
+      this._resetUnauthenticated();
+      useCsrfStore().clear();
+      router.replace({ name: 'login' }).catch(() => {});
+    },
+
     /**
      * Company switch — §10.
      *

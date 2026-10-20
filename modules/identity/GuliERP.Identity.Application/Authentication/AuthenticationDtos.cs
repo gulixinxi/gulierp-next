@@ -19,6 +19,9 @@ public sealed record LoginRequest(
 /// <param name="TargetCompanyId">Snowflake id of the Company to switch to.</param>
 public sealed record SwitchCompanyRequest(long TargetCompanyId);
 
+/// <summary>Authenticated self-service password change. Neither value is logged or persisted as plaintext.</summary>
+public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
 /// <summary>
 /// Authentication response returned by
 /// <c>POST /api/v1/auth/login</c> + <c>GET /api/v1/auth/me</c> +

@@ -31,7 +31,6 @@ public static class IdentitySeed
     public const string DemoPlantCode = "HQ";
     public const string DemoOrgCode = "ROOT";
     public const string DefaultAdminUserName = "admin";
-    public const string DefaultAdminPassword = "ChangeMe!2026";   // DEV-ONLY placeholder
 
     public static async Task SeedAsync(
         IdentityDbContext db,
@@ -43,6 +42,35 @@ public static class IdentitySeed
         {
             logger.LogInformation("Identity seed skipped: tenants already exist.");
             return;
+        }
+
+        // Require two distinct operator-supplied values before any seed write.
+        // The seed never persists or prints their plaintext values.
+        var platformPassword = Environment.GetEnvironmentVariable("GULIERP_DEV_SEED_PLATFORM_ADMIN_PASSWORD");
+        var tenantPassword = Environment.GetEnvironmentVariable("GULIERP_DEV_SEED_TENANT_ADMIN_PASSWORD");
+        if (string.IsNullOrWhiteSpace(platformPassword) || string.IsNullOrWhiteSpace(tenantPassword)
+            || string.Equals(platformPassword, tenantPassword, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Set distinct GULIERP_DEV_SEED_PLATFORM_ADMIN_PASSWORD and "
+                + "GULIERP_DEV_SEED_TENANT_ADMIN_PASSWORD before seeding a new development database.");
+        }
+        foreach (var (userName, password) in new[]
+                 {
+                     ("platform_admin", platformPassword),
+                     (DefaultAdminUserName, tenantPassword),
+                 })
+        {
+            var probe = new GuliErpUser { UserName = userName };
+            foreach (var validator in userManager.PasswordValidators)
+            {
+                var result = await validator.ValidateAsync(userManager, probe, password);
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Development seed password for {userName} does not meet the current policy.");
+                }
+            }
         }
 
         // ----------------------------------------------------------------
@@ -195,7 +223,7 @@ public static class IdentitySeed
             ModifiedBy = null,
             ConcurrencyVersion = 1,
         };
-        var platformResult = await userManager.CreateAsync(platformAdmin, DefaultAdminPassword);
+        var platformResult = await userManager.CreateAsync(platformAdmin, platformPassword);
         if (!platformResult.Succeeded)
         {
             throw new InvalidOperationException(
@@ -222,7 +250,7 @@ public static class IdentitySeed
             ModifiedBy = null,
             ConcurrencyVersion = 1,
         };
-        var tenantResult = await userManager.CreateAsync(tenantAdmin, DefaultAdminPassword);
+        var tenantResult = await userManager.CreateAsync(tenantAdmin, tenantPassword);
         if (!tenantResult.Succeeded)
         {
             throw new InvalidOperationException(
