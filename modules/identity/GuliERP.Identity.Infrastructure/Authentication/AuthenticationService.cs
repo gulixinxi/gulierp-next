@@ -207,7 +207,7 @@ public sealed class AuthenticationService : IAppAuthenticationService
 
     public async Task<LoginResponse> GetCurrentAsync(CancellationToken ct = default)
     {
-        var (userId, _, _) = ReadCurrentClaims();
+        var (userId, ticketTenantId, ticketCompanyId) = ReadCurrentClaims();
         if (userId is null)
         {
             throw new AuthenticationRequiredException();
@@ -222,7 +222,39 @@ public sealed class AuthenticationService : IAppAuthenticationService
             throw new AuthenticationRequiredException();
         }
 
-        return await BuildResponseAsync(user, companyIdOverride: null, ct);
+        if (ticketTenantId != user.TenantId)
+        {
+            throw new AuthenticationRequiredException();
+        }
+
+        // A company-scoped role needs the company claim in the cookie. Older
+        // tickets can lack it while /me still resolves a default company from
+        // membership, causing the UI to advertise permissions that the next
+        // API request cannot exercise. Preserve a valid selected company and
+        // repair a missing or revoked company claim from current membership.
+        long? selectedCompanyId = ticketCompanyId;
+        if (selectedCompanyId.HasValue)
+        {
+            try
+            {
+                await _companySwitching.ValidateSwitchAsync(selectedCompanyId.Value, ct);
+            }
+            catch (CompanyNotAccessibleException)
+            {
+                selectedCompanyId = null;
+            }
+            catch (UserHasNoCompanyMembershipException)
+            {
+                selectedCompanyId = null;
+            }
+        }
+
+        var response = await BuildResponseAsync(user, selectedCompanyId, ct);
+        if (ticketCompanyId != response.CompanyId)
+        {
+            await MintCookieAsync(user, isPersistent: false, response.CompanyId, ct);
+        }
+        return response;
     }
 
     public async Task<LoginResponse> SwitchCompanyAsync(

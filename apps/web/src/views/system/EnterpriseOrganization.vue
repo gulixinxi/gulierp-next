@@ -231,14 +231,15 @@ async function load() {
   error.value = '';
   errorDetail.value = '';
   errorType.value = 'error';
+  let failedStep = '组织结构';
   try {
     const data = await getOrganizationTree();
     companies.value = data.companies ?? [];
     if (companies.value.length > 0) {
-      const [userRows, roleRows] = await Promise.all([
-        listEnterpriseUsers(),
-        listEnterpriseRoles(),
-      ]);
+      failedStep = '用户列表';
+      const userRows = await listEnterpriseUsers();
+      failedStep = '角色列表';
+      const roleRows = await listEnterpriseRoles();
       users.value = userRows;
       roles.value = roleRows;
     } else {
@@ -246,7 +247,9 @@ async function load() {
       roles.value = [];
     }
   } catch (err) {
-    companies.value = [];
+    if (failedStep === '组织结构') {
+      companies.value = [];
+    }
     const apiError = err instanceof ApiError ? err : null;
     const status = apiError?.status ?? (err as any)?.status;
     if (status === 401) {
@@ -255,8 +258,8 @@ async function load() {
       errorDetail.value = '请重新登录后再查看企业组织。';
     } else if (status === 403) {
       errorType.value = 'warning';
-      error.value = '无权访问企业组织';
-      errorDetail.value = '当前账号没有系统管理权限。';
+      error.value = `无权访问${failedStep}`;
+      errorDetail.value = `${failedStep}请求被拒绝（${apiError?.code ?? 'HTTP 403'}），请检查该功能对应的账号权限与公司范围。`;
     } else if (status === 404) {
       errorType.value = 'warning';
       error.value = '尚未初始化企业组织';

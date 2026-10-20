@@ -332,6 +332,13 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal("20002", switchedDoc.RootElement.GetProperty("companyId").GetString());
         Assert.Contains(switchedDoc.RootElement.GetProperty("permissionCodes").EnumerateArray(),
             code => code.GetString() == "crm.lead.manage");
+
+        var switchedMeResponse = await client.GetAsync("/api/v1/auth/me");
+        Assert.Equal(HttpStatusCode.OK, switchedMeResponse.StatusCode);
+        using var switchedMeDoc = JsonDocument.Parse(await switchedMeResponse.Content.ReadAsStringAsync());
+        Assert.Equal("20002", switchedMeDoc.RootElement.GetProperty("companyId").GetString());
+        Assert.Contains(switchedMeDoc.RootElement.GetProperty("permissionCodes").EnumerateArray(),
+            code => code.GetString() == "crm.lead.manage");
     }
 
     [Fact]
