@@ -193,9 +193,11 @@
         </el-form-item>
       </el-form>
       <el-alert v-if="roleDialog.userId === auth.user?.userId" title="为自己添加角色后，请重新登录以刷新权限；不可在此撤销自己的角色。" type="info" :closable="false" />
+      <el-alert v-if="selfRoleRemoval" title="不能撤销自己的现有角色。请保留原角色，或由另一名有权限的管理员调整。" type="warning" :closable="false" style="margin-top: 12px" />
+      <el-alert v-if="roleError" :title="roleError" type="error" :closable="false" style="margin-top: 12px" />
       <template #footer>
         <el-button @click="roleDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="savingRoles" :disabled="loadingRoles" @click="submitRoles">保存</el-button>
+        <el-button type="primary" :loading="savingRoles" :disabled="loadingRoles || selfRoleRemoval" @click="submitRoles">保存</el-button>
       </template>
     </el-dialog>
   </section>
@@ -236,7 +238,10 @@ const savingOrg = ref(false);
 const savingUser = ref(false);
 const loadingRoles = ref(false);
 const savingRoles = ref(false);
-const roleDialog = reactive({ visible: false, userId: '', userName: '', roleCodes: [] as string[] });
+const roleError = ref('');
+const roleDialog = reactive({ visible: false, userId: '', userName: '', roleCodes: [] as string[], originalRoleCodes: [] as string[] });
+const selfRoleRemoval = computed(() => roleDialog.userId === auth.user?.userId
+  && roleDialog.originalRoleCodes.some(code => !roleDialog.roleCodes.includes(code)));
 const orgDialog = reactive({ visible: false, parentId: '', code: '', name: '' });
 const userDialog = reactive({
   visible: false,
@@ -384,10 +389,13 @@ async function openRoleDialog(user: EnterpriseUserListItemDto) {
   roleDialog.userId = user.userId;
   roleDialog.userName = user.userName;
   roleDialog.roleCodes = [];
+  roleDialog.originalRoleCodes = [];
+  roleError.value = '';
   roleDialog.visible = true;
   loadingRoles.value = true;
   try {
     roleDialog.roleCodes = await listEnterpriseUserCompanyRoles(user.userId, activeCompany.value.companyId);
+    roleDialog.originalRoleCodes = [...roleDialog.roleCodes];
   } catch {
     roleDialog.visible = false;
     ElMessage.error('读取公司角色失败');
@@ -398,14 +406,28 @@ async function openRoleDialog(user: EnterpriseUserListItemDto) {
 
 async function submitRoles() {
   if (!activeCompany.value || !roleDialog.userId) return;
+  if (selfRoleRemoval.value) return;
+  roleError.value = '';
+  if (roleDialog.roleCodes.length === roleDialog.originalRoleCodes.length
+    && roleDialog.roleCodes.every(code => roleDialog.originalRoleCodes.includes(code))) {
+    roleDialog.visible = false;
+    ElMessage.info('公司角色未变化');
+    return;
+  }
   savingRoles.value = true;
   try {
     await setEnterpriseUserCompanyRoles(roleDialog.userId, activeCompany.value.companyId, roleDialog.roleCodes);
     roleDialog.visible = false;
     ElMessage.success('公司角色已更新；被调整用户重新登录后生效');
     await load();
-  } catch {
-    ElMessage.error('调整权限失败，请核对角色与公司范围');
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 403) {
+      roleError.value = '当前账号无权分配该角色，或目标用户不在当前公司范围。';
+    } else if (err instanceof ApiError && err.status === 401) {
+      roleError.value = '登录状态已失效，请重新登录后重试。';
+    } else {
+      roleError.value = '调整权限失败。请确认角色仍有效、目标用户属于当前公司；如需撤销自己的角色，请由另一名管理员操作。';
+    }
   } finally {
     savingRoles.value = false;
   }
