@@ -43,6 +43,60 @@ namespace GuliERP.Identity.IntegrationTests;
 public sealed class EnterpriseRolePackCrossTenantFacts
 {
     [Fact]
+    public async Task CrmReadOnly_Provision_Is_Explicit_Company_Scoped_And_Idempotent()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        var tenant = await SeedTenantAsync(db, "CRM_A", 9101);
+        var company = await SeedCompanyAsync(db, tenant, "CRM001");
+        var user = await SeedAdminUserAsync(db, tenant);
+        db.UserCompanyMemberships.Add(new UserCompanyMembership
+        {
+            TenantId = tenant.Id,
+            CompanyId = company.Id,
+            UserId = user.Id,
+            IsDefault = true,
+            Status = MembershipStatus.Active,
+        });
+        await db.SaveChangesAsync();
+        var provisioner = new EnterpriseBusinessRolePackProvisioner(db);
+
+        var first = await provisioner.EnsureCrmReadOnlyRolePackAsync(
+            tenant.Id, company.Id, user.Id, DateTimeOffset.UtcNow);
+        var second = await provisioner.EnsureCrmReadOnlyRolePackAsync(
+            tenant.Id, company.Id, user.Id, DateTimeOffset.UtcNow);
+
+        Assert.True(first.RoleCreated);
+        Assert.True(first.AssignmentCreated);
+        Assert.Equal(6, first.ClaimsCreated.Count);
+        Assert.False(second.RoleCreated);
+        Assert.False(second.AssignmentCreated);
+        Assert.Empty(second.ClaimsCreated);
+        var assignment = Assert.Single(await db.UserRoleAssignments.ToListAsync());
+        Assert.Equal(tenant.Id, assignment.TenantId);
+        Assert.Equal(company.Id, assignment.CompanyId);
+        Assert.Equal(user.Id, assignment.UserId);
+    }
+
+    [Fact]
+    public async Task CrmReadOnly_Rejects_User_Without_Membership()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        var tenant = await SeedTenantAsync(db, "CRM_B", 9102);
+        var company = await SeedCompanyAsync(db, tenant, "CRM002");
+        var user = await SeedAdminUserAsync(db, tenant);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new EnterpriseBusinessRolePackProvisioner(db).EnsureCrmReadOnlyRolePackAsync(
+                tenant.Id, company.Id, user.Id, DateTimeOffset.UtcNow));
+        Assert.Empty(await db.Roles.ToListAsync());
+        Assert.Empty(await db.UserRoleAssignments.ToListAsync());
+    }
+
+    [Fact]
     public async Task TenantA_Creates_ErpMdmOperator_Succeeds()
     {
         await using var provider = BuildProvider();

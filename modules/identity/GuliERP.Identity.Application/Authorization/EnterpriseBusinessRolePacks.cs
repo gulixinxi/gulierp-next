@@ -53,6 +53,7 @@ public static class EnterpriseBusinessRolePacks
     //      boundary stays locked).
     public const string PurchOperatorRoleCode = "ERP_PURCH_OPERATOR";
     public const string PurchOperatorRoleName = "ERP Purchase Operator";
+    public const string CrmReadOnlyRoleCode = "CRM_READONLY";
 
     // GULIERP_SYSTEM_ADMIN_PACK_BOUNDARY_001 (G3-R1C, 2026-08-26):
     // The ERP_SYSTEM_ADMIN role pack is now ALSO exposed as an
@@ -151,6 +152,23 @@ public static class EnterpriseBusinessRolePacks
         {
             "purchase.order.read",
             "purchase.order.manage",
+        });
+
+    // CRM stays a separate business role. Provisioning it is explicit; the
+    // system administrator and the initial enterprise admin do not receive it
+    // implicitly. The permission list matches CRM read policies only.
+    public static readonly EnterpriseBusinessRolePack CrmReadOnly = new(
+        CrmReadOnlyRoleCode,
+        "CRM Read Only",
+        "Read CRM leads, companies, contacts, deals, activities and import/export logs only.",
+        new[]
+        {
+            "crm.lead.read",
+            "crm.company.read",
+            "crm.contact.read",
+            "crm.deal.read",
+            "crm.activity.read",
+            "crm.log.read",
         });
 
     /// <summary>

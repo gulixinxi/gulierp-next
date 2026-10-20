@@ -63,6 +63,41 @@ public sealed class EnterpriseBusinessRolePackProvisioner
         _db = db;
     }
 
+    public async Task<EnterpriseRolePackProvisionResult> EnsureCrmReadOnlyRolePackAsync(
+        long tenantId,
+        long companyId,
+        long userId,
+        DateTimeOffset now,
+        CancellationToken ct = default)
+    {
+        var hasActiveMembership = await (
+            from membership in _db.UserCompanyMemberships.AsNoTracking()
+            join user in _db.Users.AsNoTracking() on membership.UserId equals user.Id
+            join company in _db.Companies.AsNoTracking() on membership.CompanyId equals company.Id
+            where membership.TenantId == tenantId
+                  && membership.CompanyId == companyId
+                  && membership.UserId == userId
+                  && membership.Status == MembershipStatus.Active
+                  && user.TenantId == tenantId
+                  && user.Status == UserStatus.Active
+                  && company.TenantId == tenantId
+                  && company.Status == CompanyStatus.Active
+            select membership.Id).AnyAsync(ct);
+        if (!hasActiveMembership)
+        {
+            throw new InvalidOperationException(
+                "CRM read-only role requires an active user/company membership in the target tenant.");
+        }
+
+        return await EnsureRolePackAsync(
+            tenantId,
+            companyId,
+            userId,
+            EnterpriseBusinessRolePacks.CrmReadOnly,
+            now,
+            ct);
+    }
+
     public async Task<EnterpriseBusinessRolePackProvisionResult> EnsureInitialAdminBusinessRolePackAsync(
         long tenantId,
         long companyId,
