@@ -1,0 +1,513 @@
+table_name,column_name,role,note
+eba_io,eba_id,text/code,
+eba_io,voucher_id,text/code,
+eba_io,item_id,text/code,
+eba_io,voucher_type,text/code,
+eba_io,voucher_no,text/code,
+eba_io,voucher_date,text/code,
+eba_io,ret_flag,text/code,
+eba_io,edt_id,text/code,
+eba_io,res_id,text/code,
+eba_io,std_unit_type_id,text/code,
+eba_io,std_num,numeric:qty,quantity-style
+eba_io,inp_unit_type_id,text/code,
+eba_io,inp_num,numeric:qty,quantity-style
+eba_io,inp_price,numeric:amount,amount-style (currency)
+eba_io,inp_amount,numeric:amount,amount-style (currency)
+eba_io,inp_num_factor,numeric:integer,
+eba_io,discount,numeric:rate,0-1 range
+eba_io,discount_amount,numeric:amount,amount-style (currency)
+eba_io,tax_rate,numeric:qty,quantity-style
+eba_io,tax_amount,numeric:amount,amount-style (currency)
+eba_io,total_amount,numeric:amount,amount-style (currency)
+eba_io,note_info,text/code,
+eba_io,dept_id,text/code,
+eba_io,emp_id,text/code,
+eba_io,create_date,text/code,
+eba_io,create_user_id,text/code,
+eba_io,batch_no,text/code,
+eba_io,cost_price,numeric:amount,amount-style (currency)
+eba_io,ass_num,numeric:qty,quantity-style
+eba_io,sub_attr_val_1,text/code,
+eba_io,sub_attr_val_2,text/code,
+eba_io,sub_attr_val_3,text/code,
+eba_io,produce_date,text/code,
+eba_io,item_fee_1,text/code,
+eba_io,item_fee_2,text/code,
+eba_io,v_discount,numeric:rate,0-1 range
+eba_io,draw_percent,numeric:amount,amount-style (currency)
+eba_io,profit,numeric:amount,amount-style (currency)
+eba_io,discount_price,numeric:amount,amount-style (currency)
+eba_io,tax_price,numeric:amount,amount-style (currency)
+eba_io,money_type,text/code,
+eba_io,money_factor,numeric:integer,
+eba_io,project_id,text/code,
+eba_io,mem_card_no,text/code,
+eba_io,vr_item_ext_1,text/code,
+eba_io,vr_item_ext_2,text/code,
+eba_io,vr_item_ext_3,text/code,
+eba_io,vr_item_ext_4,text/code,
+eba_io,vr_item_ext_5,text/code,
+eba_io,vr_item_ext_6,text/code,
+edt_io,voucher_id,text/code,
+edt_io,item_id,text/code,
+edt_io,voucher_type,text/code,
+edt_io,voucher_no,text/code,
+edt_io,voucher_date,text/code,
+edt_io,io_type_id,text/code,
+edt_io,io_flag,text/code,
+edt_io,edt_id,text/code,
+edt_io,res_id,text/code,
+edt_io,std_unit_type_id,text/code,
+edt_io,std_num,numeric:qty,quantity-style
+edt_io,inp_unit_type_id,text/code,
+edt_io,inp_num,numeric:qty,quantity-style
+edt_io,inp_price,numeric:amount,amount-style (currency)
+edt_io,inp_amount,numeric:amount,amount-style (currency)
+edt_io,inp_num_factor,numeric:integer,
+edt_io,tag_price,numeric:amount,amount-style (currency)
+edt_io,tag_amount,numeric:amount,amount-style (currency)
+edt_io,discount,numeric:rate,0-1 range
+edt_io,discount_amount,numeric:amount,amount-style (currency)
+edt_io,tax_rate,numeric:qty,quantity-style
+edt_io,tax_amount,numeric:amount,amount-style (currency)
+edt_io,total_amount,numeric:amount,amount-style (currency)
+edt_io,note_info,text/code,
+edt_io,ref_voucher_id,text/code,
+edt_io,ref_item_id,text/code,
+edt_io,ref_voucher_type,text/code,
+edt_io,ref_voucher_no,text/code,
+edt_io,dept_id,text/code,
+edt_io,emp_id,text/code,
+edt_io,create_date,text/code,
+edt_io,create_user_id,text/code,
+edt_io,ass_corp,text/code,
+edt_io,cost_price,numeric:amount,amount-style (currency)
+edt_io,batch_no,text/code,
+edt_io,eba_type,text/code,
+edt_io,eba_id,text/code,
+edt_io,emf_shop_id,text/code,
+edt_io,ass_num,numeric:qty,quantity-style
+edt_io,sub_attr_val_1,text/code,
+edt_io,sub_attr_val_2,text/code,
+edt_io,sub_attr_val_3,text/code,
+edt_io,produce_date,text/code,
+edt_io,related_edt_id,text/code,
+edt_io,item_fee_1,text/code,
+edt_io,item_fee_2,text/code,
+edt_io,voucher_sub_type,text/code,
+edt_io,res_cost_opt,text/code,
+edt_io,edt_site_id,text/code,
+edt_io,discount_price,numeric:amount,amount-style (currency)
+edt_io,tax_price,numeric:amount,amount-style (currency)
+edt_io,money_type,text/code,
+edt_io,money_factor,numeric:integer,
+edt_io,cost_amount,numeric:amount,amount-style (currency)
+edt_io,move_res_flag,text/code,
+edt_io,project_id,text/code,
+edt_io,emf_process_id,text/code,
+edt_io,emf_center_id,text/code,
+edt_io,emf_v_no,text/code,
+ebs_vr_item,voucher_id,text/code,
+ebs_vr_item,item_id,text/code,
+ebs_vr_item,res_id,text/code,
+ebs_vr_item,std_unit_type_id,text/code,
+ebs_vr_item,std_num,numeric:qty,quantity-style
+ebs_vr_item,inp_unit_type_id,text/code,
+ebs_vr_item,inp_num,numeric:qty,quantity-style
+ebs_vr_item,inp_price,numeric:amount,amount-style (currency)
+ebs_vr_item,inp_amount,numeric:amount,amount-style (currency)
+ebs_vr_item,inp_num_factor,numeric:integer,
+ebs_vr_item,tag_price,numeric:amount,amount-style (currency)
+ebs_vr_item,tag_amount,numeric:amount,amount-style (currency)
+ebs_vr_item,discount,numeric:rate,0-1 range
+ebs_vr_item,discount_amount,numeric:amount,amount-style (currency)
+ebs_vr_item,tax_rate,numeric:qty,quantity-style
+ebs_vr_item,tax_amount,numeric:amount,amount-style (currency)
+ebs_vr_item,total_amount,numeric:amount,amount-style (currency)
+ebs_vr_item,note_info,text/code,
+ebs_vr_item,state,text/code,
+ebs_vr_item,ref_voucher_id,text/code,
+ebs_vr_item,ref_item_id,text/code,
+ebs_vr_item,ref_voucher_type,text/code,
+ebs_vr_item,ref_voucher_no,text/code,
+ebs_vr_item,batch_no,text/code,
+ebs_vr_item,vr_item_ext_1,text/code,
+ebs_vr_item,vr_item_ext_2,text/code,
+ebs_vr_item,cost_price,numeric:amount,amount-style (currency)
+ebs_vr_item,item_edt_id,text/code,
+ebs_vr_item,ass_num,numeric:qty,quantity-style
+ebs_vr_item,sub_attr_val_1,text/code,
+ebs_vr_item,sub_attr_val_2,text/code,
+ebs_vr_item,sub_attr_val_3,text/code,
+ebs_vr_item,produce_date,text/code,
+ebs_vr_item,item_date_lmt,text/code,
+ebs_vr_item,item_target_edt_id,text/code,
+ebs_vr_item,item_fee_1,text/code,
+ebs_vr_item,item_fee_2,text/code,
+ebs_vr_item,res_cost_opt,text/code,
+ebs_vr_item,vr_item_ext_3,text/code,
+ebs_vr_item,vr_item_ext_4,text/code,
+ebs_vr_item,vr_item_ext_5,text/code,
+ebs_vr_item,vr_item_ext_6,text/code,
+ebs_vr_item,item_edt_site_id,text/code,
+ebs_vr_item,discount_price,numeric:amount,amount-style (currency)
+ebs_vr_item,tax_price,numeric:amount,amount-style (currency)
+ebs_vr_item,is_main,text/code,
+ebs_vr_item,main_id,text/code,
+ebs_vr_item,item_emf_center_id,text/code,
+ebs_vr_item,item_emf_process_id,text/code,
+ebs_vr_item,bom_id,text/code,
+res,auto_copy_parent_info,text/code,
+res,batch_flag,text/code,
+res,quality_days,numeric:qty,quantity-style
+res,ceil_num,numeric:qty,quantity-style
+res,floor_num,numeric:qty,quantity-style
+res,stop_flag,text/code,
+res,in_ceil_price,numeric:amount,amount-style (currency)
+res,in_ref_price,numeric:amount,amount-style (currency)
+res,out_floor_price,numeric:amount,amount-style (currency)
+res,out_ref_price,numeric:amount,amount-style (currency)
+res,order_id,numeric:integer,
+res,cost_price,numeric:amount,amount-style (currency)
+res,price_dot_num,numeric:qty,quantity-style
+res,num_dot_num,numeric:qty,quantity-style
+res,edt_io_flag,text/code,
+res,cost_cal_method,text/code,
+res,edt_ceil_num,numeric:qty,quantity-style
+res,edt_floor_num,numeric:qty,quantity-style
+res,pict_file_id,text/code,
+res,evaluate_price,numeric:amount,amount-style (currency)
+res,res_id,text/code,
+res,res_cat_id,text/code,
+res,res_name,text/code,
+res,parent_res_id,text/code,
+res,res_unit_type,text/code,
+res,bar_code,text/code,
+res,res_spec,text/code,
+res,manufacturer,text/code,
+res,res_kind,text/code,
+res,easy_code,text/code,
+res,default_edt_id,text/code,
+res,res_model,text/code,
+res,res_rank,text/code,
+res,res_place,text/code,
+res,ass_unit_type,text/code,
+res,res_desc,text/code,
+res,ext_1,text/code,
+res,ext_2,text/code,
+res,ext_3,text/code,
+res,ext_4,text/code,
+res,ext_5,text/code,
+res,ext_6,text/code,
+res,ext_7,text/code,
+res,ext_8,text/code,
+res,create_date,text/code,
+res,create_user_id,text/code,
+res,last_modi_date,text/code,
+res,last_modi_user_id,text/code,
+res,emf_route_id,text/code,
+res,subject_storage_amount,numeric:amount,amount-style (currency)
+res,subject_sell_income,text/code,
+res,subject_sell_cost,numeric:amount,amount-style (currency)
+res,sup_id,text/code,
+res,homepage,text/code,
+res,uname,text/code,
+mio_account_io,voucher_id,text/code,
+mio_account_io,item_id,text/code,
+mio_account_io,voucher_type,text/code,
+mio_account_io,voucher_no,text/code,
+mio_account_io,voucher_date,text/code,
+mio_account_io,account_id,text/code,
+mio_account_io,io_flag,text/code,
+mio_account_io,amount,numeric:amount,amount-style (currency)
+mio_account_io,method_id,text/code,
+mio_account_io,abstract,text/code,
+mio_account_io,subject_id,text/code,
+mio_account_io,note_info,text/code,
+mio_account_io,dept_id,text/code,
+mio_account_io,emp_id,text/code,
+mio_account_io,create_date,text/code,
+mio_account_io,create_user_id,text/code,
+mio_account_io,state,text/code,
+mio_account_io,amount_before_check,numeric:qty,quantity-style
+mio_account_io,eba_id,text/code,
+mio_account_io,sup_id,text/code,
+mio_account_io,project_id,text/code,
+mio_account_io,ass_no,text/code,
+mio_account_io,check_date,text/code,
+mio_account_io,check_user_id,text/code,
+evm_v_item,voucher_id,text/code,
+evm_v_item,item_id,text/code,
+evm_v_item,org_amount,numeric:amount,amount-style (currency)
+evm_v_item,money_factor,numeric:integer,
+evm_v_item,amount,numeric:amount,amount-style (currency)
+evm_v_item,ab_flag,text/code,
+evm_v_item,ass_num,numeric:qty,quantity-style
+evm_v_item,subject_id,text/code,
+evm_v_item,abstract,text/code,
+evm_v_item,org_money_type,text/code,
+evm_v_item,ass_dept_id,text/code,
+evm_v_item,ass_emp_id,text/code,
+evm_v_item,ass_res_id,text/code,
+evm_v_item,ass_project_id,text/code,
+evm_v_item,ass_eba_id,text/code,
+evm_v_item,ass_sup_id,text/code,
+evm_v_item,note_info,text/code,
+mio_bank_io,mio_bank_io_id,text/code,
+mio_bank_io,account_id,text/code,
+mio_bank_io,voucher_no,text/code,
+mio_bank_io,voucher_date,text/code,
+mio_bank_io,io_flag,text/code,
+mio_bank_io,amount,numeric:amount,amount-style (currency)
+mio_bank_io,method_id,text/code,
+mio_bank_io,abstract,text/code,
+mio_bank_io,create_date,text/code,
+mio_bank_io,create_user_id,text/code,
+mio_bank_io,state,text/code,
+mio_bank_io,bank_check_flag,text/code,
+mio_bank_io,bank_check_date,text/code,
+mio_bank_io,bank_check_user_id,text/code,
+mio_bank_io,bank_check_group_id,text/code,
+mio_check,check_no,text/code,
+mio_check,oper_id,text/code,
+mio_check,account_id,text/code,
+mio_check,state,text/code,
+mio_check,buy_oper_id,text/code,
+mio_check,buy_date,text/code,
+mio_check,buy_emp_id,text/code,
+mio_check,get_date,text/code,
+mio_check,get_dept_id,text/code,
+mio_check,get_emp_id,text/code,
+mio_check,get_amount_lmt,text/code,
+mio_check,get_usage,text/code,
+mio_check,pay_date,text/code,
+mio_check,pay_dept_id,text/code,
+mio_check,pay_emp_id,text/code,
+mio_check,pay_amount,numeric:amount,amount-style (currency)
+mio_check,note_info,text/code,
+wage_data,voucher_id,text/code,
+wage_data,data_month,text/code,
+wage_data,val,text/code,
+wage_data,emp_id,text/code,
+wage_data,wage_subject_id,text/code,
+wage_data,dept_id,text/code,
+wage_set_val,voucher_id,text/code,
+wage_set_val,item_id,text/code,
+wage_set_val,emp_id,text/code,
+wage_set_val,wage_subject_id,text/code,
+wage_set_val,val,text/code,
+wage_set_val,dept_id,text/code,
+eba_mem_card_usage,rec_id,text/code,
+eba_mem_card_usage,card_no,text/code,
+eba_mem_card_usage,usage_date,text/code,
+eba_mem_card_usage,usage_type,text/code,
+eba_mem_card_usage,usage_mark,numeric:qty,quantity-style
+eba_mem_card_usage,usage_amount,numeric:amount,amount-style (currency)
+eba_mem_card_usage,sell_amount,numeric:amount,amount-style (currency)
+eba_mem_card_usage,note_info,text/code,
+eba_mem_card_usage,create_date,text/code,
+eba_mem_card_usage,create_user_id,text/code,
+eba_mem_card_usage,voucher_id,text/code,
+eba_mem_card_usage,ex_rule_id,text/code,
+eba_mem_card_usage,dept_id,text/code,
+eba_mem_card_usage,emp_id,text/code,
+eba_mem_card_usage,account_id,text/code,
+eba_mem_card_usage,io_amount,numeric:amount,amount-style (currency)
+eba_mem_card_usage,v_no,text/code,
+eba_mem_card,card_no,text/code,
+eba_mem_card,linkman,text/code,
+eba_mem_card,gender,text/code,
+eba_mem_card,birthday,text/code,
+eba_mem_card,phone_no,text/code,
+eba_mem_card,easy_code,text/code,
+eba_mem_card,address,text/code,
+eba_mem_card,post_code,text/code,
+eba_mem_card,id_code,text/code,
+eba_mem_card,grant_date,text/code,
+eba_mem_card,mem_card_grade,text/code,
+eba_mem_card,discount_rate,numeric:qty,quantity-style
+eba_mem_card,date_limit,text/code,
+eba_mem_card,note_info,text/code,
+eba_mem_card,state,text/code,
+eba_mem_card,stop_date,text/code,
+eba_mem_card,create_date,text/code,
+eba_mem_card,create_user_id,text/code,
+eba_mem_card,init_amount,numeric:amount,amount-style (currency)
+eba_mem_card,init_mark,numeric:qty,quantity-style
+eba_mem_card,init_sell_amount,numeric:qty,quantity-style
+eba_mem_card,service_id,text/code,
+eba_mem_card,dept_id,text/code,
+eba_mem_card,emp_id,text/code,
+eba_mem_card,eba_id,text/code,
+sup,owe_time_limit,text/code,
+sup,owe_amount_limit,text/code,
+sup,tot_buy_amount,numeric:amount,amount-style (currency)
+sup,pre_out,text/code,
+sup,should_out,text/code,
+sup,order_id,numeric:integer,
+sup,mio_method_id,text/code,
+sup,sup_id,text/code,
+sup,parent_sup_id,text/code,
+sup,sup_name,text/code,
+sup,easy_code,text/code,
+sup,sup_type,text/code,
+sup,sup_grade,text/code,
+sup,sup_rela,text/code,
+sup,sup_from,text/code,
+sup,agent_id,text/code,
+sup,id_type,text/code,
+sup,id_code,text/code,
+sup,service_id,text/code,
+sup,country_id,text/code,
+sup,province_id,text/code,
+sup,city_id,text/code,
+sup,zone_id,text/code,
+sup,address,text/code,
+sup,post_code,text/code,
+sup,linkman,text/code,
+sup,office_no,text/code,
+sup,mobile_no,text/code,
+sup,home_no,text/code,
+sup,fax_no,text/code,
+sup,e_mail,text/code,
+sup,qq_no,text/code,
+sup,msn_no,text/code,
+sup,other_im_no,text/code,
+sup,bank_name,text/code,
+sup,bank_account_name,text/code,
+sup,bank_account,text/code,
+sup,revenue_no,text/code,
+sup,credit_grade,text/code,
+sup,loyalty_grade,text/code,
+sup,approve_grade,text/code,
+sup,state,text/code,
+sup,company_kind,text/code,
+sup,industry_code,text/code,
+sup,company_size,text/code,
+sup,background_notes,text/code,
+sup,homepage,text/code,
+sup,year_earn,text/code,
+sup,employee_eduaction,text/code,
+sup,super_manager,text/code,
+sup,manager_man,text/code,
+sup,note_info,text/code,
+sup,create_date,text/code,
+sup,create_user_id,text/code,
+sup,last_modi_date,text/code,
+sup,last_modi_user_id,text/code,
+sup,dept_id,text/code,
+sup,emp_id,text/code,
+sup,mio_account,text/code,
+sup,money_type,text/code,
+asset,asset_id,text/code,
+asset,asset_no,text/code,
+asset,asset_name,text/code,
+asset,asset_type_id,text/code,
+asset,asset_kind,text/code,
+asset,asset_spec,text/code,
+asset,use_state,text/code,
+asset,equip_vender,text/code,
+asset,place,text/code,
+asset,manager_dept_id,text/code,
+asset,manager_emp_id,text/code,
+asset,manufacture_date,text/code,
+asset,manufacture_no,text/code,
+asset,in_date,text/code,
+asset,in_method,text/code,
+asset,in_num,numeric:qty,quantity-style
+asset,asset_unit_type,text/code,
+asset,in_price,numeric:amount,amount-style (currency)
+asset,load_unit_type,text/code,
+asset,cal_method,text/code,
+asset,out_date,text/code,
+asset,out_method,text/code,
+asset,out_clear_amount,numeric:amount,amount-style (currency)
+asset,out_income,text/code,
+asset,out_note,text/code,
+asset,state,text/code,
+asset,linkman,text/code,
+asset,link_phone,text/code,
+asset,num_inside,text/code,
+asset,num_outside,text/code,
+asset,examine_days,numeric:qty,quantity-style
+asset,last_examine_date,text/code,
+asset,next_examine_date,text/code,
+asset,note_info,text/code,
+asset,ext_1,text/code,
+asset,ext_2,text/code,
+asset,ext_3,text/code,
+asset,ext_4,text/code,
+asset,ext_5,text/code,
+asset,ext_6,text/code,
+asset,ext_7,text/code,
+asset,ext_8,text/code,
+asset,in_amount,numeric:amount,amount-style (currency)
+asset,in_load,text/code,
+asset,depre_method,text/code,
+asset,plan_use_month,text/code,
+asset,plan_net_amount,numeric:amount,amount-style (currency)
+asset,plan_net_rate,numeric:qty,quantity-style
+asset,done_depre_amount,numeric:amount,amount-style (currency)
+asset,done_load,text/code,
+asset,done_month,text/code,
+asset,done_reduce_amount,numeric:amount,amount-style (currency)
+asset,beg_month,text/code,
+asset,beg_amount,numeric:amount,amount-style (currency)
+asset,org_amount,numeric:amount,amount-style (currency)
+asset,draw_dept_id,text/code,
+asset,draw_emp_id,text/code,
+asset,depre_target_subject_id,text/code,
+asset,depre_target_ass_project_id,text/code,
+res_cost_io,voucher_id,text/code,
+res_cost_io,item_id,text/code,
+res_cost_io,voucher_type,text/code,
+res_cost_io,voucher_no,text/code,
+res_cost_io,voucher_date,text/code,
+res_cost_io,res_id,text/code,
+res_cost_io,res_batch_no,text/code,
+res_cost_io,res_inp_num,numeric:qty,quantity-style
+res_cost_io,res_inp_unit_type_id,text/code,
+res_cost_io,res_std_num,numeric:qty,quantity-style
+res_cost_io,res_inp_num_factor,numeric:integer,
+res_cost_io,cost_res_id,text/code,
+res_cost_io,cost_res_inp_num,numeric:qty,quantity-style
+res_cost_io,cost_res_std_num,numeric:qty,quantity-style
+res_cost_io,cost_res_amount,numeric:amount,amount-style (currency)
+res_cost_io,cost_res_inp_unit_type_id,text/code,
+res_cost_io,cost_res_inp_num_factor,numeric:integer,
+timer_overtime,overtime_id,text/code,
+timer_overtime,dept_id,text/code,
+timer_overtime,emp_id,text/code,
+timer_overtime,overtime_type_id,text/code,
+timer_overtime,overtime_date,text/code,
+timer_overtime,beg_time,text/code,
+timer_overtime,hours,numeric:qty,quantity-style
+timer_overtime,minutes,numeric:qty,quantity-style
+timer_overtime,factor,numeric:integer,
+timer_overtime,agree_emp_id,text/code,
+timer_overtime,note_info,text/code,
+timer_overtime,create_date,text/code,
+timer_overtime,create_user_id,text/code,
+timer_overtime,v_no,text/code,
+timer_overtime,benefit_state,text/code,
+timer_overtime,benefit_fee,text/code,
+timer_overtime,rest_minutes,numeric:qty,quantity-style
+timer_overtime,voucher_id,text/code,
+timer_overtime,item_id,text/code,
+timer_leave,leave_id,text/code,
+timer_leave,dept_id,text/code,
+timer_leave,emp_id,text/code,
+timer_leave,leave_type_id,text/code,
+timer_leave,beg_time,text/code,
+timer_leave,end_time,text/code,
+timer_leave,days,numeric:qty,quantity-style
+timer_leave,hours,numeric:qty,quantity-style
+timer_leave,minutes,numeric:qty,quantity-style
+timer_leave,agree_emp_id,text/code,
+timer_leave,note_info,text/code,
+timer_leave,create_date,text/code,
+timer_leave,create_user_id,text/code,
+timer_leave,v_no,text/code,
+timer_leave,instead_emp_id,text/code,
+timer_leave,rest_duration,text/code,

@@ -1,5 +1,6 @@
 export type ShellModuleKey =
   | 'home'
+  | 'crm'
   | 'basic'
   | 'mdm'
   | 'sales'
@@ -49,6 +50,41 @@ export const shellNavigation: ShellNavigationModule[] = [
         label: '工作台',
         items: [
           { id: 'home-overview', label: '业务概览', icon: 'DataLine', disabled: true, placeholder: '业务概览待开发' },
+        ],
+      },
+    ],
+  },
+  {
+    key: 'crm',
+    label: '谷粒CRM',
+    shortLabel: '谷粒CRM',
+    icon: 'UserFilled',
+    groups: [
+      {
+        label: '线索与客户',
+        items: [
+          { id: 'crm-dashboard', label: '经营看板', icon: 'DataAnalysis', route: '/crm/dashboard', tabTitle: '经营看板' },
+          { id: 'list-crm-leads', label: '线索池', icon: 'Search', route: '/crm/leads', tabTitle: '线索池' },
+          { id: 'list-crm-companies', label: '客户主档', icon: 'OfficeBuilding', route: '/crm/companies', tabTitle: '客户主档' },
+          { id: 'crm-today-tasks', label: '今日待办', icon: 'Bell', route: '/crm/tasks', tabTitle: '今日待办' },
+        ],
+      },
+      {
+        label: '销售流程',
+        items: [
+          { id: 'crm-opportunities', label: '商机建议', icon: 'MagicStick', route: '/crm/opportunities', tabTitle: '商机建议' },
+          { id: 'list-crm-deals', label: '商机管理', icon: 'TrendCharts', route: '/crm/deals', tabTitle: '商机管理' },
+          { id: 'crm-contract', label: '合同管理', icon: 'Document', disabled: true, placeholder: '合同管理待开发' },
+          { id: 'crm-payment', label: '回款管理', icon: 'Money', disabled: true, placeholder: '回款管理待开发' },
+        ],
+      },
+      {
+        label: '数据管理',
+        items: [
+          { id: 'crm-signals', label: '情报信号', icon: 'DataAnalysis', route: '/crm/signals', tabTitle: '情报信号' },
+          { id: 'crm-quake', label: '线索采集', icon: 'Search', route: '/crm/quake', tabTitle: '线索采集' },
+          { id: 'crm-reverse-lookup', label: '单位反查', icon: 'ZoomIn', route: '/crm/reverse-lookup', tabTitle: '单位反查' },
+          { id: 'crm-import-export-logs', label: '导入导出日志', icon: 'Tickets', route: '/crm/logs', tabTitle: '导入导出日志' },
         ],
       },
     ],
@@ -109,7 +145,7 @@ export const shellNavigation: ShellNavigationModule[] = [
       {
         label: '销售单据',
         items: [
-          { id: 'list-sales-order', label: '销售订单', icon: 'Tickets', route: '/sales/orders', tabTitle: '销售订单' },
+          { id: 'list-sales-order', label: '销售订单', icon: 'Tickets', route: '/sales-orders', tabTitle: '销售订单' },
           { id: 'sales-quotation', label: '报价单', icon: 'Document', disabled: true, placeholder: '报价单待开发' },
           { id: 'sales-delivery', label: '发货单', icon: 'Van', disabled: true, placeholder: '发货单待开发' },
           { id: 'sales-invoice', label: '销售发票', icon: 'Money', disabled: true, placeholder: '销售发票待开发' },

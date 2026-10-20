@@ -88,11 +88,15 @@ public static class SalesOrderEndpoints
             })
             .RequireAuthorization(SalesPolicies.SalesOrderManage);
 
-        group.MapPost("/{id:long}/cancel", async (long id, ISalesOrderService svc, CancellationToken ct) =>
+        group.MapPost("/{id:long}/cancel", async (
+                long id,
+                [FromBody] CancelSalesOrderRequest? request,
+                ISalesOrderService svc,
+                CancellationToken ct) =>
             {
                 try
                 {
-                    var updated = await svc.CancelAsync(id, ct);
+                    var updated = await svc.CancelAsync(id, request?.CancellationReason, ct);
                     return updated is null ? Results.NotFound() : Results.Ok(updated);
                 }
                 catch (SalesValidationException ex)

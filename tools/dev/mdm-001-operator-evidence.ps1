@@ -231,6 +231,10 @@ function Redact-SecretText {
 
     if ($null -eq $Value) { return '' }
     $text = ($Value | Out-String)
+    # Fail closed for connection-bearing diagnostic blocks, including quoted/multiline values.
+    if ($text -match '(?i)\b(Host|Server|Data Source|Database|Initial Catalog|Username|User ID|UserId|UID|Password|Pwd|PGPASSWORD)\s*=') {
+        return 'Host=***;Database=***;Username=***;Password=***; [connection diagnostics redacted]'
+    }
     $text = $text -replace "(?i)(Password|Pwd)\s*=\s*[^;`r`n]+", '$1=***'
     return $text
 }
@@ -261,7 +265,7 @@ function Restore-OperatorConnectionEnvironment {
 
 function Redact-ConnectionString([string]$cs) {
     if ([string]::IsNullOrEmpty($cs)) { return '<empty>' }
-    return ($cs -replace "(?i)Password\s*=\s*[^;]+", 'Password=***')
+    return 'Host=***;Database=***;Username=***;Password=***;'
 }
 
 # ----------------------------------------------------------------

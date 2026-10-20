@@ -277,9 +277,12 @@ Write-Host ""
 Write-Host "## C. Redaction + env roundtrip" -ForegroundColor Cyan
 
 Test-Case 'Redact-ConnectionString redacts password' {
-    $cs = 'Host=192.168.2.228;Port=5432;Database=gulierp_g2_003_test;Username=gulidata;Password=SuperSecret123!;Include Error Detail=true'
+    $cs = 'Host=sentinel-host;Port=5432;Database=sentinel-db;Username=sentinel-user;Password=sentinel-secret;Include Error Detail=true'
     $r = Redact-ConnectionString -cs $cs
-    Assert-False $r.Contains('SuperSecret123!')
+    Assert-False $r.Contains('sentinel-secret')
+    Assert-False $r.Contains('sentinel-host')
+    Assert-False $r.Contains('sentinel-db')
+    Assert-False $r.Contains('sentinel-user')
     Assert-True $r.Contains('Password=***')
 }
 
@@ -292,13 +295,13 @@ Test-Case 'env var snapshot + restore roundtrip' {
     $origConn = $env:ConnectionStrings__GuliERP
     $origSeed = $env:GULIERP_MDM_SEED_FILE
     try {
-        $env:ConnectionStrings__GuliERP = 'Password=original'
+        $env:ConnectionStrings__GuliERP = 'Password=sentinel-original'
         $env:GULIERP_MDM_SEED_FILE = 'C:/some/path.json'
         $snap = Save-OperatorConnectionEnvironment
-        $env:ConnectionStrings__GuliERP = 'Password=changed'
+        $env:ConnectionStrings__GuliERP = 'Password=sentinel-changed'
         $env:GULIERP_MDM_SEED_FILE = 'C:/changed.json'
         Restore-OperatorConnectionEnvironment $snap
-        Assert-Equal 'Password=original' $env:ConnectionStrings__GuliERP
+        Assert-Equal 'Password=sentinel-original' $env:ConnectionStrings__GuliERP
         Assert-Equal 'C:/some/path.json' $env:GULIERP_MDM_SEED_FILE
     } finally {
         $env:ConnectionStrings__GuliERP = $origConn

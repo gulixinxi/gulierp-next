@@ -1,3 +1,5 @@
+> V0.9说明（2026-09-09）：本页是2026-08-25历史proposal索引。保留历史正文；当前进展和验证范围以 [基线报告](../verification/GULIERP_BASELINE_FREEZE_V0_9_REPORT.md) 为准。
+
 # GuliERP Project Memory Index
 
 | Field | Value |

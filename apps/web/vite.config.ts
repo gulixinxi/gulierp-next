@@ -9,6 +9,21 @@ const API_TARGET = process.env.VITE_API_TARGET || 'http://127.0.0.1:5000';
 
 export default defineConfig({
   plugins: [vue()],
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('element-plus') || id.includes('@element-plus')) return 'vendor-element-plus';
+          if (id.includes('vue-router') || id.includes('pinia') || id.includes('@vue') || id.includes('/vue/')) {
+            return 'vendor-vue';
+          }
+          return 'vendor';
+        }
+      }
+    }
+  },
   server: {
     port: 5173,
     proxy: {
@@ -22,4 +37,3 @@ export default defineConfig({
     }
   }
 });
-

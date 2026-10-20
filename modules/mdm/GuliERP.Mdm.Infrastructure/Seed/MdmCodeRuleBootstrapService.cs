@@ -189,7 +189,7 @@ public sealed class MdmCodeRuleBootstrapService : IMdmCodeRuleBootstrapService
         // table. The bootstrap never writes to the Identity schema.
         var tenantIds = await _identityDb.Tenants
             .AsNoTracking()
-            .Where(t => t.Status == TenantStatus.Active)
+            .Where(t => t.Status == TenantStatus.Active && t.Id > 0)
             .Select(t => t.Id)
             .ToListAsync(ct);
 
@@ -287,7 +287,7 @@ public sealed class MdmCodeRuleBootstrapService : IMdmCodeRuleBootstrapService
         // source of truth for active Tenants + Companies.
         var tenants = await _identityDb.Tenants
             .AsNoTracking()
-            .Where(t => t.Status == TenantStatus.Active)
+            .Where(t => t.Status == TenantStatus.Active && t.Id > 0)
             .Select(t => t.Id)
             .ToListAsync(ct);
 
@@ -385,7 +385,7 @@ public sealed class MdmCodeRuleBootstrapService : IMdmCodeRuleBootstrapService
         // active Warehouses.
         var tenants = await _identityDb.Tenants
             .AsNoTracking()
-            .Where(t => t.Status == TenantStatus.Active)
+            .Where(t => t.Status == TenantStatus.Active && t.Id > 0)
             .Select(t => t.Id)
             .ToListAsync(ct);
 
@@ -474,7 +474,7 @@ public sealed class MdmCodeRuleBootstrapService : IMdmCodeRuleBootstrapService
     {
         var tenantIds = await _identityDb.Tenants
             .AsNoTracking()
-            .Where(t => t.Status == TenantStatus.Active)
+            .Where(t => t.Status == TenantStatus.Active && t.Id > 0)
             .Select(t => t.Id)
             .ToListAsync(ct);
 

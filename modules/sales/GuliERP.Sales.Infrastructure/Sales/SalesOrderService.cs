@@ -67,9 +67,9 @@ public sealed class SalesOrderService : ISalesOrderService
             .Take(pageSize)
             .Select(x => new SalesOrderListItemDto(
                 x.Id, x.OrderNo, x.CustomerId, x.CustomerCodeSnapshot, x.CustomerNameSnapshot,
-                x.OrderDate, x.RequestedDeliveryDate, x.CurrencyCode, x.Status,
+                x.OrderDate, x.RequestedDeliveryDate, x.WarehouseId, x.CurrencyCode, x.Status,
                 x.TotalNetAmount, x.TotalTaxAmount, x.TotalAmount,
-                x.CreatedAt, x.ModifiedAt, x.ConcurrencyVersion))
+                x.CreatedAt, x.ModifiedAt, x.ConfirmedAt, x.CancelledAt, x.ConcurrencyVersion))
             .ToListAsync(ct);
         return new PagedResult<SalesOrderListItemDto>(items, page, pageSize, (int)total);
     }
@@ -108,9 +108,12 @@ public sealed class SalesOrderService : ISalesOrderService
             CustomerNameSnapshot = customer.Name,
             OrderDate = request.OrderDate,
             RequestedDeliveryDate = request.RequestedDeliveryDate,
+            // B3.6-A additions.
+            WarehouseId = request.WarehouseId,
             CurrencyCode = "CNY",
             Status = SalesOrderStatus.Draft,
             Remarks = NormalizeOptional(request.Remarks, 2000, nameof(request.Remarks)),
+            DeliveryAddressSnapshot = NormalizeOptional(request.DeliveryAddressSnapshot, 500, nameof(request.DeliveryAddressSnapshot)),
             CreatedAt = now,
             CreatedBy = _currentUser.Id,
             ModifiedAt = now,
@@ -141,12 +144,20 @@ public sealed class SalesOrderService : ISalesOrderService
         {
             throw new SalesValidationException(SalesErrorCodes.ConcurrencyConflict, "Sales order was modified by another user. Reload and retry.");
         }
-        var customer = await ResolveCustomerAsync(tenantId, request.CustomerId, ct);
-        order.CustomerId = customer.Id;
-        order.CustomerCodeSnapshot = customer.Code;
-        order.CustomerNameSnapshot = customer.Name;
+
+        // B3.6-A: customer snapshot first-save rule. Re-capture only when
+        // CustomerId actually changed; otherwise preserve the existing snapshot.
+        if (order.CustomerId != request.CustomerId)
+        {
+            var customer = await ResolveCustomerAsync(tenantId, request.CustomerId, ct);
+            order.CustomerId = customer.Id;
+            order.CustomerCodeSnapshot = customer.Code;
+            order.CustomerNameSnapshot = customer.Name;
+        }
         order.OrderDate = request.OrderDate;
         order.RequestedDeliveryDate = request.RequestedDeliveryDate;
+        order.WarehouseId = request.WarehouseId;
+        order.DeliveryAddressSnapshot = NormalizeOptional(request.DeliveryAddressSnapshot, 500, nameof(request.DeliveryAddressSnapshot));
         order.Remarks = NormalizeOptional(request.Remarks, 2000, nameof(request.Remarks));
         order.ModifiedAt = DateTimeOffset.UtcNow;
         order.ModifiedBy = _currentUser.Id;
@@ -166,13 +177,20 @@ public sealed class SalesOrderService : ISalesOrderService
         {
             throw new SalesValidationException(SalesErrorCodes.InvalidStatusTransition, "Only Draft sales orders can be confirmed.");
         }
+        // B3.6-A: V1 Sales §4 — DeliveryAddressSnapshot is captured at Confirm.
+        // The current entity value (which the operator may have edited in Draft)
+        // becomes the canonical snapshot. We do NOT change the rule for already-
+        // null values; the snapshot is whatever the operator left in the form.
+        var now = DateTimeOffset.UtcNow;
         order.Status = SalesOrderStatus.Confirmed;
+        order.ConfirmedAt = now;
+        order.ConfirmedBy = _currentUser.Id;
         Touch(order);
         await _sales.SaveChangesAsync(ct);
         return Map(order);
     }
 
-    public async Task<SalesOrderDto?> CancelAsync(long id, CancellationToken ct = default)
+    public async Task<SalesOrderDto?> CancelAsync(long id, string? cancellationReason, CancellationToken ct = default)
     {
         var order = await GetTrackedInScopeAsync(id, ct);
         if (order is null) return null;
@@ -180,7 +198,21 @@ public sealed class SalesOrderService : ISalesOrderService
         {
             throw new SalesValidationException(SalesErrorCodes.InvalidStatusTransition, "Sales order is already cancelled.");
         }
+        // B3.6-A: V1 Sales §9 — reason is required when cancelling Confirmed;
+        // optional when cancelling Draft. The UI is expected to enforce this for
+        // Confirmed; the server enforces as a defense-in-depth.
+        var normalizedReason = NormalizeOptional(cancellationReason, 500, nameof(cancellationReason));
+        if (order.Status == SalesOrderStatus.Confirmed && string.IsNullOrWhiteSpace(normalizedReason))
+        {
+            throw new SalesValidationException(
+                SalesErrorCodes.ValidationFailed,
+                "Cancellation reason is required when cancelling a Confirmed sales order.");
+        }
+        var now = DateTimeOffset.UtcNow;
         order.Status = SalesOrderStatus.Cancelled;
+        order.CancelledAt = now;
+        order.CancelledBy = _currentUser.Id;
+        order.CancellationReason = normalizedReason;
         Touch(order);
         await _sales.SaveChangesAsync(ct);
         return Map(order);
@@ -206,11 +238,10 @@ public sealed class SalesOrderService : ISalesOrderService
                 throw new SalesValidationException(SalesErrorCodes.InvalidItem, $"Active item id={input.ItemId} was not found in current tenant.");
             }
 
+            // B3.6-A: V1 Standard §9 — UoM default = Item.BaseUomId; user
+            // may override. The previous hard-throw that forced uomId ==
+            // baseUomId is REMOVED. We only verify the chosen UoM is active.
             var uomId = input.UomId ?? item.BaseUomId;
-            if (uomId != item.BaseUomId)
-            {
-                throw new SalesValidationException(SalesErrorCodes.InvalidUom, "Only the item's base UOM is supported in this slice.");
-            }
             var uom = await _mdm.Uoms.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == uomId && x.Status == MasterDataStatus.Active, ct);
             if (uom is null)
@@ -225,6 +256,10 @@ public sealed class SalesOrderService : ISalesOrderService
                 ItemId = item.Id,
                 ItemCodeSnapshot = item.Code,
                 ItemNameSnapshot = item.Name,
+                // B3.6-A: V1 Standard §9 — server is authoritative; if the
+                // client passed a SpecificationSnapshot we still prefer the
+                // current Item value (single source of truth).
+                SpecificationSnapshot = string.IsNullOrWhiteSpace(item.Specification) ? null : item.Specification,
                 UomId = uom.Id,
                 UomCodeSnapshot = uom.Code,
                 UomNameSnapshot = uom.Name,
@@ -332,11 +367,14 @@ public sealed class SalesOrderService : ISalesOrderService
     private static SalesOrderDto Map(SalesOrder order) => new(
         order.Id, order.TenantId, order.CompanyId, order.OrderNo,
         order.CustomerId, order.CustomerCodeSnapshot, order.CustomerNameSnapshot,
-        order.OrderDate, order.RequestedDeliveryDate, order.CurrencyCode, order.Status,
+        order.OrderDate, order.RequestedDeliveryDate, order.WarehouseId, order.CurrencyCode, order.Status,
         order.Remarks, order.TotalNetAmount, order.TotalTaxAmount, order.TotalAmount,
-        order.CreatedAt, order.ModifiedAt, order.ConcurrencyVersion,
+        order.DeliveryAddressSnapshot,
+        order.CreatedAt, order.ModifiedAt,
+        order.ConfirmedAt, order.ConfirmedBy, order.CancelledAt, order.CancelledBy, order.CancellationReason,
+        order.ConcurrencyVersion,
         order.Lines.OrderBy(x => x.LineNo).Select(x => new SalesOrderLineDto(
-            x.Id, x.LineNo, x.ItemId, x.ItemCodeSnapshot, x.ItemNameSnapshot,
+            x.Id, x.LineNo, x.ItemId, x.ItemCodeSnapshot, x.ItemNameSnapshot, x.SpecificationSnapshot,
             x.UomId, x.UomCodeSnapshot, x.UomNameSnapshot,
             x.Quantity, x.UnitPrice, x.DiscountRate, x.TaxRate,
             x.NetAmount, x.TaxAmount, x.TotalAmount, x.Remarks)).ToList());

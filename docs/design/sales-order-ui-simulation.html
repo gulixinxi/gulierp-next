@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GuliERP SalesOrder UI 仿真 — 原始设计还原 V4</title>
+<style>
+:root{
+  --primary-default:#0A6ED1; --primary-hover:#085CAF; --primary-active:#074693;
+  --primary-bg:#F2F8FC; --primary-border:#D9EAF7;
+  --bg-canvas:#FFFFFF; --bg-subtle:#F7F8FA; --bg-muted:#EEF1F4;
+  --text-primary:#1D2D3E; --text-secondary:#5B738B; --text-muted:#6B7C8C;
+  --text-disabled:#A0AEC0;
+  --border-default:#D9E2EC; --border-strong:#B8C5D1; --border-subtle:#E5EBF0;
+  --danger-default:#BB0000; --danger-bg:#FBEAEA;
+  --warning-default:#E9730C; --warning-bg:#FDF1E1;
+  --success-default:#107E3E; --success-bg:#E4F2EA;
+  --focus-ring:rgba(10,110,209,0.35);
+  --size-input:32px; --table-header-h:36px; --table-row-h:36px;
+  --radius-sm:4px; --radius:6px; --radius-lg:8px;
+  --shadow-sm:0 1px 2px rgba(15,23,42,0.04);
+  --shadow-md:0 2px 6px rgba(15,23,42,0.08);
+  --shadow-lg:0 4px 16px rgba(15,23,42,0.12);
+  --erp-font-size:13px; --erp-font-size-sm:12px; --erp-line-height:1.45;
+  --erp-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Roboto,sans-serif;
+  --erp-mono-font:"JetBrains Mono","Consolas","SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--erp-font-family);font-size:var(--erp-font-size);line-height:var(--erp-line-height);color:var(--text-primary);background:#f6f7fb;-webkit-font-smoothing:antialiased}
+.so-edit{display:flex;flex-direction:column;min-height:100vh;max-width:1440px;margin:0 auto;background:#f6f7fb}
+
+/* Sticky Header Bar */
+.edit-headerbar{background:var(--bg-canvas);border-bottom:1px solid var(--border-subtle);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;top:0;z-index:20;box-shadow:var(--shadow-sm)}
+.headerbar-left,.headerbar-right,.status-tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn-back{display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:var(--erp-font-size);padding:4px 8px;border-radius:var(--radius-sm)}
+.btn-back:hover{color:var(--primary-default);background:var(--primary-bg)}
+.doc-no{font-size:15px;font-weight:700;color:var(--text-primary)}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:var(--erp-font-size-sm);font-weight:500;line-height:1.6}
+.tag-info{background:#E5EBF0;color:#5B738B}
+.tag-success{background:var(--success-bg);color:var(--success-default)}
+.tag-danger{background:var(--danger-bg);color:var(--danger-default)}
+.tag-warning{background:var(--warning-bg);color:var(--warning-default)}
+.version-tag{background:var(--bg-muted);color:var(--text-muted);padding:2px 8px;border-radius:999px;font-size:11px;font-family:var(--erp-mono-font)}
+.btn{display:inline-flex;align-items:center;gap:4px;height:var(--size-input);padding:0 14px;border:1px solid var(--border-default);background:var(--bg-canvas);color:var(--text-primary);font-size:var(--erp-font-size);border-radius:var(--radius-sm);cursor:pointer;transition:all .18s;white-space:nowrap}
+.btn:hover{border-color:var(--primary-default);color:var(--primary-default)}
+.btn-primary{background:var(--primary-default);border-color:var(--primary-default);color:#fff}
+.btn-primary:hover{background:var(--primary-hover);border-color:var(--primary-hover);color:#fff}
+.btn-success{background:var(--success-default);border-color:var(--success-default);color:#fff}
+.btn-success:hover{background:#0B5A2C;border-color:#0B5A2C;color:#fff}
+.btn-danger{background:var(--bg-canvas);border-color:var(--danger-default);color:var(--danger-default)}
+.btn-danger:hover{background:var(--danger-bg);color:var(--danger-default)}
+.btn-sm{height:28px;padding:0 10px;font-size:var(--erp-font-size-sm)}
+
+/* Section card */
+.edit-section{background:var(--bg-canvas);margin:8px 16px;border-radius:var(--radius);padding:12px 16px;box-shadow:var(--shadow-sm)}
+.section-title{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border-subtle);flex-wrap:wrap}
+.section-sub{font-size:var(--erp-font-size-sm);font-weight:400;color:var(--text-muted);margin-left:8px}
+.section-icon{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;color:var(--primary-default)}
+
+/* 主表 = 业务主信息 + 补充信息 合二为一 */
+.form-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 16px}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+.form-item{display:flex;flex-direction:column;gap:4px}
+.form-label{font-size:var(--erp-font-size-sm);color:var(--text-secondary);font-weight:500}
+.form-label .req{color:var(--danger-default);margin-left:2px}
+.form-control{height:var(--size-input);border:1px solid var(--border-default);border-radius:var(--radius-sm);padding:0 10px;font-size:var(--erp-font-size);background:var(--bg-canvas);color:var(--text-primary);transition:border-color .18s;display:flex;align-items:center}
+.form-control:hover{border-color:var(--border-strong)}
+.form-control.is-disabled{background:var(--bg-muted);color:var(--text-disabled);cursor:not-allowed;border-color:var(--border-subtle)}
+.form-control .caret{margin-left:auto;color:var(--text-muted);font-size:11px}
+.form-textarea{height:auto;min-height:72px;padding:8px 10px;font-family:inherit;line-height:1.5;resize:vertical;align-items:flex-start}
+
+/* 明细表容器(含 sticky 汇总) */
+.lines-section{padding-bottom:0}
+.line-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:8px 10px;background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-sm)}
+.line-hint{color:var(--text-muted);font-size:var(--erp-font-size-sm);margin-left:4px}
+.col-settings-btn{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border:1px solid var(--border-default);background:var(--bg-canvas);color:var(--text-secondary);font-size:var(--erp-font-size-sm);border-radius:var(--radius-sm);cursor:pointer}
+.col-settings-btn:hover{border-color:var(--primary-default);color:var(--primary-default)}
+
+/* 明细表 + 汇总:共享一个 overflow 容器,汇总 sticky bottom */
+.lines-body{position:relative;display:flex;flex-direction:column}
+.line-grid{border:1px solid var(--border-default);border-radius:var(--radius) var(--radius) 0 0;background:var(--bg-canvas);overflow:auto;flex:1}
+.line-grid-table{width:100%;border-collapse:collapse;font-size:var(--erp-font-size)}
+.line-grid-table thead th{background:var(--bg-subtle);height:var(--table-header-h);padding:0 8px;font-weight:600;color:var(--text-secondary);border-bottom:1px solid var(--border-default);text-align:left;font-size:var(--erp-font-size-sm);white-space:nowrap;position:sticky;top:0;z-index:2}
+.line-grid-table tbody td{height:var(--table-row-h);padding:0 8px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+.line-grid-table tbody tr:last-child td{border-bottom:none}
+.line-grid-table tbody tr:hover{background:var(--primary-bg)}
+.col-idx{width:40px;text-align:center;color:var(--text-muted);font-family:var(--erp-mono-font)}
+.col-sel{width:38px;text-align:center}
+.col-item{min-width:200px}
+.col-spec{width:120px}
+.col-uom{width:100px}
+.col-num{width:90px;text-align:right}
+.col-money{width:110px;text-align:right}
+.col-action{width:70px;text-align:center}
+.num-cell{font-family:var(--erp-mono-font);text-align:right}
+.num-strong{font-weight:600;color:var(--text-primary)}
+.snap-cell{color:var(--text-secondary);font-size:var(--erp-font-size-sm)}
+.cell-input{width:100%;height:28px;border:1px solid transparent;border-radius:var(--radius-sm);padding:0 6px;font-size:var(--erp-font-size);background:transparent;font-family:var(--erp-mono-font);text-align:right;color:var(--text-primary)}
+.cell-input:hover{border-color:var(--border-subtle);background:var(--bg-canvas)}
+.cell-input:focus{border-color:var(--primary-default);outline:none;background:var(--bg-canvas);box-shadow:0 0 0 2px var(--focus-ring)}
+.item-trigger{display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);cursor:pointer;background:var(--bg-canvas);font-size:var(--erp-font-size)}
+.item-trigger:hover{border-color:var(--primary-default);background:var(--primary-bg)}
+.item-trigger .ph{color:var(--text-disabled)}
+.item-trigger .code{color:var(--primary-default);font-weight:500;font-family:var(--erp-mono-font);font-size:var(--erp-font-size-sm)}
+.item-trigger .name{color:var(--text-primary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.uom-select{height:28px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:0 8px;background:var(--bg-canvas);font-size:var(--erp-font-size);cursor:pointer}
+.uom-select:hover{border-color:var(--primary-default)}
+.btn-link-danger{background:none;border:none;color:var(--danger-default);cursor:pointer;font-size:var(--erp-font-size-sm);padding:4px 8px;border-radius:var(--radius-sm)}
+.btn-link-danger:hover{background:var(--danger-bg)}
+.row-selected{background:var(--primary-bg)!important}
+
+/* 汇总:粘在明细表底部(不是浏览器底部) */
+.lines-totals{border:1px solid var(--border-default);border-top:none;border-radius:0 0 var(--radius) var(--radius);background:var(--bg-canvas)}
+.lines-totals-row1{display:grid;grid-template-columns:repeat(4,1fr);padding:6px 12px;gap:8px}
+.lines-totals-row2{padding:6px 12px;border-top:1px solid var(--border-subtle);display:flex;justify-content:flex-end;align-items:center;gap:16px;background:var(--primary-bg)}
+.lines-totals-cell{display:flex;align-items:baseline;gap:6px}
+.lines-totals-label{font-size:var(--erp-font-size-sm);color:var(--text-muted)}
+.lines-totals-value{font-family:var(--erp-mono-font);font-size:13px;color:var(--text-primary)}
+.grand-label{font-size:var(--erp-font-size-sm);color:var(--text-secondary)}
+.grand-value{font-family:var(--erp-mono-font);font-size:16px;font-weight:700;color:var(--primary-default)}
+
+/* Popover */
+.popover-mask{position:fixed;inset:0;z-index:30;display:none}
+.popover-mask.open{display:block}
+.popover{position:absolute;z-index:31;background:var(--bg-canvas);border:1px solid var(--border-default);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);display:none;flex-direction:column}
+.popover.open{display:flex}
+.popover-header{padding:12px 16px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:8px}
+.popover-title{font-weight:600;color:var(--text-primary)}
+.popover-search{flex:1;height:30px;border:1px solid var(--border-default);border-radius:var(--radius-sm);padding:0 10px;font-size:var(--erp-font-size)}
+.popover-search:focus{border-color:var(--primary-default);outline:none;box-shadow:0 0 0 2px var(--focus-ring)}
+.popover-body{max-height:280px;overflow:auto}
+.popover-table{width:100%;border-collapse:collapse;font-size:var(--erp-font-size)}
+.popover-table thead th{background:var(--bg-subtle);padding:6px 10px;text-align:left;font-size:var(--erp-font-size-sm);color:var(--text-secondary);font-weight:600;position:sticky;top:0}
+.popover-table tbody tr{cursor:pointer}
+.popover-table tbody tr:hover{background:var(--primary-bg)}
+.popover-table tbody tr.checked{background:var(--primary-bg)}
+.popover-table tbody td{padding:6px 10px;border-bottom:1px solid var(--border-subtle)}
+.popover-footer{padding:8px 16px;border-top:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;font-size:var(--erp-font-size-sm);color:var(--text-muted);gap:8px}
+.col-pop{width:300px}
+.col-pop-body{padding:8px 0;max-height:340px;overflow:auto}
+.col-row{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:grab}
+.col-row:hover{background:var(--bg-subtle)}
+.col-row.dragging{opacity:0.5}
+.col-row .drag-handle{color:var(--text-disabled);cursor:grab;font-size:14px;line-height:1}
+.col-row .col-name{flex:1;font-size:var(--erp-font-size)}
+.col-row .col-name .lock{color:var(--text-muted);font-size:10px;margin-left:4px}
+.col-row.is-hidden{opacity:0.45}
+
+/* 附件(最后) */
+.attach-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.attach-dropzone{border:1px dashed var(--border-strong);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;transition:all .18s;background:var(--bg-subtle)}
+.attach-dropzone:hover,.attach-dropzone.is-drag{border-color:var(--primary-default);background:var(--primary-bg)}
+.attach-dropzone .dz-icon{font-size:28px;color:var(--primary-default);margin-bottom:6px}
+.attach-dropzone .dz-title{font-weight:600;color:var(--text-primary);margin-bottom:4px}
+.attach-dropzone .dz-sub{font-size:var(--erp-font-size-sm);color:var(--text-muted)}
+.attach-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.attach-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius);transition:border-color .18s}
+.attach-item:hover{border-color:var(--border-strong)}
+.attach-icon{width:32px;height:32px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.attach-icon.is-img{background:#E8F5E9;color:#2E7D32}
+.attach-icon.is-doc{background:#E3F2FD;color:#1565C0}
+.attach-icon.is-xls{background:#FFF3E0;color:#E65100}
+.attach-icon.is-pdf{background:#FFEBEE;color:#C62828}
+.attach-icon.is-zip{background:#F3E5F5;color:#6A1B9A}
+.attach-icon.is-other{background:#ECEFF1;color:#455A64}
+.attach-info{flex:1;min-width:0}
+.attach-name{font-size:var(--erp-font-size);color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.attach-meta{font-size:var(--erp-font-size-sm);color:var(--text-muted);margin-top:2px}
+.attach-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.attach-btn{background:none;border:none;padding:4px 6px;color:var(--text-muted);cursor:pointer;border-radius:var(--radius-sm);font-size:14px;line-height:1}
+.attach-btn:hover{background:var(--bg-muted);color:var(--primary-default)}
+.attach-btn.is-danger:hover{color:var(--danger-default);background:var(--danger-bg)}
+.attach-empty{grid-column:1/-1;padding:20px;text-align:center;color:var(--text-muted);font-size:var(--erp-font-size-sm);border:1px dashed var(--border-subtle);border-radius:var(--radius);background:var(--bg-subtle)}
+
+/* 补充信息(合入主表后,作为主表底部的一个分隔区) */
+.master-section{margin-bottom:0}
+.master-split{border-top:1px solid var(--border-subtle);margin-top:12px;padding-top:12px}
+
+/* Banner */
+.diff-banner{margin:8px 16px;padding:8px 12px;background:#FFF7E6;border:1px solid #FFE0A3;border-radius:var(--radius);font-size:var(--erp-font-size-sm);color:#8C6A00;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.diff-banner strong{color:#8C5A00}
+.cb{width:14px;height:14px;cursor:pointer;accent-color:var(--primary-default)}
+.badge-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 5px;background:var(--primary-default);color:#fff;border-radius:999px;font-size:10px;font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="so-edit">
+
+  <!-- Sticky Header Bar -->
+  <div class="edit-headerbar">
+    <div class="headerbar-left">
+      <button class="btn-back" onclick="alert('返回列表')"><span>◀</span> 返回</button>
+      <span style="color:var(--border-subtle)">|</span>
+      <span class="doc-no">SO-20260829-0001</span>
+      <div class="status-tags">
+        <span class="tag tag-success">已确认</span>
+        <span class="tag tag-warning">未执行</span>
+      </div>
+      <span class="version-tag">v3</span>
+    </div>
+    <div class="headerbar-right">
+      <button class="btn" onclick="saveDraft()">保存草稿</button>
+      <button class="btn btn-success" onclick="submitConfirm()">提交确认</button>
+      <button class="btn btn-danger" onclick="cancelDoc()">取消单据</button>
+    </div>
+  </div>
+
+  <div class="diff-banner">
+    <strong>原始设计还原 V4</strong> · V4 改进:
+    <strong>①</strong> 汇总从浏览器底部 sticky 改为<strong>粘在明细表底部</strong>;
+    <strong>②</strong> <strong>附件移到最后</strong>(主表 → 明细表+汇总 → 附件);
+    <strong>③</strong> Section 重命名为 <strong>主表 / 明细表</strong>,补充信息合入主表。
+  </div>
+
+  <!-- ========== 主表 ========== (业务主信息 + 补充信息 合二为一) -->
+  <div class="edit-section master-section">
+    <div class="section-title">
+      <span class="section-icon">📄</span><span>主表</span>
+      <span class="section-sub">客户、日期、仓库、收货地址均在本区域</span>
+    </div>
+    <!-- 业务主信息 -->
+    <div class="form-grid-4">
+      <div class="form-item"><label class="form-label">单据日期<span class="req">*</span></label><div class="form-control"><span>2026-08-29</span><span class="caret">▾</span></div></div>
+      <div class="form-item"><label class="form-label">客户<span class="req">*</span></label><div class="form-control" onclick="openPartnerPicker(this)" style="cursor:pointer"><span style="color:var(--primary-default);font-weight:500">C001</span><span style="margin-left:6px">张三有限公司</span><span class="caret">▾</span></div></div>
+      <div class="form-item"><label class="form-label" style="color:var(--text-disabled)">销售员 <span style="font-size:10px">(P1)</span></label><div class="form-control is-disabled placeholder">—</div></div>
+      <div class="form-item"><label class="form-label">币种<span class="req">*</span></label><div class="form-control is-disabled">CNY</div></div>
+      <div class="form-item"><label class="form-label">要求交货日期</label><div class="form-control"><span>2026-09-05</span><span class="caret">▾</span></div></div>
+      <div class="form-item"><label class="form-label">仓库(默认)</label><div class="form-control" onclick="openWarehousePicker(this)" style="cursor:pointer"><span style="color:var(--primary-default);font-weight:500">WH01</span><span style="margin-left:6px">上海仓库</span><span class="caret">▾</span></div></div>
+      <div class="form-item"><label class="form-label" style="color:var(--text-disabled)">价格模式 <span style="font-size:10px">(P1)</span></label><div class="form-control is-disabled placeholder">—</div></div>
+      <div class="form-item"><label class="form-label" style="color:var(--text-disabled)">付款方式 <span style="font-size:10px">(DEFERRED)</span></label><div class="form-control is-disabled placeholder">—</div></div>
+    </div>
+    <!-- 补充信息(合入主表,无独立标题,用细线分隔) -->
+    <div class="master-split">
+      <div class="form-grid-2">
+        <div class="form-item"><label class="form-label">收货地址(快照)</label><div class="form-control form-textarea" contenteditable="true" style="white-space:pre-wrap">上海市浦东新区张江高科技园区
+博云路 2 号 5 楼
+张三 13800138000</div></div>
+        <div class="form-item"><label class="form-label">备注</label><div class="form-control form-textarea" contenteditable="true">客户要求 9 月 5 日前送达,加急处理。</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 明细表 + 汇总 ========== -->
+  <div class="edit-section lines-section">
+    <div class="section-title">
+      <span class="section-icon">▦</span><span>明细表</span>
+      <span class="section-sub">2 行 · 先选物料自动带出代码/规格/单位;金额自动计算</span>
+    </div>
+
+    <div class="line-toolbar">
+      <button class="btn btn-primary btn-sm" onclick="addLine()">+ 添加行</button>
+      <button class="btn btn-sm" onclick="copyPrevLine()">复制上一行</button>
+      <button class="btn btn-danger btn-sm" onclick="removeSelected()">删除选中</button>
+      <button class="col-settings-btn" onclick="openColSettings(this)">
+        <span>⚙</span> 列设置
+        <span class="badge-count" id="hiddenBadge" style="display:none">0</span>
+      </button>
+      <span class="line-hint">Tab=下一格 · Enter=下移同列 · ↑↓=上下行 · Delete=删行</span>
+    </div>
+
+    <div class="lines-body">
+      <div class="line-grid">
+        <table class="line-grid-table" id="lineTable">
+          <thead id="lineHead"></thead>
+          <tbody id="lineBody"></tbody>
+        </table>
+      </div>
+      <!-- 汇总:紧跟在明细表下方,同 section 内 -->
+      <div class="lines-totals">
+        <div class="lines-totals-row1">
+          <div class="lines-totals-cell"><span class="lines-totals-label">行数</span><span class="lines-totals-value" id="tLines">2</span></div>
+          <div class="lines-totals-cell"><span class="lines-totals-label">总数量</span><span class="lines-totals-value" id="tQty">15.0000</span></div>
+          <div class="lines-totals-cell"><span class="lines-totals-label">净额合计</span><span class="lines-totals-value" id="tNet">¥1,500.00</span></div>
+          <div class="lines-totals-cell"><span class="lines-totals-label">税额合计</span><span class="lines-totals-value" id="tTax">¥195.00</span></div>
+        </div>
+        <div class="lines-totals-row2">
+          <span class="grand-label">价税合计</span>
+          <span class="grand-value" id="tGrand">¥1,695.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 附件 (最后) ========== -->
+  <div class="edit-section">
+    <div class="section-title">
+      <span class="section-icon">📎</span><span>附件</span>
+      <span class="section-sub" id="attachCountSub">3 个文件 · 支持拖拽或点击上传</span>
+    </div>
+
+    <div class="attach-toolbar">
+      <label class="btn btn-primary btn-sm" style="cursor:pointer">
+        <span>📤 上传文件</span>
+        <input type="file" multiple accept="*/*" style="display:none" onchange="onFileSelected(this.files)">
+      </label>
+      <span style="flex:1"></span>
+      <span style="font-size:var(--erp-font-size-sm);color:var(--text-muted)">单文件 ≤ 10MB · 支持 PDF/图片/Word/Excel/ZIP</span>
+    </div>
+
+    <div class="attach-dropzone" id="attachDropzone"
+         onclick="document.querySelector('#attachDropzoneInput').click()"
+         ondragenter="event.preventDefault();this.classList.add('is-drag')"
+         ondragover="event.preventDefault();this.classList.add('is-drag')"
+         ondragleave="this.classList.remove('is-drag')"
+         ondrop="onDrop(event)">
+      <div class="dz-icon">⬆</div>
+      <div class="dz-title">拖拽文件到此处 或 点击选择文件</div>
+      <div class="dz-sub">支持 PDF / 图片 / Word / Excel / ZIP · 可批量上传</div>
+      <input type="file" id="attachDropzoneInput" multiple accept="*/*" style="display:none" onchange="onFileSelected(this.files)">
+    </div>
+
+    <div style="margin-top:12px">
+      <div class="attach-list" id="attachList"></div>
+    </div>
+  </div>
+
+</div><!-- /so-edit -->
+
+<!-- 物料选择 Popover(多选) -->
+<div class="popover-mask" id="itemMask" onclick="closePopovers()"></div>
+<div class="popover" id="itemPopover" style="width:600px">
+  <div class="popover-header">
+    <span class="popover-title">选择物料</span>
+    <input type="text" class="popover-search" placeholder="搜索代码 / 名称 / 助记码 / 规格" id="itemSearch" oninput="filterItems(this.value)">
+  </div>
+  <div class="popover-body">
+    <table class="popover-table">
+      <thead>
+        <tr>
+          <th style="width:34px"><input type="checkbox" class="cb" id="itemSelectAll" onchange="toggleSelectAllItems(this)"></th>
+          <th style="width:120px">Code</th>
+          <th>Name</th>
+          <th style="width:100px">Spec</th>
+          <th style="width:60px">UOM</th>
+          <th style="width:70px">助记码</th>
+        </tr>
+      </thead>
+      <tbody id="itemList"></tbody>
+    </table>
+  </div>
+  <div class="popover-footer">
+    <span>提示:勾选多个物料可批量添加为多行;双击单行快速添加</span>
+    <span style="display:flex;align-items:center;gap:12px">
+      <span>已选 <b id="pickedCount" style="color:var(--primary-default)">0</b> 项</span>
+      <button class="btn btn-sm" onclick="closePopovers()">取消</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmPickItems()">确定添加</button>
+    </span>
+  </div>
+</div>
+
+<!-- 列设置 Popover -->
+<div class="popover col-pop" id="colPopover">
+  <div class="popover-header"><span class="popover-title">列设置</span><span style="color:var(--text-muted);font-size:11px;margin-left:auto">拖拽排序 · 勾选显隐</span></div>
+  <div class="col-pop-body" id="colPopBody"></div>
+  <div style="padding:8px 16px;border-top:1px solid var(--border-subtle);display:flex;gap:8px">
+    <button class="btn btn-sm" onclick="resetCols()" style="background:none;border:none;color:var(--primary-default)">恢复默认</button>
+    <span style="flex:1"></span>
+    <button class="btn btn-sm" onclick="closeColSettings()">关闭</button>
+  </div>
+</div>
+
+<script>
+const ITEMS=[
+  {id:'1',code:'ITEM_CHAIR',name:'办公椅',specification:'',baseUomName:'件',mnemonicCode:'YZ'},
+  {id:'2',code:'ITEM_DESK',name:'办公桌 120cm',specification:'120cm',baseUomName:'件',mnemonicCode:'ZB'},
+  {id:'3',code:'ITEM_LAMP',name:'台灯 LED',specification:'LED 5W',baseUomName:'台',mnemonicCode:'TD'},
+  {id:'4',code:'ITEM_PAPER',name:'A4 打印纸',specification:'500张/包',baseUomName:'包',mnemonicCode:'ZZ'},
+];
+const UOMS=[{id:'u1',code:'PCS',name:'件'},{id:'u2',code:'SET',name:'套'},{id:'u3',code:'BAG',name:'包'}];
+const COLS_DEFAULT=[
+  {key:'sel',  label:'',         width:38, core:false,fixed:'left', kind:'sel'},
+  {key:'idx',  label:'#',        width:40, core:false,fixed:'left', kind:'idx'},
+  {key:'item', label:'物料(搜索)',minWidth:200,core:true, kind:'item'},
+  {key:'spec', label:'规格',     width:120,core:true, kind:'spec'},
+  {key:'uom',  label:'单位',     width:100,core:true, kind:'uom'},
+  {key:'qty',  label:'数量',     width:90, core:true, kind:'num',  field:'quantity'},
+  {key:'price',label:'单价',     width:90, core:true, kind:'num',  field:'unitPrice'},
+  {key:'disc', label:'折扣%',    width:80, core:false,kind:'num',  field:'discountRate'},
+  {key:'tax',  label:'税额%',    width:80, core:false,kind:'num',  field:'taxRate'},
+  {key:'net',  label:'净额',     width:110,core:false,kind:'money',field:'netAmount'},
+  {key:'total',label:'价税合计', width:110,core:true, kind:'money',field:'totalAmount'},
+  {key:'act',  label:'操作',     width:70, core:false,fixed:'right',kind:'action'},
+];
+let cols=COLS_DEFAULT.map(c=>({...c,visible:true}));
+let lines=[
+  {clientId:'c1',lineNo:1,item:ITEMS[0],uomId:'u1',uomCode:'PCS',uomName:'件',quantity:10,unitPrice:100,discountRate:0,taxRate:0.13},
+  {clientId:'c2',lineNo:2,item:ITEMS[1],uomId:'u1',uomCode:'PCS',uomName:'件',quantity:5,unitPrice:100,discountRate:0,taxRate:0.13},
+];
+let activeRow=null,pickedIds=new Set();
+
+let attachments=[
+  {id:'a1',name:'报价单-v2.pdf',size:245760,type:'pdf'},
+  {id:'a2',name:'客户营业执照.jpg',size:3145728,type:'img'},
+  {id:'a3',name:'订单确认函.docx',size:81920,type:'doc'},
+];
+
+function fmt(n,d=2){return Number(n||0).toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+function recompute(r){const q=r.quantity||0,p=r.unitPrice||0,d=r.discountRate||0,t=r.taxRate||0;const r2=n=>Math.round(n*100)/100;r.netAmount=r2(q*p*(1-d));r.taxAmount=r2(r.netAmount*t);r.totalAmount=r2(r.netAmount+r.taxAmount);}
+function recalcTotals(){let q=0,n=0,t=0,g=0;lines.forEach(r=>{recompute(r);q+=r.quantity||0;n+=r.netAmount||0;t+=r.taxAmount||0;g+=r.totalAmount||0;});
+  document.getElementById('tLines').textContent=lines.length;
+  document.getElementById('tQty').textContent=fmt(q,4);
+  document.getElementById('tNet').textContent='¥'+fmt(n);
+  document.getElementById('tTax').textContent='¥'+fmt(t);
+  document.getElementById('tGrand').textContent='¥'+fmt(g);
+}
+
+function visibleCols(){return cols.filter(c=>c.visible);}
+function renderHead(){
+  const vc=visibleCols();
+  document.getElementById('lineHead').innerHTML='<tr>'+vc.map(c=>{
+    const w=c.width?`width:${c.width}px`:(c.minWidth?`min-width:${c.minWidth}px`:'');
+    const cls=['col-'+c.key];
+    if(c.kind==='num'||c.kind==='money')cls.push('col-num');
+    return `<th class="${cls.join(' ')}" style="${w}">${c.label}</th>`;
+  }).join('')+'</tr>';
+}
+function renderRows(){
+  const vc=visibleCols();
+  document.getElementById('lineBody').innerHTML=lines.map((r,i)=>{
+    const tds=vc.map(c=>{
+      switch(c.kind){
+        case 'sel':return `<td class="col-sel"><input type="checkbox" class="cb row-cb" data-id="${r.clientId}" onchange="toggleRow(this)"></td>`;
+        case 'idx':return `<td class="col-idx">${i+1}</td>`;
+        case 'item':return `<td class="col-item"><div class="item-trigger" onclick="openItemPicker('${r.clientId}',this)">${r.item?`<span class="code">${r.item.code}</span><span class="name">${r.item.name}</span>`:'<span class="ph">点击选择物料</span>'}<span class="caret">▾</span></div></td>`;
+        case 'spec':return `<td><span class="snap-cell">${r.item?.specification||'—'}</span></td>`;
+        case 'uom':return `<td class="col-uom"><select class="uom-select" onchange="onUomChange('${r.clientId}',this.value)">${UOMS.map(u=>`<option value="${u.id}" ${u.id===r.uomId?'selected':''}>${u.name} (${u.code})</option>`).join('')}</select></td>`;
+        case 'num':{const v=r[c.field];return `<td class="col-num"><input class="cell-input" type="number" step="${c.field==='quantity'?'0.0001':'0.01'}" ${c.field!=='quantity'&&c.field!=='unitPrice'?'min="0" max="1"':''} value="${v}" oninput="onNumChange('${r.clientId}','${c.field}',this.value)"></td>`;}
+        case 'money':{const v=r[c.field];return `<td class="col-money num-cell ${c.field==='totalAmount'?'num-strong':''}">${fmt(v)}</td>`;}
+        case 'action':return `<td class="col-action"><button class="btn-link-danger" onclick="removeLine('${r.clientId}')">删除</button></td>`;
+      }
+    }).join('');
+    return `<tr data-id="${r.clientId}">${tds}</tr>`;
+  }).join('');
+  recalcTotals();
+}
+
+function onNumChange(id,field,val){const r=lines.find(l=>l.clientId===id);if(!r)return;r[field]=parseFloat(val)||0;recompute(r);const tr=document.querySelector(`tr[data-id="${id}"]`);if(tr){const vc=visibleCols();vc.forEach((c,ci)=>{if(c.kind==='money'){tr.children[ci].textContent=fmt(r[c.field]);tr.children[ci].classList.toggle('num-strong',c.field==='totalAmount');}});}recalcTotals();}
+function onUomChange(id,uomId){const r=lines.find(l=>l.clientId===id);if(!r)return;const u=UOMS.find(x=>x.id===uomId);if(!u)return;r.uomId=u.id;r.uomCode=u.code;r.uomName=u.name;}
+function addLine(){const id='c'+Date.now();lines.push({clientId:id,lineNo:lines.length+1,item:null,uomId:'u1',uomCode:'PCS',uomName:'件',quantity:1,unitPrice:0,discountRate:0,taxRate:0});renderRows();}
+function copyPrevLine(){if(!lines.length)return;const last=lines[lines.length-1];const id='c'+Date.now();lines.push({...last,clientId:id,item:last.item?{...last.item}:null,lineNo:lines.length+1});renderRows();}
+function removeLine(id){lines=lines.filter(l=>l.clientId!==id);renderRows();}
+function removeSelected(){document.querySelectorAll('.row-cb:checked').forEach(cb=>{lines=lines.filter(l=>l.clientId!==cb.dataset.id);});renderRows();}
+function toggleRow(cb){cb.closest('tr').classList.toggle('row-selected',cb.checked);}
+
+// 物料选择 Popover
+function openItemPicker(rowId,trigger){
+  activeRow=rowId;pickedIds.clear();renderItemList(ITEMS);
+  const el=document.getElementById('itemPopover'),mask=document.getElementById('itemMask');
+  const rect=trigger.getBoundingClientRect();let top=rect.bottom+4,left=rect.left;
+  if(left+600>window.innerWidth)left=window.innerWidth-620;
+  if(top+380>window.innerHeight)top=Math.max(8,rect.top-380);
+  el.style.top=top+'px';el.style.left=left+'px';el.classList.add('open');mask.classList.add('open');
+  document.getElementById('itemSearch').value='';document.getElementById('itemSearch').focus();updatePickedCount();
+}
+function renderItemList(arr){
+  document.getElementById('itemList').innerHTML=arr.map(it=>{
+    const checked=pickedIds.has(it.id)?'checked':'';
+    return `<tr class="${checked?'checked':''}" data-id="${it.id}" onclick="togglePick('${it.id}',event)">
+      <td><input type="checkbox" class="cb" ${checked} onclick="event.stopPropagation();togglePick('${it.id}')"></td>
+      <td style="font-family:var(--erp-mono-font);color:var(--primary-default)">${it.code}</td>
+      <td>${it.name}</td>
+      <td style="color:var(--text-secondary)">${it.specification||'—'}</td>
+      <td style="text-align:center">${it.baseUomName}</td>
+      <td style="font-family:var(--erp-mono-font);color:var(--text-secondary)">${it.mnemonicCode||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+function togglePick(id,e){
+  if(pickedIds.has(id))pickedIds.delete(id);else pickedIds.add(id);
+  const tr=document.querySelector(`#itemList tr[data-id="${id}"]`);
+  if(tr){tr.classList.toggle('checked',pickedIds.has(id));const cb=tr.querySelector('.cb');if(cb)cb.checked=pickedIds.has(id);}
+  updatePickedCount();if(e&&e.detail===2){confirmPickItems();}
+}
+function toggleSelectAllItems(cb){
+  if(cb.checked)lastFiltered.forEach(it=>pickedIds.add(it.id));else lastFiltered.forEach(it=>pickedIds.delete(it.id));
+  renderItemList(lastFiltered);updatePickedCount();
+}
+let lastFiltered=ITEMS;
+function filterItems(q){
+  q=(q||'').trim().toLowerCase();
+  lastFiltered=!q?ITEMS:ITEMS.filter(it=>(it.code||'').toLowerCase().includes(q)||(it.name||'').toLowerCase().includes(q)||(it.mnemonicCode||'').toLowerCase().includes(q)||(it.specification||'').toLowerCase().includes(q));
+  renderItemList(lastFiltered);
+}
+function updatePickedCount(){document.getElementById('pickedCount').textContent=pickedIds.size;}
+function confirmPickItems(){
+  const picked=ITEMS.filter(it=>pickedIds.has(it.id));
+  if(picked.length===0){alert('请至少勾选一个物料');return;}
+  let firstTarget=lines.find(l=>l.clientId===activeRow);
+  picked.forEach((it,idx)=>{
+    const u=UOMS.find(x=>x.name===it.baseUomName)||UOMS[0];
+    const data={item:it,uomId:u.id,uomCode:u.code,uomName:u.name,quantity:1,unitPrice:0,discountRate:0,taxRate:0};
+    if(idx===0&&firstTarget&&!firstTarget.item){Object.assign(firstTarget,data);}
+    else{const id='c'+Date.now()+idx;lines.push({clientId:id,lineNo:lines.length+1,...data});}
+  });
+  closePopovers();renderRows();
+}
+function closePopovers(){document.getElementById('itemPopover').classList.remove('open');document.getElementById('itemMask').classList.remove('open');activeRow=null;pickedIds.clear();}
+
+// 列设置
+let dragSrc=null;
+function openColSettings(trigger){
+  const el=document.getElementById('colPopover'),mask=document.getElementById('itemMask');
+  const rect=trigger.getBoundingClientRect();
+  let top=rect.bottom+4,left=rect.right-300;
+  if(left<8)left=8;if(top+380>window.innerHeight)top=Math.max(8,rect.top-380);
+  el.style.top=top+'px';el.style.left=left+'px';el.classList.add('open');mask.classList.add('open');renderColList();
+}
+function closeColSettings(){document.getElementById('colPopover').classList.remove('open');document.getElementById('itemMask').classList.remove('open');}
+function renderColList(){
+  const body=document.getElementById('colPopBody');
+  body.innerHTML=cols.map((c,i)=>{
+    const lock=c.core?'<span class="lock">核心·锁定</span>':(c.fixed?'<span class="lock">固定</span>':'');
+    const dis=c.core||c.fixed?'disabled':'';
+    const vis=c.visible;
+    return `<div class="col-row ${vis?'':'is-hidden'}" draggable="${!c.core&&!c.fixed}" data-idx="${i}" ondragstart="onColDragStart(event,${i})" ondragover="event.preventDefault()" ondrop="onColDrop(event,${i})" ondragend="onColDragEnd(event)">
+      <span class="drag-handle">${(c.core||c.fixed)?'':(vis?'⋮⋮':'')}</span>
+      <label style="display:flex;align-items:center;gap:6px;flex:1;cursor:pointer">
+        <input type="checkbox" class="cb" ${vis?'checked':''} ${dis} onchange="toggleCol(${i},this.checked)">
+        <span class="col-name">${c.label||'(空)'} ${lock}</span>
+      </label>
+    </div>`;
+  }).join('');
+  const hidden=cols.filter(c=>!c.visible).length;
+  const badge=document.getElementById('hiddenBadge');badge.textContent=hidden;badge.style.display=hidden>0?'inline-flex':'none';
+}
+function toggleCol(i,vis){if(cols[i].core)return;cols[i].visible=vis;renderColList();renderHead();renderRows();}
+function onColDragStart(e,i){if(cols[i].core||cols[i].fixed){e.preventDefault();return;}dragSrc=i;e.target.closest('.col-row').classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function onColDragEnd(e){document.querySelectorAll('.col-row.dragging').forEach(r=>r.classList.remove('dragging'));}
+function onColDrop(e,i){
+  e.preventDefault();if(dragSrc===null||dragSrc===i)return;if(cols[i].fixed||cols[dragSrc].fixed){dragSrc=null;return;}
+  const movableIdxs=cols.map((c,idx)=>({c,idx})).filter(x=>!x.c.fixed).map(x=>x.idx);
+  const srcMov=movableIdxs.indexOf(dragSrc),tgtMov=movableIdxs.indexOf(i);
+  if(srcMov<0||tgtMov<0){dragSrc=null;return;}
+  const moved=cols.splice(dragSrc,1)[0];
+  let insertAt=0,seen=0;
+  for(let k=0;k<cols.length;k++){if(!cols[k].fixed){if(seen===tgtMov){insertAt=k;break;}seen++;}if(k===cols.length-1)insertAt=cols.length;}
+  cols.splice(insertAt,0,moved);
+  dragSrc=null;renderColList();renderHead();renderRows();
+}
+function resetCols(){cols=COLS_DEFAULT.map(c=>({...c,visible:true}));renderColList();renderHead();renderRows();}
+
+// 附件
+function detectFileType(name){
+  const ext=(name.split('.').pop()||'').toLowerCase();
+  if(['jpg','jpeg','png','gif','bmp','webp'].includes(ext))return'img';
+  if(['pdf'].includes(ext))return'pdf';
+  if(['doc','docx'].includes(ext))return'doc';
+  if(['xls','xlsx','csv'].includes(ext))return'xls';
+  if(['zip','rar','7z'].includes(ext))return'zip';
+  return'other';
+}
+function fileIcon(type){const map={img:'🖼',pdf:'📕',doc:'📘',xls:'📗',zip:'📦',other:'📄'};return map[type]||'📄';}
+function formatSize(bytes){if(bytes<1024)return bytes+' B';if(bytes<1048576)return(bytes/1024).toFixed(1)+' KB';return(bytes/1048576).toFixed(1)+' MB';}
+function renderAttachments(){
+  const list=document.getElementById('attachList');
+  const sub=document.getElementById('attachCountSub');
+  sub.textContent=`${attachments.length} 个文件 · 支持拖拽或点击上传`;
+  if(attachments.length===0){list.innerHTML=`<div class="attach-empty">暂无附件</div>`;return;}
+  list.innerHTML=attachments.map(a=>`<div class="attach-item">
+      <div class="attach-icon is-${a.type}">${fileIcon(a.type)}</div>
+      <div class="attach-info">
+        <div class="attach-name" title="${a.name}">${a.name}</div>
+        <div class="attach-meta">${formatSize(a.size)}</div>
+      </div>
+      <div class="attach-actions">
+        <button class="attach-btn" title="下载" onclick="downloadAttach('${a.id}')">⬇</button>
+        <button class="attach-btn is-danger" title="删除" onclick="removeAttach('${a.id}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+function onFileSelected(fileList){
+  Array.from(fileList).forEach(f=>{attachments.push({id:'a'+Date.now()+Math.random().toString(36).slice(2,6),name:f.name,size:f.size,type:detectFileType(f.name)});});
+  renderAttachments();
+}
+function onDrop(e){e.preventDefault();document.getElementById('attachDropzone').classList.remove('is-drag');onFileSelected(e.dataTransfer.files);}
+function removeAttach(id){attachments=attachments.filter(a=>a.id!==id);renderAttachments();}
+function downloadAttach(id){alert('下载文件(仿真)')}
+
+// 占位
+function openPartnerPicker(el){}
+function openWarehousePicker(el){}
+function saveDraft(){alert('保存草稿(仿真)');}
+function submitConfirm(){alert('提交确认(仿真):Draft → Confirmed');}
+function cancelDoc(){alert('取消单据(仿真)');}
+
+// 初始化
+renderHead();renderRows();renderAttachments();
+</script>
+</body>
+</html>

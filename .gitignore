@@ -26,6 +26,13 @@ tools/discovery/mdm-000d/_normalized/
 # Frontend incremental build cache.
 apps/web/tsconfig.tsbuildinfo
 
+# Local CRM database backup; keep the file on disk, never publish it.
+/deploy/gulicrm-clean-deploy.dump
+
+# Deployment guides may contain local connection examples; preserve locally only.
+/docs/project-docs/GuliERP国内CRM本地部署指南.docx
+/docs/project-docs/GuliERP国内CRM本地部署指南V2.docx
+
 # Local generated artifacts and test evidence output.
 artifacts/
 tests/**/TestResults/
@@ -45,3 +52,25 @@ tools/discovery/**/__pycache__/
 tools/discovery/**/*.pyc
 tools/discovery/**/_*.log
 tools/discovery/**/_*.py
+
+# V0.9 closure: audited local-only paths; retain files, do not publish credentials/logs.
+/.git-stage-list
+/.stack-pids.json
+/.vite-dev.err.log
+/.vite-dev.log
+/.vite-stderr.log
+/.vite-stdout.log
+/tools/dev/.quarantine/_commit_chore_dev.txt
+/tools/dev/.quarantine/_commit_docs_final.txt
+/tools/dev/.quarantine/_commit_feat_identity.txt
+/tools/dev/.quarantine/_commit_feat_purchase_backend.txt
+/tools/dev/.quarantine/_commit_feat_web_purchase.txt
+/tools/dev/.quarantine/_commit_test_identity.txt
+/tools/dev/.quarantine/_commit_test_purchase.txt
+/tools/dev/.quarantine/_r2a_neg_check.ps1
+/tools/dev/.quarantine/_run_r2a_runtime.ps1
+/tools/dev/.quarantine/_run_workbench_matrix.ps1
+/tools/dev/.quarantine/_run_writepath.ps1
+/tools/dev/.b36c-orphan-quarantine/LookupDialog.vue
+/tools/dev/.b36c-orphan-quarantine/mock-mdm.ts
+/tools/dev/.b36c-orphan-quarantine/mock-sales-order.ts

@@ -41,7 +41,7 @@ export const useTabsStore = defineStore('erp-tabs', () => {
       id,
       kind: 'detail',
       title: salesOrderNo,
-      route: `/sales-order/${soId}`,
+      route: `/sales-orders/${soId}`,
       closable: true,
       soId
     };
@@ -61,7 +61,7 @@ export const useTabsStore = defineStore('erp-tabs', () => {
       id,
       kind: 'edit',
       title: mode === 'create' ? '新建销售订单' : `编辑 ${salesOrderNo}`,
-      route: `/sales-order/${soId}/edit`,
+      route: `/sales-orders/${soId}/edit`,
       closable: true,
       soId
     };

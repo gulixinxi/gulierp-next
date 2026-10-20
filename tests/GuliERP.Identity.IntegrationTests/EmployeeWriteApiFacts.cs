@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using GuliERP.Identity.Application.Authorization;
 using GuliERP.Identity.Application.Employee;
 using GuliERP.Identity.Domain.Entities;
@@ -57,6 +59,10 @@ namespace GuliERP.Identity.IntegrationTests;
 public sealed class EmployeeWriteApiFacts : IClassFixture<WebApplicationFactory<Program>>
 {
     private const string RouteBase = "/api/v1/organization";
+    private static readonly JsonSerializerOptions ApiJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter() },
+    };
 
     private readonly WebApplicationFactory<Program> _factory;
 
@@ -88,7 +94,7 @@ public sealed class EmployeeWriteApiFacts : IClassFixture<WebApplicationFactory<
         request.Content = JsonContent.Create(body);
 
         var response = await client.SendAsync(request);
-        var dto = await response.Content.ReadFromJsonAsync<EmployeeDto>();
+        var dto = await response.Content.ReadFromJsonAsync<EmployeeDto>(ApiJsonOptions);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(dto);
@@ -216,7 +222,7 @@ public sealed class EmployeeWriteApiFacts : IClassFixture<WebApplicationFactory<
             tenantId, companyId, userId: 1,
             permission: GuliErpPermissions.IdentityEmployeeRead);
         var response = await client.SendAsync(request);
-        var body = await response.Content.ReadFromJsonAsync<PagedResultDto>();
+        var body = await response.Content.ReadFromJsonAsync<PagedResultDto>(ApiJsonOptions);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(body);
@@ -238,7 +244,7 @@ public sealed class EmployeeWriteApiFacts : IClassFixture<WebApplicationFactory<
             tenantId, companyId, userId: 1,
             permission: GuliErpPermissions.IdentityEmployeeRead);
         var response = await client.SendAsync(request);
-        var body = await response.Content.ReadFromJsonAsync<PagedResultDto>();
+        var body = await response.Content.ReadFromJsonAsync<PagedResultDto>(ApiJsonOptions);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(3, body!.TotalCount);
@@ -284,7 +290,7 @@ public sealed class EmployeeWriteApiFacts : IClassFixture<WebApplicationFactory<
             tenantId, companyId, userId: 1,
             permission: GuliErpPermissions.IdentityEmployeeRead);
         var response = await client.SendAsync(request);
-        var dto = await response.Content.ReadFromJsonAsync<EmployeeDto>();
+        var dto = await response.Content.ReadFromJsonAsync<EmployeeDto>(ApiJsonOptions);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(dto);
@@ -326,7 +332,7 @@ public sealed class EmployeeWriteApiFacts : IClassFixture<WebApplicationFactory<
             Status: EmployeeStatus.Inactive,
             ExpectedConcurrencyVersion: 1));
         var response = await client.SendAsync(request);
-        var dto = await response.Content.ReadFromJsonAsync<EmployeeDto>();
+        var dto = await response.Content.ReadFromJsonAsync<EmployeeDto>(ApiJsonOptions);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(EmployeeStatus.Inactive, dto!.Status);

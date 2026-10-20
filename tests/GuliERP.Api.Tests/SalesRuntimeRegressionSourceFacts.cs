@@ -215,13 +215,44 @@ public sealed class SalesRuntimeRegressionSourceFacts
         Assert.Contains("我的视图", list);
         Assert.Contains("gs-bulk-bar", list);
         Assert.Contains("edit-headerbar", edit);
-        Assert.Contains("单据头信息", edit);
-        Assert.Contains("订单明细", edit);
-        Assert.Contains("新增行", edit);
-        Assert.Contains("金额汇总", edit);
+        // B3.6-E §7 freezes the stacked editor and shared components;
+        // B3.6-H §7/§18 confirms the later 主表/补充信息/明细表 labels.
+        // That accepted surface was uncommitted WIP at b09eebf (H §16),
+        // so the old monolithic editor's captions are not the contract.
+        var template = System.Text.RegularExpressions.Regex.Replace(
+            edit[..edit.IndexOf("<script", StringComparison.Ordinal)],
+            @"<!--[\s\S]*?-->", "");
+        Assert.Equal(3, System.Text.RegularExpressions.Regex.Matches(template, "class=\"section-title\"").Count);
+        Assert.DoesNotContain("<el-tabs", template);
+        Assert.DoesNotContain("<el-tab-pane", template);
+        var master = template.IndexOf("<span>主表</span>", StringComparison.Ordinal);
+        var supplement = template.IndexOf("<span>补充信息</span>", StringComparison.Ordinal);
+        var lines = template.IndexOf("<span>明细表</span>", StringComparison.Ordinal);
+        Assert.True(master >= 0 && supplement > master && lines > supplement);
+        Assert.Contains("v-model=\"form.customerId\"", template[master..supplement]);
+        Assert.Contains("v-model=\"form.deliveryAddressSnapshot\"", template[master..supplement]);
+        Assert.Contains("v-model=\"form.remarks\"", template[supplement..lines]);
+        Assert.Contains("<LineGrid", template[lines..]);
+        Assert.Contains("v-model:lines=\"form.lines\"", template[lines..]);
+        Assert.Contains("@add=\"onAddLine\"", template[lines..]);
+        Assert.Contains("import LineGrid from '../../components/transaction/LineGrid.vue'", edit);
+        var lineGrid = File.ReadAllText(Path.Combine(Root, "apps/web/src/components/transaction/LineGrid.vue"));
+        Assert.Contains("@click=\"onAdd\">添加行</el-button>", lineGrid);
+        Assert.Contains(":data=\"localLines\"", lineGrid);
+        Assert.Contains("import TotalsBar from '../../components/transaction/TotalsBar.vue'", edit);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(template, "<TotalsBar\\b"));
+        Assert.Contains("<TotalsBar :lines=\"form.lines\" currency-code=\"CNY\" />", template[lines..]);
+        var totals = File.ReadAllText(Path.Combine(Root, "apps/web/src/components/transaction/TotalsBar.vue"));
+        foreach (var amount in new[] { "totalNetAmount", "totalTaxAmount", "totalAmount" })
+            Assert.Contains("{{ formatMoney(" + amount + ") }}", totals);
+        foreach (var label in new[] { "净额合计", "税额合计", "价税合计" })
+            Assert.Contains(">" + label + "</span>", totals);
         Assert.Contains("detail-headerbar", detail);
         Assert.Contains("el-descriptions", detail);
         Assert.Contains("来源/下游", detail);
         Assert.Contains("操作日志", detail);
+        Assert.Equal(4, System.Text.RegularExpressions.Regex.Matches(detail, "<el-tab-pane\\b").Count);
+        foreach (var key in new[] { "approval", "attachments", "relations", "audit" })
+            Assert.Contains("<el-tab-pane name=\"" + key + "\">", detail);
     }
 }

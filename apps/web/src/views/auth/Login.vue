@@ -13,17 +13,13 @@
   - Success → router replace to intended route or /sales-order
 --->
 <template>
-  <div class="login-canvas">
+  <div class="login-canvas" :style="{ backgroundImage: `url(${loginHeroUrl})` }">
     <div class="login-rail-decoration" aria-hidden="true">
       <div class="rail-inner">
         <div class="brand-mark">谷</div>
         <div class="brand-text">
           <div class="brand-title">GuliERP</div>
-          <div class="brand-subtitle">企业资源计划 · 销售版</div>
-        </div>
-        <div class="rail-footnote">
-          Secure Sign-in · Cookie-based Authentication<br />
-          XSRF-Protected · HTTPS Only
+          <div class="brand-subtitle">企业资源计划</div>
         </div>
       </div>
     </div>
@@ -151,6 +147,7 @@ import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import type { FormInstance, FormRules } from 'element-plus';
 import { useAuthStore } from '../../stores/auth';
+import loginHeroUrl from '../../assets/login-hero-gulierp.png';
 
 const router = useRouter();
 const route = useRoute();
@@ -217,7 +214,7 @@ watch(() => route.query, (q) => {
 // If already authenticated, fast-forward (e.g. browser back after successful login).
 // We don't flash the form.
 if (auth.isAuthenticated) {
-  const r = auth.consumeIntendedRoute() || '/sales-order';
+  const r = auth.consumeIntendedRoute() || '/sales-orders';
   router.replace(r).catch(() => {});
 }
 
@@ -237,7 +234,7 @@ async function onSubmit(): Promise<void> {
       tenantCode: form.tenantCode.trim() || null,
     });
     // SUCCESS — go to intended route or shell default.
-    const target = auth.consumeIntendedRoute() || '/sales-order';
+    const target = auth.consumeIntendedRoute() || '/sales-orders';
     await router.replace(target).catch(() => {});
   } catch {
     // Error was already classified in auth store (lastError). UI will render via computed above.
@@ -270,38 +267,48 @@ onBeforeUnmount(() => {
   min-height: 100vh;
   width: 100%;
   display: flex;
-  background: var(--bg-canvas, #F8FAFC);
+  background-color: var(--bg-canvas, #F8FAFC);
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Left 40% decorative rail */
+.login-canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(248, 250, 252, 0.10) 0%, rgba(248, 250, 252, 0.22) 46%, rgba(248, 250, 252, 0.74) 72%, rgba(248, 250, 252, 0.92) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.20), rgba(241, 245, 249, 0.10));
+  pointer-events: none;
+}
+
 .login-rail-decoration {
   display: none;
 }
 @media (min-width: 960px) {
   .login-rail-decoration {
     display: flex;
-    width: 42%;
-    background: var(--color-slate-900, #0F172A);
-    color: var(--text-inverse, #FFFFFF);
+    width: 48%;
+    color: var(--text-primary, #0F172A);
     padding: 56px 48px;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
+    position: relative;
+    z-index: 1;
   }
-  .rail-inner { height: 100%; display: flex; flex-direction: column; justify-content: space-between; max-width: 380px; }
+  .rail-inner { display: flex; align-items: center; gap: 16px; max-width: 380px; }
   .brand-mark {
-    width: 56px; height: 56px; border-radius: 12px;
+    width: 52px; height: 52px; border-radius: 8px;
     background: linear-gradient(135deg, var(--color-blue-500, #0284C7), var(--color-blue-700, #075985));
     display: flex; align-items: center; justify-content: center;
-    font-size: 28px; font-weight: 700; color: #fff; letter-spacing: 0.5px;
-    margin-bottom: 20px;
+    font-size: 26px; font-weight: 700; color: #fff; letter-spacing: 0;
     box-shadow: 0 8px 24px rgba(2, 132, 199, 0.25);
   }
-  .brand-title { font-size: 28px; font-weight: 700; letter-spacing: 0.5px; }
-  .brand-subtitle { font-size: 14px; color: var(--color-slate-400, #94A3B8); margin-top: 4px; }
-  .rail-footnote {
-    font-size: 12px; line-height: 1.7;
-    color: var(--color-slate-500, #64748B);
-  }
+  .brand-title { font-size: 28px; font-weight: 700; letter-spacing: 0; }
+  .brand-subtitle { font-size: 14px; color: var(--text-muted, #64748B); margin-top: 4px; }
 }
 
 /* Right form area (always 100% on mobile, 58% on desktop) */
@@ -311,16 +318,19 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 32px 20px;
+  position: relative;
+  z-index: 1;
 }
 
 .login-card {
   width: 100%;
   max-width: 400px;
-  background: var(--bg-container, #FFFFFF);
-  border: 1px solid var(--bg-muted, #E2E8F0);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(226, 232, 240, 0.86);
+  border-radius: 8px;
   padding: 36px 32px 24px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 18px 52px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.05);
+  backdrop-filter: blur(12px);
 }
 
 .login-head { margin-bottom: 20px; }

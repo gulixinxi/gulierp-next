@@ -39,7 +39,7 @@ public static class IdentitySeed
         ILogger logger,
         CancellationToken ct = default)
     {
-        if (await db.Tenants.AsNoTracking().AnyAsync(ct))
+        if (await db.Tenants.AsNoTracking().Where(t => t.Id > 0).AnyAsync(ct))
         {
             logger.LogInformation("Identity seed skipped: tenants already exist.");
             return;

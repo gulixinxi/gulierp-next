@@ -67,7 +67,7 @@
         </el-table-column>
       </el-table>
       <div v-if="!loading && hits.length === 0" class="tx-partner-selector-empty">
-        <el-empty :description="keyword ? '无匹配业务伙伴' : '请输入关键字搜索'" :image-size="60" />
+        <el-empty :description="keyword ? '无匹配客商' : '请输入关键字搜索'" :image-size="60" />
       </div>
     </div>
   </el-popover>
@@ -78,7 +78,7 @@ import { computed, ref, watch } from 'vue';
 import { Search, User } from '@element-plus/icons-vue';
 import { listBusinessPartners } from '../../api/mdm/business-partner';
 import { roleUiToInt } from '../../types/mdm';
-import type { BusinessPartner, BusinessPartnerListParams, BusinessPartnerRole } from '../../types/mdm';
+import type { BusinessPartner, BusinessPartnerListParams, BusinessPartnerRole, PagedResult } from '../../types/mdm';
 
 const props = defineProps<{
   modelValue: string | null;
@@ -89,6 +89,17 @@ const props = defineProps<{
    */
   role?: 'Customer' | 'Supplier' | 'Both';
   placeholder?: string;
+  /**
+   * GULIERP_TRANSACTION_PHASE_B2 (Phase B.2 — SalesOrder frontend wire)
+   * Optional override for the business-partner fetch. Defaults to the
+   * standard MDM endpoint (`/api/v1/mdm/business-partners`), which
+   * requires `MdmPolicies.BusinessPartnerRead`. Single-role operators
+   * such as SALES_OPERATOR do NOT have that permission; they must pass
+   * a customFetcher that hits the SalesOrder context facade (e.g.
+   * `listSalesOrderCustomers`) so the boundary contract (G3-R1C) is
+   * preserved.
+   */
+  customFetcher?: (params: BusinessPartnerListParams) => Promise<PagedResult<BusinessPartner>>;
 }>();
 
 const emit = defineEmits<{
@@ -149,7 +160,8 @@ async function runSearch() {
     if (props.role === 'Customer' || props.role === 'Supplier') {
       params.role = roleUiToInt(props.role as BusinessPartnerRole);
     }
-    const result = await listBusinessPartners(params);
+    const fetchPartners = props.customFetcher ?? listBusinessPartners;
+    const result = await fetchPartners(params);
     if (myToken === searchToken) {
       hits.value = result.items;
     }

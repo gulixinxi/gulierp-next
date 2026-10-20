@@ -1,0 +1,644 @@
+[
+  {
+    "status": "M",
+    "path": "apps/api/GuliERP.Api/Sales/SalesOrderEndpoints.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "840B2690CA7488D6142C3B243DA0B5E69F5432F376964814202C456531D45F26"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/api/sales-order.ts",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "F20ED30859687529AAD3D16978DB68A2D3AE870D91A4A7F748C9B37787543E09"
+  },
+  {
+    "status": "D",
+    "path": "apps/web/src/components/LookupDialog.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "DELETED"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/components/transaction/ItemSelectorPopover.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "E51FFB75E67EA5157853BB88A19FD015A4DA6B5C255E89797461DED3A9BF90DE"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/components/transaction/LineGrid.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "8E629792E30C95F809B29BC21AE478F9B9E0B4BA9482460CF72148720ACB2AB5"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/components/transaction/PartnerSelectorPopover.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "4A68200D138C7FD1B3DD7366948AFA16F70991041D1BD5E0CFDB5D17F1060676"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/components/transaction/WarehouseSelectorPopover.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "A41A48A1EF52533BD52DA5C0D54C18A5FE135D3AB4EFBE8673B78186E2AA31C8"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/layout/navigation.ts",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "77F88D701F54AB8A6C37C512603562C85450D2A935651DB5E60E3107A240C546"
+  },
+  {
+    "status": "D",
+    "path": "apps/web/src/mock/mdm.ts",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "DELETED"
+  },
+  {
+    "status": "D",
+    "path": "apps/web/src/mock/sales-order.ts",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "DELETED"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/router.ts",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "82504F9D567718FC003247B3FDAE40691CAD7430F10DD881AF55945DE1059CDE"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/stores/sales-order.ts",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "FD4444E294B5318A9786B5381026767C794EB2000B7F7D926D4A2FFA5A12F5D4"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/stores/tabs.ts",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "BB240DBABBBC80A73E9038E7254D6F4E29350C6D67781E27B41C6BDB26D5B34B"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/types/sales-order.ts",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "1100276FBBFCB9F720326E59DC069FACF8631CBCAC0CF556D3464AEDA6B00140"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/views/auth/Forbidden403.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "D475423F81D1A2578C0D989282EAD5A520E8C36EC3481DA51CD3BDE10AE16309"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/views/auth/Login.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "F6AA9992055165E7525CD5CB044131E053EA899934324C030271A8A40834541E"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/views/sales-order/SalesOrderDetail.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "D5177B13DC9D867DB792D7210235E49647908EDCE306A06B757E26FF47807E07"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/views/sales-order/SalesOrderEdit.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "B7022449F2ECDE596177BE2ABA0DFA9A0B22C7D577E42ACE6B9A86E449EEE60A"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/src/views/sales-order/SalesOrderList.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "AEA3863053157DFA13C9E86A34C65BAD0EF9D59A3096BF16E2EDFF82BC923206"
+  },
+  {
+    "status": "M",
+    "path": "apps/web/vite.config.ts",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "BEE32B591250E435FCAD6804FAAC543BED8B2DE77462269C084197F90B2B48E4"
+  },
+  {
+    "status": "M",
+    "path": "docs/governance/GOAL_REGISTRY.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "D17271CF91B9D78CC4E91249D90C6F2C21BD9EDD42EE2CDCEDA971C2BB56CEB2"
+  },
+  {
+    "status": "M",
+    "path": "docs/verification/GULIERP_EMPLOYEE_CODE_CONTRACT_RECONCILIATION_001_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "BAD3F8BAEF2504F0526368E2E096F14B1FFB574C4E1B2574175D5ADDE60BDD8C"
+  },
+  {
+    "status": "M",
+    "path": "modules/sales/GuliERP.Sales.Application/ISalesOrderService.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "DD5D37121C44B5B5636EB69D3289311D2DE08C87B98310B13729E33DD96E8E06"
+  },
+  {
+    "status": "M",
+    "path": "modules/sales/GuliERP.Sales.Application/SalesOrderDtos.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "D79EC4FE52B0B7D010A86D2FEA8CD327497FEA9E1541E2810CFDD37E287CCBB4"
+  },
+  {
+    "status": "M",
+    "path": "modules/sales/GuliERP.Sales.Domain/Entities/SalesOrder.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "CADCDFCCF16C46A66E9332F8BF64D727FBE70702E5AA5345EEA9B8B0553AB572"
+  },
+  {
+    "status": "M",
+    "path": "modules/sales/GuliERP.Sales.Domain/Entities/SalesOrderLine.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "89195430DC56DEF0D59D4096DB3169AFC147420DA76AF21AED78FE83EFD120EC"
+  },
+  {
+    "status": "M",
+    "path": "modules/sales/GuliERP.Sales.Domain/Enums/SalesOrderStatus.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "4A4B51BB7C9C374F6AF7C2FF80E6ECD3B5E6065BBF3A623C663367BC8F4E6D6B"
+  },
+  {
+    "status": "M",
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Migrations/SalesDbContextModelSnapshot.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "F23387B3158FB7831C6C6C696DB6E06B85EA5DE106148D05DBB24304170AD79B"
+  },
+  {
+    "status": "M",
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Persistence/Configurations/SalesOrderConfiguration.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "20270DBE99128FD3922C7E79D7914F8870BAE06FA580CEE83093B7613D0B559A"
+  },
+  {
+    "status": "M",
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Persistence/Configurations/SalesOrderLineConfiguration.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "323285E0C3FE8FCCCDDFC8C3C3741E037D17EB60B1C9363491D9B5263FBB4738"
+  },
+  {
+    "status": "M",
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Sales/SalesOrderService.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "21F43463E6A2D2F565C50DA89FD839E73F6D710782FA79830C1C14AF5D20035B"
+  },
+  {
+    "status": "M",
+    "path": "tests/GuliERP.Identity.IntegrationTests/EnterpriseBootstrapAndOrganizationTreeFacts.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "AB0F98EA0DD7BF34C903F095B6D206042C8E336C5100342A21EEA64AC879F4C2"
+  },
+  {
+    "status": "M",
+    "path": "tests/GuliERP.Identity.IntegrationTests/EnterpriseRolePackCrossTenantFacts.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "F1420312B352F2822C9D942D2044C52F95F5A8799B4F5AE155C21E36CE0BD32F"
+  },
+  {
+    "status": "M",
+    "path": "tests/GuliERP.Sales.Tests/SalesOrderServiceFacts.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "42E80C3FEB0DCA18A0AA3DA83D842680E3C7D06162238E846F152BA56E6841EB"
+  },
+  {
+    "status": "M",
+    "path": "tools/dev/check-runtime.ps1",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "6675400F6F8125EAB783F4DFECA3BB9B82028765B860B6C580EA4A1CA27CEDA6"
+  },
+  {
+    "status": "M",
+    "path": "tools/dev/start-stack.ps1",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "BC4BE6764C557375EB9470481A7C8DF9B205A31063C616D8D57122C1BBF8AD71"
+  },
+  {
+    "status": "M",
+    "path": "tools/dev/stop-stack.ps1",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "51BEE0A9D175EB5AC0C3986B9629BB5A28AAEFD4A3443BC9E9E070AD407ACDAF"
+  },
+  {
+    "status": "??",
+    "path": ".git-stage-list",
+    "category": "C_TEMPORARY",
+    "sha256": "2EBC64612A49CA8E62DFA176A2233043BE3070A108FDC3CB584F96067225323F"
+  },
+  {
+    "status": "??",
+    "path": ".stack-pids.json",
+    "category": "C_TEMPORARY",
+    "sha256": "521B3FE148D646148CF872298233F4B7B5CB919783DF0757E821EEB970DBA462"
+  },
+  {
+    "status": "??",
+    "path": ".vite-dev.err.log",
+    "category": "C_TEMPORARY",
+    "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "status": "??",
+    "path": ".vite-dev.log",
+    "category": "C_TEMPORARY",
+    "sha256": "C85C5E5EAC1B820BD0246EFF106A6ED9853C4B1A419FEED8C8627F8836342ADF"
+  },
+  {
+    "status": "??",
+    "path": ".vite-stderr.log",
+    "category": "C_TEMPORARY",
+    "sha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  {
+    "status": "??",
+    "path": ".vite-stdout.log",
+    "category": "C_TEMPORARY",
+    "sha256": "9C8BB11915EDB9674B84B99A5073F1B28E9CF0921C06A4D3C06942835E4DCF72"
+  },
+  {
+    "status": "??",
+    "path": "apps/web/src/assets/login-hero-gulierp.png",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "2A6E823069E7612D83C1FD47AB2C0F046414722BE9B103C24127CA71A3EA19AE"
+  },
+  {
+    "status": "??",
+    "path": "apps/web/src/views/dev/TxComponentsPreview.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "A6399AFE2AC2B0F2A6D7666CB30CE10B8F9F57959848442AE50EBF8EC388D746"
+  },
+  {
+    "status": "??",
+    "path": "docs/business/DEV_LOWCODE_ARCHITECTURE_ANALYSIS_INSTRUCTIONS.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "F425CA3AE9C27BBC8E0505D310D522A184DBD8FFC742301D1E0136BD6C38D16F"
+  },
+  {
+    "status": "??",
+    "path": "docs/business/DEV_LOWCODE_ARCHITECTURE_INVENTORY_001.sql",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "3A9D67C2893D236B813C47C97F79CFB3729198A02E1577EC4E8379CEA2A6C578"
+  },
+  {
+    "status": "??",
+    "path": "docs/business/GULIERP_ADDRESS_AND_REGION_STANDARD_V1.md",
+    "category": "A_KEEP",
+    "sha256": "FADA63191982F90450AEC608C8F15E086F6A83FEDE1303975D57FC3BD37CD872"
+  },
+  {
+    "status": "??",
+    "path": "docs/business/GULIERP_ADMINNET_PLATFORM_FOUNDATION_REFERENCE_AUDIT_001.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "8C226BA45774E9F698CA650141A937EE19008D5EE3E7C522B1E9E0ADB1E22D39"
+  },
+  {
+    "status": "??",
+    "path": "docs/business/GULIERP_DEV_TO_CURRENT_ARCHITECTURE_GAP_AUDIT_001.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "FD9146165B5A600D11804D1E2DB3A897FFE5B8F120E3C745CFB77392DE72DD24"
+  },
+  {
+    "status": "??",
+    "path": "docs/business/GULIERP_MASTER_DATA_CODE_RULE_STANDARD_V1.md",
+    "category": "A_KEEP",
+    "sha256": "C915E100221B94268B368DDF196BB0C3FDA9ACF63B82639E3207502524C9FA5C"
+  },
+  {
+    "status": "??",
+    "path": "docs/business/GULIERP_MASTER_DATA_COMMON_FIELD_CONTRACT_V1.md",
+    "category": "A_KEEP",
+    "sha256": "A53B806F81CD123D20581B60AA5185B51DCA4B9BEF3A3A1CA72DA0EC9D4C1F3A"
+  },
+  {
+    "status": "??",
+    "path": "docs/business/GULIERP_NUMERIC_PRECISION_STANDARD_V1.md",
+    "category": "A_KEEP",
+    "sha256": "45AE797E72C216A35557214E6EA15DBBFB94F57AF358DA5A620099EF4B10960E"
+  },
+  {
+    "status": "??",
+    "path": "docs/business/GULIERP_PRE_INVENTORY_ARCHITECTURE_DECISION_001.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "1D2F1E231CD4A8B0F9F6941F225D3748BED0F604AA8C06B839472ACCABA8B277"
+  },
+  {
+    "status": "??",
+    "path": "docs/business/GULIERP_REFERENCE_EVIDENCE_BOUNDARY_AND_COLLECTION_PLAN_001.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "E0C03551EEC8A1B73D6DB20CCC71377494A468293E54FB132371D9C33D65DB26"
+  },
+  {
+    "status": "??",
+    "path": "docs/business/GULIERP_TRANSACTION_DOCUMENT_STANDARD_V1.md",
+    "category": "A_KEEP",
+    "sha256": "8CA69222740F91DBC80E8A549382376DE0D8C014C3A16B6185F6EEF2192B4C91"
+  },
+  {
+    "status": "??",
+    "path": "docs/design/GULIERP_PURCHASE_ORDER_REDESIGN_V1.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "DF954EBA8AC394778298739210B2561C1709FBF149A174A7D949A3D0556128A5"
+  },
+  {
+    "status": "??",
+    "path": "docs/design/GULIERP_SALES_ORDER_REDESIGN_V1.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "18E988692FD847816807975E841A61B9BB7EE46737EDDB0E477242915DE82C16"
+  },
+  {
+    "status": "??",
+    "path": "docs/design/GULIERP_TRANSACTION_DOCUMENT_UX_CONTRACT_V1.md",
+    "category": "A_KEEP",
+    "sha256": "DBBCACECD82F0F65740C1ADD7C9385E70C0BAB150116AE59758FC08422AF0BC6"
+  },
+  {
+    "status": "??",
+    "path": "docs/design/GULIERP_UI_LAYOUT_STANDARD_V2.md",
+    "category": "A_KEEP",
+    "sha256": "5F2FD782BB6D6CB6E09C4F1FE187AAC6A883266A78F53D4BB14E78172AC64749"
+  },
+  {
+    "status": "??",
+    "path": "docs/design/GULIERP_UI_SYSTEM_CALIBRATION_001_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "1CDE62B9359530FF9D7E7050FFF11C93F5D18705ACA303729B189A33A75B4BDB"
+  },
+  {
+    "status": "??",
+    "path": "docs/design/MINIMAX_SALES_ORDER_REBUILD_PROMPT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "9210AA971ED1E795D3FCE19FA78841D30BA16FF5992598985E1648E6419FC3E6"
+  },
+  {
+    "status": "??",
+    "path": "docs/design/sales-order-ui-simulation.html",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "9B91B1E08D2DBCA130B2AC143288084C38A6FF03F8457D89FEB1780937E24501"
+  },
+  {
+    "status": "??",
+    "path": "docs/planning/2026-09-09-project-audit/REPORT.md",
+    "category": "A_KEEP",
+    "sha256": "822C0F07A745981FBDAA708B97F3514C9F5720CBD2F127A07ECC707CD13890C9"
+  },
+  {
+    "status": "??",
+    "path": "docs/planning/2026-09-09-project-audit/findings.md",
+    "category": "A_KEEP",
+    "sha256": "12ED14D28A09259913CEB98BF41D99AAE48011A560AFC64A6D4CB0EA96142D5A"
+  },
+  {
+    "status": "??",
+    "path": "docs/planning/2026-09-09-project-audit/progress.md",
+    "category": "A_KEEP",
+    "sha256": "FF8DCEBD23396E670A467436731D939EC46253024B8D4532B748EF069D792CCE"
+  },
+  {
+    "status": "??",
+    "path": "docs/planning/2026-09-09-project-audit/task_plan.md",
+    "category": "A_KEEP",
+    "sha256": "BC65D0AB97C0E97E4FD8E2316480B6CB36674AB3A0B7545D536B7F6F9F85F1D6"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_ADDRESS_AND_REGION_STANDARD_V1_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "3DCAC6C91203CC9E0C2DF14E7007B489E5C8729097E053C4E2F47E0D566FCD2B"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_ADMINNET_PLATFORM_FOUNDATION_REFERENCE_AUDIT_001_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "70C8741F3F130167C863D977AFDA90D2BEE4622A12732ACCFC3868F90FA3B97B"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_DEV_TO_CURRENT_ARCHITECTURE_GAP_AUDIT_001_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "457BBD40559488129D41BD16B419DA598FF92D6ADDA82A5E839FE1E7C9395008"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_EMPLOYEE_MASTER_FINAL_GOVERNANCE_CLOSURE_001_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "7A89C120A4F8558EF15BA7114B41A41D58ECEDE3B74B54C0F1635B08B081CAE6"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_EMPLOYEE_MASTER_POSTGRES_RUNTIME_CLOSURE_001_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "6736BC3B619754BE5AED5A84BC08F94CC5BA507950679B8F694E63E54AB42905"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_FORMAL_ADMIN_ROLEPACK_CONTRACT_ALIGNMENT_001_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "9E79C1FC8BA939BEAB81766861924C8AF0A686C28AF65BC9EDFC4BE2AB58F3D5"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_MASTER_DATA_CODE_RULE_STANDARD_V1_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "6FFDCE5D535769F190D3B8C0072339A27F0C630FD198463CE2E3DFD4D632DBD3"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_MASTER_DATA_COMMON_FIELD_CONTRACT_V1_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "4AB873502C0E4EC0A0EBFFCD5D87E5578DA1F58B78FC355BCE405CE3AE25EAF4"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_MDM_MNEMONIC_LIFECYCLE_V1_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "ACF7B3F092F9B965AEC0CBDC0DFDF59DD824982A6EC008EC2E1EC3E3F461C5ED"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_MDM_UI_AND_COMMON_FIELD_AUDIT_V1_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "9C90176A806285F906644068D2E4CE95C08B2BEE271643C660EA67561974AB2E"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_NEXT_EMPLOYEE_OPERATOR_RUNTIME_FINAL_001_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "F7BBDC7CEEC3553C3C9195DF5B058D9826B3377286968D13AE04440AF5B3DFB4"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_NUMERIC_PRECISION_STANDARD_V1_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "0C6C45DE7E7987ABEE18FDAB8ADFC14E66924DAD79D37A301FFBC941C1AAFA21"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_PRE_INVENTORY_ARCHITECTURE_DECISION_001_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "58B978D1827BD9F1909AC2B5D0A1C70EC8554AE17A5EFD3776B727F14A82D952"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_TRANSACTION_DOCUMENT_REDESIGN_V1_GAP_MATRIX.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "37816B9FDB88A910332A3C940EBA3CD53C73DB32DC8394EBCBAC4F274DB62FB1"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_TRANSACTION_DOCUMENT_REDESIGN_V1_IMPLEMENTATION_PLAN.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "4DC92FFE64C3A54A48D8EB874FEECCDB9BCD13CAA8B5A359292143CA5902352A"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_TRANSACTION_PHASE_B3_6_E_FREEZE_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "CF6BA99901579A0834C71E48EB28D2799EB3BB16971DB3D19DC6EF39C42439D8"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_TRANSACTION_PHASE_B3_6_F_DIAGNOSIS_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "2F7FABC5EA2E39C841F891561D6B2B8E7753D191BB8B9AEC0665068FC803DB18"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_TRANSACTION_PHASE_B3_6_G_FREEZE_RESPECTING_MINIMAL_FIX_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "53D16A7CB54DBAF205A506FC87B03C75F2DCDB2F05E258052F3EF366B51D5BFD"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/GULIERP_TRANSACTION_PHASE_B3_6_H_POST_FIX_RECON_REPORT.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "745F238302C92C239395B263B4D4CCC6D1BE5BCD1D5E20FF3032920D21127E7A"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/ONLYIT_MATURE_ERP_REFERENCE_AUDIT_001.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "647783736AF06C671D9DBC4195F4F8A508C2944EBDF54DEC016C851EEC256CE0"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/ONLYIT_NUMERIC_PRECISION_MATRIX_001.csv",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "26699CD800C98B0DD73A5E4E61374F4A3D41436E0D9D11603F9568705AE1CCF6"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/ONLYIT_PRODUCTION_HARDENING_MATRIX_001.md",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "3EC1D8C4E5188DB122737A5695C5AE2D4B9AF138F19C8662CBCCF8F5AC46088B"
+  },
+  {
+    "status": "??",
+    "path": "docs/verification/ONLYIT_SCHEMA_INVENTORY_001.csv",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "BB376876560B1BCC651049E69D76C5D6CD71CF71FA81B043C0FB0C338979FA5F"
+  },
+  {
+    "status": "??",
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Migrations/20260903120000_SALES002_SalesOrderV1HeaderAuditSnapshotUom.Designer.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "AD7D69DA05378AC262B9804F3C5DEFEFDC258C47CD0057F0A972723C7E8E58EF"
+  },
+  {
+    "status": "??",
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Migrations/20260903120000_SALES002_SalesOrderV1HeaderAuditSnapshotUom.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "E4323F3C5D16B913D48B8FAF842713F1C1E7EE8C6CD23B01E3CC38B158B1F6B0"
+  },
+  {
+    "status": "??",
+    "path": "tests/GuliERP.Sales.Tests/SalesOrderV1HeaderFacts.cs",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "D1B2C9376F06A741B83DF22DCE1E29E4AAE4F2C149C417066EA203816F9DCE5E"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.b36c-orphan-quarantine/LookupDialog.vue",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "DF164B8F4BEDD00CA6F60855BC833FF601D69DB820070509D243B64D9DA030D2"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.b36c-orphan-quarantine/mock-mdm.ts",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "5FF6143226D5E8281F05C22A6C08F2280B6DCB8DAF3D5DBA422725BA4F1F2F9F"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.b36c-orphan-quarantine/mock-sales-order.ts",
+    "category": "D_REVIEW_REQUIRED",
+    "sha256": "07FD32FA88701D2E9A39F0EAFDDE2079C5EACC23844DF5D04D4244D5F5E77C5B"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.quarantine/_commit_chore_dev.txt",
+    "category": "C_TEMPORARY",
+    "sha256": "539A33F9349A3873E09B234A61FCB93214B590FC21A6E8B076907960E881557B"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.quarantine/_commit_docs_final.txt",
+    "category": "C_TEMPORARY",
+    "sha256": "5DC55CAC1EE616C98F3214115BF1C7762C1C58E079758D30EAAF86979CAB7091"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.quarantine/_commit_feat_identity.txt",
+    "category": "C_TEMPORARY",
+    "sha256": "96EA844FCF1A9D46CB058EAC6B776D261FA31D8DC1633DDECCD58E04A976907C"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.quarantine/_commit_feat_purchase_backend.txt",
+    "category": "C_TEMPORARY",
+    "sha256": "C20BECCEB8F8F930FF9FDA7223992024D30493905E1F7E1A614CCDF1BCCAA288"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.quarantine/_commit_feat_web_purchase.txt",
+    "category": "C_TEMPORARY",
+    "sha256": "F4A66A6E04C79B2E344F840C1B94EDE694B25712DE0BF6513764AB0CAB0228F7"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.quarantine/_commit_test_identity.txt",
+    "category": "C_TEMPORARY",
+    "sha256": "53099FB67153E10D69387991E7774F9A6B6CF069C06AF896D81E839F5E3B8BC0"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.quarantine/_commit_test_purchase.txt",
+    "category": "C_TEMPORARY",
+    "sha256": "1EA0873C6878211C1211AE2E37C960C14F1EDFCA22E262F270313F721CB6D712"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.quarantine/_r2a_neg_check.ps1",
+    "category": "C_TEMPORARY",
+    "sha256": "E5FEE7BFF74804B438E48BB395B61712025A4B5BBD24096D98C21750D643B794"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.quarantine/_run_r2a_runtime.ps1",
+    "category": "C_TEMPORARY",
+    "sha256": "EEB52A1ABB4ED4BE01571A76E7EF2D60B8BE2F1016BF70D9B27F30AD39BE5C39"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.quarantine/_run_workbench_matrix.ps1",
+    "category": "C_TEMPORARY",
+    "sha256": "0818B95C4F91DF030755D4BD8ECCA64AC32239A58A9AA56691946689004FA773"
+  },
+  {
+    "status": "??",
+    "path": "tools/dev/.quarantine/_run_writepath.ps1",
+    "category": "C_TEMPORARY",
+    "sha256": "7687A6F114C61C6ECB9DE31125B90E2F3038224D1E9F73249C1DE537B27DED89"
+  }
+]

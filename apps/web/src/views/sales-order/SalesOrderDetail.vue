@@ -6,12 +6,11 @@
         <el-divider direction="vertical" />
         <div class="doc-meta">
           <span class="doc-no">{{ order.orderNo }}</span>
-          <span class="doc-type">普通销售</span>
         </div>
         <div class="status-tags">
+          <!-- B3.6-A: TRAE-遗留 chip（"已通过"/"未提交"/"未执行"）已移除。
+               V1 P0 单维度 Status（草稿/已确认/已取消）由 SALES_STATUS_LABEL 表达。 -->
           <el-tag :type="SALES_STATUS_TAG[order.status]" size="small" effect="dark">{{ SALES_STATUS_LABEL[order.status] }}</el-tag>
-          <el-tag type="info" size="small" effect="plain">{{ order.status === 2 ? '已通过' : '未提交' }}</el-tag>
-          <el-tag type="info" size="small" effect="plain">未执行</el-tag>
         </div>
       </div>
       <div class="headerbar-right">
@@ -29,9 +28,10 @@
         <el-descriptions-item label="单据编号"><span class="mono">{{ order.orderNo }}</span></el-descriptions-item>
         <el-descriptions-item label="订单日期">{{ order.orderDate }}</el-descriptions-item>
         <el-descriptions-item label="交货日期">{{ order.requestedDeliveryDate || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="单据类型">普通销售</el-descriptions-item>
+        <!-- B3.6-A: 单据类型 (Normal/Sample/Return) 不属于 V1 P0 字段 — 移除。 -->
         <el-descriptions-item label="客户" :span="2"><span class="link">{{ order.customerNameSnapshot }}</span><span class="mono small">({{ order.customerCodeSnapshot }})</span></el-descriptions-item>
         <el-descriptions-item label="币种">{{ order.currencyCode }}</el-descriptions-item>
+        <el-descriptions-item label="默认仓库">{{ warehouseLabel }}</el-descriptions-item>
         <el-descriptions-item label="乐观锁版本">v{{ order.concurrencyVersion }}</el-descriptions-item>
         <el-descriptions-item label="不含税金额">{{ money(order.totalNetAmount) }}</el-descriptions-item>
         <el-descriptions-item label="税额">{{ money(order.totalTaxAmount) }}</el-descriptions-item>
@@ -39,6 +39,10 @@
         <el-descriptions-item label="创建时间">{{ order.createdAt }}</el-descriptions-item>
         <el-descriptions-item label="更新时间">{{ order.modifiedAt }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="4">{{ order.remarks || '—' }}</el-descriptions-item>
+        <!-- B3.6-A: V1 Sales §4 DeliveryAddressSnapshot — Confirm 时锁定的收货地址。 -->
+        <el-descriptions-item label="收货地址（确认快照）" :span="4">
+          <span style="white-space: pre-wrap">{{ order.deliveryAddressSnapshot || '—' }}</span>
+        </el-descriptions-item>
       </el-descriptions>
     </div>
 
@@ -103,8 +107,10 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowLeft, Checked, CircleClose, Document, EditPen, Grid, Link, List, Paperclip, Printer, Select } from '@element-plus/icons-vue';
+import { listAllWarehousesActiveOnly } from '../../api/mdm/warehouse';
 import { useSalesOrderStore } from '../../stores/sales-order';
 import { useTabsStore } from '../../stores/tabs';
+import type { Warehouse } from '../../types/mdm';
 import { SALES_STATUS_LABEL, SALES_STATUS_TAG } from '../../types/sales-order';
 
 defineOptions({ name: 'SalesOrderDetail' });
@@ -114,12 +120,58 @@ const router = useRouter();
 const store = useSalesOrderStore();
 const tabs = useTabsStore();
 const loading = ref(false);
-const activeTab = ref('approval');
+const activeTab = ref('audit');
 const id = computed(() => String(route.params.id));
 const order = computed(() => store.current);
-const auditRows = computed(() => order.value ? [
-  { action: 'Create/Update', actor: 'System', at: order.value.modifiedAt, remark: '后端审计日志接入后展示完整操作链' },
-] : []);
+
+// B3.6-C UI Integration — client-side warehouse projection.
+// The V1 detail DTO carries only warehouseId; the projection is
+// resolved once on mount via the active-warehouse list endpoint
+// and rendered as `${code} · ${name}` in the 默认仓库 row.
+const warehouseMap = ref<Map<string, Warehouse>>(new Map());
+const warehouseLabel = computed(() => {
+  const id = order.value?.warehouseId;
+  if (!id) return '—';
+  const w = warehouseMap.value.get(String(id));
+  if (w) return w.name ? `${w.code} · ${w.name}` : w.code;
+  return String(id);
+});
+async function loadWarehouseMap() {
+  try {
+    const list = await listAllWarehousesActiveOnly();
+    const m = new Map<string, Warehouse>();
+    for (const w of list) m.set(String(w.id), w);
+    warehouseMap.value = m;
+  } catch {
+    /* keep previous map; fall back to raw id in the row */
+  }
+}
+
+// B3.6-A: V1 Sales §9 / Sales §13 — 操作日志展示 create / modify / confirm / cancel
+// 的 actor + time + reason。仅显示有值的字段；空操作不出现。
+const auditRows = computed(() => {
+  const o = order.value;
+  if (!o) return [];
+  const rows: Array<{ action: string; actor: string; at: string; remark: string }> = [];
+  if (o.createdAt) {
+    rows.push({ action: '创建', actor: o.createdBy ? `#${o.createdBy}` : '—', at: o.createdAt, remark: '' });
+  }
+  if (o.modifiedAt && o.modifiedAt !== o.createdAt) {
+    rows.push({ action: '修改', actor: o.modifiedBy ? `#${o.modifiedBy}` : '—', at: o.modifiedAt, remark: '' });
+  }
+  if (o.confirmedAt) {
+    rows.push({ action: '确认', actor: o.confirmedBy ? `#${o.confirmedBy}` : '—', at: o.confirmedAt, remark: 'Draft → Confirmed' });
+  }
+  if (o.cancelledAt) {
+    rows.push({
+      action: '取消',
+      actor: o.cancelledBy ? `#${o.cancelledBy}` : '—',
+      at: o.cancelledAt,
+      remark: o.cancellationReason ? `原因：${o.cancellationReason}` : '（草稿直接取消，未填原因）',
+    });
+  }
+  return rows;
+});
 
 function money(v: number, decimals = 2) {
   return new Intl.NumberFormat('zh-CN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(v || 0);
@@ -130,14 +182,15 @@ async function load() {
   try {
     const dto = await store.fetchDetail(id.value);
     tabs.openDetail(dto.id, dto.orderNo);
+    void loadWarehouseMap();
   } catch (err) {
     ElMessage.error((err as any)?.detail || (err as any)?.title || '销售订单加载失败');
   } finally {
     loading.value = false;
   }
 }
-function goBack() { tabs.setActive('list-sales-order'); router.push('/sales-order').catch(() => {}); }
-function edit() { if (!order.value) return; tabs.openEdit(order.value.id, order.value.orderNo, 'edit'); router.push(`/sales-order/${order.value.id}/edit`).catch(() => {}); }
+function goBack() { tabs.setActive('list-sales-order'); router.push('/sales-orders').catch(() => {}); }
+function edit() { if (!order.value) return; tabs.openEdit(order.value.id, order.value.orderNo, 'edit'); router.push(`/sales-orders/${order.value.id}/edit`).catch(() => {}); }
 async function confirm() {
   if (!order.value) return;
   await ElMessageBox.confirm('确认后订单客户和明细不可再修改，是否继续？', '确认销售订单');
@@ -150,9 +203,28 @@ async function confirm() {
 }
 async function cancel() {
   if (!order.value) return;
-  await ElMessageBox.confirm('确定取消该销售订单？', '取消销售订单', { type: 'warning' });
+  // B3.6-A: Confirmed → require reason (matches Edit.vue behaviour).
+  let reason: string | null = null;
+  if (order.value.status === 2) {
+    const result = await ElMessageBox.prompt(
+      '已确认单据需填写取消原因',
+      '取消销售订单',
+      {
+        confirmButtonText: '确定取消',
+        cancelButtonText: '不取消',
+        inputPattern: /.+/,
+        inputErrorMessage: '原因必填',
+        inputValue: '',
+      }
+    ).catch(() => ({ value: null as string | null }));
+    if (result.value === null) return;
+    reason = result.value.trim() || null;
+  } else {
+    const confirmed = await ElMessageBox.confirm('确定取消该销售订单？', '取消销售订单', { type: 'warning' }).catch(() => null);
+    if (confirmed === null) return;
+  }
   try {
-    await store.cancel(order.value.id);
+    await store.cancel(order.value.id, reason);
     ElMessage.success('销售订单已取消');
   } catch (err) {
     ElMessage.error((err as any)?.detail || (err as any)?.title || '取消失败');

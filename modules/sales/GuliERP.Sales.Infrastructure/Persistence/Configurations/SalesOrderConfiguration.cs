@@ -24,6 +24,15 @@ public sealed class SalesOrderConfiguration : IEntityTypeConfiguration<SalesOrde
         b.Property(x => x.TotalAmount).HasPrecision(18, 2);
         b.Property(x => x.ConcurrencyVersion).IsConcurrencyToken();
 
+        // B3.6-A additions (V1 Sales §2 + §9). All nullable.
+        b.Property(x => x.WarehouseId);
+        b.Property(x => x.DeliveryAddressSnapshot).HasMaxLength(500);
+        b.Property(x => x.ConfirmedAt);
+        b.Property(x => x.ConfirmedBy);
+        b.Property(x => x.CancelledAt);
+        b.Property(x => x.CancelledBy);
+        b.Property(x => x.CancellationReason).HasMaxLength(500);
+
         b.HasIndex(x => new { x.TenantId, x.CompanyId, x.OrderNo })
             .IsUnique()
             .HasDatabaseName("ux_gulierp_sales_order_scope_orderno");
@@ -31,6 +40,8 @@ public sealed class SalesOrderConfiguration : IEntityTypeConfiguration<SalesOrde
             .HasDatabaseName("ix_gulierp_sales_order_scope");
         b.HasIndex(x => x.CustomerId)
             .HasDatabaseName("ix_gulierp_sales_order_customerid");
+        b.HasIndex(x => x.WarehouseId)
+            .HasDatabaseName("ix_gulierp_sales_order_warehouseid");
 
         b.HasMany(x => x.Lines)
             .WithOne(x => x.SalesOrder)

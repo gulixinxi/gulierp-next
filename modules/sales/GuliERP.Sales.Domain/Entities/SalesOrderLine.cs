@@ -8,6 +8,11 @@ public sealed class SalesOrderLine
     public long ItemId { get; set; }
     public string ItemCodeSnapshot { get; set; } = string.Empty;
     public string ItemNameSnapshot { get; set; } = string.Empty;
+    /// <summary>
+    /// Item specification snapshot. Per V1 Standard §9 / Sales §3:
+    /// captured from Item at line create / Item change. Nullable.
+    /// </summary>
+    public string? SpecificationSnapshot { get; set; }
     public long UomId { get; set; }
     public string UomCodeSnapshot { get; set; } = string.Empty;
     public string UomNameSnapshot { get; set; } = string.Empty;

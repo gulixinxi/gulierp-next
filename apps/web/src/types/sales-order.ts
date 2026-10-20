@@ -1,6 +1,9 @@
 import type { PagedResult } from './mdm';
 
-export type SalesOrderStatus = 1 | 2 | 3;
+// B3.6-A: V1 Sales §5. P0 only uses 1 / 2 / 3; 4-6 are reserved for
+// future Goals (shipping / receiving / AR). The frontend types accept
+// the full union so the API can be extended without a breaking change.
+export type SalesOrderStatus = 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface SalesOrderLineInput {
   itemId: string;
@@ -10,6 +13,8 @@ export interface SalesOrderLineInput {
   discountRate: number;
   taxRate: number;
   remarks?: string | null;
+  /** B3.6-A addition. Server is authoritative; client may send what it saw. */
+  specificationSnapshot?: string | null;
 }
 
 export interface CreateSalesOrderRequest {
@@ -18,6 +23,10 @@ export interface CreateSalesOrderRequest {
   requestedDeliveryDate?: string | null;
   remarks?: string | null;
   lines: SalesOrderLineInput[];
+  /** B3.6-A addition. Sales P0 OPTIONAL. */
+  warehouseId?: string | null;
+  /** B3.6-A addition. Sales P0 DERIVED; editable in Draft, captured at Confirm. */
+  deliveryAddressSnapshot?: string | null;
 }
 
 export interface UpdateSalesOrderRequest extends CreateSalesOrderRequest {
@@ -30,6 +39,8 @@ export interface SalesOrderLineDto {
   itemId: string;
   itemCodeSnapshot: string;
   itemNameSnapshot: string;
+  /** B3.6-A addition. */
+  specificationSnapshot?: string | null;
   uomId: string;
   uomCodeSnapshot: string;
   uomNameSnapshot: string;
@@ -53,14 +64,30 @@ export interface SalesOrderDto {
   customerNameSnapshot: string;
   orderDate: string;
   requestedDeliveryDate?: string | null;
+  /** B3.6-A addition. Sales P0 OPTIONAL. */
+  warehouseId?: string | null;
   currencyCode: string;
   status: SalesOrderStatus;
   remarks?: string | null;
   totalNetAmount: number;
   totalTaxAmount: number;
   totalAmount: number;
+  /** B3.6-A addition. */
+  deliveryAddressSnapshot?: string | null;
   createdAt: string;
   modifiedAt: string;
+  createdBy?: number | null;
+  modifiedBy?: number | null;
+  /** B3.6-A addition. Audit: Draft → Confirmed timestamp. */
+  confirmedAt?: string | null;
+  /** B3.6-A addition. Audit: Draft → Confirmed actor. */
+  confirmedBy?: number | null;
+  /** B3.6-A addition. Audit: → Cancelled timestamp. */
+  cancelledAt?: string | null;
+  /** B3.6-A addition. Audit: → Cancelled actor. */
+  cancelledBy?: number | null;
+  /** B3.6-A addition. Required for Confirmed→Cancelled; optional from Draft. */
+  cancellationReason?: string | null;
   concurrencyVersion: number;
   lines: SalesOrderLineDto[];
 }
@@ -73,6 +100,8 @@ export interface SalesOrderListItemDto {
   customerNameSnapshot: string;
   orderDate: string;
   requestedDeliveryDate?: string | null;
+  /** B3.6-A addition. */
+  warehouseId?: string | null;
   currencyCode: string;
   status: SalesOrderStatus;
   totalNetAmount: number;
@@ -80,7 +109,16 @@ export interface SalesOrderListItemDto {
   totalAmount: number;
   createdAt: string;
   modifiedAt: string;
+  /** B3.6-A addition. */
+  confirmedAt?: string | null;
+  /** B3.6-A addition. */
+  cancelledAt?: string | null;
   concurrencyVersion: number;
+}
+
+/** B3.6-A addition. Body for POST /api/v1/sales/orders/{id}/cancel. */
+export interface CancelSalesOrderRequest {
+  cancellationReason?: string | null;
 }
 
 export interface SalesOrderListParams {
@@ -98,12 +136,18 @@ export const SALES_STATUS_LABEL: Record<SalesOrderStatus, string> = {
   1: '草稿',
   2: '已确认',
   3: '已取消',
+  4: '部分执行',
+  5: '已执行',
+  6: '已关闭',
 };
 
-export const SALES_STATUS_TAG: Record<SalesOrderStatus, 'info' | 'success' | 'danger'> = {
+export const SALES_STATUS_TAG: Record<SalesOrderStatus, 'info' | 'success' | 'danger' | 'warning'> = {
   1: 'info',
   2: 'success',
   3: 'danger',
+  4: 'warning',
+  5: 'success',
+  6: 'info',
 };
 
 export type DocumentStatus = 'Draft' | 'Active' | 'Closed' | 'Cancelled';

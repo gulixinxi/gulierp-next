@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 const router = useRouter();
-function goHome() { router.replace('/sales-order').catch(() => {}); }
+function goHome() { router.replace('/sales-orders').catch(() => {}); }
 function goBack() {
   if (window.history.length > 1) router.back();
   else goHome();

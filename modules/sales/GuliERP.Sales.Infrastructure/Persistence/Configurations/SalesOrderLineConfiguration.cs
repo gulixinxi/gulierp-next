@@ -23,6 +23,8 @@ public sealed class SalesOrderLineConfiguration : IEntityTypeConfiguration<Sales
         b.Property(x => x.TaxAmount).HasPrecision(18, 2);
         b.Property(x => x.TotalAmount).HasPrecision(18, 2);
         b.Property(x => x.Remarks).HasMaxLength(1000);
+        // B3.6-A addition (V1 Standard §9).
+        b.Property(x => x.SpecificationSnapshot).HasMaxLength(500);
         b.HasIndex(x => x.SalesOrderId).HasDatabaseName("ix_gulierp_sales_order_line_orderid");
         b.HasIndex(x => x.ItemId).HasDatabaseName("ix_gulierp_sales_order_line_itemid");
     }

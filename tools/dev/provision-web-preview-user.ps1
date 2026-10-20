@@ -199,7 +199,7 @@ if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
 if ($LASTEXITCODE -ne 0) {
     throw 'Wrong-DB detected by post-prompt assert.'
 }
-$displayConn = ($ConnectionString -replace 'Password=[^;]+', 'Password=***')
+$displayConn = 'Host=***;Database=***;Username=***;Password=***;'
 Write-Host "[WEB-PREVIEW-001A] Using connection: $displayConn" -ForegroundColor Cyan
 
 # --- 2b. (Reset mode only) Pre-reset READ-ONLY diagnose -------------------

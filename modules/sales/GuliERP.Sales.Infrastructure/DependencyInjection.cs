@@ -1,5 +1,4 @@
 using GuliERP.Identity.Application.Authorization;
-using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Sales.Application;
 using GuliERP.Sales.Infrastructure.Persistence;
 using GuliERP.Sales.Infrastructure.Sales;

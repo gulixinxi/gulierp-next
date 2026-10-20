@@ -96,8 +96,49 @@ function Stop-VerifiedProcess {
         Write-Warn ("  refusing to stop {0} pid={1}; process ownership could not be verified" -f $Role, $ProcessId)
         return
     }
-    Write-Warn ("  stopping {0} pid={1}" -f $Role, $ProcessId)
-    Stop-Process -Id $ProcessId -Force -ErrorAction SilentlyContinue
+    Stop-ProcessTree -ProcessId $ProcessId -Role $Role
+}
+
+function Get-ChildProcessIds {
+    param([Parameter(Mandatory = $true)][int]$ProcessId)
+    try {
+        return @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $ProcessId" -ErrorAction Stop |
+            ForEach-Object { [int]$_.ProcessId })
+    } catch {
+        return @()
+    }
+}
+
+function Get-DescendantProcessIds {
+    param([Parameter(Mandatory = $true)][int]$ProcessId)
+    $result = New-Object System.Collections.Generic.List[int]
+    $queue = New-Object System.Collections.Generic.Queue[int]
+    foreach ($childId in (Get-ChildProcessIds -ProcessId $ProcessId)) {
+        $queue.Enqueue($childId)
+    }
+    while ($queue.Count -gt 0) {
+        $current = $queue.Dequeue()
+        $result.Add($current)
+        foreach ($childId in (Get-ChildProcessIds -ProcessId $current)) {
+            $queue.Enqueue($childId)
+        }
+    }
+    return @($result)
+}
+
+function Stop-ProcessTree {
+    param(
+        [Parameter(Mandatory = $true)][int]$ProcessId,
+        [Parameter(Mandatory = $true)][string]$Role
+    )
+    $ids = @((Get-DescendantProcessIds -ProcessId $ProcessId) | Sort-Object -Descending)
+    $ids += $ProcessId
+    foreach ($id in ($ids | Select-Object -Unique)) {
+        $process = Get-Process -Id $id -ErrorAction SilentlyContinue
+        if (-not $process) { continue }
+        Write-Warn ("  stopping {0} pid={1}" -f $Role, $id)
+        Stop-Process -Id $id -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Get-RecordPid {

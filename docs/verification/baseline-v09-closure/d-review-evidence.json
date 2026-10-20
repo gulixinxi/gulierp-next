@@ -1,0 +1,713 @@
+[
+  {
+    "path": "apps/api/GuliERP.Api/Sales/SalesOrderEndpoints.cs",
+    "status": "M",
+    "exists": true,
+    "added": "6",
+    "deleted": "2",
+    "refs": 0,
+    "sha256": "840B2690CA7488D6142C3B243DA0B5E69F5432F376964814202C456531D45F26"
+  },
+  {
+    "path": "apps/web/src/api/sales-order.ts",
+    "status": "M",
+    "exists": true,
+    "added": "9",
+    "deleted": "2",
+    "refs": 0,
+    "sha256": "F20ED30859687529AAD3D16978DB68A2D3AE870D91A4A7F748C9B37787543E09"
+  },
+  {
+    "path": "apps/web/src/components/LookupDialog.vue",
+    "status": "D",
+    "exists": false,
+    "added": "0",
+    "deleted": "366",
+    "refs": 59,
+    "sha256": "DELETED"
+  },
+  {
+    "path": "apps/web/src/components/transaction/ItemSelectorPopover.vue",
+    "status": "M",
+    "exists": true,
+    "added": "340",
+    "deleted": "9",
+    "refs": 0,
+    "sha256": "E51FFB75E67EA5157853BB88A19FD015A4DA6B5C255E89797461DED3A9BF90DE"
+  },
+  {
+    "path": "apps/web/src/components/transaction/LineGrid.vue",
+    "status": "M",
+    "exists": true,
+    "added": "230",
+    "deleted": "11",
+    "refs": 0,
+    "sha256": "8E629792E30C95F809B29BC21AE478F9B9E0B4BA9482460CF72148720ACB2AB5"
+  },
+  {
+    "path": "apps/web/src/components/transaction/PartnerSelectorPopover.vue",
+    "status": "M",
+    "exists": true,
+    "added": "15",
+    "deleted": "3",
+    "refs": 0,
+    "sha256": "4A68200D138C7FD1B3DD7366948AFA16F70991041D1BD5E0CFDB5D17F1060676"
+  },
+  {
+    "path": "apps/web/src/components/transaction/WarehouseSelectorPopover.vue",
+    "status": "M",
+    "exists": true,
+    "added": "47",
+    "deleted": "2",
+    "refs": 0,
+    "sha256": "A41A48A1EF52533BD52DA5C0D54C18A5FE135D3AB4EFBE8673B78186E2AA31C8"
+  },
+  {
+    "path": "apps/web/src/layout/navigation.ts",
+    "status": "M",
+    "exists": true,
+    "added": "1",
+    "deleted": "1",
+    "refs": 0,
+    "sha256": "77F88D701F54AB8A6C37C512603562C85450D2A935651DB5E60E3107A240C546"
+  },
+  {
+    "path": "apps/web/src/mock/mdm.ts",
+    "status": "D",
+    "exists": false,
+    "added": "0",
+    "deleted": "120",
+    "refs": 3326,
+    "sha256": "DELETED"
+  },
+  {
+    "path": "apps/web/src/mock/sales-order.ts",
+    "status": "D",
+    "exists": false,
+    "added": "0",
+    "deleted": "428",
+    "refs": 438,
+    "sha256": "DELETED"
+  },
+  {
+    "path": "apps/web/src/router.ts",
+    "status": "M",
+    "exists": true,
+    "added": "42",
+    "deleted": "18",
+    "refs": 0,
+    "sha256": "82504F9D567718FC003247B3FDAE40691CAD7430F10DD881AF55945DE1059CDE"
+  },
+  {
+    "path": "apps/web/src/stores/sales-order.ts",
+    "status": "M",
+    "exists": true,
+    "added": "2",
+    "deleted": "2",
+    "refs": 0,
+    "sha256": "FD4444E294B5318A9786B5381026767C794EB2000B7F7D926D4A2FFA5A12F5D4"
+  },
+  {
+    "path": "apps/web/src/stores/tabs.ts",
+    "status": "M",
+    "exists": true,
+    "added": "2",
+    "deleted": "2",
+    "refs": 0,
+    "sha256": "BB240DBABBBC80A73E9038E7254D6F4E29350C6D67781E27B41C6BDB26D5B34B"
+  },
+  {
+    "path": "apps/web/src/types/sales-order.ts",
+    "status": "M",
+    "exists": true,
+    "added": "46",
+    "deleted": "2",
+    "refs": 0,
+    "sha256": "1100276FBBFCB9F720326E59DC069FACF8631CBCAC0CF556D3464AEDA6B00140"
+  },
+  {
+    "path": "apps/web/src/views/auth/Forbidden403.vue",
+    "status": "M",
+    "exists": true,
+    "added": "1",
+    "deleted": "1",
+    "refs": 0,
+    "sha256": "D475423F81D1A2578C0D989282EAD5A520E8C36EC3481DA51CD3BDE10AE16309"
+  },
+  {
+    "path": "apps/web/src/views/auth/Login.vue",
+    "status": "M",
+    "exists": true,
+    "added": "38",
+    "deleted": "28",
+    "refs": 0,
+    "sha256": "F6AA9992055165E7525CD5CB044131E053EA899934324C030271A8A40834541E"
+  },
+  {
+    "path": "apps/web/src/views/sales-order/SalesOrderDetail.vue",
+    "status": "M",
+    "exists": true,
+    "added": "84",
+    "deleted": "12",
+    "refs": 0,
+    "sha256": "D5177B13DC9D867DB792D7210235E49647908EDCE306A06B757E26FF47807E07"
+  },
+  {
+    "path": "apps/web/src/views/sales-order/SalesOrderEdit.vue",
+    "status": "M",
+    "exists": true,
+    "added": "717",
+    "deleted": "188",
+    "refs": 0,
+    "sha256": "B7022449F2ECDE596177BE2ABA0DFA9A0B22C7D577E42ACE6B9A86E449EEE60A"
+  },
+  {
+    "path": "apps/web/src/views/sales-order/SalesOrderList.vue",
+    "status": "M",
+    "exists": true,
+    "added": "74",
+    "deleted": "25",
+    "refs": 0,
+    "sha256": "AEA3863053157DFA13C9E86A34C65BAD0EF9D59A3096BF16E2EDFF82BC923206"
+  },
+  {
+    "path": "apps/web/vite.config.ts",
+    "status": "M",
+    "exists": true,
+    "added": "15",
+    "deleted": "1",
+    "refs": 0,
+    "sha256": "BEE32B591250E435FCAD6804FAAC543BED8B2DE77462269C084197F90B2B48E4"
+  },
+  {
+    "path": "docs/governance/GOAL_REGISTRY.md",
+    "status": "M",
+    "exists": true,
+    "added": "149",
+    "deleted": "6",
+    "refs": 0,
+    "sha256": "D17271CF91B9D78CC4E91249D90C6F2C21BD9EDD42EE2CDCEDA971C2BB56CEB2"
+  },
+  {
+    "path": "docs/verification/GULIERP_EMPLOYEE_CODE_CONTRACT_RECONCILIATION_001_REPORT.md",
+    "status": "M",
+    "exists": true,
+    "added": "297",
+    "deleted": "317",
+    "refs": 0,
+    "sha256": "BAD3F8BAEF2504F0526368E2E096F14B1FFB574C4E1B2574175D5ADDE60BDD8C"
+  },
+  {
+    "path": "modules/sales/GuliERP.Sales.Application/ISalesOrderService.cs",
+    "status": "M",
+    "exists": true,
+    "added": "5",
+    "deleted": "1",
+    "refs": 0,
+    "sha256": "DD5D37121C44B5B5636EB69D3289311D2DE08C87B98310B13729E33DD96E8E06"
+  },
+  {
+    "path": "modules/sales/GuliERP.Sales.Application/SalesOrderDtos.cs",
+    "status": "M",
+    "exists": true,
+    "added": "46",
+    "deleted": "3",
+    "refs": 0,
+    "sha256": "D79EC4FE52B0B7D010A86D2FEA8CD327497FEA9E1541E2810CFDD37E287CCBB4"
+  },
+  {
+    "path": "modules/sales/GuliERP.Sales.Domain/Entities/SalesOrder.cs",
+    "status": "M",
+    "exists": true,
+    "added": "20",
+    "deleted": "0",
+    "refs": 0,
+    "sha256": "CADCDFCCF16C46A66E9332F8BF64D727FBE70702E5AA5345EEA9B8B0553AB572"
+  },
+  {
+    "path": "modules/sales/GuliERP.Sales.Domain/Entities/SalesOrderLine.cs",
+    "status": "M",
+    "exists": true,
+    "added": "5",
+    "deleted": "0",
+    "refs": 0,
+    "sha256": "89195430DC56DEF0D59D4096DB3169AFC147420DA76AF21AED78FE83EFD120EC"
+  },
+  {
+    "path": "modules/sales/GuliERP.Sales.Domain/Enums/SalesOrderStatus.cs",
+    "status": "M",
+    "exists": true,
+    "added": "13",
+    "deleted": "0",
+    "refs": 0,
+    "sha256": "4A4B51BB7C9C374F6AF7C2FF80E6ECD3B5E6065BBF3A623C663367BC8F4E6D6B"
+  },
+  {
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Migrations/SalesDbContextModelSnapshot.cs",
+    "status": "M",
+    "exists": true,
+    "added": "9",
+    "deleted": "0",
+    "refs": 0,
+    "sha256": "F23387B3158FB7831C6C6C696DB6E06B85EA5DE106148D05DBB24304170AD79B"
+  },
+  {
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Persistence/Configurations/SalesOrderConfiguration.cs",
+    "status": "M",
+    "exists": true,
+    "added": "11",
+    "deleted": "0",
+    "refs": 0,
+    "sha256": "20270DBE99128FD3922C7E79D7914F8870BAE06FA580CEE83093B7613D0B559A"
+  },
+  {
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Persistence/Configurations/SalesOrderLineConfiguration.cs",
+    "status": "M",
+    "exists": true,
+    "added": "2",
+    "deleted": "0",
+    "refs": 0,
+    "sha256": "323285E0C3FE8FCCCDDFC8C3C3741E037D17EB60B1C9363491D9B5263FBB4738"
+  },
+  {
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Sales/SalesOrderService.cs",
+    "status": "M",
+    "exists": true,
+    "added": "52",
+    "deleted": "14",
+    "refs": 0,
+    "sha256": "21F43463E6A2D2F565C50DA89FD839E73F6D710782FA79830C1C14AF5D20035B"
+  },
+  {
+    "path": "tests/GuliERP.Identity.IntegrationTests/EnterpriseBootstrapAndOrganizationTreeFacts.cs",
+    "status": "M",
+    "exists": true,
+    "added": "40",
+    "deleted": "24",
+    "refs": 0,
+    "sha256": "AB0F98EA0DD7BF34C903F095B6D206042C8E336C5100342A21EEA64AC879F4C2"
+  },
+  {
+    "path": "tests/GuliERP.Identity.IntegrationTests/EnterpriseRolePackCrossTenantFacts.cs",
+    "status": "M",
+    "exists": true,
+    "added": "29",
+    "deleted": "5",
+    "refs": 0,
+    "sha256": "F1420312B352F2822C9D942D2044C52F95F5A8799B4F5AE155C21E36CE0BD32F"
+  },
+  {
+    "path": "tests/GuliERP.Sales.Tests/SalesOrderServiceFacts.cs",
+    "status": "M",
+    "exists": true,
+    "added": "1",
+    "deleted": "1",
+    "refs": 0,
+    "sha256": "42E80C3FEB0DCA18A0AA3DA83D842680E3C7D06162238E846F152BA56E6841EB"
+  },
+  {
+    "path": "tools/dev/check-runtime.ps1",
+    "status": "M",
+    "exists": true,
+    "added": "4",
+    "deleted": "3",
+    "refs": 0,
+    "sha256": "6675400F6F8125EAB783F4DFECA3BB9B82028765B860B6C580EA4A1CA27CEDA6"
+  },
+  {
+    "path": "tools/dev/start-stack.ps1",
+    "status": "M",
+    "exists": true,
+    "added": "79",
+    "deleted": "7",
+    "refs": 0,
+    "sha256": "BC4BE6764C557375EB9470481A7C8DF9B205A31063C616D8D57122C1BBF8AD71"
+  },
+  {
+    "path": "tools/dev/stop-stack.ps1",
+    "status": "M",
+    "exists": true,
+    "added": "43",
+    "deleted": "2",
+    "refs": 0,
+    "sha256": "51BEE0A9D175EB5AC0C3986B9629BB5A28AAEFD4A3443BC9E9E070AD407ACDAF"
+  },
+  {
+    "path": "apps/web/src/assets/login-hero-gulierp.png",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "2A6E823069E7612D83C1FD47AB2C0F046414722BE9B103C24127CA71A3EA19AE"
+  },
+  {
+    "path": "apps/web/src/views/dev/TxComponentsPreview.vue",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "A6399AFE2AC2B0F2A6D7666CB30CE10B8F9F57959848442AE50EBF8EC388D746"
+  },
+  {
+    "path": "docs/business/DEV_LOWCODE_ARCHITECTURE_ANALYSIS_INSTRUCTIONS.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "F425CA3AE9C27BBC8E0505D310D522A184DBD8FFC742301D1E0136BD6C38D16F"
+  },
+  {
+    "path": "docs/business/DEV_LOWCODE_ARCHITECTURE_INVENTORY_001.sql",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "3A9D67C2893D236B813C47C97F79CFB3729198A02E1577EC4E8379CEA2A6C578"
+  },
+  {
+    "path": "docs/business/GULIERP_ADMINNET_PLATFORM_FOUNDATION_REFERENCE_AUDIT_001.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "8C226BA45774E9F698CA650141A937EE19008D5EE3E7C522B1E9E0ADB1E22D39"
+  },
+  {
+    "path": "docs/business/GULIERP_DEV_TO_CURRENT_ARCHITECTURE_GAP_AUDIT_001.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "FD9146165B5A600D11804D1E2DB3A897FFE5B8F120E3C745CFB77392DE72DD24"
+  },
+  {
+    "path": "docs/business/GULIERP_PRE_INVENTORY_ARCHITECTURE_DECISION_001.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "1D2F1E231CD4A8B0F9F6941F225D3748BED0F604AA8C06B839472ACCABA8B277"
+  },
+  {
+    "path": "docs/business/GULIERP_REFERENCE_EVIDENCE_BOUNDARY_AND_COLLECTION_PLAN_001.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "E0C03551EEC8A1B73D6DB20CCC71377494A468293E54FB132371D9C33D65DB26"
+  },
+  {
+    "path": "docs/design/GULIERP_PURCHASE_ORDER_REDESIGN_V1.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "DF954EBA8AC394778298739210B2561C1709FBF149A174A7D949A3D0556128A5"
+  },
+  {
+    "path": "docs/design/GULIERP_SALES_ORDER_REDESIGN_V1.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "18E988692FD847816807975E841A61B9BB7EE46737EDDB0E477242915DE82C16"
+  },
+  {
+    "path": "docs/design/GULIERP_UI_SYSTEM_CALIBRATION_001_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "1CDE62B9359530FF9D7E7050FFF11C93F5D18705ACA303729B189A33A75B4BDB"
+  },
+  {
+    "path": "docs/design/MINIMAX_SALES_ORDER_REBUILD_PROMPT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "9210AA971ED1E795D3FCE19FA78841D30BA16FF5992598985E1648E6419FC3E6"
+  },
+  {
+    "path": "docs/design/sales-order-ui-simulation.html",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "9B91B1E08D2DBCA130B2AC143288084C38A6FF03F8457D89FEB1780937E24501"
+  },
+  {
+    "path": "docs/verification/GULIERP_ADDRESS_AND_REGION_STANDARD_V1_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "3DCAC6C91203CC9E0C2DF14E7007B489E5C8729097E053C4E2F47E0D566FCD2B"
+  },
+  {
+    "path": "docs/verification/GULIERP_ADMINNET_PLATFORM_FOUNDATION_REFERENCE_AUDIT_001_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "70C8741F3F130167C863D977AFDA90D2BEE4622A12732ACCFC3868F90FA3B97B"
+  },
+  {
+    "path": "docs/verification/GULIERP_DEV_TO_CURRENT_ARCHITECTURE_GAP_AUDIT_001_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "457BBD40559488129D41BD16B419DA598FF92D6ADDA82A5E839FE1E7C9395008"
+  },
+  {
+    "path": "docs/verification/GULIERP_EMPLOYEE_MASTER_FINAL_GOVERNANCE_CLOSURE_001_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "7A89C120A4F8558EF15BA7114B41A41D58ECEDE3B74B54C0F1635B08B081CAE6"
+  },
+  {
+    "path": "docs/verification/GULIERP_EMPLOYEE_MASTER_POSTGRES_RUNTIME_CLOSURE_001_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "6736BC3B619754BE5AED5A84BC08F94CC5BA507950679B8F694E63E54AB42905"
+  },
+  {
+    "path": "docs/verification/GULIERP_FORMAL_ADMIN_ROLEPACK_CONTRACT_ALIGNMENT_001_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "9E79C1FC8BA939BEAB81766861924C8AF0A686C28AF65BC9EDFC4BE2AB58F3D5"
+  },
+  {
+    "path": "docs/verification/GULIERP_MASTER_DATA_CODE_RULE_STANDARD_V1_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "6FFDCE5D535769F190D3B8C0072339A27F0C630FD198463CE2E3DFD4D632DBD3"
+  },
+  {
+    "path": "docs/verification/GULIERP_MASTER_DATA_COMMON_FIELD_CONTRACT_V1_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "4AB873502C0E4EC0A0EBFFCD5D87E5578DA1F58B78FC355BCE405CE3AE25EAF4"
+  },
+  {
+    "path": "docs/verification/GULIERP_MDM_MNEMONIC_LIFECYCLE_V1_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "ACF7B3F092F9B965AEC0CBDC0DFDF59DD824982A6EC008EC2E1EC3E3F461C5ED"
+  },
+  {
+    "path": "docs/verification/GULIERP_MDM_UI_AND_COMMON_FIELD_AUDIT_V1_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "9C90176A806285F906644068D2E4CE95C08B2BEE271643C660EA67561974AB2E"
+  },
+  {
+    "path": "docs/verification/GULIERP_NEXT_EMPLOYEE_OPERATOR_RUNTIME_FINAL_001_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "F7BBDC7CEEC3553C3C9195DF5B058D9826B3377286968D13AE04440AF5B3DFB4"
+  },
+  {
+    "path": "docs/verification/GULIERP_NUMERIC_PRECISION_STANDARD_V1_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "0C6C45DE7E7987ABEE18FDAB8ADFC14E66924DAD79D37A301FFBC941C1AAFA21"
+  },
+  {
+    "path": "docs/verification/GULIERP_PRE_INVENTORY_ARCHITECTURE_DECISION_001_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "58B978D1827BD9F1909AC2B5D0A1C70EC8554AE17A5EFD3776B727F14A82D952"
+  },
+  {
+    "path": "docs/verification/GULIERP_TRANSACTION_DOCUMENT_REDESIGN_V1_GAP_MATRIX.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "37816B9FDB88A910332A3C940EBA3CD53C73DB32DC8394EBCBAC4F274DB62FB1"
+  },
+  {
+    "path": "docs/verification/GULIERP_TRANSACTION_DOCUMENT_REDESIGN_V1_IMPLEMENTATION_PLAN.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "4DC92FFE64C3A54A48D8EB874FEECCDB9BCD13CAA8B5A359292143CA5902352A"
+  },
+  {
+    "path": "docs/verification/GULIERP_TRANSACTION_PHASE_B3_6_E_FREEZE_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "CF6BA99901579A0834C71E48EB28D2799EB3BB16971DB3D19DC6EF39C42439D8"
+  },
+  {
+    "path": "docs/verification/GULIERP_TRANSACTION_PHASE_B3_6_F_DIAGNOSIS_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "2F7FABC5EA2E39C841F891561D6B2B8E7753D191BB8B9AEC0665068FC803DB18"
+  },
+  {
+    "path": "docs/verification/GULIERP_TRANSACTION_PHASE_B3_6_G_FREEZE_RESPECTING_MINIMAL_FIX_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "53D16A7CB54DBAF205A506FC87B03C75F2DCDB2F05E258052F3EF366B51D5BFD"
+  },
+  {
+    "path": "docs/verification/GULIERP_TRANSACTION_PHASE_B3_6_H_POST_FIX_RECON_REPORT.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "745F238302C92C239395B263B4D4CCC6D1BE5BCD1D5E20FF3032920D21127E7A"
+  },
+  {
+    "path": "docs/verification/ONLYIT_MATURE_ERP_REFERENCE_AUDIT_001.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "647783736AF06C671D9DBC4195F4F8A508C2944EBDF54DEC016C851EEC256CE0"
+  },
+  {
+    "path": "docs/verification/ONLYIT_NUMERIC_PRECISION_MATRIX_001.csv",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "26699CD800C98B0DD73A5E4E61374F4A3D41436E0D9D11603F9568705AE1CCF6"
+  },
+  {
+    "path": "docs/verification/ONLYIT_PRODUCTION_HARDENING_MATRIX_001.md",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "3EC1D8C4E5188DB122737A5695C5AE2D4B9AF138F19C8662CBCCF8F5AC46088B"
+  },
+  {
+    "path": "docs/verification/ONLYIT_SCHEMA_INVENTORY_001.csv",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "BB376876560B1BCC651049E69D76C5D6CD71CF71FA81B043C0FB0C338979FA5F"
+  },
+  {
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Migrations/20260903120000_SALES002_SalesOrderV1HeaderAuditSnapshotUom.Designer.cs",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "AD7D69DA05378AC262B9804F3C5DEFEFDC258C47CD0057F0A972723C7E8E58EF"
+  },
+  {
+    "path": "modules/sales/GuliERP.Sales.Infrastructure/Migrations/20260903120000_SALES002_SalesOrderV1HeaderAuditSnapshotUom.cs",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "E4323F3C5D16B913D48B8FAF842713F1C1E7EE8C6CD23B01E3CC38B158B1F6B0"
+  },
+  {
+    "path": "tests/GuliERP.Sales.Tests/SalesOrderV1HeaderFacts.cs",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "D1B2C9376F06A741B83DF22DCE1E29E4AAE4F2C149C417066EA203816F9DCE5E"
+  },
+  {
+    "path": "tools/dev/.b36c-orphan-quarantine/LookupDialog.vue",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "DF164B8F4BEDD00CA6F60855BC833FF601D69DB820070509D243B64D9DA030D2"
+  },
+  {
+    "path": "tools/dev/.b36c-orphan-quarantine/mock-mdm.ts",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "5FF6143226D5E8281F05C22A6C08F2280B6DCB8DAF3D5DBA422725BA4F1F2F9F"
+  },
+  {
+    "path": "tools/dev/.b36c-orphan-quarantine/mock-sales-order.ts",
+    "status": "??",
+    "exists": true,
+    "added": "new",
+    "deleted": "",
+    "refs": 0,
+    "sha256": "07FD32FA88701D2E9A39F0EAFDDE2079C5EACC23844DF5D04D4244D5F5E77C5B"
+  }
+]

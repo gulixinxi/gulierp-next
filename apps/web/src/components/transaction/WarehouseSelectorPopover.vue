@@ -66,14 +66,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Search, House } from '@element-plus/icons-vue';
-import { listAllWarehousesActiveOnly } from '../../api/mdm/warehouse';
+import { listAllWarehousesActiveOnly, getWarehouse } from '../../api/mdm/warehouse';
 import type { Warehouse } from '../../types/mdm';
 
 const props = defineProps<{
   modelValue: string | null;
   placeholder?: string;
+  /**
+   * B3.6-C UI Integration — explicit code/name projection from the
+   * parent. When set, the trigger displays `${code} · ${name}`
+   * even when the warehouse is not in the current `hits` (which
+   * is the case for a loaded draft where the popover has not yet
+   * been opened, or the previous search keyword did not match).
+   */
+  selectedWarehouse?: { id: string; code?: string | null; name?: string | null } | null;
 }>();
 
 const emit = defineEmits<{
@@ -88,6 +96,10 @@ const hits = ref<Warehouse[]>([]);
 let searchToken = 0;
 
 const displayValue = computed(() => {
+  const sw = props.selectedWarehouse;
+  if (sw && sw.id && sw.id === props.modelValue && sw.code) {
+    return sw.name ? `${sw.code} · ${sw.name}` : sw.code;
+  }
   const cur = hits.value.find((h) => h.id === props.modelValue);
   if (cur) return `${cur.code} · ${cur.name}`;
   return '';
@@ -152,6 +164,39 @@ watch(visible, (v) => {
     }, 0);
   }
 });
+
+// B3.6-C UI Integration — when the parent binds a warehouseId
+// (e.g. a loaded draft) but the V1 server does not return the
+// matching code/name, fetch the warehouse by id so the trigger
+// can render `${code} · ${name}`. Runs once on mount; idempotent.
+async function ensureCurrentWarehouseLoaded() {
+  const id = props.modelValue;
+  if (!id) return;
+  if (hits.value.find((h) => h.id === id)) return;
+  // First try getById (single fetch).
+  try {
+    const w = await getWarehouse(id);
+    if (w && !hits.value.find((h) => h.id === w.id)) {
+      hits.value = [w, ...hits.value];
+    }
+    return;
+  } catch {
+    // fall through to the list-and-filter path
+  }
+  try {
+    const all = await listAllWarehousesActiveOnly();
+    const w = all.find((x) => x.id === id);
+    if (w && !hits.value.find((h) => h.id === w.id)) {
+      hits.value = [w, ...hits.value];
+    }
+  } catch {
+    /* ignore — popover will show empty until user opens it */
+  }
+}
+onMounted(ensureCurrentWarehouseLoaded);
+// Also re-run if modelValue changes after mount (e.g. another
+// component updates the bound warehouseId).
+watch(() => props.modelValue, ensureCurrentWarehouseLoaded);
 </script>
 
 <style scoped>

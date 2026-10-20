@@ -27,6 +27,7 @@ $FrontendUrl = "http://127.0.0.1:$FrontendPort"
 $ApiProxyUrl = "$FrontendUrl/api/v1/auth/csrf"
 $OriginalConnectionString = $env:ConnectionStrings__GuliERP
 $OriginalGuliErpConnectionString = $env:GULIERP_ConnectionStrings__GuliERP
+$LocalEnvFile = Join-Path $RepoRoot '.env.local'
 
 function Write-Info {
     param([string]$Message)
@@ -36,6 +37,27 @@ function Write-Info {
 function Write-Warn {
     param([string]$Message)
     Write-Host $Message -ForegroundColor Yellow
+}
+
+function Import-LocalEnvFile {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+
+    Write-Info ("Loading local environment from {0}" -f $Path)
+    foreach ($line in (Get-Content -LiteralPath $Path -ErrorAction Stop)) {
+        $trimmed = $line.Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed.StartsWith('#')) { continue }
+        $separator = $trimmed.IndexOf('=')
+        if ($separator -le 0) { continue }
+
+        $name = $trimmed.Substring(0, $separator).Trim()
+        $value = $trimmed.Substring($separator + 1).Trim()
+        if (($value.StartsWith('"') -and $value.EndsWith('"')) -or
+            ($value.StartsWith("'") -and $value.EndsWith("'"))) {
+            $value = $value.Substring(1, $value.Length - 2)
+        }
+        [System.Environment]::SetEnvironmentVariable($name, $value, 'Process')
+    }
 }
 
 function Resolve-ToolPath {
@@ -150,9 +172,51 @@ function Stop-ProjectProcess {
         Write-Warn ("  refusing to stop {0} pid={1}; process ownership could not be verified" -f $Role, $ProcessId)
         return 'foreign'
     }
-    Write-Warn ("  stopping prior {0} pid={1}" -f $Role, $ProcessId)
-    Stop-Process -Id $ProcessId -Force -ErrorAction SilentlyContinue
+    Stop-ProcessTree -ProcessId $ProcessId -Role $Role -Reason 'prior'
     return 'stopped'
+}
+
+function Get-ChildProcessIds {
+    param([Parameter(Mandatory = $true)][int]$ProcessId)
+    try {
+        return @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $ProcessId" -ErrorAction Stop |
+            ForEach-Object { [int]$_.ProcessId })
+    } catch {
+        return @()
+    }
+}
+
+function Get-DescendantProcessIds {
+    param([Parameter(Mandatory = $true)][int]$ProcessId)
+    $result = New-Object System.Collections.Generic.List[int]
+    $queue = New-Object System.Collections.Generic.Queue[int]
+    foreach ($childId in (Get-ChildProcessIds -ProcessId $ProcessId)) {
+        $queue.Enqueue($childId)
+    }
+    while ($queue.Count -gt 0) {
+        $current = $queue.Dequeue()
+        $result.Add($current)
+        foreach ($childId in (Get-ChildProcessIds -ProcessId $current)) {
+            $queue.Enqueue($childId)
+        }
+    }
+    return @($result)
+}
+
+function Stop-ProcessTree {
+    param(
+        [Parameter(Mandatory = $true)][int]$ProcessId,
+        [Parameter(Mandatory = $true)][string]$Role,
+        [string]$Reason = 'process'
+    )
+    $ids = @((Get-DescendantProcessIds -ProcessId $ProcessId) | Sort-Object -Descending)
+    $ids += $ProcessId
+    foreach ($id in ($ids | Select-Object -Unique)) {
+        $process = Get-Process -Id $id -ErrorAction SilentlyContinue
+        if (-not $process) { continue }
+        Write-Warn ("  stopping {0} {1} pid={2}" -f $Reason, $Role, $id)
+        Stop-Process -Id $id -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Stop-LaunchedProcess {
@@ -160,9 +224,8 @@ function Stop-LaunchedProcess {
         [object]$Process,
         [string]$Role
     )
-    if ($Process -and -not $Process.HasExited) {
-        Write-Warn ("  stopping launched {0} pid={1}" -f $Role, $Process.Id)
-        Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
+    if ($Process) {
+        Stop-ProcessTree -ProcessId $Process.Id -Role $Role -Reason 'launched'
     }
 }
 
@@ -275,10 +338,18 @@ function Stop-PriorStack {
 
 function Get-ConnectionString {
     if (-not [string]::IsNullOrWhiteSpace($env:ConnectionStrings__GuliERP)) {
-        return $env:ConnectionStrings__GuliERP
+        $value = $env:ConnectionStrings__GuliERP
+        if ($value -match 'REPLACE_WITH_|CHANGE_ME') {
+            throw 'ConnectionStrings__GuliERP still contains a placeholder value. Update .env.local with the real PostgreSQL password.'
+        }
+        return $value
     }
     if (-not [string]::IsNullOrWhiteSpace($env:GULIERP_ConnectionStrings__GuliERP)) {
-        return $env:GULIERP_ConnectionStrings__GuliERP
+        $value = $env:GULIERP_ConnectionStrings__GuliERP
+        if ($value -match 'REPLACE_WITH_|CHANGE_ME') {
+            throw 'GULIERP_ConnectionStrings__GuliERP still contains a placeholder value. Update .env.local with the real PostgreSQL password.'
+        }
+        return $value
     }
     Write-Warn 'ConnectionStrings__GuliERP is not set. The launcher will prompt once for the canonical PostgreSQL password.'
     if ([Console]::IsInputRedirected) {
@@ -370,6 +441,7 @@ if (-not (Test-Path -LiteralPath $BackendCsproj)) { throw "Backend csproj not fo
 if (-not (Test-Path -LiteralPath $WebDir)) { throw "Web dir not found: $WebDir" }
 if (-not (Test-Path -LiteralPath $Runner)) { throw "Runner not found: $Runner" }
 if (-not (Test-Path -LiteralPath $LogDir)) { New-Item -ItemType Directory -Path $LogDir | Out-Null }
+Import-LocalEnvFile -Path $LocalEnvFile
 
 $Dotnet = Resolve-ToolPath -Name $Dotnet
 $Npm = Resolve-ToolPath -Name $Npm

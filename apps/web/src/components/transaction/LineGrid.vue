@@ -45,7 +45,19 @@
       @selection-change="onSelectionChange"
     >
       <el-table-column type="selection" width="38" fixed="left" />
-      <el-table-column type="index" label="#" width="48" fixed="left" align="center" />
+      <!-- B3.6-C Acceptance Debt — column 2 displays the row's
+           `lineNo` field (the V1 line number) instead of the
+           auto-incremented row index. This is the field the
+           LineNo step-10 contract actually operates on, so the
+           browser smoke can verify the contract end-to-end
+           (initial 10, after delete + batch add 20 -> 30 -> 50). -->
+      <el-table-column
+        label="行号"
+        prop="lineNo"
+        width="70"
+        fixed="left"
+        align="center"
+      />
 
       <el-table-column label="物料" min-width="240" fixed="left">
         <template #default="{ row }">
@@ -84,7 +96,7 @@
               :key="u.id"
               :label="`${u.name} (${u.code})`"
               :value="u.id"
-              :disabled="u.status && u.status !== 'active'"
+              :disabled="String(u.status) !== '1' && u.status !== 'active'"
             />
           </el-select>
         </template>
@@ -226,7 +238,7 @@ import { Plus, Delete, Search, Goods } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { listItems } from '../../api/mdm/item';
 import { listUoms } from '../../api/mdm/uom';
-import type { Item, Uom } from '../../types/mdm';
+import type { Item, Uom, ItemListParams, UomListParams, PagedResult } from '../../types/mdm';
 import type { TransactionLineRow } from './types';
 
 /**
@@ -242,6 +254,35 @@ export interface LineGridRow extends TransactionLineRow {
 const props = defineProps<{
   lines: LineGridRow[];
   readOnly?: boolean;
+  /**
+   * GULIERP_TRANSACTION_PHASE_B2 (Phase B.2 — SalesOrder frontend wire)
+   * Optional override for the item fetch used by the inline item picker.
+   * Defaults to `listItems` (`/api/v1/mdm/items`), which requires
+   * `MdmPolicies.ItemRead`. Single-role operators such as SALES_OPERATOR
+   * do NOT have that permission; the editor must pass a customFetcher
+   * that hits the SalesOrder context facade (e.g. `listSalesOrderItems`).
+   */
+  customItemFetcher?: (params: ItemListParams) => Promise<PagedResult<Item>>;
+  /**
+   * Same boundary concern as customItemFetcher, but for the UoM list
+   * loaded when an item is picked. Defaults to `listUoms`
+   * (`/api/v1/mdm/uoms`, requires `MdmPolicies.UomRead`).
+   */
+  customUomFetcher?: (params: UomListParams) => Promise<PagedResult<Uom>>;
+  /**
+   * GULIERP_TRANSACTION_PHASE_B2_1 (Phase B.2.1 — Numeric Precision
+   * alignment). Number of decimals to round the line amount fields
+   * (netAmount, taxAmount, totalAmount) to in the client preview.
+   * Default 4 preserves the original Phase A behaviour. Pass 2 to
+   * match GULIERP_NUMERIC_PRECISION_STANDARD_V1 §7 (commercial
+   * amount scale 2) so the preview matches what the V1 server
+   * recomputes with `MidpointRounding.AwayFromZero`. For non-negative
+   * numbers — which covers all sales/purchase commercial amounts —
+   * `Math.round(n * factor) / factor` is exactly equivalent to
+   * `MidpointRounding.AwayFromZero` (JS `Math.round` rounds .5 toward
+   * positive infinity, which for x >= 0 is away from zero).
+   */
+  lineAmountScale?: 2 | 4;
 }>();
 
 const emit = defineEmits<{
@@ -310,11 +351,16 @@ function recomputeRow(row: LineGridRow) {
   const price = Number.isFinite(row.unitPrice) ? row.unitPrice : 0;
   const disc = Number.isFinite(row.discountRate) ? row.discountRate : 0;
   const tax = Number.isFinite(row.taxRate) ? row.taxRate : 0;
-  // Storage precision 4 per GULIERP_NUMERIC_PRECISION_STANDARD_V1.
-  const round4 = (n: number) => Math.round(n * 10000) / 10000;
-  row.netAmount = round4(qty * price * (1 - disc));
-  row.taxAmount = round4(row.netAmount * tax);
-  row.totalAmount = round4(row.netAmount + row.taxAmount);
+  // B2.1: configurable line-amount scale. Default 4 preserves Phase A
+  // behaviour. Sales Order (and any other commercial document) passes
+  // 2 so the preview matches the V1 server's MidpointRounding.AwayFromZero
+  // recomputation per GULIERP_NUMERIC_PRECISION_STANDARD_V1 §7.
+  const scale = props.lineAmountScale ?? 4;
+  const factor = scale === 2 ? 100 : 10000;
+  const roundAmount = (n: number) => Math.round(n * factor) / factor;
+  row.netAmount = roundAmount(qty * price * (1 - disc));
+  row.taxAmount = roundAmount(row.netAmount * tax);
+  row.totalAmount = roundAmount(row.netAmount + row.taxAmount);
 }
 
 function onCellChange(row: LineGridRow) {
@@ -359,7 +405,8 @@ async function runPickerSearch() {
   const myToken = ++pickerToken;
   pickerLoading.value = true;
   try {
-    const result = await listItems({
+    const fetchItems = props.customItemFetcher ?? listItems;
+    const result = await fetchItems({
       keyword: pickerKeyword.value.trim() || undefined,
       page: 1,
       pageSize: 20,
@@ -383,8 +430,17 @@ async function onPickerRowClick(item: Item) {
   row.specification = item.specification;
   // Load UoM options and pick the item's base UoM as default.
   try {
-    const uoms = await listUoms({ page: 1, pageSize: 100 });
-    const active = uoms.items.filter((u) => u.status === 'active');
+    const fetchUoms = props.customUomFetcher ?? listUoms;
+    const uoms = await fetchUoms({ page: 1, pageSize: 100 });
+    // B3.6-G — backend serialises `status` as an integer (1=active,
+    // 2=inactive) on the context facade; the canonical /api/v1/mdm/uoms
+    // still returns the UI string. Accept both so the inline picker
+    // auto-fills the unit for the picked item. String() coerces the
+    // int into its decimal form for the equality check; the typed
+    // Uom's `status` is the string form so 'active' is also valid.
+    const active = uoms.items.filter(
+      (u) => String(u.status) === '1' || u.status === 'active',
+    );
     row.uomOptions = active;
     row.uomById = Object.fromEntries(active.map((u) => [u.id, u]));
     const baseUomId = item.baseUomId;
@@ -424,6 +480,169 @@ async function onPickerRowClick(item: Item) {
     target?.focus();
   }, 0);
 }
+
+// --- B3.6-B: multi-select item batch append ---
+// The existing `onPickerRowClick` above is intentionally left
+// unchanged. The two flows share `recomputeRow` + `emitUpdate` +
+// `emit('item-pick')` so that the editor (and TotalsBar) see the
+// same observable events; only the entry point differs.
+
+let batchUomCache: Uom[] | null = null;
+let batchUomInflight: Promise<Uom[]> | null = null;
+
+async function fetchActiveUomsForBatch(): Promise<Uom[]> {
+  if (batchUomCache) return batchUomCache;
+  if (batchUomInflight) return batchUomInflight;
+  const fetchUoms = props.customUomFetcher ?? listUoms;
+  batchUomInflight = (async () => {
+    try {
+      const uoms = await fetchUoms({ page: 1, pageSize: 100 });
+      // B3.6-G — see onPickerRowClick: accept both int and string
+      // status encodings; the predicate change is additive (no
+      // contract change).
+      return uoms.items.filter(
+        (u) => String(u.status) === '1' || u.status === 'active',
+      );
+    } finally {
+      batchUomInflight = null;
+    }
+  })();
+  const result = await batchUomInflight;
+  batchUomCache = result;
+  return result;
+}
+
+// B3.6-B.1 §8 — LineNo allocation must be based on the current
+// maximum lineNo, NOT on `localLines.length`. After a user deletes
+// a row in the middle of the list, the previous formula
+// `(localLines.length + index + 1) * 10` could produce a lineNo that
+// collides with an existing row. The new formula reads the max
+// lineNo across the surviving lines and assigns
+// max + (index + 1) * STEP. The default STEP is 10 (matches the
+// existing V1 contract; the B2 onAddLine in SalesOrderEdit uses
+// the same 10-multiplier).
+const LINE_NO_STEP = 10;
+function nextLineNoForBatch(count: number): number {
+  const maxExisting = localLines.reduce(
+    (acc, l) => (l.lineNo > acc ? l.lineNo : acc),
+    0,
+  );
+  return maxExisting + LINE_NO_STEP;
+}
+
+function buildNewRowFromItem(item: Item, baseTime: number, index: number, startLineNo: number): LineGridRow {
+  return {
+    clientId: `c-${baseTime}-${index}`,
+    // B3.6-B.1 §8 — start from the first free lineNo and step
+    // forward so a batch of N rows gets lineNo values
+    // startLineNo, startLineNo + 10, … startLineNo + (N-1)*10.
+    lineNo: startLineNo + index * LINE_NO_STEP,
+    itemId: item.id,
+    itemCode: item.code,
+    itemName: item.name,
+    // Per B3.6-B §五 #4 — pass through the Item's current spec; the
+    // server is authoritative at save (B3.6-A snapshot rule).
+    specification: item.specification,
+    uomId: null,
+    uomCode: undefined,
+    uomName: undefined,
+    uomOptions: undefined,
+    uomById: undefined,
+    // Per B3.6-B §五 #3 — explicit P0 defaults for new batch lines.
+    quantity: 1,
+    unitPrice: 0,
+    discountRate: 0,
+    taxRate: 0,
+    netAmount: 0,
+    taxAmount: 0,
+    totalAmount: 0,
+    remarks: undefined,
+  };
+}
+
+function applyUomSelection(row: LineGridRow, active: Uom[], baseUomId?: string | null) {
+  // Reuse the same selection logic as the inline picker, so the
+  // B2.1 contract (item.baseUomId default; fall back to first active
+  // UoM) is preserved for the multi-select flow.
+  row.uomOptions = active;
+  row.uomById = Object.fromEntries(active.map((u) => [u.id, u]));
+  if (baseUomId && row.uomById[baseUomId]) {
+    row.uomId = baseUomId;
+    row.uomCode = row.uomById[baseUomId].code;
+    row.uomName = row.uomById[baseUomId].name;
+  } else if (active.length > 0) {
+    row.uomId = active[0].id;
+    row.uomCode = active[0].code;
+    row.uomName = active[0].name;
+  } else {
+    row.uomId = null;
+    row.uomCode = undefined;
+    row.uomName = undefined;
+  }
+}
+
+export interface BatchAppendResult {
+  added: number;
+  skipped: number;
+  skippedItems: Item[];
+}
+
+async function batchAppendItems(items: Item[]): Promise<BatchAppendResult> {
+  if (props.readOnly) {
+    return { added: 0, skipped: 0, skippedItems: [] };
+  }
+  if (!items || items.length === 0) {
+    return { added: 0, skipped: 0, skippedItems: [] };
+  }
+  // Per B3.6-B §五 #7 — dedup by itemId. Already-present items are
+  // reported back so the parent can show "已跳过 N 个已存在物料".
+  const existing = new Set(
+    localLines.map((l) => l.itemId).filter((x): x is string => !!x),
+  );
+  const fresh: Item[] = [];
+  const skipped: Item[] = [];
+  for (const it of items) {
+    if (existing.has(it.id)) {
+      skipped.push(it);
+    } else {
+      fresh.push(it);
+      existing.add(it.id);
+    }
+  }
+  if (fresh.length === 0) {
+    return { added: 0, skipped: skipped.length, skippedItems: skipped };
+  }
+  // Per B3.6-B §五 #5 — fetch UoM once and reuse for every new row
+  // (the inline picker fetches per row, which is wasteful for batch).
+  let active: Uom[] = [];
+  try {
+    active = await fetchActiveUomsForBatch();
+  } catch {
+    // If UoM lookup fails entirely we still add the lines so the
+    // user does not lose their selection; the editor will surface the
+    // empty UoM state and they can pick a UoM manually per row.
+  }
+  const baseTime = Date.now();
+  // B3.6-B.1 §8 — compute the starting lineNo once (max existing + step)
+  // and pass it down so each new row increments from there.
+  const startLineNo = nextLineNoForBatch(fresh.length);
+  // Per B3.6-B §五 #8 — preserve the caller's selection order.
+  fresh.forEach((item, i) => {
+    const row = buildNewRowFromItem(item, baseTime, i, startLineNo);
+    applyUomSelection(row, active, item.baseUomId);
+    recomputeRow(row);
+    localLines.push(row);
+    emit('item-pick', row, item);
+  });
+  emitUpdate();
+  return { added: fresh.length, skipped: skipped.length, skippedItems: skipped };
+}
+
+// Expose to the parent (SalesOrderEdit) so it can call
+// batchAppendItems after receiving the `multi-select` event from
+// ItemSelectorPopover. We do NOT change the public emit surface —
+// the B2/B2.1 events remain identical.
+defineExpose({ batchAppendItems });
 
 // Suppress unused-import warning from Eslint when ElMessage isn't used.
 void ElMessage;

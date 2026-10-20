@@ -60,12 +60,18 @@ public sealed class EnterpriseRolePackCrossTenantFacts
 
         Assert.True(result.Mdm.RoleCreated);
         Assert.True(result.Sales.RoleCreated);
+        Assert.True(result.Employee.RoleCreated);
+        Assert.True(result.Purchase.RoleCreated);
         Assert.Equal("ERP_MDM_OPERATOR", result.Mdm.RoleCode);
         Assert.Equal("ERP_SALES_OPERATOR", result.Sales.RoleCode);
+        Assert.Equal("ERP_EMPLOYEE_OPERATOR", result.Employee.RoleCode);
+        Assert.Equal("ERP_PURCH_OPERATOR", result.Purchase.RoleCode);
         // Tenant A is the FIRST tenant to create the role. There is
         // no other tenant to collide with.
         Assert.Empty(result.Mdm.CrossTenantNormalizedNameCollisions);
         Assert.Empty(result.Sales.CrossTenantNormalizedNameCollisions);
+        Assert.Empty(result.Employee.CrossTenantNormalizedNameCollisions);
+        Assert.Empty(result.Purchase.CrossTenantNormalizedNameCollisions);
     }
 
     [Fact]
@@ -98,6 +104,8 @@ public sealed class EnterpriseRolePackCrossTenantFacts
 
         Assert.True(result.Mdm.RoleCreated);
         Assert.True(result.Sales.RoleCreated);
+        Assert.True(result.Employee.RoleCreated);
+        Assert.True(result.Purchase.RoleCreated);
         // Both roles are now present in BOTH tenants, sharing the
         // same NormalizedName but different TenantId. This is the
         // design target of the schema repair.
@@ -110,6 +118,14 @@ public sealed class EnterpriseRolePackCrossTenantFacts
         Assert.Equal(tenantA.Id, salesCollision.ExistingTenantId);
         Assert.Equal("ERP_SALES_OPERATOR", salesCollision.ExistingRoleCode);
         Assert.Equal("ERP SALES OPERATOR", salesCollision.NormalizedName);
+        var employeeCollision = Assert.Single(result.Employee.CrossTenantNormalizedNameCollisions);
+        Assert.Equal(tenantA.Id, employeeCollision.ExistingTenantId);
+        Assert.Equal("ERP_EMPLOYEE_OPERATOR", employeeCollision.ExistingRoleCode);
+        Assert.Equal("ERP EMPLOYEE OPERATOR", employeeCollision.NormalizedName);
+        var purchaseCollision = Assert.Single(result.Purchase.CrossTenantNormalizedNameCollisions);
+        Assert.Equal(tenantA.Id, purchaseCollision.ExistingTenantId);
+        Assert.Equal("ERP_PURCH_OPERATOR", purchaseCollision.ExistingRoleCode);
+        Assert.Equal("ERP PURCHASE OPERATOR", purchaseCollision.NormalizedName);
     }
 
     [Fact]
@@ -135,22 +151,30 @@ public sealed class EnterpriseRolePackCrossTenantFacts
         // duplicate assignments.
         Assert.True(first.Mdm.RoleCreated);
         Assert.True(first.Sales.RoleCreated);
+        Assert.True(first.Employee.RoleCreated);
+        Assert.True(first.Purchase.RoleCreated);
         Assert.False(second.Mdm.RoleCreated);
         Assert.False(second.Sales.RoleCreated);
+        Assert.False(second.Employee.RoleCreated);
+        Assert.False(second.Purchase.RoleCreated);
         Assert.Empty(second.Mdm.ClaimsCreated);
         Assert.Empty(second.Sales.ClaimsCreated);
+        Assert.Empty(second.Employee.ClaimsCreated);
+        Assert.Empty(second.Purchase.ClaimsCreated);
         // Same tenant: no cross-tenant collision to capture.
         Assert.Empty(second.Mdm.CrossTenantNormalizedNameCollisions);
         Assert.Empty(second.Sales.CrossTenantNormalizedNameCollisions);
+        Assert.Empty(second.Employee.CrossTenantNormalizedNameCollisions);
+        Assert.Empty(second.Purchase.CrossTenantNormalizedNameCollisions);
         // Database invariants for this isolated test: the
         // EnterpriseBusinessRolePackProvisioner (used directly here)
-        // provisions the 3 business roles (MDM + Sales +
-        // EmployeeOperator) per GULIERP_EMPLOYEE_ROLE_PACK_TEST_ALIGNMENT_001
-        // (2026-08-24). The ERP_SYSTEM_ADMIN role is created by
+        // provisions the 4 business roles (MDM + Sales +
+        // EmployeeOperator + PurchOperator) after G3-R2B. The
+        // ERP_SYSTEM_ADMIN role is created by
         // the full IEnterpriseBootstrapService.CreateEnterpriseBootstrapAsync
         // path, which is exercised separately in
         // EnterpriseBootstrapAndOrganizationTreeFacts.
-        Assert.Equal(3, await db.Roles.CountAsync());
+        Assert.Equal(4, await db.Roles.CountAsync());
     }
 
     private static ServiceProvider BuildProvider()

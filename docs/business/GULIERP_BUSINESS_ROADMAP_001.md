@@ -1,3 +1,5 @@
+> V0.9说明（2026-09-09）：本页是2026-08-23历史冻结路线图。保留历史正文；当前进展和验证范围以 [基线报告](../verification/GULIERP_BASELINE_FREEZE_V0_9_REPORT.md) 为准。
+
 # GULIERP_BUSINESS_ROADMAP_001
 
 > Goal: define the V1.5 / V2 / V2.5 development path from

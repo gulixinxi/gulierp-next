@@ -32,7 +32,7 @@ public sealed class MdmBusinessPartnerWarehouseLocationFacts : IClassFixture<Web
         _factory.WithWebHostBuilder(builder => builder.UseEnvironment("Testing"));
 
     private static string UniqueSuffix() =>
-        Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+        "T" + Guid.NewGuid().ToString("N")[..7].ToUpperInvariant();
 
     private static void RequireRealDb(IServiceProvider sp)
     {

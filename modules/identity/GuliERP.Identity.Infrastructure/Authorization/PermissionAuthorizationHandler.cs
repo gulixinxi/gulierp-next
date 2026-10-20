@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using GuliERP.Foundation.Kernel;
+using GuliERP.Identity.Application.Authorization;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
 using GuliERP.Identity.Infrastructure.Persistence;

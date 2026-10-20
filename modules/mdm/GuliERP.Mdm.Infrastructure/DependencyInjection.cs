@@ -1,5 +1,4 @@
 using GuliERP.Identity.Application.Authorization;
-using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Mdm.Application;
 using GuliERP.Mdm.Infrastructure.Mdm;
 using GuliERP.Mdm.Infrastructure.Persistence;
@@ -49,6 +48,9 @@ public static class DependencyInjection
         services.AddScoped<IMdmService, MdmService>();
         services.AddScoped<IMasterDataCodeService, MasterDataCodeService>();
         services.AddScoped<IMdmBusinessPartnerService, MdmBusinessPartnerService>();
+        // Read-only candidate lookup for cross-module matching (CRM ↔ MDM).
+        // CRM consumes the interface, never MdmDbContext directly.
+        services.AddScoped<IBusinessPartnerCandidateLookupService, BusinessPartnerCandidateLookupService>();
         services.AddScoped<IMdmWarehouseService, MdmWarehouseService>();
         services.AddScoped<IMdmLocationService, MdmLocationService>();
         services.AddScoped<IMdmDictionaryService, MdmDictionaryService>();

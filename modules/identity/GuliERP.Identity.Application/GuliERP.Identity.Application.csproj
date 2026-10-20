@@ -8,4 +8,7 @@
     <ProjectReference Include="..\..\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
     <ProjectReference Include="..\GuliERP.Identity.Domain\GuliERP.Identity.Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
 </Project>

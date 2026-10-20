@@ -63,9 +63,8 @@ function Parse-NpgsqlKey([string]$s, [string]$key) {
 
 function Redact([string]$s) {
     if ([string]::IsNullOrEmpty($s)) { return '<empty>' }
-    # Truncate long strings; replace control chars; mask to ASCII-printable summary
-    if ($s.Length -gt 80) { $s = $s.Substring(0, 80) + '...' }
-    return $s
+    # Never emit any caller-supplied connection data, including malformed strings.
+    return 'Host=***;Database=***;Username=***;Password=***;'
 }
 
 # -------------------------------------------------------------------
@@ -78,7 +77,7 @@ if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
 if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
     Write-Host "[FAIL] No connection string provided." -ForegroundColor Red
     Write-Host "       Set `-ConnectionString` or `$env:ConnectionStrings__GuliERP`."
-    Write-Host "       EXPECTED DATABASE: $ExpectedDatabase"
+    Write-Host "       EXPECTED DATABASE: ***"
     Write-Host "       ACTUAL DATABASE  : <no connection string>"
     exit 1
 }
@@ -94,7 +93,7 @@ $username  = Parse-NpgsqlKey -s $ConnectionString -key 'Username'
 if ([string]::IsNullOrEmpty($database)) {
     Write-Host "[FAIL] Connection string is missing the Database= key." -ForegroundColor Red
     Write-Host "       Connection: $(Redact $ConnectionString)"
-    Write-Host "       EXPECTED DATABASE: $ExpectedDatabase"
+    Write-Host "       EXPECTED DATABASE: ***"
     exit 1
 }
 
@@ -102,14 +101,14 @@ if ([string]::IsNullOrEmpty($database)) {
 # Step 3: assert
 # -------------------------------------------------------------------
 if ($database -eq $ExpectedDatabase) {
-    Write-Host "[PASS] Host=$hostName Database=$database Username=$username (matches canonical target)"
+    Write-Host "[PASS] Host=*** Database=*** Username=*** (matches canonical target)"
     exit 0
 } else {
     Write-Host "[FAIL] Wrong-DB detected." -ForegroundColor Red
-    Write-Host "       EXPECTED DATABASE: $ExpectedDatabase"
-    Write-Host "       ACTUAL DATABASE  : $database"
-    Write-Host "       Host             : $hostName"
-    Write-Host "       Username         : $username"
+    Write-Host "       EXPECTED DATABASE: ***"
+    Write-Host "       ACTUAL DATABASE  : ***"
+    Write-Host "       Host             : ***"
+    Write-Host "       Username         : ***"
     Write-Host "       (Password is never printed. Set `$env:ConnectionStrings__GuliERP if not already set.)"
     Write-Host ""
     Write-Host "       To override the canonical target (e.g. for a future cutover),"

@@ -136,6 +136,11 @@ public sealed class MdmServiceBoundaryArchitectureTests
                                        // reads/writes Tenant-scoped MDM data
                                        // (BusinessPartner / Warehouse / Location remain in
                                        // MdmMasterData002Services).
+        "BusinessPartnerCandidateLookupService.cs", // Guli Platform V2: sanctioned read-only
+                                                    // candidate lookup service. Reads
+                                                    // BusinessPartner by TaxNumber/Name for
+                                                    // cross-module candidate matching (CRM ↔ MDM).
+                                                    // Tenant-scoped internally; never writes.
         "CountryConfiguration.cs",
         "AdministrativeRegionConfiguration.cs",
         "FoundationModelBoundaries.cs", // if present

@@ -122,7 +122,7 @@ if (-not $ConnectionString) {
     $ConnectionString = Read-Host -Prompt 'Npgsql connection string (Host=...;Port=...;Database=...;Username=...;Password=...)'
 }
 
-$displayConn = ($ConnectionString -replace 'Password=[^;]+', 'Password=***')
+$displayConn = 'Host=***;Database=***;Username=***;Password=***;'
 Write-Host "[G2-004] Using connection: $displayConn" -ForegroundColor Cyan
 
 # --- 0b. (-GrantMdmOperator mode only) Grant the MDM permissions ----------

@@ -65,7 +65,7 @@ public sealed class ReferenceSeedIntegrationFacts
         if (long.TryParse(tenantEnv, out var parsed)) tenantId = parsed;
 
         Console.WriteLine($"=== G3-R1 ReferenceSeedService integration run ===");
-        Console.WriteLine($"  connectionString : {connStr}");
+        Console.WriteLine("  connectionString : Host=***;Database=***;Username=***;Password=***;");
         Console.WriteLine($"  referenceRoot    : {refRoot}");
         Console.WriteLine($"  tenantId         : {tenantId}");
         Console.WriteLine();

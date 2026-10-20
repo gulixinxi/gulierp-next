@@ -17,6 +17,11 @@
     <Project Path="modules/mdm/GuliERP.Mdm.Application/GuliERP.Mdm.Application.csproj" />
     <Project Path="modules/mdm/GuliERP.Mdm.Infrastructure/GuliERP.Mdm.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/modules/crm/">
+    <Project Path="modules/crm/GuliERP.Crm.Application/GuliERP.Crm.Application.csproj" />
+    <Project Path="modules/crm/GuliERP.Crm.Domain/GuliERP.Crm.Domain.csproj" />
+    <Project Path="modules/crm/GuliERP.Crm.Infrastructure/GuliERP.Crm.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/modules/document-kernel/">
     <Project Path="modules/document-kernel/GuliERP.DocumentKernel.Domain/GuliERP.DocumentKernel.Domain.csproj" />
     <Project Path="modules/document-kernel/GuliERP.DocumentKernel.Application/GuliERP.DocumentKernel.Application.csproj" />
@@ -42,12 +47,16 @@
     <Project Path="tests/GuliERP.Mdm.IntegrationTests/GuliERP.Mdm.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.Mdm.Tests/GuliERP.Mdm.Tests.csproj" />
     <Project Path="tests/GuliERP.Sales.Tests/GuliERP.Sales.Tests.csproj" />
+    <Project Path="tests/GuliERP.Api.Tests/GuliERP.Api.Tests.csproj" />
+    <Project Path="tests/GuliERP.Crm.Tests/GuliERP.Crm.Tests.csproj" />
     <Project Path="tests/GuliERP.DocumentKernel.IntegrationTests/GuliERP.DocumentKernel.IntegrationTests.csproj" />
     <Project Path="tests/GuliERP.DocumentKernel.Tests/GuliERP.DocumentKernel.Tests.csproj" />
     <Project Path="tests/GuliERP.Purchase.Tests/GuliERP.Purchase.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/GuliERP.Identity.Bootstrap/GuliERP.Identity.Bootstrap.csproj" />
+    <Project Path="tools/GuliERP.G3R1C.IdentityProvisioner/GuliERP.G3R1C.IdentityProvisioner.csproj" />
     <Project Path="tools/GuliERP.G3R2B.IdentityProvisioner/GuliERP.G3R2B.IdentityProvisioner.csproj" />
+    <Project Path="tools/GuliERP.Mdm.Bootstrap/GuliERP.Mdm.Bootstrap.csproj" />
   </Folder>
 </Solution>

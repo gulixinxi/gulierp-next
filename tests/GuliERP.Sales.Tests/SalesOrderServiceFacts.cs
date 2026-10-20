@@ -146,7 +146,7 @@ public sealed class SalesOrderServiceFacts
         var created = await fixture.Service.CreateDraftAsync(NewCreateRequest(), null);
 
         var confirmed = await fixture.Service.ConfirmAsync(created.Id);
-        var cancelled = await fixture.Service.CancelAsync(created.Id);
+        var cancelled = await fixture.Service.CancelAsync(created.Id, cancellationReason: "test cancel");
 
         Assert.NotNull(confirmed);
         Assert.Equal(SalesOrderStatus.Confirmed, confirmed.Status);

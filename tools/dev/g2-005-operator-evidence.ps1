@@ -80,6 +80,10 @@ function Redact-SecretText {
 
     if ($null -eq $Value) { return '' }
     $text = ($Value | Out-String)
+    # Fail closed for connection-bearing diagnostic blocks, including quoted/multiline values.
+    if ($text -match '(?i)\b(Host|Server|Data Source|Database|Initial Catalog|Username|User ID|UserId|UID|Password|Pwd|PGPASSWORD)\s*=') {
+        return 'Host=***;Database=***;Username=***;Password=***; [connection diagnostics redacted]'
+    }
     $text = $text -replace "(?i)(Password|Pwd)\s*=\s*[^;`r`n]+", '$1=***'
     return $text
 }
@@ -742,8 +746,8 @@ function Invoke-DotNetTestWithTimeout {
         $process.WaitForExit()
         $stdoutText = $stdoutTask.Result
         $stderrText = $stderrTask.Result
-        $stdoutLinesBuffer = @($stdoutText -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
-        $stderrLinesBuffer = @($stderrText -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
+        $stdoutLinesBuffer = @((Redact-SecretText $stdoutText) -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
+        $stderrLinesBuffer = @((Redact-SecretText $stderrText) -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
         Set-Content -LiteralPath $stdoutFile -Value $stdoutLinesBuffer -Encoding UTF8
         Set-Content -LiteralPath $stderrFile -Value $stderrLinesBuffer -Encoding UTF8
         $stderrTail = Get-BufferedTail -Lines $stderrLinesBuffer
@@ -757,8 +761,8 @@ function Invoke-DotNetTestWithTimeout {
     $process.WaitForExit()
     $stdoutText = $stdoutTask.Result
     $stderrText = $stderrTask.Result
-    $stdoutLinesBuffer = @($stdoutText -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
-    $stderrLinesBuffer = @($stderrText -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
+    $stdoutLinesBuffer = @((Redact-SecretText $stdoutText) -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
+    $stderrLinesBuffer = @((Redact-SecretText $stderrText) -split "(`r`n|`n|`r)" | Where-Object { $_ -ne '' })
     Set-Content -LiteralPath $stdoutFile -Value $stdoutLinesBuffer -Encoding UTF8
     Set-Content -LiteralPath $stderrFile -Value $stderrLinesBuffer -Encoding UTF8
     foreach ($line in $stdoutLinesBuffer) {
@@ -1293,7 +1297,7 @@ else {
     Write-Host "[G2-005] Using caller-provided connection string."
 }
 
-Write-Host "[G2-005] Connection: $((Redact-SecretText $conn).Trim())"
+Write-Host '[G2-005] Connection: Host=***;Database=***;Username=***;Password=***;'
 Set-OperatorConnectionEnvironment -ConnectionString $conn
 
 $MarkerPrefix = 'test_operator_'

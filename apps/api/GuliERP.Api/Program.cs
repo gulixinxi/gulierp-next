@@ -1,10 +1,12 @@
 using GuliERP.Api;
 using GuliERP.Api.Authentication;
+using GuliERP.Api.Crm;
 using GuliERP.Api.Kernel;
 using GuliERP.Api.Mdm;
 using GuliERP.Api.Organization;
 using GuliERP.Api.Purchase;
 using GuliERP.Api.Sales;
+using GuliERP.Crm.Infrastructure;
 using GuliERP.DocumentKernel.Infrastructure;
 using GuliERP.Foundation;
 using GuliERP.Foundation.Kernel;
@@ -157,6 +159,11 @@ builder.Services.AddGuliErpSales(connectionString);
 //     No seed data and no mock fallback are registered.
 builder.Services.AddGuliErpPurchase(connectionString);
 
+// --- 4g. CRM-001 services (Customer Relationship Management) ---
+//     Lead + Customer + Contact + FollowUpRecord vertical slice.
+//     Reuses Identity permission system for authorization.
+builder.Services.AddGuliErpCrm(connectionString);
+
 // --- 5. ProblemDetails + Exception Handler (G2-002 §8) ---
 //     Native ASP.NET Core 10 IExceptionHandler chain. The Foundation
 //     handler maps unhandled exceptions to RFC 9457 / 7807 ProblemDetails
@@ -252,11 +259,13 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new SnowflakeLongJsonConverter());
     options.SerializerOptions.Converters.Add(new NullableSnowflakeLongJsonConverter());
+    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 });
 builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new SnowflakeLongJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new NullableSnowflakeLongJsonConverter());
+    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 });
 
 var app = builder.Build();
@@ -336,6 +345,7 @@ app.MapMdmEndpoints();
 app.MapGuliErpOrganizationEndpoints();
 app.MapSalesOrderEndpoints();
 app.MapPurchaseOrderEndpoints();
+app.MapCrmEndpoints();
 
 // --- 11b. G2-002R2 test-only endpoints (Environment-gated) ---
 //     These two endpoints exist ONLY to let the Foundation Kernel

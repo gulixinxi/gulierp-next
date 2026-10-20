@@ -360,9 +360,10 @@ function Test-Section7-NoStaleProcesses {
 function Test-Section8-DiskSpace {
     Write-Host ""
     Write-Host "[Section 8/8] Disk Space" -ForegroundColor Cyan
-    $drive = (Get-Item $NEW_PROJECT_ROOT).PSDrive
-    $freeGB = [Math]::Round($drive.Free / 1GB, 2)
-    Write-Info "Drive $($drive.Name): $freeGB GB free"
+    $driveName = (Get-Item $NEW_PROJECT_ROOT).PSDrive.Name
+    $disk = New-Object System.IO.DriveInfo("$driveName`:\")
+    $freeGB = [Math]::Round($disk.AvailableFreeSpace / 1GB, 2)
+    Write-Info "Drive ${driveName}: $freeGB GB free"
     if ($freeGB -lt 2.0) {
         Write-Fail "Disk free = $freeGB GB (need >= 2 GB for builds)"
         $script:FailCount++

@@ -1,6 +1,42 @@
 # Goal Registry
 
+## Latest Governance Closure Addendum (2026-08-27)
+
+| Field | Value |
+|---|---|
+| Goal | **GULIERP_EMPLOYEE_MASTER_FINAL_GOVERNANCE_CLOSURE_001** |
+| Gate | **`GULIERP_EMPLOYEE_MASTER_FINAL_GOVERNANCE_CLOSURE_001_VERIFIED`** |
+| Status | **VERIFIED + FROZEN** — Operator provided final console evidence for `pwsh ./tools/dev/g2-005-operator-evidence.ps1`; repository evidence under `tests/_evidence_trx/g2-005/20260827-003945` confirms the Step4 TRX suites are `396/396 PASS` (`Identity.Bootstrap.Tests` 64/64, `Identity.Tests` 103/103, `Foundation.Tests` 68/68, `Identity.IntegrationTests` 130/130, `Foundation.IntegrationTests` 31/31). The same harness script order requires successful Release build, Foundation/Identity migrations, runtime authorization probes, and Production boundary probes before it can print final `ALL CHECKS PASS`; the detailed 401/403/200/404 probe lines were not persisted as a 20260827 transcript, so the final report records them as Operator console evidence plus script-order corroboration rather than a separate repository transcript. |
+| Employee Master V1 | **VERIFIED + FROZEN** — Employee remains ERP Business Person Master, not HRM/CRM. V1 field contract is the current `Employee` entity: Id, TenantId, CompanyId, DepartmentId?, UserId?, EmployeeNo, Name, Status, CreatedAt, CreatedBy?, ModifiedAt, ModifiedBy?, ConcurrencyVersion. No Mobile/Phone/Email/WeChat/WeCom/QRCode/Position/Remark fields. |
+| EmployeeNo | **FROZEN** — ordinary business EmployeeNo uses `UPPER_SNAKE`, regex `^[A-Z][A-Z0-9_]{1,39}$`; ordinary API/user-created EmployeeNo must not use hyphen. `EMP-SYSTEM` remains Bootstrap-only reserved system employee number. |
+| User / Employee boundary | **FROZEN** — User is authentication/authorization identity; Employee is business person identity. They must not be collapsed into one model. |
+| Permission boundary | **VERIFIED** — `ERP_SYSTEM_ADMIN` remains exact 8 Identity system-administration permissions. `ERP_EMPLOYEE_OPERATOR` remains exact 2 Employee business permissions. No Employee/Sales/Purchase/Inventory goal may silently expand `ERP_SYSTEM_ADMIN`. |
+| Current formal admin contract | **5 role assignments / 30 effective permissions** — `ERP_SYSTEM_ADMIN`, `ERP_MDM_OPERATOR`, `ERP_SALES_OPERATOR`, `ERP_EMPLOYEE_OPERATOR`, `ERP_PURCH_OPERATOR`. Historical Employee milestone reports that mention 4 roles are preserved as historical snapshots; current G3-R2B contract is 5 roles. |
+| Resolved blocked state | Previous `121/130 PASS` + `9 OPERATOR_DB_ENVIRONMENT_BLOCKED` Identity Integration status is **RESOLVED_BY_OPERATOR_EVIDENCE** by the 20260827 Operator TRX `130/130 PASS`. |
+| Contact Profile | **DESIGN ONLY** — `docs/business/GULIERP_CONTACT_PROFILE_001_DESIGN_REPORT.md`; no implementation started here. |
+| Employee Vue | **IMPLEMENTED in MDM UI path** — current source has `apps/web/src/views/mdm/EmployeeList.vue`; no new Employee UI work was started in this closure goal. |
+| Report | `docs/verification/GULIERP_EMPLOYEE_MASTER_FINAL_GOVERNANCE_CLOSURE_001_REPORT.md` |
+| Commit rule | **NO AUTOMATIC COMMIT / NO PUSH / NO REMOTE CREATION** |
+
 ## Active Goal
+
+| Field | Value |
+|---|---|
+| Goal | **GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1 — Master Data Code Rule + Country/Region + PostalAddress + BP Frontend + Operator Evidence (Wave 1 + 1.5 + 2 + 3 + 4 + 5)** |
+| Gate | **`GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1_IMPLEMENTED_AWAITING_OPERATOR_EVIDENCE`** |
+| Status | **Wave 1 + 1.5 + 2 + 3 + 4 + 5 (code-side) + Wave 5.1 partial operator evidence. DOWNGRADED from VERIFIED to AWAITING_OPERATOR_EVIDENCE pending two open gaps**. Gap A: MCA public API `xzqh/getList` returns L1 (33 provinces/municipalities) + L2 (333 prefectures) only for non-municipalities. L3 (118 county/district rows total) exists ONLY for 4 municipalities (Beijing 16 + Tianjin 16 + Shanghai 16 + Chongqing 38 = 86) and province-direct counties (Hainan 20 + Xinjiang 12 = 32). Ordinary provinces (Shandong 37, Hebei 13, ...) have ZERO L3 rows in the database = **OFFICIAL_SOURCE_LIMITATION** (cannot VERIFY CN Region data completeness per brief §二十七). Total: 33 L1 + 333 L2 + 118 L3 = **484** (0 duplicate, 0 orphan, 0 cross-country parent). Verified via API walk 2026-08-28 22:30. Gap B: Real browser smoke PARTIALLY executed in Wave 5.1 (4/8 PASS: S1 list, S2 auto-code, S4 country, S7 international; 4/8 FAIL: S3 mnemonic UI timing, S5 CN Cascader 3-level OFFICIAL_SOURCE_LIMITATION, S6 municipality async timing, S8 legacy edit UI overlay `.el-drawer__title` z-index). Playwright 1.59 + Chromium-1234. **Gate re-elevation to `VERIFIED` requires either: (a) Operator provides MCA / NBS level-3 export file for ordinary provinces; (b) Operator confirms third-party source license; (c) Operator accepts OFFICIAL_SOURCE_LIMITATION as the production state**. NO COMMIT / NO PUSH (per brief §四十五 + §五十五). |
+| Entry Gate | `MDM-002 BusinessPartner / Warehouse / Location` CLOSED + `GULIERP_EMPLOYEE_MASTER_FINAL_GOVERNANCE_CLOSURE_001_VERIFIED` |
+| Architecture / Decision | `docs/business/GULIERP_MASTER_DATA_CODE_RULE_STANDARD_V1.md` (frozen) + `docs/business/GULIERP_MASTER_DATA_COMMON_FIELD_CONTRACT_V1.md` (frozen) + `docs/business/GULIERP_ADDRESS_AND_REGION_STANDARD_V1.md` (frozen) + `docs/verification/GULIERP_MDM_UI_AND_COMMON_FIELD_AUDIT_V1_REPORT.md` (frozen audit baseline) |
+| Verification | `docs/verification/GULIERP_MASTER_DATA_FOUNDATION_IMPLEMENTATION_V1_REPORT.md` (final consolidated) + `..._WAVE15_REPORT.md` (Wave 1.5) + `..._WAVE2_REPORT.md` (Wave 2) + `..._WAVE3_REPORT.md` (Wave 3, PostalAddress + BP Backend) + `..._WAVE4_REPORT.md` (Wave 4, BP Frontend). Focused tests: `MasterDataCodeServiceFacts` 6/6 + `MdmCodeRuleBootstrapServiceFacts` 3/3 + `MdmReferenceDataServiceFacts` 11/11 + `BusinessPartnerPostalAddressFacts` 19/19 = **39/39 focused PASS**. Suite totals: `GuliERP.Mdm.Tests` 317/317, `GuliERP.Foundation.Tests` 68/68, `GuliERP.Identity.Tests` 103/103, `GuliERP.Sales.Tests` 17/17, `GuliERP.Purchase.Tests` 18/18, `GuliERP.DocumentKernel.Tests` 44/44 = **567/567 PASS, 0 regression**. |
+| Reuse proof | `MasterDataCodeService` 与 `NumberingRuleService` / `MdmService` 同级, 0 读 tenant-scoped MDM 数据. `MdmCodeRuleBootstrapService` 单职责 idempotent 引导, 不新建第二套 bootstrap framework. `MdmReferenceDataService` 复用既有 `MdmSeed` 模式 + 既有 `MdmDtos` (新增 4 records). `gulierp_hilo_sequence` PROJECT_SHARED (Identity IDGEN001 创建, Mdm/Sales/Purchase 共享). `IMdmReferenceDataService` 复用 (Wave 4 reference endpoints 直接调既有 service, 0 新建 service / 0 新建 DTO 转换). Service Boundary whitelist `AllowedMdmDbContextUsers` +7 全部为 sanctioned read-only MDM code-rule / MDM reference-data path. |
+| Local Evidence | `dotnet build GuliERP.slnx --nologo --disable-build-servers -m:1 -v:minimal` → 0 errors, 0 warnings. `dotnet test tests/GuliERP.Mdm.Tests --no-restore --no-build -m:1` → 317/317 PASS. `npm run typecheck` (apps/web) → 0 errors. `npm run build` (apps/web) → ✓ built in 6.75s, BusinessPartnerList 24.18 kB / gzip 7.70 kB. Cross-process concurrency: 20 并发 InMemory 全部 distinct (BP_000001..BP_000020) — PG cross-process 留 Operator 端. Migration 评审: MDM003 (2 tables + 2 UX + 1 FK Restrict) + MDM004 (2 tables + 5 indexes + 1 self-FK Restrict) + MDM005 (4 ADD COLUMN + 1 IX + 1 FK Restrict, 0 DROP) 全部 ADDITIVE, 0 mutation. |
+| Country Dataset Manifest | `iso-3166-1-alpha-2@2020` (ISO 3166-1:2020 codes, **free for use per ISO's published guidance**) + Unicode CLDR territory names (en / zh-Hans, **Unicode Data Files and Software License**). `Iso3166CountrySeedData.ExpectedRowCount = 249` 验证在 `Seed_Matches_Iso_3166_1_Row_Count`. |
+| Region Dataset Manifest | `PENDING_OPERATOR_RUN@2026-08-28` — schema + API + read methods + 4 reference endpoints 就绪; 实际 import 留 Operator 走 `https://dmfw.mca.gov.cn/` 官方源 (per brief §二十九, 2025 年《行政区划代码管理办法》正式以 MCA National Geographical Names Database 为 canonical). V1 限定省/市/区县 3 级 (per brief §十九), schema 任意深度 (per brief §二十, 不固定 3-level). Repo redistribution license 待 Operator 复核 (per brief §十八). |
+| Out-of-Scope (V1) | Item / Warehouse / Location 的 `_codeService.GenerateNextAsync` 接入 (Wave 1 仅做 BP 接入; Warehouse/Location/Item CREATE 仍走显式 Code); 跨进程 PG 并发 + 真实 API integration regression (Wave 5 / Operator); MCA 行政区划数据 import (Operator 走单独 importer). |
+| Forbidden follow-up without user authorization | Item/Warehouse/Location.Create 接入 _codeService (后续 goal); 修改 ERP_SYSTEM_ADMIN 权限边界 (locked by 9 unit tests in ErpSystemAdminPackBoundaryFacts); 新增 Identity 端点 (会变更权限模型); 修改 HiLo sequence 归属; 修改 BusinessPartner 既有 Code 历史 (per brief §九); commit / push / remote (per brief §三十三 / §四十五). |
+| Next Goal | **Wave 5 — Regression + PostgreSQL Runtime Acceptance** (per brief §二十六 + §四十一). 范围: Operator 端 `dotnet ef database update` apply MDM003/004/005; 20+ 真机 cross-process BP code generation 并发; BusinessPartner 真实 API end-to-end 跑; MCA 数据 importer 跑 (许可复核后); Browser smoke + manual acceptance. 0 关键代码缺口, 全部 Operator-side. |
+
+## Previous Active Goal (superseded)
 
 | Field | Value |
 |---|---|
@@ -1807,16 +1843,123 @@ Per user brief STEP 6: `CASE C: 冻结文档互相冲突. 同样 STOP. 禁止 Ag
 
 ### G2-EM-001C — Operator follow-up
 
-After user authorizes `COMMIT_GROUP_8` (this report) + `COMMIT_GROUP_6` + `COMMIT_GROUP_7`, the next step is:
+  1810→After user authorizes `COMMIT_GROUP_8` (this report) + `COMMIT_GROUP_6` + `COMMIT_GROUP_7`, the next step is:
+  1811→
+  1812→`GULIERP_NEXT_OPERATOR_RUNTIME_VERIFICATION_001` re-run. When the 9 remaining Category C tests pass on real PG, flip `G2-EM-001` and `G2-EM-001B` Gates to `_VERIFIED`.
+  1813→
+  1814→---
+  1815→
+  1816→## STOP
+  1817→
+  1818→G2-EM-001C Mavis-side is closed. Gate is
+  1819→`GULIERP_EMPLOYEE_CODE_CONTRACT_RECONCILIATION_001_VERIFIED` (Mavis side). 9
+  1820→Category C (PG-required) tests still pending Operator runtime verification.
+  1821→
+  1822→NEXT_GOAL_CANDIDATE = **`GULIERP_NEXT_OPERATOR_RUNTIME_VERIFICATION_001` re-run (now only 9 Category C tests remain) OR any user-approved G2-005 / Contact Profile / HR Vue / Sales Order Goal (NOT STARTED, HALTED)**.
+  1823→
+  1824→---
+  1825→
+  1826→## GULIERP_NEXT_EMPLOYEE_OPERATOR_RUNTIME_FINAL_001 — Final Runtime Closure Attempt (Mavis side, 2026-08-26)
+  1827→
+  1828→| Field | Value |
+  1826→|---|---|
+  1827→| Goal | **`GULIERP_NEXT_EMPLOYEE_OPERATOR_RUNTIME_FINAL_001`** — Employee Master V1 最终 Runtime Verification |
+  1828→| Gate | `GULIERP_NEXT_EMPLOYEE_OPERATOR_RUNTIME_FINAL_001_VERIFIED` |
+  1829→| Status | **CODE_SIDE_VERIFIED + OPERATOR_DB_ENVIRONMENT_BLOCKED** |
+  1830→| Repo / Branch / HEAD | `D:\guli\projects\gulierp-next` / `master` / `139fe1e940258d71b85d328d88b4e1358c0f7b1e` |
+  1831→| Working tree | 2 entry modified (uncommitted): `docs/verification/GULIERP_EMPLOYEE_CODE_CONTRACT_RECONCILIATION_001_REPORT.md` (from prev Goal) + `docs/verification/GULIERP_NEXT_EMPLOYEE_OPERATOR_RUNTIME_FINAL_001_REPORT.md` (this Goal) + this section |
+  1832→| Commit rule | **NO COMMIT / NO PUSH / NO REMOTE** per brief. Update is uncommitted. |
+  1833→| Final Gate Result | **`GULIERP_NEXT_EMPLOYEE_OPERATOR_RUNTIME_FINAL_001_ENVIRONMENT_BLOCKED`** (PostgreSQL unreachable from agent; 15 PG-required IntegrationTests + 1 PG-required source-grep Api test = 16 known not-yet-runtime-PASSed) |
+  1834→
+  1835→### Final Goal Status Map (per brief STEP 13)
 
-`GULIERP_NEXT_OPERATOR_RUNTIME_VERIFICATION_001` re-run. When the 9 remaining Category C tests pass on real PG, flip `G2-EM-001` and `G2-EM-001B` Gates to `_VERIFIED`.
+| Goal | Status |
+|---|---|
+| **Employee Master V1** (`G2-EM-001`) | **CODE_SIDE_VERIFIED** (15/15 EmployeeWriteApiFacts in agent in-memory). PG runtime evidence PENDING. Cannot flip `GULIERP_NEXT_EMPLOYEE_MASTER_001_CLOSURE_001_VERIFIED` without PG runtime. |
+| **Permission Boundary** (`G2-EM-001B`) | **CODE_SIDE_VERIFIED** (G3-R1C + G3-R2B boundary tests in `Identity.Tests` 103/103). PG runtime evidence PENDING. Cannot flip `GULIERP_EMPLOYEE_PERMISSION_BOUNDARY_FIX_001_VERIFIED` without PG runtime. |
+| **Contact Profile** | **DESIGN ONLY**. `docs/business/GULIERP_CONTACT_PROFILE_001_DESIGN_REPORT.md` exists. NO implementation. NO test. NO runtime. |
+| **Employee Vue** | **NOT IMPLEMENTED**. NO `apps/web/src/views/employee/*` page exists. NO `apps/web/src/api/identity/employee.ts` client. NO `EmployeeList.vue`. The 6 MDM-list-page components are reusable but not wired for Employee. |
+| **This Goal** | ENVIRONMENT_BLOCKED. |
+| **G3-R2A** | `G3_R2A_SALESORDER_RUNTIME_REBUILD_VERIFIED` (earlier) |
+| **G3-R2B** | `G3_R2B_PURCHASEORDER_RUNTIME_REBUILD_VERIFIED` (earlier) |
+| **G3-R2C** (next mainline) | **NOT STARTED**. Hard scope forbids starting it in this Goal. |
+| **G3-R3A** (Inventory Receiving) | **NOT STARTED**. Hard scope forbids starting it in this Goal. |
+
+### 15 PG-required IntegrationTests (full list, exact names from test output)
+
+1. `EnterpriseBootstrapAndOrganizationTreeFacts.CreateEnterpriseBootstrap_Creates_Independent_Business_Role_Packs_For_Admin` (BOOTSTRAP_GATE_REQUIRED + STALE_TEST_CONTRACT: Expected 4/Actual 5 after G3-R2B)
+2. `EnterpriseBootstrapAndOrganizationTreeFacts.CreateEnterpriseBootstrap_Repeated_Run_Does_Not_Duplicate_Business_Role_Pack` (BOOTSTRAP_GATE_REQUIRED + STALE_TEST_CONTRACT)
+3. `EnterpriseBootstrapAndOrganizationTreeFacts.ExistingEnterpriseEnsure_Creates_Missing_Business_Roles_And_Is_Idempotent` (BOOTSTRAP_GATE_REQUIRED + STALE_TEST_CONTRACT)
+4. `EnterpriseBootstrapAndOrganizationTreeFacts.ExistingEnterpriseEnsure_Backfills_Missing_Expected_Claims` (BOOTSTRAP_GATE_REQUIRED + STALE_TEST_CONTRACT)
+5. `EnterpriseBootstrapAndOrganizationTreeFacts.ExistingEnterpriseEnsure_Stops_When_Role_Has_Unexpected_Wildcard` (BOOTSTRAP_GATE_REQUIRED + ENVIRONMENT_BLOCKED)
+6. `EnterpriseRolePackCrossTenantFacts.SameTenant_DuplicateProvisionerCall_IsIdempotent_AndDiagnosticStaysClean` (OTHER_IDENTITY_INTEGRATION + likely STALE_TEST_CONTRACT)
+7. `G2_005_AuthorizationDataScopeFacts.RealPostgreSql_PersistedRoleClaimAndRoleAssignment_AuthorizesOnlyInsideTenantCompanyScope` (SECURITY_GATE_REQUIRED + ENVIRONMENT_BLOCKED)
+8. `IdentityApplicationServiceFacts.ICompanySwitchingService_ResolveDefault_No_Membership_Returns_Null` (OTHER + ENVIRONMENT_BLOCKED)
+9. `IdentityReferentialIntegrityFacts.FK_Tenant_AcceptOnValid` (OTHER + ENVIRONMENT_BLOCKED)
+10. `IdentityReferentialIntegrityFacts.FK_Tenant_RejectOnOrphan` (OTHER + ENVIRONMENT_BLOCKED)
+11. `IdentityReferentialIntegrityFacts.FK_DeleteBehavior_Restrict_TenantCannotBeDeletedWithCompanies` (OTHER + ENVIRONMENT_BLOCKED)
+12. `IdGenerationHiLoFacts.HiLo_PreGenerates_Id_Before_SaveChanges` (OTHER + ENVIRONMENT_BLOCKED)
+13. `IdGenerationHiLoFacts.HiLo_Persists_Long_Id` (OTHER + ENVIRONMENT_BLOCKED)
+14. `IdGenerationHiLoFacts.HiLo_FreshScopes_Produce_Distinct_Ids` (OTHER + ENVIRONMENT_BLOCKED)
+15. `IdGenerationHiLoFacts.HiLo_Does_Not_Collide_With_Existing_Id_Range` (OTHER + ENVIRONMENT_BLOCKED)
+
+### 1 PG-required Api test (separately discovered)
+
+- `GuliERP.Api.Tests.SalesRuntimeRegressionSourceFacts.SalesOrder_Runtime_Path_Uses_Real_Apis_And_No_Mock_Order_Source` (line 179) — STALE_TEST_CONTRACT: asserts `listBusinessPartners` but G3-R2A `9e7eea2` replaced with `listSalesOrderCustomers`. Per brief NO test-gaming; not fixed this Goal.
+
+### Failure classification summary (per brief STEP 10)
+
+| Class | Count | Notes |
+|---|---:|---|
+| NEW_REGRESSION | **0** | No NEW production code regression. All failures are either PG-blocked or STALE_TEST_CONTRACT from G3-R2A / G3-R2B. |
+| TEST_DATA_CONFLICT | 0 unmasked | The 2 unmasked `EMP-000001` / `EMP-DUP` are already resolved in `ab8b247` (Option A). |
+| TEST_FIXTURE_DEFECT | 0 | The Permission Fixture ClaimType Fix (`GULIERP_PERMISSION_TEST_FIXTURE_CLAIMTYPE_FIX_001`) was already resolved in `ab8b247` per GROUP_7. |
+| **ENVIRONMENT_BLOCKED** | 11 | Pure PG-required. Cannot run in agent env. |
+| **INHERITED_STALE_TEST_CONTRACT** (induced by G3-R2A/G3-R2B) | 5 | Not fixed per brief's no-test-gaming rule. |
+| DATABASE_STATE_CONFLICT | 0 | N/A |
+| HARNESS_DEFECT | 0 | N/A |
+
+### Operator Action
+
+```
+# Operator on the canonical PG workstation:
+cd D:\guli\projects\gulierp-next
+pwsh tools\dev\g2-005-operator-evidence.ps1
+
+# 15 IntegrationTests will run against the real PG:
+#   - 11 PG-required (ENVIRONMENT_BLOCKED) will run cleanly
+#   - 5 stale-test-contract will fail with `Expected 4 / Actual 5` etc.
+#     → THOSE FAILURES ARE NOT REGRESSIONS. They are G3-R2B-induced
+#     test data drift. The production code (EnterpriseBusinessRolePacks,
+#     InitialAdminRolePacks, EnterpriseBusinessRolePackProvisioner) is
+#     correct.
+#   - The 1 Api.Tests stale source-grep will also fail; also not a
+#     regression.
+#
+# Recommended follow-up Goal:
+# GULIERP_NEXT_EMPLOYEE_OPERATOR_RUNTIME_G3_R2B_ALIGNMENT_001
+#   - Update EnterpriseBootstrapAndOrganizationTreeFacts.cs line 306,
+#     345, 347 (Expected 4/24/4 → 5/26/5)
+#   - Update Api.Tests.SalesRuntimeRegressionSourceFacts.cs line 192
+#     (listBusinessPartners → listSalesOrderCustomers)
+#   - Re-run operator harness
+#   - Flip GULIERP_NEXT_EMPLOYEE_OPERATOR_RUNTIME_FINAL_001_VERIFIED
+```
+
+### Next Mainline (NOT STARTED, hard scope forbids starting in this Goal)
+
+Per brief: 禁止顺手开启下一个 Goal.
+
+**Recommended next mainline (Operator's choice)**:
+1. `GULIERP_NEXT_EMPLOYEE_OPERATOR_RUNTIME_G3_R2B_ALIGNMENT_001` (align G3-R2B-induced test data drift; re-run operator harness; flip VERIFIED) — REQUIRES Operator decision
+2. `G3-R2C` Sales/Purchase Shared Hardening (cross-module query refactor) — REQUIRES Operator decision
+3. `G3-R3A` Inventory Receiving (purchase order receiving side) — REQUIRES Operator decision
+4. Contact Profile (V1.5 design) / Employee Vue (HR front-end) — REQUIRES Operator decision
 
 ---
 
 ## STOP
 
-G2-EM-001C Mavis-side is closed. Gate is
-`GULIERP_EMPLOYEE_CODE_CONTRACT_RECONCILIATION_001_VERIFIED` (Mavis side). 9
-Category C (PG-required) tests still pending Operator runtime verification.
+This Goal Mavis-side is closed. Gate is **`GULIERP_NEXT_EMPLOYEE_OPERATOR_RUNTIME_FINAL_001_ENVIRONMENT_BLOCKED`**.
 
-NEXT_GOAL_CANDIDATE = **`GULIERP_NEXT_OPERATOR_RUNTIME_VERIFICATION_001` re-run (now only 9 Category C tests remain) OR any user-approved G2-005 / Contact Profile / HR Vue / Sales Order Goal (NOT STARTED, HALTED)**.
+The 15 PG-required IntegrationTests + 1 PG-required source-grep Api test = 16 known require Operator-side PG runtime to flip `_VERIFIED`. No NEW production-code regression. No test-gaming. No commit / push / remote. Per brief: STOP.

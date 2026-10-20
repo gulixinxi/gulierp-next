@@ -58,8 +58,8 @@ export const useSalesOrderStore = defineStore('sales-orders', () => {
     return current.value;
   }
 
-  async function cancel(id: string) {
-    current.value = await cancelSalesOrder(id);
+  async function cancel(id: string, reason: string | null) {
+    current.value = await cancelSalesOrder(id, reason);
     return current.value;
   }
 

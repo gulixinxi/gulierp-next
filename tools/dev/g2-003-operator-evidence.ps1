@@ -120,7 +120,7 @@ if (-not $ConnectionString) {
     $ConnectionString = Read-Host -Prompt 'Npgsql connection string (Host=...;Port=...;Database=...;Username=...;Password=...)'
 }
 
-$displayConn = ($ConnectionString -replace 'Password=[^;]+', 'Password=***')
+$displayConn = 'Host=***;Database=***;Username=***;Password=***;'
 Write-Host "[G2-003] Using connection: $displayConn" -ForegroundColor Cyan
 
 # Expose the env var for the rest of the run.

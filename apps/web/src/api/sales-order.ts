@@ -1,5 +1,6 @@
 import { apiGet, apiPost, apiPut } from './http';
 import type {
+  CancelSalesOrderRequest,
   CreateSalesOrderRequest,
   SalesOrderDto,
   SalesOrderListParams,
@@ -27,6 +28,12 @@ export async function confirmSalesOrder(id: string): Promise<SalesOrderDto> {
   return apiPost<SalesOrderDto>(`/api/v1/sales/orders/${id}/confirm`);
 }
 
-export async function cancelSalesOrder(id: string): Promise<SalesOrderDto> {
-  return apiPost<SalesOrderDto>(`/api/v1/sales/orders/${id}/cancel`);
+/**
+ * B3.6-A signature change. <paramref name="reason"/> is required when
+ * cancelling a Confirmed order; optional when cancelling a Draft.
+ * The server enforces the required-on-Confirmed rule as a defense in depth.
+ */
+export async function cancelSalesOrder(id: string, reason: string | null): Promise<SalesOrderDto> {
+  const body: CancelSalesOrderRequest = { cancellationReason: reason };
+  return apiPost<SalesOrderDto>(`/api/v1/sales/orders/${id}/cancel`, body);
 }

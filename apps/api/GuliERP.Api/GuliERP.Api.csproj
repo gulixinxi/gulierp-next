@@ -16,6 +16,8 @@
     <ProjectReference Include="..\..\..\modules\sales\GuliERP.Sales.Infrastructure\GuliERP.Sales.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\modules\purchase\GuliERP.Purchase.Application\GuliERP.Purchase.Application.csproj" />
     <ProjectReference Include="..\..\..\modules\purchase\GuliERP.Purchase.Infrastructure\GuliERP.Purchase.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\modules\crm\GuliERP.Crm.Application\GuliERP.Crm.Application.csproj" />
+    <ProjectReference Include="..\..\..\modules\crm\GuliERP.Crm.Infrastructure\GuliERP.Crm.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" />

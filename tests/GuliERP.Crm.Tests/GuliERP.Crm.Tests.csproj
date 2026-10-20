@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>GuliERP.Crm.Tests</RootNamespace>
+    <AssemblyName>GuliERP.Crm.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+    <PackageReference Include="Moq" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\modules\foundation\GuliERP.Foundation\GuliERP.Foundation.csproj" />
+    <ProjectReference Include="..\..\modules\mdm\GuliERP.Mdm.Domain\GuliERP.Mdm.Domain.csproj" />
+    <ProjectReference Include="..\..\modules\mdm\GuliERP.Mdm.Application\GuliERP.Mdm.Application.csproj" />
+    <ProjectReference Include="..\..\modules\mdm\GuliERP.Mdm.Infrastructure\GuliERP.Mdm.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\crm\GuliERP.Crm.Domain\GuliERP.Crm.Domain.csproj" />
+    <ProjectReference Include="..\..\modules\crm\GuliERP.Crm.Application\GuliERP.Crm.Application.csproj" />
+    <ProjectReference Include="..\..\modules\crm\GuliERP.Crm.Infrastructure\GuliERP.Crm.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
