@@ -13,18 +13,32 @@ export interface ErpTab {
   dirty?: boolean;     // unsaved changes (warning on close)
 }
 
-const LIST_TAB: ErpTab = {
-  id: 'list-sales-order',
+const HOME_TAB: ErpTab = {
+  id: 'home',
   kind: 'list',
-  title: '销售订单',
-  route: '/sales/orders',
+  title: '首页',
+  route: '/',
   closable: false
 };
 
 export const useTabsStore = defineStore('erp-tabs', () => {
-  const tabs = ref<ErpTab[]>([{ ...LIST_TAB }]);
-  const activeId = ref<string>(LIST_TAB.id);
+  const tabs = ref<ErpTab[]>([{ ...HOME_TAB }]);
+  const activeId = ref<string>(HOME_TAB.id);
   const fullscreen = ref<boolean>(false);
+  let sessionUserId: string | null = null;
+
+  function syncSession(userId: string, isAllowed: (route: string) => boolean) {
+    if (sessionUserId !== userId) {
+      // Tab titles can contain another account's business data. Never carry
+      // them across logins in the same browser session.
+      tabs.value = [{ ...HOME_TAB }];
+      activeId.value = HOME_TAB.id;
+      sessionUserId = userId;
+      return;
+    }
+    tabs.value = tabs.value.filter(tab => !tab.closable || isAllowed(tab.route));
+    if (!tabs.value.some(tab => tab.id === activeId.value)) activeId.value = HOME_TAB.id;
+  }
 
   function setActive(id: string) {
     activeId.value = id;
@@ -79,7 +93,7 @@ export const useTabsStore = defineStore('erp-tabs', () => {
     // List tabs opened AFTER the pinned home are closable.
     // The home tab (first tab, closable:false) is pinned and
     // can never be closed by batch operations.
-    const tab: ErpTab = { id, kind, title, route, closable: id !== LIST_TAB.id };
+    const tab: ErpTab = { id, kind, title, route, closable: true };
     tabs.value.push(tab);
     activeId.value = tab.id;
     return tab;
@@ -131,5 +145,5 @@ export const useTabsStore = defineStore('erp-tabs', () => {
     fullscreen.value = v === undefined ? !fullscreen.value : v;
   }
 
-  return { tabs, activeId, fullscreen, setActive, openDetail, openEdit, ensureList, closeTab, closeLeft, closeRight, closeOthers, closeAll, markDirty, toggleFullscreen };
+  return { tabs, activeId, fullscreen, syncSession, setActive, openDetail, openEdit, ensureList, closeTab, closeLeft, closeRight, closeOthers, closeAll, markDirty, toggleFullscreen };
 });

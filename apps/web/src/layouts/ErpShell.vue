@@ -416,6 +416,21 @@ const activeModuleNavigation = computed(() =>
 const currentModuleLabel = computed(() => activeModuleNavigation.value?.label || '');
 const allNavigationItems = computed(() =>
   modules.value.flatMap(module => module.groups.flatMap(group => group.items.filter(canAccessItem))));
+
+watch(
+  () => [auth.user?.tenantId, auth.user?.userId, auth.user?.companyId, auth.user?.permissionCodes],
+  () => {
+    if (!auth.user) return;
+    tabs.syncSession(`${auth.user.tenantId}:${auth.user.userId}:${auth.user.companyId ?? ''}`, tabRoute => {
+      const canonical = tabRoute.startsWith('/purchase-orders/')
+        ? '/purchase/orders'
+        : tabRoute.startsWith('/sales/orders') ? '/sales-orders' : tabRoute;
+      const item = findNavigationItemByRoute(canonical);
+      return !!item && canAccessItem(item);
+    });
+  },
+  { immediate: true },
+);
 const searchedMenuItems = computed(() => {
   const query = menuSearch.value.trim().toLowerCase();
   if (!query) return allNavigationItems.value.filter(item => item.route).slice(0, 8);
