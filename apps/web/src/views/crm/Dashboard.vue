@@ -2,6 +2,13 @@
   <div class="dashboard">
     <h2 class="page-title">经营看板</h2>
 
+    <el-alert v-if="loadError" title="看板数据加载失败，请重试。" type="error" :closable="false" show-icon>
+      <template #default>
+        <el-button link type="primary" @click="loadStats">重新加载</el-button>
+      </template>
+    </el-alert>
+    <el-skeleton v-if="loading" :rows="8" animated />
+    <template v-else-if="stats">
     <!-- 逾期跟进提醒横幅 -->
     <el-alert
       v-if="stats?.overdue.count && stats.overdue.count > 0"
@@ -148,6 +155,7 @@
         </el-card>
       </el-col>
     </el-row>
+    </template>
   </div>
 </template>
 
@@ -158,18 +166,27 @@ import { getDashboardStats, type DashboardStats } from '../../api/crm';
 
 const router = useRouter();
 const stats = ref<DashboardStats | null>(null);
+const loading = ref(false);
+const loadError = ref(false);
 
 function goCompany(id: number) {
   router.push(`/crm/companies/${id}`);
 }
 
-onMounted(async () => {
+async function loadStats() {
+  loading.value = true;
+  loadError.value = false;
+  stats.value = null;
   try {
     stats.value = await getDashboardStats();
-  } catch (e) {
-    console.error('加载看板数据失败', e);
+  } catch {
+    loadError.value = true;
+  } finally {
+    loading.value = false;
   }
-});
+}
+
+onMounted(loadStats);
 
 const funnelStages = computed(() => {
   if (!stats.value) return [];

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\modules\crm\GuliERP.Crm.Infrastructure\GuliERP.Crm.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
