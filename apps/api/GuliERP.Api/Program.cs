@@ -313,6 +313,22 @@ app.UseExceptionHandler();   // delegates to AuthenticationExceptionHandler FIRS
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseRouting();
 app.UseAuthentication();     // G2-004: sets HttpContext.User from the auth cookie
+app.Use(async (http, next) =>
+{
+    if (http.User.Identity?.IsAuthenticated == true
+        && http.User.HasClaim(AccountSecurityClaims.MustChangePassword, "true")
+        && http.Request.Path.StartsWithSegments("/api/v1")
+        && !http.Request.Path.StartsWithSegments("/api/v1/auth/csrf")
+        && !http.Request.Path.StartsWithSegments("/api/v1/auth/me")
+        && !http.Request.Path.StartsWithSegments("/api/v1/auth/logout")
+        && !http.Request.Path.StartsWithSegments("/api/v1/auth/password/change"))
+    {
+        http.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await http.Response.WriteAsJsonAsync(new { code = "password_change_required", title = "Change password before continuing." });
+        return;
+    }
+    await next(http);
+});
 app.UseAuthenticationContext();   // G2-004: claims → ICurrentTenant/Company/User (D-003 closure)
 app.UseRateLimiter();
 app.UseAuthorization();      // G2-005: endpoint policy evaluation after routing

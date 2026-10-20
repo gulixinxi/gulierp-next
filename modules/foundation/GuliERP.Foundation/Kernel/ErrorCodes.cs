@@ -61,6 +61,7 @@ public static class ErrorCodes
     /// </summary>
     public const string PasswordPolicyViolation = "password_policy_violation";
     public const string CurrentPasswordInvalid = "current_password_invalid";
+    public const string MfaRequired = "mfa_required";
 
     /// <summary>
     /// <c>POST /api/v1/auth/company/switch</c> was called with a

@@ -16,6 +16,7 @@ import type { Router, RouteLocationNormalized, NavigationGuardNext } from 'vue-r
 import { useAuthStore } from '../stores/auth';
 import Login from '../views/auth/Login.vue';
 import Forbidden403 from '../views/auth/Forbidden403.vue';
+import ChangePasswordRequired from '../views/auth/ChangePasswordRequired.vue';
 
 const PUBLIC_ROUTES = new Set(['login', '403', 'bootstrap-status']);
 
@@ -34,6 +35,8 @@ export function installAuthRoutes(router: Router): void {
       meta: { public: true },
     });
   }
+  router.addRoute({ path: '/change-password-required', name: 'change-password-required',
+    component: ChangePasswordRequired });
   // /403 — standalone page. Entry is allowed both authenticated & unauthenticated
   // (unauthenticated will be caught by the guard anyway).
   if (!router.hasRoute('403')) {
@@ -65,6 +68,13 @@ export function installAuthGuard(router: Router): void {
     }
 
     const isPublic = to.meta?.public === true || isPublicRouteName(to.name);
+
+    if (auth.isAuthenticated && auth.user?.mustChangePassword
+        && to.name !== 'change-password-required') {
+      return next({ name: 'change-password-required' });
+    }
+    if (auth.isAuthenticated && !auth.user?.mustChangePassword
+        && to.name === 'change-password-required') return next('/sales-orders');
 
     // --- Rule 1: Authenticated user hitting /login → forward to shell ---
     if (to.name === 'login' && auth.isAuthenticated) {

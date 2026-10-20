@@ -129,3 +129,6 @@ public sealed class PasswordChangeRejectedException : Exception
         CurrentPasswordInvalid = currentPasswordInvalid;
     }
 }
+
+/// <summary>Raised only after the primary password was verified.</summary>
+public sealed class MfaRequiredException : Exception { }

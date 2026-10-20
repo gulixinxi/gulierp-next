@@ -61,6 +61,8 @@
           <el-icon><Lock /></el-icon>
           <span>修改密码</span>
         </el-dropdown-item>
+        <el-dropdown-item command="mfa"><el-icon><Lock /></el-icon><span>双重验证</span></el-dropdown-item>
+        <el-dropdown-item v-if="canReset" command="reset-user"><el-icon><Lock /></el-icon><span>辅助重置用户密码</span></el-dropdown-item>
       </el-dropdown-menu>
     </template>
   </el-dropdown>
@@ -82,6 +84,25 @@
       <el-button type="primary" :loading="changing" @click="onChangePassword">保存并重新登录</el-button>
     </template>
   </el-dialog>
+  <el-dialog v-model="mfaVisible" title="双重验证" width="460px" append-to-body @closed="closeMfa">
+    <p>{{ auth.user?.mfaEnabled ? '已启用验证器。停用需要密码和当前验证码。' : '先验证当前密码，再将密钥添加到验证器。' }}</p>
+    <el-input v-model="mfaPassword" type="password" placeholder="当前密码" autocomplete="current-password" />
+    <el-button v-if="!auth.user?.mfaEnabled && !mfaKey" @click="beginMfa">获取绑定密钥</el-button>
+    <p v-if="mfaKey">绑定密钥（仅此处显示）：<code>{{ mfaKey }}</code></p>
+    <el-input v-if="mfaKey || auth.user?.mfaEnabled" v-model="mfaCode" placeholder="验证器中的 6 位验证码" autocomplete="one-time-code" />
+    <el-button v-if="mfaKey" type="primary" @click="turnOnMfa">验证并启用</el-button>
+    <el-button v-if="auth.user?.mfaEnabled" type="danger" @click="turnOffMfa">停用双重验证</el-button>
+    <div v-if="recoveryCodes.length"><strong>恢复码仅显示这一次，请离线保存：</strong><p v-for="code in recoveryCodes" :key="code"><code>{{ code }}</code></p></div>
+    <el-button v-if="recoveryCodes.length" type="primary" @click="mfaVisible = false">我已保存，重新登录</el-button>
+  </el-dialog>
+  <el-dialog v-model="resetVisible" title="辅助重置用户密码" width="460px" append-to-body @closed="clearReset">
+    <p>仅限同租户用户。临时密码只显示一次，请通过已核验的安全渠道交给用户。</p>
+    <el-input v-model="targetUserId" placeholder="目标用户 ID" />
+    <el-input v-model="resetPassword" type="password" placeholder="您的当前密码" autocomplete="current-password" />
+    <el-input v-if="auth.user?.mfaEnabled" v-model="resetMfaCode" placeholder="您的双重验证码" autocomplete="one-time-code" />
+    <el-button type="primary" @click="onResetUser">生成临时密码</el-button>
+    <p v-if="temporaryPassword">临时密码（仅显示一次）：<code>{{ temporaryPassword }}</code></p>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -93,7 +114,7 @@ import { computed, onBeforeUnmount, ref } from 'vue';
 import { ArrowDown, User, UserFilled, Lock } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { useAuthStore } from '../../stores/auth';
-import { changePassword } from '../../api/auth';
+import { changePassword, setupMfa, enableMfa, disableMfa, resetUserPassword } from '../../api/auth';
 
 const auth = useAuthStore();
 const changeDialogVisible = ref(false);
@@ -101,6 +122,41 @@ const changing = ref(false);
 const currentPassword = ref('');
 const newPassword = ref('');
 const confirmPassword = ref('');
+const mfaVisible = ref(false);
+const mfaPassword = ref('');
+const mfaCode = ref('');
+const mfaKey = ref('');
+const recoveryCodes = ref<string[]>([]);
+const resetVisible = ref(false);
+const targetUserId = ref('');
+const resetPassword = ref('');
+const resetMfaCode = ref('');
+const temporaryPassword = ref('');
+const canReset = computed(() => auth.user?.permissionCodes.includes('identity.user.manage') ?? false);
+
+function clearMfa() { mfaPassword.value = mfaCode.value = mfaKey.value = ''; recoveryCodes.value = []; }
+function closeMfa() { const enabled = recoveryCodes.value.length > 0; clearMfa(); if (enabled) auth.finishPasswordChange(); }
+function clearReset() { targetUserId.value = resetPassword.value = resetMfaCode.value = temporaryPassword.value = ''; }
+async function beginMfa() {
+  try { mfaKey.value = (await setupMfa(mfaPassword.value)).sharedKey; mfaPassword.value = ''; }
+  catch { ElMessage.error('身份验证失败，无法开始绑定'); }
+}
+async function turnOnMfa() {
+  try { recoveryCodes.value = (await enableMfa(mfaCode.value)).recoveryCodes; mfaCode.value = ''; mfaKey.value = ''; }
+  catch { ElMessage.error('验证码无效'); }
+}
+async function turnOffMfa() {
+  try { await disableMfa(mfaPassword.value, mfaCode.value); clearMfa(); auth.finishPasswordChange(); }
+  catch { ElMessage.error('密码或验证码错误'); }
+}
+async function onResetUser() {
+  if (!/^\d+$/.test(targetUserId.value)) { ElMessage.warning('请输入有效用户 ID'); return; }
+  try {
+    temporaryPassword.value = (await resetUserPassword(targetUserId.value, resetPassword.value,
+      resetMfaCode.value || null)).temporaryPassword;
+    resetPassword.value = resetMfaCode.value = '';
+  } catch { ElMessage.error('重置失败：请核对权限、用户和身份验证信息'); }
+}
 
 function clearPasswords(): void {
   currentPassword.value = '';
@@ -110,6 +166,8 @@ function clearPasswords(): void {
 
 function onCommand(command: string): void {
   if (command === 'change-password') changeDialogVisible.value = true;
+  if (command === 'mfa') mfaVisible.value = true;
+  if (command === 'reset-user') resetVisible.value = true;
 }
 
 async function onChangePassword(): Promise<void> {
@@ -141,7 +199,7 @@ async function onChangePassword(): Promise<void> {
   }
 }
 
-onBeforeUnmount(clearPasswords);
+onBeforeUnmount(() => { clearPasswords(); clearMfa(); clearReset(); });
 
 const displayName = computed<string>(() => auth.displayName);
 const userName = computed<string>(() => auth.userName);

@@ -20,6 +20,7 @@ using AuthenticationRequiredException = GuliERP.Identity.Application.Authenticat
 using CompanyAccessDeniedException = GuliERP.Identity.Application.Authentication.CompanyAccessDeniedException;
 using BackendUnavailableException = GuliERP.Identity.Application.Authentication.BackendUnavailableException;
 using PasswordChangeRejectedException = GuliERP.Identity.Application.Authentication.PasswordChangeRejectedException;
+using MfaRequiredException = GuliERP.Identity.Application.Authentication.MfaRequiredException;
 
 namespace GuliERP.Identity.Infrastructure.Authentication;
 
@@ -62,7 +63,7 @@ public sealed class AuthenticationService : IAppAuthenticationService
     }
 
     public async Task<LoginResponse> LoginAsync(
-        string userName, string password, string? tenantCode, CancellationToken ct = default)
+        string userName, string password, string? tenantCode, string? mfaCode = null, CancellationToken ct = default)
     {
         // 0. Wrap the DB-bound steps in a try/catch that maps
         //    transient DB failures to a uniform invalid_credentials
@@ -136,6 +137,29 @@ public sealed class AuthenticationService : IAppAuthenticationService
                 };
                 throw new InvalidCredentialsException(
                     userName, tenantCode, outcome);
+            }
+
+            if (await _userManager.GetTwoFactorEnabledAsync(user))
+            {
+                if (string.IsNullOrWhiteSpace(mfaCode))
+                {
+                    throw new MfaRequiredException();
+                }
+
+                var normalizedCode = mfaCode.Replace(" ", string.Empty, StringComparison.Ordinal)
+                    .Replace("-", string.Empty, StringComparison.Ordinal);
+                var verified = await _userManager.VerifyTwoFactorTokenAsync(
+                    user, _userManager.Options.Tokens.AuthenticatorTokenProvider, normalizedCode);
+                if (!verified && mfaCode.Length <= 32)
+                {
+                    verified = (await _userManager.RedeemTwoFactorRecoveryCodeAsync(user, mfaCode)).Succeeded;
+                }
+                if (!verified)
+                {
+                    await _userManager.AccessFailedAsync(user);
+                    throw new InvalidCredentialsException(userName, tenantCode, "wrong_mfa");
+                }
+                await _userManager.ResetAccessFailedCountAsync(user);
             }
 
             // 5. Mint the cookie.
@@ -269,6 +293,14 @@ public sealed class AuthenticationService : IAppAuthenticationService
         {
             throw new PasswordChangeRejectedException(
                 result.Errors.Any(error => error.Code == "PasswordMismatch"));
+        }
+
+        var mustChange = (await _userManager.GetClaimsAsync(user))
+            .Where(c => c.Type == AccountSecurityClaims.MustChangePassword).ToArray();
+        foreach (var claim in mustChange)
+        {
+            var removed = await _userManager.RemoveClaimAsync(user, claim);
+            if (!removed.Succeeded) throw new InvalidOperationException("Could not clear the password-change requirement.");
         }
 
         // Identity updates the security stamp. End this browser session now;
@@ -407,7 +439,10 @@ public sealed class AuthenticationService : IAppAuthenticationService
             CompanyName: company?.Name,
             IsPlatformAdmin: await ResolveIsPlatformAdminAsync(user, companyId, ct),
             AvailableCompanies: availableCompanies,
-            PermissionCodes: permissionCodes);
+            PermissionCodes: permissionCodes,
+            MustChangePassword: (await _userManager.GetClaimsAsync(user))
+                .Any(c => c.Type == AccountSecurityClaims.MustChangePassword),
+            MfaEnabled: await _userManager.GetTwoFactorEnabledAsync(user));
     }
 
     private async Task<bool> ResolveIsPlatformAdminAsync(

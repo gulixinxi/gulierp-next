@@ -9,6 +9,7 @@ using CompanyAccessDeniedException = GuliERP.Identity.Application.Authentication
 using InvalidCompanySelectionException = GuliERP.Identity.Application.Authentication.InvalidCompanySelectionException;
 using BackendUnavailableException = GuliERP.Identity.Application.Authentication.BackendUnavailableException;
 using PasswordChangeRejectedException = GuliERP.Identity.Application.Authentication.PasswordChangeRejectedException;
+using MfaRequiredException = GuliERP.Identity.Application.Authentication.MfaRequiredException;
 
 namespace GuliERP.Identity.Infrastructure.Authentication;
 
@@ -104,6 +105,12 @@ public sealed class AuthenticationExceptionHandler : IExceptionHandler
                 rejected.CurrentPasswordInvalid
                     ? "The current password is incorrect."
                     : "Choose a password that meets the current policy."),
+
+            MfaRequiredException => BuildProblem(
+                StatusCodes.Status428PreconditionRequired,
+                ErrorCodes.MfaRequired,
+                "Additional verification required.",
+                "Enter an authenticator or recovery code."),
 
             _ => null,
         };

@@ -50,7 +50,7 @@ public interface IAuthenticationService
     ///   the user's primary Tenant.</param>
     /// <param name="ct">Cancellation token.</param>
     Task<LoginResponse> LoginAsync(
-        string userName, string password, string? tenantCode,
+        string userName, string password, string? tenantCode, string? mfaCode = null,
         CancellationToken ct = default);
 
     /// <summary>

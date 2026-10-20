@@ -28,6 +28,8 @@ export interface AuthUserDto {
   isPlatformAdmin: boolean;
   availableCompanies: AuthCompanyDto[];
   permissionCodes: string[];
+  mustChangePassword: boolean;
+  mfaEnabled: boolean;
 }
 
 export interface AuthCompanyDto {
@@ -43,6 +45,7 @@ export interface LoginRequest {
   userName: string;
   password: string;
   tenantCode: string | null;  // nullable per backend contract; null = use backend's demo fallback
+  mfaCode?: string | null;
 }
 
 // ===== 4. RFC 7807 Problem Detail (§3.3 uniform failure) =====

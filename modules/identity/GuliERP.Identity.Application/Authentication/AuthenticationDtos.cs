@@ -11,7 +11,8 @@ namespace GuliERP.Identity.Application.Authentication;
 public sealed record LoginRequest(
     string UserName,
     string Password,
-    string? TenantCode = null);
+    string? TenantCode = null,
+    string? MfaCode = null);
 
 /// <summary>
 /// <c>POST /api/v1/auth/company/switch</c> request body.
@@ -56,7 +57,9 @@ public sealed record LoginResponse(
     string? CompanyName,
     bool IsPlatformAdmin,
     IReadOnlyList<AuthCompanyDto> AvailableCompanies,
-    IReadOnlyList<string> PermissionCodes);
+    IReadOnlyList<string> PermissionCodes,
+    bool MustChangePassword = false,
+    bool MfaEnabled = false);
 
 public sealed record AuthCompanyDto(
     long CompanyId,

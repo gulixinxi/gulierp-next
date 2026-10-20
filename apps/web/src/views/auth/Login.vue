@@ -56,6 +56,12 @@
         />
 
         <el-alert
+          v-else-if="lastError?.code === 'mfa_required'"
+          type="info" :closable="false" show-icon class="login-alert"
+          title="请输入验证器或恢复码"
+        />
+
+        <el-alert
           v-else-if="lastError && invalidCreds"
           type="error"
           :closable="false"
@@ -102,6 +108,10 @@
               show-password
               :disabled="loading"
             />
+          </el-form-item>
+
+          <el-form-item v-if="mfaPrompt" label="双重验证码或恢复码">
+            <el-input v-model="form.mfaCode" autocomplete="one-time-code" inputmode="numeric" :disabled="loading" />
           </el-form-item>
 
           <!-- Tenant code — optional per backend contract (LoginRequest.TenantCode = string? = null).
@@ -160,7 +170,9 @@ const form = reactive({
   userName: '',
   password: '',
   tenantCode: '',  // empty = null = backend demo fallback (not hardcoded "default")
+  mfaCode: '',
 });
+const mfaPrompt = ref(false);
 
 const rules: FormRules = {
   userName: [
@@ -232,11 +244,17 @@ async function onSubmit(): Promise<void> {
       userName: form.userName,
       password: form.password,
       tenantCode: form.tenantCode.trim() || null,
+      mfaCode: form.mfaCode.trim() || null,
     });
+    form.password = '';
+    form.mfaCode = '';
     // SUCCESS — go to intended route or shell default.
-    const target = auth.consumeIntendedRoute() || '/sales-orders';
+    const target = auth.user?.mustChangePassword
+      ? '/change-password-required'
+      : auth.consumeIntendedRoute() || '/sales-orders';
     await router.replace(target).catch(() => {});
   } catch {
+    if (auth.lastError?.code === 'mfa_required') mfaPrompt.value = true;
     // Error was already classified in auth store (lastError). UI will render via computed above.
     // Clear password ONLY on credential failure (defense-in-depth); keep username for convenience.
     if (invalidCreds.value) form.password = '';
@@ -254,6 +272,7 @@ function tryReload(): void {
 // (Reactive proxy values are observable from devtools; scrubbing reduces window of exposure.)
 onBeforeUnmount(() => {
   form.password = '';
+  form.mfaCode = '';
   form.userName = '';
 });
 </script>

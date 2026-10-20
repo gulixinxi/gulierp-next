@@ -73,6 +73,10 @@ public static class IdentitySeed
             }
         }
 
+        await using var seedTransaction = db.Database.IsRelational()
+            ? await db.Database.BeginTransactionAsync(ct)
+            : null;
+
         // ----------------------------------------------------------------
         // 1. Default Tenant
         // ----------------------------------------------------------------
@@ -231,6 +235,9 @@ public static class IdentitySeed
                 + string.Join("; ", platformResult.Errors.Select(e => e.Description)));
         }
         var platformAdminId = platformAdmin.Id;
+        if (!(await userManager.AddClaimAsync(platformAdmin,
+            new System.Security.Claims.Claim(Authentication.AccountSecurityClaims.MustChangePassword, "true"))).Succeeded)
+            throw new InvalidOperationException("Could not require platform admin first-login password change.");
 
         // The Tenant Admin (in the default Tenant).
         var tenantAdmin = new GuliErpUser
@@ -258,6 +265,9 @@ public static class IdentitySeed
                 + string.Join("; ", tenantResult.Errors.Select(e => e.Description)));
         }
         var tenantAdminId = tenantAdmin.Id;
+        if (!(await userManager.AddClaimAsync(tenantAdmin,
+            new System.Security.Claims.Claim(Authentication.AccountSecurityClaims.MustChangePassword, "true"))).Succeeded)
+            throw new InvalidOperationException("Could not require tenant admin first-login password change.");
 
         // ----------------------------------------------------------------
         // 7. Default memberships + role assignments
@@ -339,6 +349,7 @@ public static class IdentitySeed
         });
 
         await db.SaveChangesAsync(ct);
+        if (seedTransaction is not null) await seedTransaction.CommitAsync(ct);
 
         logger.LogInformation(
             "Identity seed completed: tenant={TenantId}, company={CompanyId}, plant={PlantId}, org={OrgId}, platformAdmin={PlatformAdminId}, tenantAdmin={TenantAdminId}.",

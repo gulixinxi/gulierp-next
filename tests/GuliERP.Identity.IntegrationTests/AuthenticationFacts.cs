@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text.Json;
 using GuliERP.Api.Authentication;
 using GuliERP.Foundation.Kernel;
@@ -9,6 +10,7 @@ using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
 using GuliERP.Identity.Infrastructure.Persistence;
 using GuliERP.Identity.Infrastructure.Authorization;
+using GuliERP.Identity.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -389,6 +391,160 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/auth/me")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync("CorrectHorse!2026")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await LoginAsync("calm river crosses the valley")).StatusCode);
+    }
+
+    [Fact]
+    public async Task FirstLogin_MustChangePassword_BlocksBusinessUntilChange()
+    {
+        using var factory = BuildInMemoryClient(nameof(FirstLogin_MustChangePassword_BlocksBusinessUntilChange));
+        await SeedPlatformRoleLoginFixtureAsync(factory.Services);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<GuliErpUser>>();
+            var user = await users.FindByNameAsync("test_operator_g2_004");
+            Assert.NotNull(user);
+            Assert.True((await users.AddClaimAsync(user,
+                new Claim(AccountSecurityClaims.MustChangePassword, "true"))).Succeeded);
+        }
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        var login = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/login")
+        { Content = JsonContent.Create(new LoginRequest("test_operator_g2_004", "CorrectHorse!2026")) };
+        AttachCsrfToken(login, await FetchCsrfTokenAsync(client));
+        var loggedIn = await client.SendAsync(login);
+        Assert.Equal(HttpStatusCode.OK, loggedIn.StatusCode);
+        Assert.Contains("\"mustChangePassword\":true", await loggedIn.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/v1/system/ping")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/v1/auth/me")).StatusCode);
+        var change = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/password/change")
+        { Content = JsonContent.Create(new ChangePasswordRequest("CorrectHorse!2026", "long fresh password phrase 2026")) };
+        AttachCsrfToken(change, await FetchCsrfTokenAsync(client));
+        Assert.Equal(HttpStatusCode.NoContent, (await client.SendAsync(change)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Mfa_Enrollment_RequiresCodeOnSubsequentLogin()
+    {
+        using var factory = BuildInMemoryClient(nameof(Mfa_Enrollment_RequiresCodeOnSubsequentLogin));
+        await SeedPlatformRoleLoginFixtureAsync(factory.Services);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        async Task<HttpResponseMessage> PostAsync(string path, object body)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = JsonContent.Create(body) };
+            AttachCsrfToken(request, await FetchCsrfTokenAsync(client));
+            return await client.SendAsync(request);
+        }
+        async Task<HttpResponseMessage> LoginAsync(string? code = null) =>
+            await PostAsync("/api/v1/auth/login", new LoginRequest(
+                "test_operator_g2_004", "CorrectHorse!2026", MfaCode: code));
+
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync()).StatusCode);
+        var setup = await PostAsync("/api/v1/auth/mfa/setup", new MfaSetupRequest("CorrectHorse!2026"));
+        Assert.Equal(HttpStatusCode.OK, setup.StatusCode);
+        using var json = JsonDocument.Parse(await setup.Content.ReadAsStringAsync());
+        var key = json.RootElement.GetProperty("sharedKey").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(key));
+        var code = TotpForTest(key!);
+        var enabled = await PostAsync("/api/v1/auth/mfa/enable", new MfaCodeRequest(code));
+        Assert.Equal(HttpStatusCode.OK, enabled.StatusCode);
+        using var enabledJson = JsonDocument.Parse(await enabled.Content.ReadAsStringAsync());
+        var recovery = enabledJson.RootElement.GetProperty("recoveryCodes")[0].GetString();
+        Assert.False(string.IsNullOrWhiteSpace(recovery));
+        Assert.Equal(HttpStatusCode.PreconditionRequired, (await LoginAsync()).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync("00000000")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(recovery)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await PostAsync("/api/v1/auth/logout", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync(recovery)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(code)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await PostAsync("/api/v1/auth/mfa/disable",
+            new MfaDisableRequest("CorrectHorse!2026", code))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync()).StatusCode);
+    }
+
+    private static string TotpForTest(string base32)
+    {
+        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        var bytes = new List<byte>();
+        var accumulator = 0;
+        var bits = 0;
+        foreach (var character in base32.TrimEnd('=').ToUpperInvariant())
+        {
+            accumulator = (accumulator << 5) | alphabet.IndexOf(character);
+            bits += 5;
+            if (bits >= 8) { bits -= 8; bytes.Add((byte)(accumulator >> bits)); }
+        }
+        Span<byte> counter = stackalloc byte[8];
+        System.Buffers.Binary.BinaryPrimitives.WriteInt64BigEndian(counter,
+            DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30);
+        var hash = HMACSHA1.HashData(bytes.ToArray(), counter.ToArray());
+        var offset = hash[^1] & 0x0f;
+        var value = ((hash[offset] & 0x7f) << 24) | (hash[offset + 1] << 16)
+            | (hash[offset + 2] << 8) | hash[offset + 3];
+        return (value % 1_000_000).ToString("D6");
+    }
+
+    [Fact]
+    public async Task AdminReset_IsTenantScoped_AndForcesPasswordChange()
+    {
+        using var factory = BuildInMemoryClient(nameof(AdminReset_IsTenantScoped_AndForcesPasswordChange));
+        await SeedPlatformRoleLoginFixtureAsync(factory.Services);
+        long targetId;
+        long otherId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<GuliErpUser>>();
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<GuliErpRole>>();
+            var role = await roles.FindByNameAsync("Platform Admin");
+            Assert.NotNull(role);
+            Assert.True((await roles.AddClaimAsync(role,
+                new Claim(GuliErpPermissionClaimTypes.Permission, "identity.user.manage"))).Succeeded);
+            var target = new GuliErpUser { TenantId = 10_001, UserName = "reset_target",
+                Email = "reset_target@example.com", DisplayName = "Reset Target", Status = UserStatus.Active };
+            var other = new GuliErpUser { TenantId = 99_999, UserName = "other_tenant_target",
+                Email = "other_tenant_target@example.com", DisplayName = "Other", Status = UserStatus.Active };
+            Assert.True((await users.CreateAsync(target, "original target passphrase")).Succeeded);
+            Assert.True((await users.CreateAsync(other, "original other passphrase")).Succeeded);
+            targetId = target.Id;
+            otherId = other.Id;
+        }
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        async Task<HttpResponseMessage> PostAsync(string path, object body)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = JsonContent.Create(body) };
+            AttachCsrfToken(request, await FetchCsrfTokenAsync(client));
+            return await client.SendAsync(request);
+        }
+        Assert.Equal(HttpStatusCode.OK, (await PostAsync("/api/v1/auth/login",
+            new LoginRequest("test_operator_g2_004", "CorrectHorse!2026"))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await PostAsync(
+            $"/api/v1/auth/users/{otherId}/password/reset",
+            new AdminPasswordResetRequest("CorrectHorse!2026", null))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await PostAsync(
+            $"/api/v1/auth/users/{targetId}/password/reset",
+            new AdminPasswordResetRequest("wrong", null))).StatusCode);
+        var reset = await PostAsync($"/api/v1/auth/users/{targetId}/password/reset",
+            new AdminPasswordResetRequest("CorrectHorse!2026", null));
+        Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
+        using var result = JsonDocument.Parse(await reset.Content.ReadAsStringAsync());
+        var temporary = result.RootElement.GetProperty("temporaryPassword").GetString();
+        Assert.Equal(48, temporary!.Length);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<GuliErpUser>>();
+            var target = await users.FindByIdAsync(targetId.ToString());
+            Assert.NotNull(target);
+            Assert.True(await users.CheckPasswordAsync(target, temporary));
+            Assert.False(await users.CheckPasswordAsync(target, "original target passphrase"));
+            Assert.Contains(await users.GetClaimsAsync(target),
+                claim => claim.Type == AccountSecurityClaims.MustChangePassword);
+        }
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await PostAsync("/api/v1/auth/logout", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await PostAsync("/api/v1/auth/login", new LoginRequest("reset_target", "original target passphrase"))).StatusCode);
+        var targetLogin = await PostAsync("/api/v1/auth/login", new LoginRequest("reset_target", temporary));
+        Assert.Equal(HttpStatusCode.OK, targetLogin.StatusCode);
+        Assert.Contains("\"mustChangePassword\":true", await targetLogin.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/v1/system/ping")).StatusCode);
     }
 
     // ----- /api/v1/auth/logout -----

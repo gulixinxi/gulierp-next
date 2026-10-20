@@ -197,6 +197,12 @@ public sealed class EnterpriseOrganizationAdminService : IEnterpriseOrganization
             ModifiedBy = _currentUser.Id,
             ConcurrencyVersion = 1,
         };
+        // Identity writes the user and its first-login claim in separate calls.
+        // Keep them atomic on the relational store so a partial failure never
+        // leaves a usable account without the mandatory change marker.
+        await using var creationTransaction = _db.Database.IsRelational()
+            ? await _db.Database.BeginTransactionAsync(ct)
+            : null;
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
@@ -204,6 +210,11 @@ public sealed class EnterpriseOrganizationAdminService : IEnterpriseOrganization
                 "User create failed: "
                 + string.Join("; ", result.Errors.Select(e => $"{e.Code}:{e.Description}")));
         }
+
+        var changeClaim = await _userManager.AddClaimAsync(user,
+            new System.Security.Claims.Claim(Authentication.AccountSecurityClaims.MustChangePassword, "true"));
+        if (!changeClaim.Succeeded)
+            throw new InvalidOperationException("Could not mark the new account for first-login password change.");
 
         var orgId = request.OrganizationUnitId;
         if (orgId.HasValue)
@@ -264,6 +275,8 @@ public sealed class EnterpriseOrganizationAdminService : IEnterpriseOrganization
         {
             await AssignRoleAsync(new AssignEnterpriseUserRoleRequest(user.Id, roleCode, company.Id), ct);
         }
+
+        if (creationTransaction is not null) await creationTransaction.CommitAsync(ct);
 
         return (await BuildUserDtosAsync(new[] { user }, ct)).Single();
     }

@@ -183,7 +183,7 @@ export const useAuthStore = defineStore('auth', {
      * and is NEVER written to state, Pinia, localStorage, URL, or console.
      * We don't copy `req` into this function's stack — the login module handles trimming.
      */
-    async signIn(req: { userName: string; password: string; tenantCode?: string | null }): Promise<void> {
+    async signIn(req: { userName: string; password: string; tenantCode?: string | null; mfaCode?: string | null }): Promise<void> {
       this.lastError = null;
       this.status = 'loading';
       // §3: refresh CSRF token immediately before login so it's not stale.
@@ -207,6 +207,7 @@ export const useAuthStore = defineStore('auth', {
           userName: req.userName,
           password: req.password,
           tenantCode: req.tenantCode ?? null,
+          mfaCode: req.mfaCode ?? null,
         });
         // Login success: the backend has SET the auth cookie (HttpOnly — JS can't touch it).
         this.user = user;
@@ -217,7 +218,10 @@ export const useAuthStore = defineStore('auth', {
       } catch (err) {
         const code = (err as any)?.code;
         // Per §3.3 DEC-AUTH-006 enumeration defense: accept ONLY invalid_credentials as the 401 code.
-        if (code === 'invalid_credentials') {
+        if (code === 'mfa_required') {
+          this.status = 'unauthenticated';
+          this.lastError = { type: 'about:blank', title: 'MFA required', status: 428, code };
+        } else if (code === 'invalid_credentials') {
           this.status = 'unauthenticated';
           this.lastError = {
             type: (err as any)?.type || 'about:blank',

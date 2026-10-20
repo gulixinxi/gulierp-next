@@ -7,6 +7,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using GuliERP.Identity.Domain.Entities;
+using GuliERP.Identity.Infrastructure.Authentication;
+using GuliERP.Identity.Infrastructure.Authorization;
+using GuliERP.Identity.Application.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace GuliERP.Api.Authentication;
 
@@ -133,7 +140,7 @@ public static class AuthEndpoints
             }
 
             var response = await auth.LoginAsync(
-                request.UserName, request.Password, request.TenantCode, ct);
+                request.UserName, request.Password, request.TenantCode, request.MfaCode, ct);
             return Results.Ok(response);
         });
 
@@ -190,6 +197,126 @@ public static class AuthEndpoints
             }
 
             await auth.ChangePasswordAsync(request.CurrentPassword, request.NewPassword, ct);
+            return Results.NoContent();
+        }).RequireAuthorization().RequireRateLimiting("password-change");
+
+        group.MapPost("/users/{userId:long}/password/reset", async (
+            long userId, AdminPasswordResetRequest request, UserManager<GuliErpUser> users,
+            IAntiforgery antiforgery, HttpContext http, ILoggerFactory loggerFactory) =>
+        {
+            if (!await antiforgery.IsRequestValidAsync(http)) return CsrfProblem(http);
+            var actorId = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var tenantRaw = http.User.FindFirstValue(GuliErpClaimTypes.TenantId);
+            if (!long.TryParse(actorId, out var actorKey) || !long.TryParse(tenantRaw, out var tenantKey)
+                || actorKey == userId || tenantKey == 0)
+                return Results.Forbid();
+            var actor = await users.FindByIdAsync(actorId);
+            var target = await users.FindByIdAsync(userId.ToString());
+            if (actor is null || actor.TenantId != tenantKey || target is null
+                || target.TenantId != tenantKey || target.IsPlatformAdmin)
+                return Results.NotFound();
+            if (string.IsNullOrWhiteSpace(request.CurrentPassword)
+                || !await users.CheckPasswordAsync(actor, request.CurrentPassword))
+                return Results.BadRequest(new { code = "reauthentication_failed" });
+            if (await users.GetTwoFactorEnabledAsync(actor)
+                && (string.IsNullOrWhiteSpace(request.MfaCode)
+                    || !await VerifyMfaCodeAsync(users, actor, request.MfaCode)))
+                return Results.BadRequest(new { code = "reauthentication_failed" });
+
+            var claim = new Claim(AccountSecurityClaims.MustChangePassword, "true");
+            if (!(await users.GetClaimsAsync(target)).Any(c => c.Type == claim.Type))
+            {
+                if (!(await users.AddClaimAsync(target, claim)).Succeeded)
+                    return Results.Problem(statusCode: 500, title: "Reset could not be prepared.");
+            }
+            var temporaryPassword = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
+            var token = await users.GeneratePasswordResetTokenAsync(target);
+            if (!(await users.ResetPasswordAsync(target, token, temporaryPassword)).Succeeded)
+                return Results.Problem(statusCode: 500, title: "Reset failed.");
+            loggerFactory.CreateLogger("AdminPasswordReset").LogInformation(
+                "Admin password reset completed: actorId={ActorId} targetId={TargetId} tenantId={TenantId}",
+                actorKey, userId, tenantKey);
+            http.Response.Headers.CacheControl = "no-store";
+            // The response is the only presentation of the generated value.
+            return Results.Ok(new { temporaryPassword, mustChangePassword = true });
+        }).RequireAuthorization(GuliErpAuthorizationPolicies.IdentityUserManage)
+            .RequireRateLimiting("password-change");
+
+        group.MapPost("/mfa/setup", async (
+            MfaSetupRequest request, UserManager<GuliErpUser> users,
+            SignInManager<GuliErpUser> signIn,
+            IAuthenticationService auth,
+            IAntiforgery antiforgery, HttpContext http) =>
+        {
+            if (!await antiforgery.IsRequestValidAsync(http)) return CsrfProblem(http);
+            var user = await users.GetUserAsync(http.User);
+            if (user is null) return Results.Unauthorized();
+            if (await users.GetTwoFactorEnabledAsync(user)) return Results.Conflict();
+            if (string.IsNullOrWhiteSpace(request.CurrentPassword)
+                || !await users.CheckPasswordAsync(user, request.CurrentPassword))
+                return Results.BadRequest(new { code = "reauthentication_failed" });
+            var key = await users.GetAuthenticatorKeyAsync(user);
+            if (string.IsNullOrEmpty(key))
+            {
+                if (!(await users.ResetAuthenticatorKeyAsync(user)).Succeeded)
+                    return Results.Problem(statusCode: 500);
+                key = await users.GetAuthenticatorKeyAsync(user);
+                // ResetAuthenticatorKeyAsync rotates the stamp. Recompute scope from
+                // the database so a revoked company or role is not re-minted.
+                var current = await auth.GetCurrentAsync();
+                var scopeClaims = new List<Claim>
+                {
+                    new(GuliErpClaimTypes.TenantId, current.TenantId.ToString()),
+                    new(GuliErpClaimTypes.DisplayName, current.DisplayName),
+                };
+                if (current.CompanyId.HasValue)
+                    scopeClaims.Add(new Claim(GuliErpClaimTypes.CompanyId, current.CompanyId.Value.ToString()));
+                if (current.IsPlatformAdmin)
+                    scopeClaims.Add(new Claim(GuliErpClaimTypes.IsPlatformAdmin, "true"));
+                await signIn.SignInWithClaimsAsync(user, false, scopeClaims);
+            }
+            if (string.IsNullOrEmpty(key)) return Results.Problem(statusCode: 500);
+            http.Response.Headers.CacheControl = "no-store";
+            return Results.Ok(new { sharedKey = key });
+        }).RequireAuthorization().RequireRateLimiting("password-change");
+
+        group.MapPost("/mfa/enable", async (
+            MfaCodeRequest request, UserManager<GuliErpUser> users,
+            SignInManager<GuliErpUser> signIn, IAntiforgery antiforgery, HttpContext http) =>
+        {
+            if (!await antiforgery.IsRequestValidAsync(http)) return CsrfProblem(http);
+            var user = await users.GetUserAsync(http.User);
+            if (user is null) return Results.Unauthorized();
+            if (await users.GetTwoFactorEnabledAsync(user)) return Results.Conflict();
+            if (string.IsNullOrWhiteSpace(request.Code)
+                || !await users.VerifyTwoFactorTokenAsync(user,
+                    TokenOptions.DefaultAuthenticatorProvider, request.Code.Replace(" ", "")))
+                return Results.BadRequest(new { code = "invalid_mfa_code" });
+            if (!(await users.SetTwoFactorEnabledAsync(user, true)).Succeeded)
+                return Results.Problem(statusCode: 500);
+            var codes = await users.GenerateNewTwoFactorRecoveryCodesAsync(user, 8);
+            await signIn.SignOutAsync();
+            http.Response.Headers.CacheControl = "no-store";
+            return Results.Ok(new { recoveryCodes = codes });
+        }).RequireAuthorization().RequireRateLimiting("password-change");
+
+        group.MapPost("/mfa/disable", async (
+            MfaDisableRequest request, UserManager<GuliErpUser> users,
+            SignInManager<GuliErpUser> signIn, IAntiforgery antiforgery, HttpContext http) =>
+        {
+            if (!await antiforgery.IsRequestValidAsync(http)) return CsrfProblem(http);
+            var user = await users.GetUserAsync(http.User);
+            if (user is null) return Results.Unauthorized();
+            if (!await users.GetTwoFactorEnabledAsync(user)) return Results.Conflict();
+            if (string.IsNullOrWhiteSpace(request.CurrentPassword)
+                || !await users.CheckPasswordAsync(user, request.CurrentPassword)
+                || string.IsNullOrWhiteSpace(request.Code)
+                || !await VerifyMfaCodeAsync(users, user, request.Code))
+                return Results.BadRequest(new { code = "reauthentication_failed" });
+            if (!(await users.SetTwoFactorEnabledAsync(user, false)).Succeeded)
+                return Results.Problem(statusCode: 500);
+            await users.ResetAuthenticatorKeyAsync(user);
+            await signIn.SignOutAsync();
             return Results.NoContent();
         }).RequireAuthorization().RequireRateLimiting("password-change");
 
@@ -285,4 +412,19 @@ public static class AuthEndpoints
             type: "https://gulierp.example.com/errors/csrf_validation_failed",
             extensions: extensions);
     }
+
+    private static async Task<bool> VerifyMfaCodeAsync(
+        UserManager<GuliErpUser> users, GuliErpUser user, string code)
+    {
+        var normalized = code.Replace(" ", string.Empty, StringComparison.Ordinal)
+            .Replace("-", string.Empty, StringComparison.Ordinal);
+        if (await users.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultAuthenticatorProvider, normalized))
+            return true;
+        return code.Length <= 32 && (await users.RedeemTwoFactorRecoveryCodeAsync(user, code)).Succeeded;
+    }
 }
+
+public sealed record AdminPasswordResetRequest(string CurrentPassword, string? MfaCode);
+public sealed record MfaSetupRequest(string CurrentPassword);
+public sealed record MfaCodeRequest(string Code);
+public sealed record MfaDisableRequest(string CurrentPassword, string Code);

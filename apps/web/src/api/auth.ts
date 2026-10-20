@@ -31,6 +31,7 @@ export function login(req: LoginRequest): Promise<AuthUserDto> {
     userName: (req.userName || '').trim(),
     password: req.password,          // NOT trimmed: passwords may legitimately have leading/trailing chars
     tenantCode: req.tenantCode != null ? (req.tenantCode.trim() || null) : null,
+    mfaCode: req.mfaCode ?? null,
   };
   return apiPost<AuthUserDto>(`${BASE}/login`, payload);
 }
@@ -47,6 +48,20 @@ export function logout(): Promise<void> {
 
 export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
   return apiPost<void>(`${BASE}/password/change`, { currentPassword, newPassword });
+}
+
+export function resetUserPassword(userId: string, currentPassword: string, mfaCode: string | null): Promise<{ temporaryPassword: string }> {
+  return apiPost(`${BASE}/users/${encodeURIComponent(userId)}/password/reset`, { currentPassword, mfaCode });
+}
+
+export function setupMfa(currentPassword: string): Promise<{ sharedKey: string }> {
+  return apiPost(`${BASE}/mfa/setup`, { currentPassword });
+}
+export function enableMfa(code: string): Promise<{ recoveryCodes: string[] }> {
+  return apiPost(`${BASE}/mfa/enable`, { code });
+}
+export function disableMfa(currentPassword: string, code: string): Promise<void> {
+  return apiPost(`${BASE}/mfa/disable`, { currentPassword, code });
 }
 
 /**
