@@ -176,6 +176,22 @@ public static class OrganizationEndpoints
             await SafeVoidMutationAsync(() => admin.AssignRoleAsync(request, ct)))
             .RequireAuthorization(GuliErpAuthorizationPolicies.IdentityRoleAssign);
 
+        group.MapGet("/users/{userId:long}/company-roles", async (
+            long userId,
+            long companyId,
+            IEnterpriseOrganizationAdminService admin,
+            CancellationToken ct) =>
+            Results.Ok(await admin.ListCompanyRolesAsync(userId, companyId, ct)))
+            .RequireAuthorization(GuliErpAuthorizationPolicies.IdentityRoleRead);
+
+        group.MapPut("/users/{userId:long}/company-roles", async (
+            long userId,
+            [FromBody] SetEnterpriseUserCompanyRolesRequest request,
+            IEnterpriseOrganizationAdminService admin,
+            CancellationToken ct) =>
+            await SafeVoidMutationAsync(() => admin.SetCompanyRolesAsync(userId, request, ct)))
+            .RequireAuthorization(GuliErpAuthorizationPolicies.IdentityRoleAssign);
+
         group.MapGet("/companies", async (
             ICompanyDirectoryService companies,
             CancellationToken ct) =>

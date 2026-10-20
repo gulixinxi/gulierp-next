@@ -107,8 +107,13 @@
           <el-table-column prop="displayName" label="姓名" min-width="140" />
           <el-table-column prop="email" label="邮箱" min-width="180" />
           <el-table-column prop="status" label="状态" width="100" />
-          <el-table-column label="角色" min-width="220">
+          <el-table-column label="角色（所有范围）" min-width="220">
             <template #default="{ row }">{{ row.roles.join(', ') || '-' }}</template>
+          </el-table-column>
+          <el-table-column v-if="canAssignRoles" label="权限操作" width="110" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" :disabled="!activeCompany" @click="openRoleDialog(row)">调整权限</el-button>
+            </template>
           </el-table-column>
         </el-table>
       </section>
@@ -176,6 +181,23 @@
         <el-button type="primary" :loading="savingUser" @click="submitUser">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="roleDialog.visible" :title="`调整权限 · ${roleDialog.userName}`" width="520px">
+      <p>仅调整当前公司 {{ activeCompany?.name }} 的角色；租户级角色不在此处修改。</p>
+      <p>这里只能授予列表中已有的角色；当前若仅有 CRM_READONLY，就无法从此处获得 CRM 写入权限。</p>
+      <el-form label-width="90px" v-loading="loadingRoles">
+        <el-form-item label="公司角色">
+          <el-select v-model="roleDialog.roleCodes" multiple clearable filterable placeholder="选择角色" style="width:100%">
+            <el-option v-for="role in roles" :key="role.code" :label="`${role.name} (${role.code})`" :value="role.code" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <el-alert v-if="roleDialog.userId === auth.user?.userId" title="为自己添加角色后，请重新登录以刷新权限；不可在此撤销自己的角色。" type="info" :closable="false" />
+      <template #footer>
+        <el-button @click="roleDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="savingRoles" :disabled="loadingRoles" @click="submitRoles">保存</el-button>
+      </template>
+    </el-dialog>
   </section>
 </template>
 
@@ -189,7 +211,9 @@ import {
   createOrganizationUnit,
   getOrganizationTree,
   listEnterpriseRoles,
+  listEnterpriseUserCompanyRoles,
   listEnterpriseUsers,
+  setEnterpriseUserCompanyRoles,
   setOrganizationUnitStatus,
   type EnterpriseRoleDto,
   type EnterpriseUserListItemDto,
@@ -198,7 +222,9 @@ import {
   type OrganizationUnitNodeDto,
 } from '../../api/organization';
 import { ApiError } from '../../api/http';
+import { useAuthStore } from '../../stores/auth';
 
+const auth = useAuthStore();
 const loading = ref(false);
 const error = ref('');
 const errorDetail = ref('');
@@ -208,6 +234,9 @@ const users = ref<EnterpriseUserListItemDto[]>([]);
 const roles = ref<EnterpriseRoleDto[]>([]);
 const savingOrg = ref(false);
 const savingUser = ref(false);
+const loadingRoles = ref(false);
+const savingRoles = ref(false);
+const roleDialog = reactive({ visible: false, userId: '', userName: '', roleCodes: [] as string[] });
 const orgDialog = reactive({ visible: false, parentId: '', code: '', name: '' });
 const userDialog = reactive({
   visible: false,
@@ -225,6 +254,7 @@ const flatDepartments = computed(() => flattenDepartments(departmentTree.value))
 const departmentCount = computed(() => countDepartments(departmentTree.value));
 const employees = computed(() => flattenEmployees(departmentTree.value));
 const emptyDescription = computed(() => '尚未初始化企业组织');
+const canAssignRoles = computed(() => auth.user?.permissionCodes.includes('identity.role.assign') ?? false);
 
 async function load() {
   loading.value = true;
@@ -346,6 +376,38 @@ async function submitUser() {
     await load();
   } finally {
     savingUser.value = false;
+  }
+}
+
+async function openRoleDialog(user: EnterpriseUserListItemDto) {
+  if (!activeCompany.value) return;
+  roleDialog.userId = user.userId;
+  roleDialog.userName = user.userName;
+  roleDialog.roleCodes = [];
+  roleDialog.visible = true;
+  loadingRoles.value = true;
+  try {
+    roleDialog.roleCodes = await listEnterpriseUserCompanyRoles(user.userId, activeCompany.value.companyId);
+  } catch {
+    roleDialog.visible = false;
+    ElMessage.error('读取公司角色失败');
+  } finally {
+    loadingRoles.value = false;
+  }
+}
+
+async function submitRoles() {
+  if (!activeCompany.value || !roleDialog.userId) return;
+  savingRoles.value = true;
+  try {
+    await setEnterpriseUserCompanyRoles(roleDialog.userId, activeCompany.value.companyId, roleDialog.roleCodes);
+    roleDialog.visible = false;
+    ElMessage.success('公司角色已更新；被调整用户重新登录后生效');
+    await load();
+  } catch {
+    ElMessage.error('调整权限失败，请核对角色与公司范围');
+  } finally {
+    savingRoles.value = false;
   }
 }
 

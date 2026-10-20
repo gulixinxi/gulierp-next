@@ -397,6 +397,106 @@ public sealed class EnterpriseOrganizationAdminService : IEnterpriseOrganization
             r.Status.ToString())).ToList();
     }
 
+    public async Task<IReadOnlyList<string>> ListCompanyRolesAsync(
+        long userId, long companyId, CancellationToken ct = default)
+    {
+        var tenantId = RequireTenant();
+        if (_currentCompany.Id != companyId)
+            throw new InvalidOperationException("Select the target company before managing its roles.");
+        await RequireUserAsync(tenantId, userId, ct);
+        await RequireCompanyAsync(tenantId, companyId, ct);
+        await EnsureCurrentUserCanAccessCompanyAsync(companyId, ct);
+        var now = DateTimeOffset.UtcNow;
+        return await (
+            from assignment in _db.UserRoleAssignments.AsNoTracking()
+            join role in _db.Roles.AsNoTracking() on assignment.RoleId equals role.Id
+            where assignment.TenantId == tenantId && assignment.UserId == userId
+                  && assignment.CompanyId == companyId
+                  && assignment.Status == AssignmentStatus.Active
+                  && role.TenantId == tenantId && role.Status == RoleStatus.Active
+                  && (assignment.ValidFrom == null || assignment.ValidFrom <= now)
+                  && (assignment.ValidTo == null || assignment.ValidTo > now)
+            orderby role.Code
+            select role.Code).ToListAsync(ct);
+    }
+
+    public async Task SetCompanyRolesAsync(
+        long userId, SetEnterpriseUserCompanyRolesRequest request, CancellationToken ct = default)
+    {
+        var tenantId = RequireTenant();
+        if (_currentCompany.Id != request.CompanyId)
+            throw new InvalidOperationException("Select the target company before managing its roles.");
+        await RequireUserAsync(tenantId, userId, ct);
+        await RequireCompanyAsync(tenantId, request.CompanyId, ct);
+        await EnsureCurrentUserCanAccessCompanyAsync(request.CompanyId, ct);
+        var hasMembership = await _db.UserCompanyMemberships.AnyAsync(
+            m => m.TenantId == tenantId && m.UserId == userId
+                 && m.CompanyId == request.CompanyId && m.Status == MembershipStatus.Active, ct);
+        if (!hasMembership)
+            throw new InvalidOperationException("User has no active membership in target company.");
+
+        if (request.RoleCodes is null)
+            throw new InvalidOperationException("Role codes are required.");
+        var desiredCodes = request.RoleCodes.Select(NormalizeRoleCode)
+            .ToHashSet(StringComparer.Ordinal);
+        if (desiredCodes.Overlaps(ForbiddenAssignableRoleCodes))
+            throw new InvalidOperationException("Tenant administrators cannot assign PlatformAdmin.");
+
+        var roles = await _db.Roles.AsNoTracking()
+            .Where(r => r.TenantId == tenantId && r.Status == RoleStatus.Active
+                        && desiredCodes.Contains(r.Code))
+            .ToListAsync(ct);
+        if (roles.Count != desiredCodes.Count)
+            throw new InvalidOperationException("One or more roles are not assignable.");
+
+        var assignments = await _db.UserRoleAssignments
+            .Where(a => a.TenantId == tenantId && a.UserId == userId
+                        && a.CompanyId == request.CompanyId)
+            .ToListAsync(ct);
+        var desiredRoleIds = roles.Select(r => r.Id).ToHashSet();
+        if (userId == _currentUser.Id && assignments.Any(a =>
+                a.Status == AssignmentStatus.Active && !desiredRoleIds.Contains(a.RoleId)))
+            throw new InvalidOperationException("Current administrator cannot revoke own roles.");
+
+        var now = DateTimeOffset.UtcNow;
+        foreach (var assignment in assignments)
+        {
+            var desired = desiredRoleIds.Contains(assignment.RoleId);
+            if (desired && (assignment.Status != AssignmentStatus.Active
+                            || assignment.ValidFrom > now || assignment.ValidTo <= now))
+            {
+                assignment.Status = AssignmentStatus.Active;
+                assignment.ValidFrom = null;
+                assignment.ValidTo = null;
+            }
+            else if (!desired && assignment.Status == AssignmentStatus.Active)
+            {
+                assignment.Status = AssignmentStatus.Revoked;
+            }
+            else continue;
+            assignment.ModifiedAt = now;
+            assignment.ModifiedBy = _currentUser.Id;
+            assignment.ConcurrencyVersion++;
+        }
+        foreach (var role in roles.Where(r => assignments.All(a => a.RoleId != r.Id)))
+        {
+            _db.UserRoleAssignments.Add(new UserRoleAssignment
+            {
+                TenantId = tenantId,
+                UserId = userId,
+                RoleId = role.Id,
+                CompanyId = request.CompanyId,
+                Status = AssignmentStatus.Active,
+                CreatedAt = now,
+                CreatedBy = _currentUser.Id,
+                ModifiedAt = now,
+                ModifiedBy = _currentUser.Id,
+                ConcurrencyVersion = 1,
+            });
+        }
+        await _db.SaveChangesAsync(ct);
+    }
+
     private async Task<IReadOnlyList<EnterpriseUserListItemDto>> BuildUserDtosAsync(
         IReadOnlyList<GuliErpUser> users,
         CancellationToken ct)

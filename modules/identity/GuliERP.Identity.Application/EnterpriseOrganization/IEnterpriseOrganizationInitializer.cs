@@ -148,6 +148,10 @@ public sealed record AssignEnterpriseUserRoleRequest(
     string RoleCode,
     long? CompanyId);
 
+public sealed record SetEnterpriseUserCompanyRolesRequest(
+    long CompanyId,
+    IReadOnlyList<string> RoleCodes);
+
 public sealed record EnterpriseRoleDto(
     long RoleId,
     string Code,
@@ -192,6 +196,16 @@ public interface IEnterpriseOrganizationAdminService
 
     Task AssignRoleAsync(
         AssignEnterpriseUserRoleRequest request,
+        CancellationToken ct = default);
+
+    Task<IReadOnlyList<string>> ListCompanyRolesAsync(
+        long userId,
+        long companyId,
+        CancellationToken ct = default);
+
+    Task SetCompanyRolesAsync(
+        long userId,
+        SetEnterpriseUserCompanyRolesRequest request,
         CancellationToken ct = default);
 
     Task<IReadOnlyList<EnterpriseRoleDto>> ListAssignableRolesAsync(

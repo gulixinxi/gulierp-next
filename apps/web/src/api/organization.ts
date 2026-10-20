@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './http';
+import { apiGet, apiPost, apiPut } from './http';
 
 export interface OrganizationBootstrapRequest {
   tenantCode?: string | null;
@@ -171,4 +171,16 @@ export function assignEnterpriseRole(
     roleCode,
     companyId: companyId ?? null,
   });
+}
+
+export function listEnterpriseUserCompanyRoles(userId: string, companyId: string): Promise<string[]> {
+  return apiGet<string[]>(`/api/v1/organization/users/${userId}/company-roles?companyId=${encodeURIComponent(companyId)}`);
+}
+
+export function setEnterpriseUserCompanyRoles(
+  userId: string,
+  companyId: string,
+  roleCodes: string[]
+): Promise<void> {
+  return apiPut<void>(`/api/v1/organization/users/${userId}/company-roles`, { companyId, roleCodes });
 }

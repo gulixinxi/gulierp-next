@@ -588,6 +588,44 @@ public sealed class EnterpriseBootstrapAndOrganizationTreeFacts
                 new AssignEnterpriseUserRoleRequest(user.UserId, "PLATFORM_ADMIN", null)));
     }
 
+    [Fact]
+    public async Task CompanyRoles_CanBeAssignedRevokedAndReadOnlyWithinCurrentCompany()
+    {
+        await using var provider = BuildProvider();
+        using var scope = provider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var result = await sp.GetRequiredService<IEnterpriseBootstrapService>()
+            .CreateEnterpriseBootstrapAsync(new CreateEnterpriseBootstrapRequest(
+                "GULI", "Guli", "GULI", "Guli", "owner", "Owner", "CorrectHorse!2026"));
+        using var tenantScope = sp.GetRequiredService<ICurrentTenant>().Change(result.TenantId);
+        using var companyScope = sp.GetRequiredService<ICurrentCompany>().Change(result.CompanyId);
+        using var userScope = sp.GetRequiredService<ICurrentUser>().Change(result.AdminUserId);
+        var admin = sp.GetRequiredService<IEnterpriseOrganizationAdminService>();
+        var user = await admin.CreateUserAsync(new CreateEnterpriseUserRequest(
+            "crm_tester", "CRM Tester", "CorrectHorse!2026", result.CompanyId,
+            result.RootOrganizationUnitId));
+
+        await admin.SetCompanyRolesAsync(user.UserId,
+            new SetEnterpriseUserCompanyRolesRequest(result.CompanyId, ["ERP_SYSTEM_ADMIN"]));
+        Assert.Equal(["ERP_SYSTEM_ADMIN"], await admin.ListCompanyRolesAsync(user.UserId, result.CompanyId));
+        await admin.SetCompanyRolesAsync(user.UserId,
+            new SetEnterpriseUserCompanyRolesRequest(result.CompanyId, []));
+        Assert.Empty(await admin.ListCompanyRolesAsync(user.UserId, result.CompanyId));
+        await admin.SetCompanyRolesAsync(user.UserId,
+            new SetEnterpriseUserCompanyRolesRequest(result.CompanyId, ["ERP_SYSTEM_ADMIN"]));
+        Assert.Equal(["ERP_SYSTEM_ADMIN"], await admin.ListCompanyRolesAsync(user.UserId, result.CompanyId));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => admin.SetCompanyRolesAsync(
+            result.AdminUserId, new SetEnterpriseUserCompanyRolesRequest(result.CompanyId, [])));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => admin.SetCompanyRolesAsync(
+            user.UserId, new SetEnterpriseUserCompanyRolesRequest(result.CompanyId, ["PLATFORM_ADMIN"])));
+        using (sp.GetRequiredService<ICurrentCompany>().Change(result.CompanyId + 1))
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => admin.SetCompanyRolesAsync(
+                user.UserId, new SetEnterpriseUserCompanyRolesRequest(result.CompanyId, [])));
+        }
+    }
+
     private static ServiceProvider BuildProvider()
     {
         var services = new ServiceCollection();
