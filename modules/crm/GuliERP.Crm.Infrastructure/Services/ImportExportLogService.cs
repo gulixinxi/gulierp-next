@@ -38,7 +38,7 @@ public class ImportExportLogService : IImportExportLogService
 
     public async Task<ImportExportLogDto?> GetByIdAsync(long id, CancellationToken ct)
     {
-        var log = await _db.ImportExportLogs.FindAsync(new object[] { id }, ct);
+        var log = await _db.ImportExportLogs.FirstOrDefaultAsync(x => x.Id == id, ct);
         return log is null ? null : ToDto(log);
     }
 
@@ -71,7 +71,7 @@ public class ImportExportLogService : IImportExportLogService
 
     public async Task<bool> UpdateStatusAsync(long id, LogStatus status, int successCount, int failedCount, int skippedCount, string? failureDetails, CancellationToken ct)
     {
-        var log = await _db.ImportExportLogs.FindAsync(new object[] { id }, ct);
+        var log = await _db.ImportExportLogs.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (log is null) return false;
 
         log.Status = status;

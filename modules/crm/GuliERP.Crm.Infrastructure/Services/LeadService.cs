@@ -44,7 +44,7 @@ public class LeadService : ILeadService
 
     public async Task<LeadDto?> GetByIdAsync(long id, CancellationToken ct)
     {
-        var lead = await _db.Leads.FindAsync(new object[] { id }, ct);
+        var lead = await _db.Leads.FirstOrDefaultAsync(x => x.Id == id, ct);
         return lead is null ? null : ToDto(lead);
     }
 
@@ -112,7 +112,7 @@ public class LeadService : ILeadService
 
     public async Task<LeadDto?> UpdateAsync(long id, UpdateLeadRequest request, CancellationToken ct)
     {
-        var lead = await _db.Leads.FindAsync(new object[] { id }, ct);
+        var lead = await _db.Leads.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (lead is null) return null;
 
         lead.CompanyName = request.CompanyName.Trim();
@@ -142,7 +142,7 @@ public class LeadService : ILeadService
 
     public async Task<bool> DeleteAsync(long id, CancellationToken ct)
     {
-        var lead = await _db.Leads.FindAsync(new object[] { id }, ct);
+        var lead = await _db.Leads.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (lead is null) return false;
         _db.Leads.Remove(lead);
         await _db.SaveChangesAsync(ct);
@@ -154,7 +154,7 @@ public class LeadService : ILeadService
     /// </summary>
     public async Task<bool> ClaimAsync(long id, long ownerId, CancellationToken ct)
     {
-        var lead = await _db.Leads.FindAsync(new object[] { id }, ct);
+        var lead = await _db.Leads.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (lead is null || lead.Status != LeadStatus.Pending) return false;
 
         lead.Status = LeadStatus.Claimed;
@@ -171,7 +171,7 @@ public class LeadService : ILeadService
     /// </summary>
     public async Task<bool> DiscardAsync(long id, CancellationToken ct)
     {
-        var lead = await _db.Leads.FindAsync(new object[] { id }, ct);
+        var lead = await _db.Leads.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (lead is null) return false;
 
         lead.Status = LeadStatus.Discarded;
@@ -183,7 +183,7 @@ public class LeadService : ILeadService
 
     public async Task<bool> UpdateTagsAsync(long id, List<string> tags, CancellationToken ct)
     {
-        var lead = await _db.Leads.FindAsync(new object[] { id }, ct);
+        var lead = await _db.Leads.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (lead is null) return false;
 
         lead.Tags = tags.Distinct().ToList();
@@ -195,7 +195,7 @@ public class LeadService : ILeadService
 
     public async Task<bool> AssignAsync(long id, long ownerId, CancellationToken ct)
     {
-        var lead = await _db.Leads.FindAsync(new object[] { id }, ct);
+        var lead = await _db.Leads.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (lead is null) return false;
 
         // 管理员分配：覆盖负责人，状态变为已认领（除非已转化/已废弃）
@@ -220,7 +220,7 @@ public class LeadService : ILeadService
     /// </summary>
     public async Task<CompanyDto> ConvertAsync(ConvertLeadRequest request, long? userId, CancellationToken ct)
     {
-        var lead = await _db.Leads.FindAsync(new object[] { request.LeadId }, ct);
+        var lead = await _db.Leads.FirstOrDefaultAsync(x => x.Id == request.LeadId, ct);
         if (lead is null)
             throw new InvalidOperationException($"线索 {request.LeadId} 不存在");
         if (lead.Status == LeadStatus.Converted)
@@ -321,7 +321,7 @@ public class LeadService : ILeadService
     /// </summary>
     public async Task<int> CalculateAiScoreAsync(long id, CancellationToken ct)
     {
-        var lead = await _db.Leads.FindAsync(new object[] { id }, ct);
+        var lead = await _db.Leads.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (lead is null) return 0;
 
         var score = CalculateScore(lead);

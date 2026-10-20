@@ -46,7 +46,7 @@ public class DealService : IDealService
 
     public async Task<DealDto> CreateAsync(CreateDealRequest request, long? userId, CancellationToken ct)
     {
-        var company = await _db.Companies.FindAsync(new object[] { request.CrmCompanyId }, ct);
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.Id == request.CrmCompanyId, ct);
         if (company is null)
             throw new InvalidOperationException($"CRM company {request.CrmCompanyId} not found.");
 
@@ -78,7 +78,7 @@ public class DealService : IDealService
 
     public async Task<DealDto?> UpdateAsync(long id, UpdateDealRequest request, CancellationToken ct)
     {
-        var deal = await _db.Deals.FindAsync(new object[] { id }, ct);
+        var deal = await _db.Deals.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (deal is null) return null;
 
         deal.Name = request.Name.Trim();
@@ -99,7 +99,7 @@ public class DealService : IDealService
 
     public async Task<bool> DeleteAsync(long id, CancellationToken ct)
     {
-        var deal = await _db.Deals.FindAsync(new object[] { id }, ct);
+        var deal = await _db.Deals.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (deal is null) return false;
         _db.Deals.Remove(deal);
         await _db.SaveChangesAsync(ct);
@@ -108,7 +108,7 @@ public class DealService : IDealService
 
     public async Task<bool> UpdateStageAsync(long id, DealStage stage, CancellationToken ct)
     {
-        var deal = await _db.Deals.FindAsync(new object[] { id }, ct);
+        var deal = await _db.Deals.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (deal is null) return false;
         deal.Stage = stage;
         deal.ModifiedAt = DateTimeOffset.UtcNow;
@@ -118,7 +118,7 @@ public class DealService : IDealService
 
     public async Task<bool> WinAsync(long id, CancellationToken ct)
     {
-        var deal = await _db.Deals.FindAsync(new object[] { id }, ct);
+        var deal = await _db.Deals.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (deal is null) return false;
         deal.Status = DealStatus.Won;
         deal.Stage = DealStage.Won;
@@ -129,7 +129,7 @@ public class DealService : IDealService
 
     public async Task<bool> LoseAsync(long id, LostReason reason, CancellationToken ct)
     {
-        var deal = await _db.Deals.FindAsync(new object[] { id }, ct);
+        var deal = await _db.Deals.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (deal is null) return false;
         deal.Status = DealStatus.Lost;
         deal.Stage = DealStage.Lost;

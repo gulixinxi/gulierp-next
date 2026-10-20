@@ -23,13 +23,13 @@ public class ContactService : IContactService
 
     public async Task<ContactDto?> GetByIdAsync(long id, CancellationToken ct)
     {
-        var contact = await _db.Contacts.FindAsync(new object[] { id }, ct);
+        var contact = await _db.Contacts.FirstOrDefaultAsync(x => x.Id == id, ct);
         return contact is null ? null : ToDto(contact);
     }
 
     public async Task<ContactDto> CreateAsync(CreateContactRequest request, CancellationToken ct)
     {
-        var company = await _db.Companies.FindAsync(new object[] { request.CrmCompanyId }, ct);
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.Id == request.CrmCompanyId, ct);
         if (company is null)
             throw new InvalidOperationException($"CRM company {request.CrmCompanyId} not found.");
 
@@ -63,7 +63,7 @@ public class ContactService : IContactService
 
     public async Task<ContactDto?> UpdateAsync(long id, UpdateContactRequest request, CancellationToken ct)
     {
-        var contact = await _db.Contacts.FindAsync(new object[] { id }, ct);
+        var contact = await _db.Contacts.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (contact is null) return null;
 
         if (request.IsKeyPerson && !contact.IsKeyPerson)
@@ -89,7 +89,7 @@ public class ContactService : IContactService
 
     public async Task<bool> DeleteAsync(long id, CancellationToken ct)
     {
-        var contact = await _db.Contacts.FindAsync(new object[] { id }, ct);
+        var contact = await _db.Contacts.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (contact is null) return false;
         _db.Contacts.Remove(contact);
         await _db.SaveChangesAsync(ct);
@@ -98,7 +98,7 @@ public class ContactService : IContactService
 
     public async Task<bool> SetKeyPersonAsync(long id, CancellationToken ct)
     {
-        var contact = await _db.Contacts.FindAsync(new object[] { id }, ct);
+        var contact = await _db.Contacts.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (contact is null) return false;
 
         var others = await _db.Contacts.Where(x => x.CrmCompanyId == contact.CrmCompanyId && x.IsKeyPerson && x.Id != id).ToListAsync(ct);

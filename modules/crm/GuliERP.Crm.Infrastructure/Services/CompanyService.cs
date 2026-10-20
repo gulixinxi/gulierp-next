@@ -50,7 +50,7 @@ public class CompanyService : ICompanyService
 
     public async Task<CompanyDto?> GetByIdAsync(long id, CancellationToken ct)
     {
-        var company = await _db.Companies.FindAsync(new object[] { id }, ct);
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.Id == id, ct);
         return company is null ? null : ToDto(company);
     }
 
@@ -106,7 +106,7 @@ public class CompanyService : ICompanyService
 
     public async Task<CompanyDto?> UpdateAsync(long id, UpdateCompanyRequest request, CancellationToken ct)
     {
-        var company = await _db.Companies.FindAsync(new object[] { id }, ct);
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (company is null) return null;
 
         company.FullName = request.FullName.Trim();
@@ -135,7 +135,7 @@ public class CompanyService : ICompanyService
 
     public async Task<bool> DeleteAsync(long id, CancellationToken ct)
     {
-        var company = await _db.Companies.FindAsync(new object[] { id }, ct);
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (company is null) return false;
         _db.Companies.Remove(company);
         await _db.SaveChangesAsync(ct);
@@ -144,7 +144,7 @@ public class CompanyService : ICompanyService
 
     public async Task<bool> UpdateTagsAsync(long id, List<string> tags, CancellationToken ct)
     {
-        var company = await _db.Companies.FindAsync(new object[] { id }, ct);
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (company is null) return false;
         company.Tags = tags.Distinct().ToList();
         company.ModifiedAt = DateTimeOffset.UtcNow;
@@ -154,7 +154,7 @@ public class CompanyService : ICompanyService
 
     public async Task<bool> AssignAsync(long id, long ownerId, CancellationToken ct)
     {
-        var company = await _db.Companies.FindAsync(new object[] { id }, ct);
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (company is null) return false;
         company.OwnerId = ownerId;
         company.ModifiedAt = DateTimeOffset.UtcNow;
@@ -164,7 +164,7 @@ public class CompanyService : ICompanyService
 
     public async Task<bool> UpdateStatusAsync(long id, CustomerStatus status, CancellationToken ct)
     {
-        var company = await _db.Companies.FindAsync(new object[] { id }, ct);
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (company is null) return false;
         company.Status = status;
         company.ModifiedAt = DateTimeOffset.UtcNow;
@@ -174,7 +174,7 @@ public class CompanyService : ICompanyService
 
     public async Task<bool> UpdateRatingAsync(long id, IntentRating rating, bool isSuggested, CancellationToken ct)
     {
-        var company = await _db.Companies.FindAsync(new object[] { id }, ct);
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (company is null) return false;
         company.Rating = rating;
         company.IsRatingSuggested = isSuggested;

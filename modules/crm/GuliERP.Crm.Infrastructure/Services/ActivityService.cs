@@ -44,7 +44,7 @@ public class ActivityService : IActivityService
 
     public async Task<ActivityDto> CreateAsync(CreateActivityRequest request, long? userId, CancellationToken ct)
     {
-        var company = await _db.Companies.FindAsync(new object[] { request.CrmCompanyId }, ct);
+        var company = await _db.Companies.FirstOrDefaultAsync(x => x.Id == request.CrmCompanyId, ct);
         if (company is null)
             throw new InvalidOperationException($"CRM company {request.CrmCompanyId} not found.");
 
@@ -75,7 +75,7 @@ public class ActivityService : IActivityService
 
     public async Task<ActivityDto?> UpdateAsync(long id, UpdateActivityRequest request, CancellationToken ct)
     {
-        var activity = await _db.Activities.FindAsync(new object[] { id }, ct);
+        var activity = await _db.Activities.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (activity is null) return null;
 
         activity.FollowType = request.FollowType;
@@ -95,7 +95,7 @@ public class ActivityService : IActivityService
 
     public async Task<bool> DeleteAsync(long id, CancellationToken ct)
     {
-        var activity = await _db.Activities.FindAsync(new object[] { id }, ct);
+        var activity = await _db.Activities.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (activity is null) return false;
         _db.Activities.Remove(activity);
         await _db.SaveChangesAsync(ct);
@@ -105,7 +105,7 @@ public class ActivityService : IActivityService
     /// <summary>标记跟进任务完成：清空下次动作和日期，使其从今日待办移除</summary>
     public async Task<bool> CompleteTaskAsync(long id, CancellationToken ct)
     {
-        var activity = await _db.Activities.FindAsync(new object[] { id }, ct);
+        var activity = await _db.Activities.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (activity is null) return false;
         activity.NextAction = string.Empty;
         activity.NextActionDate = null;
