@@ -76,7 +76,8 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         });
     }
 
-    private WebApplicationFactory<Program> BuildInMemoryClient(string databaseName)
+    private WebApplicationFactory<Program> BuildInMemoryClient(
+        string databaseName, bool validateSecurityStampOnEveryRequest = false)
     {
         return _factory.WithWebHostBuilder(builder =>
         {
@@ -86,6 +87,11 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
                 "Host=127.0.0.1;Port=1;Database=gulierp_g2_003_test;Username=none;Password=none");
             builder.ConfigureTestServices(services =>
             {
+                if (validateSecurityStampOnEveryRequest)
+                {
+                    services.PostConfigure<SecurityStampValidatorOptions>(options =>
+                        options.ValidationInterval = TimeSpan.Zero);
+                }
                 var inMemoryProvider = new ServiceCollection()
                     .AddEntityFrameworkInMemoryDatabase()
                     .BuildServiceProvider();
@@ -332,6 +338,56 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal("20002", switchedDoc.RootElement.GetProperty("companyId").GetString());
         Assert.Contains(switchedDoc.RootElement.GetProperty("permissionCodes").EnumerateArray(),
             code => code.GetString() == "crm.lead.manage");
+
+        var switchedMeResponse = await client.GetAsync("/api/v1/auth/me");
+        Assert.Equal(HttpStatusCode.OK, switchedMeResponse.StatusCode);
+        using var switchedMeDoc = JsonDocument.Parse(await switchedMeResponse.Content.ReadAsStringAsync());
+        Assert.Equal("20002", switchedMeDoc.RootElement.GetProperty("companyId").GetString());
+        Assert.Contains(switchedMeDoc.RootElement.GetProperty("permissionCodes").EnumerateArray(),
+            code => code.GetString() == "crm.lead.manage");
+    }
+
+    [Fact]
+    public async Task SecurityStampRefresh_PreservesTenantCompanyAndReadPermission()
+    {
+        using var factory = BuildInMemoryClient(
+            nameof(SecurityStampRefresh_PreservesTenantCompanyAndReadPermission),
+            validateSecurityStampOnEveryRequest: true);
+        await SeedPlatformRoleLoginFixtureAsync(factory.Services);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+
+        var loginRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/login")
+        {
+            Content = JsonContent.Create(new LoginRequest(
+                UserName: "test_operator_g2_004",
+                Password: "CorrectHorse!2026",
+                TenantCode: null)),
+        };
+        AttachCsrfToken(loginRequest, await FetchCsrfTokenAsync(client));
+        var loginResponse = await client.SendAsync(loginRequest);
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        // A zero validation interval simulates the first minute-boundary
+        // security-stamp refresh without a slow timer-based test.
+        var meResponse = await client.GetAsync("/api/v1/auth/me");
+        Assert.Equal(HttpStatusCode.OK, meResponse.StatusCode);
+        using var meDoc = JsonDocument.Parse(await meResponse.Content.ReadAsStringAsync());
+        Assert.Equal("10001", meDoc.RootElement.GetProperty("tenantId").GetString());
+        Assert.Equal("20001", meDoc.RootElement.GetProperty("companyId").GetString());
+        Assert.Contains(meDoc.RootElement.GetProperty("permissionCodes").EnumerateArray(),
+            code => code.GetString() == "crm.lead.read");
+
+        var leadsResponse = await client.GetAsync("/api/v1/crm/leads");
+        Assert.NotEqual(HttpStatusCode.Forbidden, leadsResponse.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Unauthorized, leadsResponse.StatusCode);
+
+        var switchRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/company/switch")
+        {
+            Content = JsonContent.Create(new SwitchCompanyRequest(20_002)),
+        };
+        AttachCsrfToken(switchRequest, await FetchCsrfTokenAsync(client));
+        var switchResponse = await client.SendAsync(switchRequest);
+        Assert.Equal(HttpStatusCode.OK, switchResponse.StatusCode);
 
         var switchedMeResponse = await client.GetAsync("/api/v1/auth/me");
         Assert.Equal(HttpStatusCode.OK, switchedMeResponse.StatusCode);

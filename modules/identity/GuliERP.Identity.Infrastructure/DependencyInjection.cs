@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using System.Globalization;
 using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Application.Authorization;
 using GuliERP.Identity.Application.CompanySwitching;
@@ -5,6 +7,7 @@ using GuliERP.Identity.Application.Directory;
 using GuliERP.Identity.Application.Employee;
 using GuliERP.Identity.Application.EnterpriseOrganization;
 using GuliERP.Identity.Domain.Entities;
+using GuliERP.Identity.Domain.Enums;
 using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Infrastructure.Authentication;
 using GuliERP.Identity.Infrastructure.CompanySwitching;
@@ -90,8 +93,83 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<IdentityDbContext>()
         .AddDefaultTokenProviders();
         GuliErpPasswordPolicy.AddValidator(services);
-        services.Configure<SecurityStampValidatorOptions>(options =>
-            options.ValidationInterval = TimeSpan.FromMinutes(1));
+        services.AddOptions<SecurityStampValidatorOptions>()
+            .Configure<IServiceScopeFactory>((options, scopeFactory) =>
+        {
+            options.ValidationInterval = TimeSpan.FromMinutes(1);
+            // Identity rebuilds the principal after every successful stamp
+            // check. Claims added by SignInWithClaimsAsync are otherwise lost,
+            // leaving an apparently signed-in user without tenant/company
+            // scope and causing all company-scoped APIs to return 403.
+            options.OnRefreshingPrincipal = async context =>
+            {
+                if (context.NewPrincipal?.Identity is not ClaimsIdentity identity
+                    || context.CurrentPrincipal is null)
+                {
+                    context.NewPrincipal = null;
+                    return;
+                }
+
+                if (!long.TryParse(context.CurrentPrincipal.FindFirstValue(ClaimTypes.NameIdentifier),
+                        NumberStyles.None, CultureInfo.InvariantCulture, out var userId)
+                    || !long.TryParse(context.CurrentPrincipal.FindFirstValue(GuliErpClaimTypes.TenantId),
+                        NumberStyles.None, CultureInfo.InvariantCulture, out var tenantId))
+                {
+                    context.NewPrincipal = null;
+                    return;
+                }
+
+                using var scope = scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+                var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+                if (user is null || user.Status != UserStatus.Active || user.TenantId != tenantId)
+                {
+                    context.NewPrincipal = null;
+                    return;
+                }
+
+                foreach (var claimType in new[]
+                {
+                    GuliErpClaimTypes.TenantId,
+                    GuliErpClaimTypes.CompanyId,
+                    GuliErpClaimTypes.DisplayName,
+                })
+                {
+                    if (identity.HasClaim(claim => claim.Type == claimType)) continue;
+                    var claim = context.CurrentPrincipal.FindFirst(claimType);
+                    if (claim is not null) identity.AddClaim(claim);
+                }
+
+                // Platform-admin is a security boundary. Re-evaluate it from
+                // current role assignments instead of renewing a stale claim.
+                var companyId = long.TryParse(
+                    context.CurrentPrincipal.FindFirstValue(GuliErpClaimTypes.CompanyId),
+                    NumberStyles.None, CultureInfo.InvariantCulture, out var parsedCompanyId)
+                    ? parsedCompanyId : (long?)null;
+                var now = DateTimeOffset.UtcNow;
+                var isPlatformAdmin = user.IsPlatformAdmin || await (
+                    from assignment in db.UserRoleAssignments.AsNoTracking()
+                    join role in db.Roles.AsNoTracking() on assignment.RoleId equals role.Id
+                    where assignment.UserId == userId
+                          && assignment.TenantId == tenantId
+                          && role.TenantId == tenantId
+                          && assignment.Status == AssignmentStatus.Active
+                          && role.Status == RoleStatus.Active
+                          && role.Code == "PLATFORM_ADMIN"
+                          && (assignment.ValidFrom == null || assignment.ValidFrom <= now)
+                          && (assignment.ValidTo == null || assignment.ValidTo > now)
+                          && (assignment.CompanyId == null || assignment.CompanyId == companyId)
+                    select assignment.Id).AnyAsync();
+                foreach (var staleClaim in identity.FindAll(GuliErpClaimTypes.IsPlatformAdmin).ToArray())
+                {
+                    identity.RemoveClaim(staleClaim);
+                }
+                if (isPlatformAdmin)
+                {
+                    identity.AddClaim(new Claim(GuliErpClaimTypes.IsPlatformAdmin, "true"));
+                }
+            };
+        });
 
         // ----- Authentication + Cookie scheme (G2-004) -----
         // V1 uses Cookie Authentication per DEC-AUTH-001.
