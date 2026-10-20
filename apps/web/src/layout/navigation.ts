@@ -17,6 +17,7 @@ export interface ShellNavigationItem {
   route?: string;
   action?: string;
   permissionKey?: string;
+  permissionKeys?: string[];
   disabled?: boolean;
   placeholder?: string;
   tabTitle?: string;
@@ -63,17 +64,17 @@ export const shellNavigation: ShellNavigationModule[] = [
       {
         label: '线索与客户',
         items: [
-          { id: 'crm-dashboard', label: '经营看板', icon: 'DataAnalysis', route: '/crm/dashboard', tabTitle: '经营看板' },
-          { id: 'list-crm-leads', label: '线索池', icon: 'Search', route: '/crm/leads', tabTitle: '线索池' },
-          { id: 'list-crm-companies', label: '客户主档', icon: 'OfficeBuilding', route: '/crm/companies', tabTitle: '客户主档' },
-          { id: 'crm-today-tasks', label: '今日待办', icon: 'Bell', route: '/crm/tasks', tabTitle: '今日待办' },
+          { id: 'crm-dashboard', label: '经营看板', icon: 'DataAnalysis', route: '/crm/dashboard', tabTitle: '经营看板', permissionKeys: ['crm.lead.read', 'crm.company.read', 'crm.deal.read', 'crm.activity.read'] },
+          { id: 'list-crm-leads', label: '线索池', icon: 'Search', route: '/crm/leads', tabTitle: '线索池', permissionKey: 'crm.lead.read' },
+          { id: 'list-crm-companies', label: '客户主档', icon: 'OfficeBuilding', route: '/crm/companies', tabTitle: '客户主档', permissionKey: 'crm.company.read' },
+          { id: 'crm-today-tasks', label: '今日待办', icon: 'Bell', route: '/crm/tasks', tabTitle: '今日待办', permissionKeys: ['crm.company.read', 'crm.activity.read'] },
         ],
       },
       {
         label: '销售流程',
         items: [
-          { id: 'crm-opportunities', label: '商机建议', icon: 'MagicStick', route: '/crm/opportunities', tabTitle: '商机建议' },
-          { id: 'list-crm-deals', label: '商机管理', icon: 'TrendCharts', route: '/crm/deals', tabTitle: '商机管理' },
+          { id: 'crm-opportunities', label: '商机建议', icon: 'MagicStick', route: '/crm/opportunities', tabTitle: '商机建议', permissionKeys: ['crm.lead.read', 'crm.company.read'] },
+          { id: 'list-crm-deals', label: '商机管理', icon: 'TrendCharts', route: '/crm/deals', tabTitle: '商机管理', permissionKey: 'crm.deal.read' },
           { id: 'crm-contract', label: '合同管理', icon: 'Document', disabled: true, placeholder: '合同管理待开发' },
           { id: 'crm-payment', label: '回款管理', icon: 'Money', disabled: true, placeholder: '回款管理待开发' },
         ],
@@ -81,10 +82,10 @@ export const shellNavigation: ShellNavigationModule[] = [
       {
         label: '数据管理',
         items: [
-          { id: 'crm-signals', label: '情报信号', icon: 'DataAnalysis', route: '/crm/signals', tabTitle: '情报信号' },
-          { id: 'crm-quake', label: '线索采集', icon: 'Search', route: '/crm/quake', tabTitle: '线索采集' },
-          { id: 'crm-reverse-lookup', label: '单位反查', icon: 'ZoomIn', route: '/crm/reverse-lookup', tabTitle: '单位反查' },
-          { id: 'crm-import-export-logs', label: '导入导出日志', icon: 'Tickets', route: '/crm/logs', tabTitle: '导入导出日志' },
+          { id: 'crm-signals', label: '情报信号', icon: 'DataAnalysis', route: '/crm/signals', tabTitle: '情报信号', permissionKey: 'crm.lead.read' },
+          { id: 'crm-quake', label: '线索采集', icon: 'Search', route: '/crm/quake', tabTitle: '线索采集', permissionKey: 'crm.lead.manage' },
+          { id: 'crm-reverse-lookup', label: '单位反查', icon: 'ZoomIn', route: '/crm/reverse-lookup', tabTitle: '单位反查', permissionKey: 'crm.lead.manage' },
+          { id: 'crm-import-export-logs', label: '导入导出日志', icon: 'Tickets', route: '/crm/logs', tabTitle: '导入导出日志', permissionKey: 'crm.log.read' },
         ],
       },
     ],

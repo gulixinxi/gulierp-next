@@ -6,7 +6,7 @@
           <span class="title">商机管理</span>
           <div>
             <el-button size="small" @click="handleExport" :icon="Download">导出Excel</el-button>
-            <el-button type="primary" size="small" @click="showDealForm = true">新建商机</el-button>
+            <el-button v-if="can('crm.deal.manage')" type="primary" size="small" @click="showDealForm = true">新建商机</el-button>
           </div>
         </div>
       </template>
@@ -25,7 +25,7 @@
             <el-select
               v-model="row.stage"
               size="small"
-              :disabled="row.status !== 0"
+              :disabled="!can('crm.deal.manage') || row.status !== 0"
               @change="handleStageChange(row)"
               style="width:100%"
             >
@@ -46,7 +46,7 @@
             <el-tag :type="statusTagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column v-if="can('crm.deal.manage')" label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button
               link type="success" size="small"
@@ -158,8 +158,10 @@ import {
 import type { DealDto, CreateDealRequest, CompanyDto } from '../../types/crm';
 import { BusinessCategory, DealStage, LostReason } from '../../types/crm';
 import { exportToExcel } from '../../utils/exportExcel';
+import { useCrmPermission } from '../../composables/useCrmPermission';
 
 const route = useRoute();
+const can = useCrmPermission();
 const router = useRouter();
 const loading = ref(false);
 const list = ref<DealDto[]>([]);

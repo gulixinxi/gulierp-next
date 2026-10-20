@@ -8,9 +8,7 @@ export interface CsrfTokenResponse {
 }
 
 // ===== 2. User DTO — matches backend LoginResponse exactly (AuthenticationDtos.cs) =====
-//   Do not add fields that the backend doesn't return. availableCompanies was removed
-//   because the backend LoginResponse does NOT include it. If a future backend
-//   endpoint provides the current user's allowed companies, define a separate DTO.
+//   Permission codes and available companies come from the current auth response.
 //
 //   API-CONTRACT-ID-001: userId / tenantId / companyId are snowflake
 //   ids serialized as JSON strings on the wire (long → string converter).
@@ -29,6 +27,7 @@ export interface AuthUserDto {
   companyName?: string | null;
   isPlatformAdmin: boolean;
   availableCompanies: AuthCompanyDto[];
+  permissionCodes: string[];
 }
 
 export interface AuthCompanyDto {

@@ -5,8 +5,8 @@
         <div class="card-header">
           <span class="title">客户主档</span>
           <div>
-            <el-button @click="handleExport" :icon="Download">导出Excel</el-button>
-            <el-button type="primary" @click="showCreate = true" :icon="Plus">新建客户</el-button>
+            <el-button v-if="can('crm.company.export')" @click="handleExport" :icon="Download">导出Excel</el-button>
+            <el-button v-if="can('crm.company.manage')" type="primary" @click="showCreate = true" :icon="Plus">新建客户</el-button>
           </div>
         </div>
       </template>
@@ -65,7 +65,7 @@
             <el-tag v-for="tag in (row.tags || [])" :key="tag" size="small" effect="plain" style="margin:2px">
               {{ tag }}
             </el-tag>
-            <el-button link type="primary" size="small" @click="handleEditTags(row)">编辑</el-button>
+            <el-button v-if="can('crm.company.manage')" link type="primary" size="small" @click="handleEditTags(row)">编辑</el-button>
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="160">
@@ -74,7 +74,7 @@
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click.stop="goDetail(row)">详情</el-button>
-            <el-button link type="danger" size="small" @click.stop="handleDelete(row)">删除</el-button>
+            <el-button v-if="can('crm.company.manage')" link type="danger" size="small" @click.stop="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -166,8 +166,10 @@ import { Plus, Search, Refresh, Download } from '@element-plus/icons-vue';
 import { listCompanies, createCompany, deleteCompany, updateCompanyTags } from '../../api/crm';
 import type { CompanyDto, CreateCompanyRequest } from '../../types/crm';
 import { exportToExcel } from '../../utils/exportExcel';
+import { useCrmPermission } from '../../composables/useCrmPermission';
 
 const router = useRouter();
+const can = useCrmPermission();
 const loading = ref(false);
 const creating = ref(false);
 const list = ref<CompanyDto[]>([]);

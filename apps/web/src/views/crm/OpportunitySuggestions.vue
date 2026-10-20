@@ -26,9 +26,9 @@
         <el-table-column prop="reason" label="推荐理由" min-width="200" show-overflow-tooltip />
         <el-table-column prop="evidence" label="证据" min-width="180" show-overflow-tooltip />
         <el-table-column prop="suggestedAmount" label="建议报价" width="120" />
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column v-if="can('crm.lead.convert') || can('crm.deal.manage')" label="操作" width="100" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" link @click="goCreateDeal(row)">{{ row.targetType === 'lead' ? '先转客户' : '转商机' }}</el-button>
+            <el-button v-if="row.targetType === 'lead' ? can('crm.lead.convert') : can('crm.deal.manage')" size="small" type="primary" link @click="goCreateDeal(row)">{{ row.targetType === 'lead' ? '先转客户' : '转商机' }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -43,8 +43,10 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { getOpportunitySuggestions, type OpportunitySuggestion } from '../../api/crm';
+import { useCrmPermission } from '../../composables/useCrmPermission';
 
 const router = useRouter();
+const can = useCrmPermission();
 const loading = ref(false);
 const suggestions = ref<OpportunitySuggestion[]>([]);
 

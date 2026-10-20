@@ -5,9 +5,9 @@
         <div class="card-header">
           <span class="title">线索池</span>
           <div>
-            <el-button @click="handleExport" :icon="Download">导出Excel</el-button>
-            <el-button @click="showImport = true" :icon="Upload">批量导入</el-button>
-            <el-button type="primary" @click="showCreate = true" :icon="Plus">新建线索</el-button>
+            <el-button v-if="can('crm.lead.export')" @click="handleExport" :icon="Download">导出Excel</el-button>
+            <el-button v-if="can('crm.lead.import')" @click="showImport = true" :icon="Upload">批量导入</el-button>
+            <el-button v-if="can('crm.lead.manage')" type="primary" @click="showCreate = true" :icon="Plus">新建线索</el-button>
           </div>
         </div>
       </template>
@@ -97,7 +97,7 @@
             <el-tag v-for="tag in (row.tags || [])" :key="tag" size="small" effect="plain" style="margin:2px">
               {{ tag }}
             </el-tag>
-            <el-button link type="primary" size="small" @click="handleEditTags(row)">编辑</el-button>
+            <el-button v-if="can('crm.lead.manage')" link type="primary" size="small" @click="handleEditTags(row)">编辑</el-button>
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="160">
@@ -105,11 +105,11 @@
         </el-table-column>
         <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handleClaim(row)" v-if="row.status === 0">认领</el-button>
-            <el-button link type="primary" size="small" @click="handleAssign(row)">分配</el-button>
-            <el-button link type="primary" size="small" @click="handleConvert(row)" v-if="row.status !== 2 && row.status !== 3">转化</el-button>
-            <el-button link type="warning" size="small" @click="handleDiscard(row)" v-if="row.status !== 3">废弃</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button link type="primary" size="small" @click="handleClaim(row)" v-if="can('crm.lead.claim') && row.status === 0">认领</el-button>
+            <el-button v-if="can('crm.lead.manage')" link type="primary" size="small" @click="handleAssign(row)">分配</el-button>
+            <el-button link type="primary" size="small" @click="handleConvert(row)" v-if="can('crm.lead.convert') && row.status !== 2 && row.status !== 3">转化</el-button>
+            <el-button link type="warning" size="small" @click="handleDiscard(row)" v-if="can('crm.lead.manage') && row.status !== 3">废弃</el-button>
+            <el-button v-if="can('crm.lead.manage')" link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -303,8 +303,10 @@ import { listLeads, createLead, deleteLead, claimLead, assignLead, discardLead, 
 import type { LeadDto, CreateLeadRequest, ConvertLeadRequest } from '../../types/crm';
 import type { BatchImportResult, TeamMember } from '../../api/crm';
 import { readSpreadsheetRows } from '../../utils/spreadsheet';
+import { useCrmPermission } from '../../composables/useCrmPermission';
 
 const route = useRoute();
+const can = useCrmPermission();
 
 // 行业自动推断：根据企业名称关键词
 function inferIndustry(companyName: string, explicitIndustry?: string): number {

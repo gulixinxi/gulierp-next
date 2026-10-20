@@ -31,7 +31,7 @@
           <template #header>
             <div class="tab-header">
               <span>联系人列表</span>
-              <el-button type="primary" size="small" @click="showContactForm = true">添加联系人</el-button>
+              <el-button v-if="can('crm.contact.manage')" type="primary" size="small" @click="showContactForm = true">添加联系人</el-button>
             </div>
           </template>
           <el-table :data="contacts" stripe>
@@ -46,7 +46,7 @@
                 <span v-else>否</span>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="100">
+            <el-table-column v-if="can('crm.contact.manage')" label="操作" width="100">
               <template #default="{ row }">
                 <el-button link type="danger" size="small" @click="handleDeleteContact(row)">删除</el-button>
               </template>
@@ -62,7 +62,7 @@
           <template #header>
             <div class="tab-header">
               <span>商机列表</span>
-              <el-button type="primary" size="small" @click="showDealForm = true">新建商机</el-button>
+              <el-button v-if="can('crm.deal.manage')" type="primary" size="small" @click="showDealForm = true">新建商机</el-button>
             </div>
           </template>
           <el-table :data="deals" stripe>
@@ -93,7 +93,7 @@
           <template #header>
             <div class="tab-header">
               <span>跟进记录</span>
-              <el-button type="primary" size="small" @click="showActivityForm = true">新增跟进</el-button>
+              <el-button v-if="can('crm.activity.manage')" type="primary" size="small" @click="showActivityForm = true">新增跟进</el-button>
             </div>
           </template>
           <el-timeline>
@@ -178,7 +178,7 @@
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="ERP客商候选" name="erp-match">
+      <el-tab-pane v-if="can('mdm.business-partner.read')" label="ERP客商候选" name="erp-match">
         <el-card shadow="never">
           <el-alert type="info" :closable="false" title="仅查询可能匹配的ERP客商；结果需人工核对，不表示已关联或已同步。" />
           <div style="margin: 16px 0">
@@ -320,10 +320,12 @@ import type { SignalDto, OpportunitySuggestion } from '../../api/crm';
 import type { CompanyDto, ContactDto, ActivityDto, DealDto, CreateContactRequest, CreateActivityRequest, CreateDealRequest, ErpMatchResultDto } from '../../types/crm';
 import { BusinessCategory, DealStage } from '../../types/crm';
 import { useAuthStore } from '../../stores/auth';
+import { useCrmPermission } from '../../composables/useCrmPermission';
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const can = useCrmPermission();
 const companyId = route.params.id as string;
 
 const loading = ref(false);

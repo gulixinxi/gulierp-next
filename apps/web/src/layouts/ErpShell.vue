@@ -183,7 +183,7 @@
           <template v-for="group in activeModuleNavigation.groups" :key="group.label">
             <div class="gs-menu-group-title">{{ group.label }}</div>
             <button
-              v-for="item in group.items"
+              v-for="item in group.items.filter(canAccessItem)"
               :key="item.id"
               class="gs-menu-item"
               type="button"
@@ -428,11 +428,13 @@ function resolveIcon(name: string) {
 }
 
 function canAccessModule(module: ShellNavigationModule): boolean {
-  return !module.permissionKey && !module.disabled;
+  return !module.disabled && (!module.permissionKey || auth.user?.permissionCodes?.includes(module.permissionKey) === true)
+    && (module.key !== 'crm' || module.groups.some(group => group.items.some(item => !!item.route && canAccessItem(item))));
 }
 
 function canAccessItem(item: ShellNavigationItem): boolean {
-  return !item.permissionKey;
+  return (!item.permissionKey || auth.user?.permissionCodes?.includes(item.permissionKey) === true)
+    && (!item.permissionKeys || item.permissionKeys.every(code => auth.user?.permissionCodes?.includes(code) === true));
 }
 
 watch(
@@ -467,7 +469,7 @@ function onModuleClick(m: ShellNavigationModule) {
     localStorage.setItem(LS_COLLAPSE_KEY, '0');
   }
   activeModule.value = m.key;
-  const firstRoute = m.groups.flatMap(group => group.items).find(item => item.route && !item.disabled);
+  const firstRoute = m.groups.flatMap(group => group.items).find(item => item.route && !item.disabled && canAccessItem(item));
   if (firstRoute) {
     openNavigationItem(firstRoute);
   }

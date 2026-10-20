@@ -8,6 +8,7 @@ using GuliERP.Identity.Application.Authentication;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
 using GuliERP.Identity.Infrastructure.Persistence;
+using GuliERP.Identity.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -301,6 +302,10 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
             Assert.Equal("山东谷粒机械有限公司", loginDoc.RootElement.GetProperty("tenantName").GetString());
             Assert.Equal("山东谷粒机械有限公司", loginDoc.RootElement.GetProperty("companyName").GetString());
             Assert.True(loginDoc.RootElement.GetProperty("isPlatformAdmin").GetBoolean());
+            Assert.Contains(loginDoc.RootElement.GetProperty("permissionCodes").EnumerateArray(),
+                code => code.GetString() == "crm.lead.read");
+            Assert.DoesNotContain(loginDoc.RootElement.GetProperty("permissionCodes").EnumerateArray(),
+                code => code.GetString() == "crm.lead.manage");
         }
 
         var meResponse = await client.GetAsync("/api/v1/auth/me");
@@ -309,6 +314,22 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         using var meDoc = JsonDocument.Parse(meBody);
         Assert.True(meDoc.RootElement.GetProperty("isPlatformAdmin").GetBoolean());
         Assert.Equal("山东谷粒机械有限公司", meDoc.RootElement.GetProperty("companyName").GetString());
+        Assert.Contains(meDoc.RootElement.GetProperty("permissionCodes").EnumerateArray(),
+            code => code.GetString() == "crm.lead.read");
+        Assert.DoesNotContain(meDoc.RootElement.GetProperty("permissionCodes").EnumerateArray(),
+            code => code.GetString() == "crm.lead.manage");
+
+        var switchRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/company/switch")
+        {
+            Content = JsonContent.Create(new SwitchCompanyRequest(20_002)),
+        };
+        AttachCsrfToken(switchRequest, await FetchCsrfTokenAsync(client));
+        var switchResponse = await client.SendAsync(switchRequest);
+        Assert.Equal(HttpStatusCode.OK, switchResponse.StatusCode);
+        using var switchedDoc = JsonDocument.Parse(await switchResponse.Content.ReadAsStringAsync());
+        Assert.Equal("20002", switchedDoc.RootElement.GetProperty("companyId").GetString());
+        Assert.Contains(switchedDoc.RootElement.GetProperty("permissionCodes").EnumerateArray(),
+            code => code.GetString() == "crm.lead.manage");
     }
 
     // ----- /api/v1/auth/logout -----
@@ -447,6 +468,19 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         };
         db.Tenants.Add(tenant);
         db.Companies.Add(company);
+        db.Companies.Add(new Company
+        {
+            Id = 20_002,
+            TenantId = tenant.Id,
+            Code = "test_operator_other_c",
+            Name = "Other Company",
+            DefaultCurrency = "CNY",
+            Timezone = "Asia/Shanghai",
+            Status = CompanyStatus.Active,
+            CreatedAt = now,
+            ModifiedAt = now,
+            ConcurrencyVersion = 1,
+        });
         await db.SaveChangesAsync();
 
         var user = new GuliErpUser
@@ -479,6 +513,26 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
         };
         var roleResult = await roleManager.CreateAsync(role);
         Assert.True(roleResult.Succeeded, string.Join("; ", roleResult.Errors.Select(e => e.Description)));
+        var claimResult = await roleManager.AddClaimAsync(role,
+            new Claim(GuliErpPermissionClaimTypes.Permission, "crm.lead.read"));
+        Assert.True(claimResult.Succeeded, string.Join("; ", claimResult.Errors.Select(e => e.Description)));
+
+        var otherCompanyRole = new GuliErpRole
+        {
+            TenantId = tenant.Id,
+            Name = "Other Company CRM Writer",
+            NormalizedName = "OTHER COMPANY CRM WRITER",
+            Code = "OTHER_COMPANY_CRM_WRITER",
+            Status = RoleStatus.Active,
+            CreatedAt = now,
+            ModifiedAt = now,
+            ConcurrencyVersion = 1,
+        };
+        var otherRoleResult = await roleManager.CreateAsync(otherCompanyRole);
+        Assert.True(otherRoleResult.Succeeded, string.Join("; ", otherRoleResult.Errors.Select(e => e.Description)));
+        var otherClaimResult = await roleManager.AddClaimAsync(otherCompanyRole,
+            new Claim(GuliErpPermissionClaimTypes.Permission, "crm.lead.manage"));
+        Assert.True(otherClaimResult.Succeeded, string.Join("; ", otherClaimResult.Errors.Select(e => e.Description)));
 
         db.UserCompanyMemberships.Add(new UserCompanyMembership
         {
@@ -492,12 +546,35 @@ public class AuthenticationFacts : IClassFixture<WebApplicationFactory<Program>>
             ModifiedAt = now,
             ConcurrencyVersion = 1,
         });
+        db.UserCompanyMemberships.Add(new UserCompanyMembership
+        {
+            TenantId = tenant.Id,
+            CompanyId = 20_002,
+            UserId = user.Id,
+            IsDefault = false,
+            JoinedAt = now,
+            Status = MembershipStatus.Active,
+            CreatedAt = now,
+            ModifiedAt = now,
+            ConcurrencyVersion = 1,
+        });
         db.UserRoleAssignments.Add(new UserRoleAssignment
         {
             TenantId = tenant.Id,
             UserId = user.Id,
             RoleId = role.Id,
             CompanyId = null,
+            Status = AssignmentStatus.Active,
+            CreatedAt = now,
+            ModifiedAt = now,
+            ConcurrencyVersion = 1,
+        });
+        db.UserRoleAssignments.Add(new UserRoleAssignment
+        {
+            TenantId = tenant.Id,
+            UserId = user.Id,
+            RoleId = otherCompanyRole.Id,
+            CompanyId = 20_002,
             Status = AssignmentStatus.Active,
             CreatedAt = now,
             ModifiedAt = now,

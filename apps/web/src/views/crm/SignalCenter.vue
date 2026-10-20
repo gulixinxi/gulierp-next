@@ -44,9 +44,9 @@
         </el-table-column>
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
-            <el-button v-if="row.status === 0" size="small" type="success" link @click="handleStatus(row.id, 1)">确认</el-button>
-            <el-button v-if="row.status === 0" size="small" type="info" link @click="handleStatus(row.id, 2)">忽略</el-button>
-            <el-button v-if="row.status === 1" size="small" type="primary" link @click="handleStatus(row.id, 3)">转商机</el-button>
+            <el-button v-if="can('crm.lead.manage') && row.status === 0" size="small" type="success" link @click="handleStatus(row.id, 1)">确认</el-button>
+            <el-button v-if="can('crm.lead.manage') && row.status === 0" size="small" type="info" link @click="handleStatus(row.id, 2)">忽略</el-button>
+            <el-button v-if="can('crm.lead.manage') && row.status === 1" size="small" type="primary" link @click="handleStatus(row.id, 3)">转商机</el-button>
             <el-button size="small" link @click="showDetail(row)">详情</el-button>
           </template>
         </el-table-column>
@@ -104,7 +104,7 @@
         <p style="color:#909399;font-size:12px">
           注意：未查询到证件不代表企业没有证件；禁止将推测性缺口当作已证实事实。
         </p>
-        <div class="verify-actions">
+        <div v-if="can('crm.lead.manage')" class="verify-actions">
           <el-button size="small" type="success" @click="verify(1)">已确认存在</el-button>
           <el-button size="small" type="danger" @click="verify(2)">已确认不存在</el-button>
           <el-button size="small" type="warning" @click="verify(3)">未查到</el-button>
@@ -123,7 +123,9 @@
 import { ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { listSignals, updateSignalStatus, updateSignalVerification, type SignalDto } from '../../api/crm';
+import { useCrmPermission } from '../../composables/useCrmPermission';
 
+const can = useCrmPermission();
 const loading = ref(false);
 const signals = ref<SignalDto[]>([]);
 const total = ref(0);

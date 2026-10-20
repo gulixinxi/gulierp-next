@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Claims;
 using GuliERP.Foundation.Kernel;
 using GuliERP.Identity.Application.CompanySwitching;
+using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
 using GuliERP.Identity.Infrastructure.Persistence;
@@ -343,6 +344,24 @@ public sealed class AuthenticationService : IAppAuthenticationService
                 orderby membership.IsDefault descending, c.Code
                 select new AuthCompanyDto(c.Id, c.Code, c.Name)).ToListAsync(ct);
 
+        // A UI hint for the selected company. Authorization remains enforced by
+        // PermissionAuthorizationHandler on every request.
+        var now = DateTimeOffset.UtcNow;
+        var permissionCodes = await (
+            from assignment in _db.UserRoleAssignments.AsNoTracking()
+            join role in _db.Roles.AsNoTracking() on assignment.RoleId equals role.Id
+            join claim in _db.RoleClaims.AsNoTracking() on role.Id equals claim.RoleId
+            where assignment.TenantId == user.TenantId
+                  && role.TenantId == user.TenantId
+                  && assignment.UserId == user.Id
+                  && assignment.Status == AssignmentStatus.Active
+                  && role.Status == RoleStatus.Active
+                  && (assignment.ValidFrom == null || assignment.ValidFrom <= now)
+                  && (assignment.ValidTo == null || assignment.ValidTo > now)
+                  && (assignment.CompanyId == null || assignment.CompanyId == companyId)
+                  && claim.ClaimType == GuliErpPermissionClaimTypes.Permission
+            select claim.ClaimValue).Distinct().OrderBy(code => code).ToListAsync(ct);
+
         return new LoginResponse(
             UserId: user.Id,
             UserName: user.UserName ?? string.Empty,
@@ -354,7 +373,8 @@ public sealed class AuthenticationService : IAppAuthenticationService
             CompanyCode: company?.Code,
             CompanyName: company?.Name,
             IsPlatformAdmin: await ResolveIsPlatformAdminAsync(user, companyId, ct),
-            AvailableCompanies: availableCompanies);
+            AvailableCompanies: availableCompanies,
+            PermissionCodes: permissionCodes);
     }
 
     private async Task<bool> ResolveIsPlatformAdminAsync(

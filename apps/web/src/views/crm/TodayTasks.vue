@@ -27,7 +27,7 @@
         <el-table-column label="操作" width="160">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="goCompany(row.companyId)">去跟进</el-button>
-            <el-button link type="success" size="small" @click="handleComplete(row)">标记完成</el-button>
+            <el-button v-if="can('crm.activity.manage')" link type="success" size="small" @click="handleComplete(row)">标记完成</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -43,9 +43,11 @@ import { ElMessage } from 'element-plus';
 import { getTodayTasks, completeActivityTask } from '../../api/crm';
 import type { TodayTaskDto } from '../../types/crm';
 import { useAuthStore } from '../../stores/auth';
+import { useCrmPermission } from '../../composables/useCrmPermission';
 
 const router = useRouter();
 const auth = useAuthStore();
+const can = useCrmPermission();
 const loading = ref(false);
 const tasks = ref<TodayTaskDto[]>([]);
 const filterMode = ref<'mine' | 'all'>('mine');
