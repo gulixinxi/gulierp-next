@@ -157,6 +157,7 @@ import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import type { FormInstance, FormRules } from 'element-plus';
 import { useAuthStore } from '../../stores/auth';
+import { defaultAuthorizedRoute } from '../../layout/navigation';
 import loginHeroUrl from '../../assets/login-hero-gulierp.png';
 
 const router = useRouter();
@@ -226,7 +227,7 @@ watch(() => route.query, (q) => {
 // If already authenticated, fast-forward (e.g. browser back after successful login).
 // We don't flash the form.
 if (auth.isAuthenticated) {
-  const r = auth.consumeIntendedRoute() || '/sales-orders';
+  const r = auth.consumeIntendedRoute() || defaultAuthorizedRoute(auth.user?.permissionCodes ?? []);
   router.replace(r).catch(() => {});
 }
 
@@ -251,7 +252,7 @@ async function onSubmit(): Promise<void> {
     // SUCCESS — go to intended route or shell default.
     const target = auth.user?.mustChangePassword
       ? '/change-password-required'
-      : auth.consumeIntendedRoute() || '/sales-orders';
+      : auth.consumeIntendedRoute() || defaultAuthorizedRoute(auth.user?.permissionCodes ?? []);
     await router.replace(target).catch(() => {});
   } catch {
     if (auth.lastError?.code === 'mfa_required') mfaPrompt.value = true;

@@ -24,8 +24,11 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '../../stores/auth';
+import { defaultAuthorizedRoute } from '../../layout/navigation';
 const router = useRouter();
-function goHome() { router.replace('/sales-orders').catch(() => {}); }
+const auth = useAuthStore();
+function goHome() { router.replace(defaultAuthorizedRoute(auth.user?.permissionCodes ?? [])).catch(() => {}); }
 function goBack() {
   if (window.history.length > 1) router.back();
   else goHome();

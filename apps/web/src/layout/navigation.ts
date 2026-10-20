@@ -99,17 +99,17 @@ export const shellNavigation: ShellNavigationModule[] = [
       {
         label: '基础数据',
         items: [
-          { id: 'list-mdm-business-partners', label: '客商', icon: 'OfficeBuilding', route: '/mdm/business-partners', tabTitle: '客商' },
-          { id: 'list-mdm-customers', label: '客户档案', icon: 'OfficeBuilding', route: '/mdm/customers', tabTitle: '客户档案' },
-          { id: 'list-mdm-suppliers', label: '供应商', icon: 'Avatar', route: '/mdm/suppliers', tabTitle: '供应商' },
+          { id: 'list-mdm-business-partners', label: '客商', icon: 'OfficeBuilding', route: '/mdm/business-partners', tabTitle: '客商', permissionKey: 'mdm.business-partner.read' },
+          { id: 'list-mdm-customers', label: '客户档案', icon: 'OfficeBuilding', route: '/mdm/customers', tabTitle: '客户档案', permissionKey: 'mdm.business-partner.read' },
+          { id: 'list-mdm-suppliers', label: '供应商', icon: 'Avatar', route: '/mdm/suppliers', tabTitle: '供应商', permissionKey: 'mdm.business-partner.read' },
           // G3-R1D (N-1): 基础数据 > 员工档案 now points to the real
           // /mdm/employees page (the 主数据 > 员工档案 already does).
           // The page was previously marked "待开发" because the 基础数据
           // module was a placeholder before the EmployeeList page was wired
           // to the real /api/v1/organization/companies/{id}/employees API.
-          { id: 'list-mdm-employees', label: '员工档案', icon: 'UserFilled', route: '/mdm/employees', tabTitle: '员工档案' },
-          { id: 'list-mdm-warehouses', label: '仓库', icon: 'Box', route: '/mdm/warehouses', tabTitle: '仓库' },
-          { id: 'list-mdm-locations', label: '库位', icon: 'Files', route: '/mdm/locations', tabTitle: '库位' },
+          { id: 'list-mdm-employees', label: '员工档案', icon: 'UserFilled', route: '/mdm/employees', tabTitle: '员工档案', permissionKey: 'identity.employee.read' },
+          { id: 'list-mdm-warehouses', label: '仓库', icon: 'Box', route: '/mdm/warehouses', tabTitle: '仓库', permissionKey: 'mdm.warehouse.read' },
+          { id: 'list-mdm-locations', label: '库位', icon: 'Files', route: '/mdm/locations', tabTitle: '库位', permissionKeys: ['mdm.location.read', 'mdm.warehouse.read'] },
         ],
       },
     ],
@@ -123,16 +123,16 @@ export const shellNavigation: ShellNavigationModule[] = [
       {
         label: '主数据',
         items: [
-          { id: 'mdm-workbench', label: '主数据中心', icon: 'Menu', route: '/mdm', tabTitle: '主数据中心' },
-          { id: 'list-mdm-uoms', label: '计量单位', icon: 'ScaleToOriginal', route: '/mdm/uoms', tabTitle: '计量单位' },
-          { id: 'list-mdm-item-categories', label: '物料分类', icon: 'Files', route: '/mdm/item-categories', tabTitle: '物料分类' },
-          { id: 'list-mdm-items', label: '商品档案', icon: 'Goods', route: '/mdm/items', tabTitle: '商品档案' },
-          { id: 'list-mdm-employees', label: '员工档案', icon: 'UserFilled', route: '/mdm/employees', tabTitle: '员工档案' },
-          { id: 'list-mdm-dictionaries', label: '基础字典', icon: 'Tickets', route: '/mdm/dictionaries', tabTitle: '基础字典' },
+          { id: 'mdm-workbench', label: '主数据中心', icon: 'Menu', route: '/mdm', tabTitle: '主数据中心', permissionKey: 'mdm.uom.read' },
+          { id: 'list-mdm-uoms', label: '计量单位', icon: 'ScaleToOriginal', route: '/mdm/uoms', tabTitle: '计量单位', permissionKey: 'mdm.uom.read' },
+          { id: 'list-mdm-item-categories', label: '物料分类', icon: 'Files', route: '/mdm/item-categories', tabTitle: '物料分类', permissionKey: 'mdm.item-category.read' },
+          { id: 'list-mdm-items', label: '商品档案', icon: 'Goods', route: '/mdm/items', tabTitle: '商品档案', permissionKeys: ['mdm.item.read', 'mdm.item-category.read', 'mdm.uom.read'] },
+          { id: 'list-mdm-employees', label: '员工档案', icon: 'UserFilled', route: '/mdm/employees', tabTitle: '员工档案', permissionKey: 'identity.employee.read' },
+          { id: 'list-mdm-dictionaries', label: '基础字典', icon: 'Tickets', route: '/mdm/dictionaries', tabTitle: '基础字典', permissionKey: 'mdm.dictionary.read' },
           // G3-R1E: 付款方式 — was DEFERRED in G3-R1D. Now real via
           // the Dictionary facade at /api/v1/mdm/payment-methods.
-          { id: 'list-mdm-payment-methods', label: '付款方式', icon: 'Money', route: '/mdm/payment-methods', tabTitle: '付款方式' },
-          { id: 'list-mdm-numbering-rules', label: '编号规则', icon: 'Document', route: '/mdm/numbering-rules', tabTitle: '编号规则' },
+          { id: 'list-mdm-payment-methods', label: '付款方式', icon: 'Money', route: '/mdm/payment-methods', tabTitle: '付款方式', permissionKey: 'mdm.dictionary.read' },
+          { id: 'list-mdm-numbering-rules', label: '编号规则', icon: 'Document', route: '/mdm/numbering-rules', tabTitle: '编号规则', permissionKey: 'mdm.numbering-rule.read' },
         ],
       },
     ],
@@ -146,7 +146,7 @@ export const shellNavigation: ShellNavigationModule[] = [
       {
         label: '销售单据',
         items: [
-          { id: 'list-sales-order', label: '销售订单', icon: 'Tickets', route: '/sales-orders', tabTitle: '销售订单' },
+          { id: 'list-sales-order', label: '销售订单', icon: 'Tickets', route: '/sales-orders', tabTitle: '销售订单', permissionKey: 'sales.order.read' },
           { id: 'sales-quotation', label: '报价单', icon: 'Document', disabled: true, placeholder: '报价单待开发' },
           { id: 'sales-delivery', label: '发货单', icon: 'Van', disabled: true, placeholder: '发货单待开发' },
           { id: 'sales-invoice', label: '销售发票', icon: 'Money', disabled: true, placeholder: '销售发票待开发' },
@@ -175,7 +175,7 @@ export const shellNavigation: ShellNavigationModule[] = [
           // context facade at /api/v1/purchase/orders/context/*
           // for Supplier / Item / UOM / Warehouse / PaymentMethod
           // dropdowns. ERP_PURCH_OPERATOR is the required role.
-          { id: 'list-purchase-order', label: '采购订单', icon: 'ShoppingCart', route: '/purchase/orders', tabTitle: '采购订单' },
+          { id: 'list-purchase-order', label: '采购订单', icon: 'ShoppingCart', route: '/purchase/orders', tabTitle: '采购订单', permissionKey: 'purchase.order.read' },
           { id: 'purchase-receipt', label: '收货单', icon: 'Box', disabled: true, placeholder: '收货单待开发' },
           { id: 'purchase-invoice', label: '采购发票', icon: 'Money', disabled: true, placeholder: '采购发票待开发' },
         ],
@@ -218,7 +218,7 @@ export const shellNavigation: ShellNavigationModule[] = [
       {
         label: '系统管理',
         items: [
-          { id: 'list-system-enterprise-organization', label: '企业组织', icon: 'OfficeBuilding', route: '/system/enterprise-organization', tabTitle: '企业组织' },
+          { id: 'list-system-enterprise-organization', label: '企业组织', icon: 'OfficeBuilding', route: '/system/enterprise-organization', tabTitle: '企业组织', permissionKey: 'identity.organization.read' },
         ],
       },
     ],
@@ -236,4 +236,21 @@ export function findNavigationModuleByRoute(path: string): ShellNavigationModule
   return shellNavigation.find(module =>
     module.groups.some(group =>
       group.items.some(item => item.route === path || (item.route !== '/' && path.startsWith(`${item.route}/`)))));
+}
+
+export function canAccessNavigationItem(item: ShellNavigationItem, permissions: readonly string[]): boolean {
+  return (!item.permissionKey || permissions.includes(item.permissionKey))
+    && (!item.permissionKeys || item.permissionKeys.every(code => permissions.includes(code)));
+}
+
+export function defaultAuthorizedRoute(permissions: readonly string[]): string {
+  const routes = [
+    '/system/enterprise-organization', '/mdm', '/mdm/employees',
+    '/crm/dashboard', '/crm/leads', '/crm/companies', '/crm/deals',
+    '/sales-orders', '/purchase/orders',
+  ];
+  return routes.find(route => {
+    const item = findNavigationItemByRoute(route);
+    return item && canAccessNavigationItem(item, permissions);
+  }) ?? '/403';
 }

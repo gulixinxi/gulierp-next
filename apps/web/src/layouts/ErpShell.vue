@@ -317,6 +317,7 @@ import {
   Search, MagicStick
 } from '@element-plus/icons-vue';
 import {
+  canAccessNavigationItem,
   findNavigationItemByRoute,
   findNavigationModuleByRoute,
   shellNavigation,
@@ -429,12 +430,11 @@ function resolveIcon(name: string) {
 
 function canAccessModule(module: ShellNavigationModule): boolean {
   return !module.disabled && (!module.permissionKey || auth.user?.permissionCodes?.includes(module.permissionKey) === true)
-    && (module.key !== 'crm' || module.groups.some(group => group.items.some(item => !!item.route && canAccessItem(item))));
+    && (!['crm', 'basic', 'mdm', 'sales', 'purchase', 'system'].includes(module.key) || module.groups.some(group => group.items.some(item => !!item.route && canAccessItem(item))));
 }
 
 function canAccessItem(item: ShellNavigationItem): boolean {
-  return (!item.permissionKey || auth.user?.permissionCodes?.includes(item.permissionKey) === true)
-    && (!item.permissionKeys || item.permissionKeys.every(code => auth.user?.permissionCodes?.includes(code) === true));
+  return canAccessNavigationItem(item, auth.user?.permissionCodes ?? []);
 }
 
 watch(

@@ -9,7 +9,7 @@
 
     <div class="mdm-workbench__grid" aria-label="主数据模块入口">
       <RouterLink
-        v-for="module in primaryModules"
+        v-for="module in availableModules"
         :key="module.route"
         class="mdm-workbench-card"
         :to="module.route"
@@ -38,7 +38,9 @@
 </template>
 
 <script setup lang="ts">
-import type { Component } from 'vue';
+import { computed, type Component } from 'vue';
+import { useAuthStore } from '../../stores/auth';
+import { canAccessNavigationItem, findNavigationItemByRoute } from '../../layout/navigation';
 import {
   Box,
   Document,
@@ -139,6 +141,12 @@ const primaryModules: WorkbenchModule[] = [
     icon: Money,
   },
 ];
+
+const auth = useAuthStore();
+const availableModules = computed(() => primaryModules.filter(module => {
+  const item = findNavigationItemByRoute(module.route);
+  return item && canAccessNavigationItem(item, auth.user?.permissionCodes ?? []);
+}));
 
 // G3-R1D (N-2): These modules are listed in the G3-R1D brief §WorkItem 2
 // but currently have no real API on the backend. The page renders them

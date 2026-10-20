@@ -17,6 +17,7 @@ import { useAuthStore } from '../stores/auth';
 import Login from '../views/auth/Login.vue';
 import Forbidden403 from '../views/auth/Forbidden403.vue';
 import ChangePasswordRequired from '../views/auth/ChangePasswordRequired.vue';
+import { canAccessNavigationItem, defaultAuthorizedRoute, findNavigationItemByRoute } from '../layout/navigation';
 
 const PUBLIC_ROUTES = new Set(['login', '403', 'bootstrap-status']);
 
@@ -74,7 +75,7 @@ export function installAuthGuard(router: Router): void {
       return next({ name: 'change-password-required' });
     }
     if (auth.isAuthenticated && !auth.user?.mustChangePassword
-        && to.name === 'change-password-required') return next('/sales-orders');
+        && to.name === 'change-password-required') return next(defaultAuthorizedRoute(auth.user?.permissionCodes ?? []));
 
     // --- Rule 1: Authenticated user hitting /login → forward to shell ---
     if (to.name === 'login' && auth.isAuthenticated) {
@@ -82,7 +83,7 @@ export function installAuthGuard(router: Router): void {
       if (redirect && redirect !== '/login') {
         return next(redirect);
       }
-      return next('/sales-order');
+      return next(defaultAuthorizedRoute(auth.user?.permissionCodes ?? []));
     }
 
     // --- Rule 2: Unauthenticated user hitting a protected route → login + capture intended ---
@@ -92,6 +93,15 @@ export function installAuthGuard(router: Router): void {
         auth.setIntendedRoute(full);
       }
       return next({ name: 'login' });
+    }
+
+    // Direct URLs and saved tabs use the same permission rule as the menu.
+    // API authorization remains authoritative.
+    if (auth.isAuthenticated) {
+      const item = findNavigationItemByRoute(to.path);
+      if (item && !canAccessNavigationItem(item, auth.user?.permissionCodes ?? [])) {
+        return next({ name: '403' });
+      }
     }
 
     // --- Rule 3: Otherwise proceed ---
