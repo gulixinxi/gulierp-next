@@ -188,7 +188,7 @@
 
     <el-dialog v-model="roleDialog.visible" :title="`调整权限 · ${roleDialog.userName}`" width="520px">
       <p>仅调整当前公司 {{ activeCompany?.name }} 的角色；租户级角色不在此处修改。</p>
-      <p>这里只能授予列表中已有的角色；当前若仅有 CRM_READONLY，就无法从此处获得 CRM 写入权限。</p>
+      <p>这里只能授予列表中已有的角色。CRM_OPERATOR 支持核心业务读写；导入、导出和系统管理需要单独授权。</p>
       <el-form label-width="90px" v-loading="loadingRoles">
         <el-form-item label="公司角色">
           <el-select v-model="roleDialog.roleCodes" multiple clearable filterable placeholder="选择角色" style="width:100%">
