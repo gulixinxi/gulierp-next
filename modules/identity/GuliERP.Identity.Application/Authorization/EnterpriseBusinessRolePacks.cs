@@ -54,6 +54,7 @@ public static class EnterpriseBusinessRolePacks
     public const string PurchOperatorRoleCode = "ERP_PURCH_OPERATOR";
     public const string PurchOperatorRoleName = "ERP Purchase Operator";
     public const string CrmReadOnlyRoleCode = "CRM_READONLY";
+    public const string CrmOperatorRoleCode = "CRM_OPERATOR";
 
     // GULIERP_SYSTEM_ADMIN_PACK_BOUNDARY_001 (G3-R1C, 2026-08-26):
     // The ERP_SYSTEM_ADMIN role pack is now ALSO exposed as an
@@ -169,6 +170,21 @@ public static class EnterpriseBusinessRolePacks
             "crm.deal.read",
             "crm.activity.read",
             "crm.log.read",
+        });
+
+    // CRM business writes remain separate from identity administration and ERP packs.
+    // Imports, exports, assignment, and external collection require distinct grants.
+    public static readonly EnterpriseBusinessRolePack CrmOperator = new(
+        CrmOperatorRoleCode,
+        "CRM Operator",
+        "Read and manage CRM leads, companies, contacts, deals and activities in the current company.",
+        new[]
+        {
+            "crm.lead.read", "crm.lead.manage", "crm.lead.claim", "crm.lead.convert",
+            "crm.company.read", "crm.company.manage", "crm.company.assign",
+            "crm.contact.read", "crm.contact.manage",
+            "crm.deal.read", "crm.deal.manage",
+            "crm.activity.read", "crm.activity.manage",
         });
 
     /// <summary>

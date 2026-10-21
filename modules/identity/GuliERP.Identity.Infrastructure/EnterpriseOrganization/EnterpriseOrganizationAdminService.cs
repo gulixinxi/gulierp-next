@@ -1,4 +1,6 @@
 using GuliERP.Foundation.Kernel;
+using GuliERP.Identity.Application.Authorization;
+using GuliERP.Identity.Infrastructure.Authorization;
 using GuliERP.Identity.Application.EnterpriseOrganization;
 using GuliERP.Identity.Domain.Entities;
 using GuliERP.Identity.Domain.Enums;
@@ -18,6 +20,60 @@ public sealed class EnterpriseOrganizationAdminService : IEnterpriseOrganization
     private readonly ICurrentTenant _currentTenant;
     private readonly ICurrentCompany _currentCompany;
     private readonly ICurrentUser _currentUser;
+
+    public async Task EnsureCrmOperatorRoleAsync(CancellationToken ct = default)
+    {
+        var tenantId = RequireTenant();
+        var companyId = _currentCompany.Id
+            ?? throw new InvalidOperationException("Select a company before managing CRM roles.");
+        await RequireCompanyAsync(tenantId, companyId, ct);
+        await EnsureCurrentUserCanAccessCompanyAsync(companyId, ct);
+
+        var pack = EnterpriseBusinessRolePacks.CrmOperator;
+        var role = await _db.Roles.SingleOrDefaultAsync(
+            r => r.TenantId == tenantId && r.Code == pack.Code, ct);
+        if (role is null)
+        {
+            var now = DateTimeOffset.UtcNow;
+            role = new GuliErpRole
+            {
+                TenantId = tenantId,
+                Code = pack.Code,
+                Name = pack.Name,
+                NormalizedName = pack.Name.ToUpperInvariant(),
+                Description = pack.Description,
+                IsSystem = true,
+                Status = RoleStatus.Active,
+                CreatedAt = now,
+                ModifiedAt = now,
+                ConcurrencyVersion = 1,
+            };
+            _db.Roles.Add(role);
+            await _db.SaveChangesAsync(ct);
+        }
+        else if (role.Status != RoleStatus.Active || !role.IsSystem)
+        {
+            throw new InvalidOperationException("CRM operator role exists with an incompatible status or type.");
+        }
+
+        var claims = await _db.RoleClaims
+            .Where(c => c.RoleId == role.Id && c.ClaimType == GuliErpPermissionClaimTypes.Permission)
+            .ToListAsync(ct);
+        var expected = pack.Permissions.ToHashSet(StringComparer.Ordinal);
+        var existing = claims.Select(c => c.ClaimValue ?? string.Empty).ToArray();
+        if (existing.Length != existing.Distinct(StringComparer.Ordinal).Count()
+            || existing.Any(value => !expected.Contains(value)))
+            throw new InvalidOperationException("CRM operator role has unexpected permission claims.");
+
+        foreach (var permission in pack.Permissions.Where(p => !existing.Contains(p, StringComparer.Ordinal)))
+            _db.RoleClaims.Add(new IdentityRoleClaim<long>
+            {
+                RoleId = role.Id,
+                ClaimType = GuliErpPermissionClaimTypes.Permission,
+                ClaimValue = permission,
+            });
+        await _db.SaveChangesAsync(ct);
+    }
 
     public EnterpriseOrganizationAdminService(
         IdentityDbContext db,

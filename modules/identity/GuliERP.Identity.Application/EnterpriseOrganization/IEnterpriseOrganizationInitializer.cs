@@ -210,6 +210,8 @@ public interface IEnterpriseOrganizationAdminService
 
     Task<IReadOnlyList<EnterpriseRoleDto>> ListAssignableRolesAsync(
         CancellationToken ct = default);
+
+    Task EnsureCrmOperatorRoleAsync(CancellationToken ct = default);
 }
 
 public sealed class EnterpriseBootstrapAlreadyExistsException : Exception

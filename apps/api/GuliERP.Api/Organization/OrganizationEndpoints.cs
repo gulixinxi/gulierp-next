@@ -169,6 +169,12 @@ public static class OrganizationEndpoints
             Results.Ok(await admin.ListAssignableRolesAsync(ct)))
             .RequireAuthorization(GuliErpAuthorizationPolicies.IdentityRoleRead);
 
+        group.MapPost("/roles/crm-operator", async (
+            IEnterpriseOrganizationAdminService admin,
+            CancellationToken ct) =>
+            await SafeVoidMutationAsync(() => admin.EnsureCrmOperatorRoleAsync(ct)))
+            .RequireAuthorization(GuliErpAuthorizationPolicies.IdentityRoleAssign);
+
         group.MapPost("/role-assignments", async (
             [FromBody] AssignEnterpriseUserRoleRequest request,
             IEnterpriseOrganizationAdminService admin,

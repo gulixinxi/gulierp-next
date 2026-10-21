@@ -102,6 +102,10 @@
 
       <section class="org-section">
         <div class="section-title">用户列表</div>
+        <div v-if="canAssignRoles && !roles.some(role => role.code === 'CRM_OPERATOR')" style="margin-bottom: 12px">
+          <el-button :loading="creatingCrmRole" @click="createCrmRole">创建 CRM 操作角色</el-button>
+          <span style="margin-left: 8px">仅创建角色，不自动授予任何用户；创建后可在“调整权限”中分配。</span>
+        </div>
         <el-table :data="users" size="small" stripe height="260">
           <el-table-column prop="userName" label="用户名" min-width="140" />
           <el-table-column prop="displayName" label="姓名" min-width="140" />
@@ -211,6 +215,7 @@ import {
   assignEnterpriseRole,
   createEnterpriseUser,
   createOrganizationUnit,
+  ensureCrmOperatorRole,
   getOrganizationTree,
   listEnterpriseRoles,
   listEnterpriseUserCompanyRoles,
@@ -238,6 +243,7 @@ const savingOrg = ref(false);
 const savingUser = ref(false);
 const loadingRoles = ref(false);
 const savingRoles = ref(false);
+const creatingCrmRole = ref(false);
 const roleError = ref('');
 const roleDialog = reactive({ visible: false, userId: '', userName: '', roleCodes: [] as string[], originalRoleCodes: [] as string[] });
 const selfRoleRemoval = computed(() => roleDialog.userId === auth.user?.userId
@@ -260,6 +266,21 @@ const departmentCount = computed(() => countDepartments(departmentTree.value));
 const employees = computed(() => flattenEmployees(departmentTree.value));
 const emptyDescription = computed(() => '尚未初始化企业组织');
 const canAssignRoles = computed(() => auth.user?.permissionCodes.includes('identity.role.assign') ?? false);
+
+async function createCrmRole() {
+  creatingCrmRole.value = true;
+  try {
+    await ensureCrmOperatorRole();
+    roles.value = await listEnterpriseRoles();
+    ElMessage.success('CRM 操作角色已创建，请为指定用户分配');
+  } catch (err) {
+    ElMessage.error(err instanceof ApiError && err.status === 403
+      ? '当前账号缺少角色分配权限或无权访问当前公司'
+      : '创建 CRM 操作角色失败，请检查企业与角色配置');
+  } finally {
+    creatingCrmRole.value = false;
+  }
+}
 
 async function load() {
   loading.value = true;

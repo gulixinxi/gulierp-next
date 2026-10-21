@@ -161,6 +161,10 @@ export function listEnterpriseRoles(): Promise<EnterpriseRoleDto[]> {
   return apiGet<EnterpriseRoleDto[]>('/api/v1/organization/roles');
 }
 
+export function ensureCrmOperatorRole(): Promise<void> {
+  return apiPost<void>('/api/v1/organization/roles/crm-operator', {});
+}
+
 export function assignEnterpriseRole(
   userId: string,
   roleCode: string,
